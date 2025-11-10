@@ -1,0 +1,50 @@
+.github/
+
+# Node
+node_modules/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build output
+/dist
+/build
+/.next
+/out
+
+# Coverage
+coverage/
+
+# Environment files
+.env*
+.env.local
+.env.development.local
+.env.production.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.sublime-workspace
+*.launch
+.settings/
+
+# Misc
+*.tsbuildinfo
+*.pem
+.vercel
+
+# Docker
+*.pid
+*.seed
+
+# Prisma
+/prisma/.env
+
+# Ignore docs build
+/docs/build

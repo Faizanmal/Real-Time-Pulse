@@ -1,0 +1,626 @@
+// Prisma Schema for Portal - Multi-Tenant B2B SaaS
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// AUTHENTICATION & USER MANAGEMENT
+// ========================================
+
+model User {
+  id        String  @id @default(uuid())
+  email     String  @unique
+  password  String? // Nullable for OAuth-only users
+  firstName String?
+  lastName  String?
+  avatar    String?
+
+  // OAuth providers
+  googleId String? @unique
+
+  // Email verification
+  emailVerified Boolean @default(false)
+
+  // Password reset
+  resetToken       String?   @unique
+  resetTokenExpiry DateTime?
+
+  // Multi-tenant relationship
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // Roles & Permissions
+  role WorkspaceRole @default(MEMBER)
+
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastLoginAt DateTime?
+
+  // Relations
+  createdPortals Portal[]
+
+  @@index([workspaceId])
+  @@index([email])
+  @@map("users")
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+// ========================================
+// WORKSPACE (TENANT)
+// ========================================
+
+model Workspace {
+  id   String @id @default(uuid())
+  name String
+  slug String @unique // URL-friendly name
+
+  // Branding
+  logo         String? // S3/R2 URL
+  primaryColor String  @default("#3B82F6") // Hex color
+
+  // Contact & Metadata
+  contactEmail String?
+  website      String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  users        User[]
+  portals      Portal[]
+  integrations Integration[]
+  subscription Subscription?
+
+  @@map("workspaces")
+}
+
+// ========================================
+// SUBSCRIPTION & BILLING
+// ========================================
+
+model Subscription {
+  id String @id @default(uuid())
+
+  // Workspace relationship
+  workspaceId String    @unique
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // Stripe
+  stripeCustomerId       String    @unique
+  stripeSubscriptionId   String?   @unique
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
+
+  // Plan details
+  plan   SubscriptionPlan   @default(TRIAL)
+  status SubscriptionStatus @default(TRIALING)
+
+  // Limits
+  maxPortals Int @default(5)
+  maxUsers   Int @default(1)
+
+  // Trial
+  trialEndsAt DateTime?
+
+  // Timestamps
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  canceledAt DateTime?
+
+  @@index([workspaceId])
+  @@index([stripeCustomerId])
+  @@map("subscriptions")
+}
+
+enum SubscriptionPlan {
+  TRIAL
+  PRO // $49/mo - 5 portals, 1 user
+  AGENCY // $99/mo - 15 portals, 5 users
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  UNPAID
+}
+
+// ========================================
+// INTEGRATIONS (OAuth Connections)
+// ========================================
+
+model Integration {
+  id String @id @default(uuid())
+
+  // Workspace relationship
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // Provider details
+  provider IntegrationProvider
+
+  // OAuth tokens (ENCRYPTED in application layer)
+  accessToken  String    @db.Text
+  refreshToken String?   @db.Text
+  expiresAt    DateTime?
+
+  // Provider-specific metadata
+  accountId   String? // e.g., Asana workspace GID, GA property ID
+  accountName String? // Display name
+  scopes      String? // Granted OAuth scopes
+
+  // Settings (JSON for provider-specific config)
+  settings Json @default("{}")
+
+  // Status
+  status        IntegrationStatus @default(ACTIVE)
+  lastSyncedAt  DateTime?
+  lastSyncError String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  widgets Widget[]
+
+  @@unique([workspaceId, provider])
+  @@index([workspaceId])
+  @@index([status])
+  @@map("integrations")
+}
+
+enum IntegrationProvider {
+  ASANA
+  CLICKUP
+  TRELLO
+  GOOGLE_ANALYTICS
+  GOOGLE_ANALYTICS_4
+  HARVEST
+  TOGGL
+  GITHUB
+  JIRA
+}
+
+enum IntegrationStatus {
+  ACTIVE
+  INACTIVE
+  ERROR
+  EXPIRED
+}
+
+// ========================================
+// PORTALS (The Core Product)
+// ========================================
+
+model Portal {
+  id String @id @default(uuid())
+
+  // Workspace relationship
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // Portal details
+  name        String
+  slug        String // Unique per workspace - used in public URL
+  description String?
+
+  // Public sharing
+  isPublic   Boolean @default(true)
+  shareToken String  @unique @default(uuid()) // Used in public URL: portal.to/v/{shareToken}
+
+  // Layout configuration (JSON)
+  layout Json @default("[]") // Array of widget positions/sizes for react-grid-layout
+
+  // Creator
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  // Cache settings
+  cacheRefreshInterval Int       @default(30) // Minutes
+  lastCachedAt         DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  widgets Widget[]
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId])
+  @@index([shareToken])
+  @@map("portals")
+}
+
+// ========================================
+// WIDGETS (Portal Building Blocks)
+// ========================================
+
+model Widget {
+  id String @id @default(uuid())
+
+  // Portal relationship
+  portalId String
+  portal   Portal @relation(fields: [portalId], references: [id], onDelete: Cascade)
+
+  // Widget details
+  name String
+
+  // Widget type
+  type WidgetType
+
+  // Configuration (JSON - varies by widget type)
+  config Json @default("{}")
+  // Examples:
+  // Text: { content: "...", format: "markdown" }
+  // Asana Task List: { projectId: "...", filter: "in_progress" }
+  // GA Metric: { metric: "users", period: "30d" }
+
+  // Grid position (redundant with portal.layout, but useful for queries)
+  gridX      Int @default(0)
+  gridY      Int @default(0)
+  gridWidth  Int @default(4)
+  gridHeight Int @default(4)
+
+  // Refresh settings
+  refreshInterval Int       @default(300) // Seconds
+  lastRefreshedAt DateTime?
+
+  // Integration relationship (optional)
+  integrationId String?
+  integration   Integration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+
+  // Display order
+  order Int @default(0)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([portalId])
+  @@index([integrationId])
+  @@map("widgets")
+}
+
+enum WidgetType {
+  // Static widgets
+  TEXT_BLOCK
+  IMAGE
+  VIDEO_EMBED
+
+  // Asana widgets
+  ASANA_TASK_LIST
+  ASANA_PROJECT_PROGRESS
+
+  // ClickUp widgets
+  CLICKUP_TASK_LIST
+  CLICKUP_PROJECT_PROGRESS
+
+  // Trello widgets
+  TRELLO_CARD_LIST
+  TRELLO_BOARD_PROGRESS
+
+  // Google Analytics 4 widgets
+  GA4_METRIC_KPI
+  GA4_LINE_GRAPH
+  GA4_TOP_PAGES
+
+  // Harvest widgets
+  HARVEST_BUDGET_TRACKER
+  HARVEST_TOTAL_HOURS
+
+  // Toggl widgets
+  TOGGL_TOTAL_HOURS
+}
+
+// ========================================
+// CACHE STORAGE (For fast public portal loads)
+// ========================================
+// Note: Actual cache data stored in Redis
+// This table stores metadata about cache jobs
+
+model CacheJob {
+  id String @id @default(uuid())
+
+  // Portal reference
+  portalId String
+
+  // Job status
+  status CacheJobStatus @default(PENDING)
+
+  // Error tracking
+  error      String?
+  retryCount Int     @default(0)
+  maxRetries Int     @default(3)
+
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  startedAt   DateTime?
+  completedAt DateTime?
+  failedAt    DateTime?
+
+  @@index([portalId])
+  @@index([status])
+  @@map("cache_jobs")
+}
+
+enum CacheJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ========================================
+// AUDIT LOGS (Enterprise Security Feature)
+// ========================================
+
+model AuditLog {
+  id String @id @default(uuid())
+
+  // Workspace & User tracking
+  workspaceId String
+  userId      String?
+  userEmail   String
+
+  // Action details
+  action   AuditAction
+  entity   String // e.g., "Portal", "Widget", "User"
+  entityId String // ID of the affected resource
+
+  // Request metadata
+  ipAddress String?
+  userAgent String?
+  method    String // HTTP method: GET, POST, PUT, DELETE
+  endpoint  String // API endpoint called
+
+  // Changes tracking (JSON)
+  oldValues Json? // Previous state
+  newValues Json? // New state
+
+  // Additional metadata
+  metadata Json? // Any extra context
+
+  // Status
+  success      Boolean @default(true)
+  errorMessage String?
+
+  // Timestamp
+  createdAt DateTime @default(now())
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+enum AuditAction {
+  // Authentication
+  LOGIN
+  LOGOUT
+  PASSWORD_RESET
+
+  // CRUD operations
+  CREATE
+  READ
+  UPDATE
+  DELETE
+
+  // Specific actions
+  INVITE_USER
+  REMOVE_USER
+  UPLOAD_FILE
+  EXPORT_DATA
+  CHANGE_SETTINGS
+  CONNECT_INTEGRATION
+  DISCONNECT_INTEGRATION
+}
+
+// ========================================
+// ANALYTICS & TRACKING
+// ========================================
+
+model AnalyticsEvent {
+  id String @id @default(uuid())
+
+  // Workspace & Portal tracking
+  workspaceId String
+  portalId    String?
+  widgetId    String?
+
+  // User tracking
+  userId    String?
+  sessionId String // Browser session ID
+
+  // Event details
+  eventType String // e.g., "portal_view", "widget_click", "widget_view"
+  eventData Json? // Additional event-specific data
+
+  // Request metadata
+  ipAddress String?
+  userAgent String?
+  referrer  String? // Where the user came from
+
+  // Timestamp
+  timestamp DateTime @default(now())
+
+  @@index([workspaceId])
+  @@index([portalId])
+  @@index([widgetId])
+  @@index([eventType])
+  @@index([timestamp])
+  @@index([sessionId])
+  @@map("analytics_events")
+}
+
+// ========================================
+// WORKSPACE MEMBERS (Enhanced RBAC)
+// ========================================
+
+model WorkspaceMember {
+  id String @id @default(uuid())
+
+  // Relationships
+  workspaceId String
+  userId      String
+
+  // Role & Permissions
+  role WorkspaceMemberRole @default(VIEWER)
+
+  // Invitation tracking
+  invitedBy  String?
+  invitedAt  DateTime  @default(now())
+  acceptedAt DateTime?
+
+  // Status
+  status MemberStatus @default(PENDING)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
+  @@map("workspace_members")
+}
+
+enum WorkspaceMemberRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum MemberStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+// ========================================
+// BACKGROUND JOBS METADATA
+// ========================================
+
+model JobMetadata {
+  id String @id @default(uuid())
+
+  // Job details
+  jobId     String @unique // BullMQ job ID
+  queueName String // Which queue: email, report, data-sync
+  jobType   String // Specific job type
+
+  // Workspace tracking
+  workspaceId String
+  userId      String?
+
+  // Status
+  status   JobStatus @default(QUEUED)
+  progress Int       @default(0) // 0-100
+
+  // Timing
+  queuedAt    DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  failedAt    DateTime?
+
+  // Results
+  result Json? // Job result data
+  error  String? // Error message if failed
+
+  // Metadata
+  metadata Json? // Additional context
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([status])
+  @@index([queueName])
+  @@map("job_metadata")
+}
+
+enum JobStatus {
+  QUEUED
+  ACTIVE
+  COMPLETED
+  FAILED
+  DELAYED
+  PAUSED
+}
+
+// ========================================
+// NOTIFICATIONS
+// ========================================
+
+model Notification {
+  id String @id @default(uuid())
+
+  // Recipient
+  userId      String
+  workspaceId String
+
+  // Notification details
+  title   String
+  message String
+  type    NotificationType
+
+  // Action link
+  actionUrl String?
+
+  // Status
+  read   Boolean   @default(false)
+  readAt DateTime?
+
+  // Related entities
+  portalId String?
+  widgetId String?
+
+  // Metadata
+  metadata Json?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([workspaceId])
+  @@index([read])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  PORTAL_CREATED
+  PORTAL_UPDATED
+  PORTAL_DELETED
+  WIDGET_ADDED
+  WIDGET_UPDATED
+  MEMBER_INVITED
+  INTEGRATION_SYNCED
+  INTEGRATION_FAILED
+}

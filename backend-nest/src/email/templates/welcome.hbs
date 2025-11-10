@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .header { background: #3B82F6; color: white; padding: 30px; text-align: center; }
+    .header h1 { margin: 0; font-size: 28px; }
+    .content { padding: 40px 30px; }
+    .content h2 { color: #3B82F6; margin-top: 0; }
+    .button { display: inline-block; padding: 12px 30px; background: #3B82F6; color: white !important; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+    .button:hover { background: #2563EB; }
+    .footer { background: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Welcome to Portal! 🎉</h1>
+    </div>
+    <div class="content">
+      <h2>Hi {{userName}},</h2>
+      <p>Welcome to <strong>{{workspaceName}}</strong>! We're excited to have you on board.</p>
+      <p>Portal helps you create beautiful, real-time client dashboards that automatically update with data from your favorite tools.</p>
+      <p>Here's what you can do next:</p>
+      <ul>
+        <li>Create your first portal</li>
+        <li>Connect integrations (Asana, Google Analytics, etc.)</li>
+        <li>Add widgets to visualize your data</li>
+        <li>Share with your clients</li>
+      </ul>
+      <a href="{{loginUrl}}" class="button">Get Started</a>
+      <p>If you have any questions, feel free to reply to this email. We're here to help!</p>
+      <p>Best regards,<br>The Portal Team</p>
+    </div>
+    <div class="footer">
+      <p>&copy; 2025 Portal. All rights reserved.</p>
+      <p>This email was sent to you because you signed up for Portal.</p>
+    </div>
+  </div>
+</body>
+</html>
