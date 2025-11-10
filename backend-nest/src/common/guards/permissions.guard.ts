@@ -5,9 +5,11 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import type { Request } from 'express';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
 import { Permission, ROLE_PERMISSIONS } from '../enums/permissions.enum';
+import type { RequestUser } from '../interfaces/auth.interface';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
@@ -26,7 +28,9 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
+    const request = context
+      .switchToHttp()
+      .getRequest<Request & { user?: RequestUser }>();
     const user = request.user;
 
     if (!user) {
@@ -34,7 +38,9 @@ export class PermissionsGuard implements CanActivate {
     }
 
     // Extract workspace ID from params or body
-    const workspaceId = request.params.workspaceId || request.body.workspaceId;
+    const params = request.params as Record<string, string>;
+    const body = request.body as Record<string, unknown>;
+    const workspaceId = params.workspaceId || (body.workspaceId as string);
 
     if (!workspaceId) {
       throw new ForbiddenException('Workspace ID not provided');

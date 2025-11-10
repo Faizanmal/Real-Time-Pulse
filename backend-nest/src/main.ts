@@ -13,7 +13,7 @@ async function bootstrap() {
   });
 
   const configService = app.get(ConfigService);
-  const logger = app.get(LoggingService);
+  const logger = await app.resolve(LoggingService);
   app.useLogger(logger);
 
   // Security

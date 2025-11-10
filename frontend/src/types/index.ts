@@ -70,3 +70,62 @@ export interface Widget {
   };
   cachedData?: unknown;
 }
+
+export interface Integration {
+  id: string;
+  workspaceId: string;
+  provider: string;
+  name: string;
+  status: 'active' | 'inactive' | 'error';
+  settings: Record<string, unknown>;
+  lastSyncAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Notification {
+  id: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+  data?: Record<string, unknown>;
+}
+
+export interface AuditLog {
+  id: string;
+  userId: string;
+  workspaceId: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  changes: Record<string, unknown>;
+  ipAddress: string;
+  userAgent: string;
+  createdAt: string;
+  user?: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+  };
+}
+
+export interface WorkspaceStats {
+  totalPortals: number;
+  totalWidgets: number;
+  totalIntegrations: number;
+  totalMembers: number;
+  activePortals: number;
+  recentActivity: number;
+}
+
+export interface HealthStatus {
+  status: 'ok' | 'degraded' | 'down';
+  uptime: number;
+  version: string;
+  database: boolean;
+  redis: boolean;
+  timestamp: string;
+}

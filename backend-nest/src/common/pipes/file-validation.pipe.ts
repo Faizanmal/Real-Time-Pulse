@@ -20,6 +20,14 @@ export class FileValidationPipe implements PipeTransform {
       throw new BadRequestException('File is required');
     }
 
+    // Log metadata for debugging
+    if (metadata.type) {
+      // Metadata contains information about the parameter being validated
+      console.log(
+        `Validating file from ${metadata.type}: ${metadata.data || 'unknown'}`,
+      );
+    }
+
     // Validate file size
     if (this.options.maxSize && value.size > this.options.maxSize) {
       const maxSizeMB = (this.options.maxSize / (1024 * 1024)).toFixed(2);

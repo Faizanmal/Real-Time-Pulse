@@ -92,8 +92,9 @@ export class IntegrationController {
   @ApiResponse({ status: 200, description: 'Data fetched successfully' })
   async fetchData(
     @Param('id') id: string,
+
     @Body() body: { dataType: string; params?: any },
-  ) {
+  ): Promise<unknown> {
     return this.integrationService.fetchData(id, body.dataType, body.params);
   }
 }

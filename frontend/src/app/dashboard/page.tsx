@@ -2,18 +2,39 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/src/store/auth';
-import { portalApi, workspaceApi } from '@/src/lib/api-client';
-import type { Portal, Workspace } from '@/src/types';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useAuthStore } from '@/src/store/auth';
+import { portalApi, workspaceApi, integrationApi } from '@/src/lib/api-client';
+import { useNotifications } from '@/src/hooks/useNotifications';
+import { StatsCard, PortalCard } from '@/src/components/ui/feature-cards';
+import type { Portal, Workspace, WorkspaceStats } from '@/src/types';
+import {
+  LayoutDashboard,
+  Plus,
+  Settings,
+  LogOut,
+  Bell,
+  Users,
+  Puzzle,
+  Zap,
+  Activity,
+  TrendingUp,
+  Search,
+  Filter,
+} from 'lucide-react';
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated, clearAuth } = useAuthStore();
+  const { notifications, isConnected, unreadCount } = useNotifications();
+  
   const [portals, setPortals] = useState<Portal[]>([]);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
+  const [stats, setStats] = useState<WorkspaceStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [integrationCount, setIntegrationCount] = useState(0);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -22,21 +43,45 @@ export default function DashboardPage() {
     }
 
     loadData();
+
+    // Listen for real-time updates
+    window.addEventListener('portal:updated', handlePortalUpdate);
+    return () => {
+      window.removeEventListener('portal:updated', handlePortalUpdate);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, router]);
 
   const loadData = async () => {
     try {
-      const [portalsData, workspaceData] = await Promise.all([
+      const [portalsData, workspaceData, integrationsData] = await Promise.all([
         portalApi.getAll(),
         workspaceApi.getMyWorkspace(),
+        user?.workspaceId ? integrationApi.getAllByWorkspace(user.workspaceId).catch(() => []) : Promise.resolve([]),
       ]);
+      
       setPortals(portalsData.portals);
       setWorkspace(workspaceData);
-    } catch (error) {
-      console.error('Failed to load data:', error);
+      setIntegrationCount(Array.isArray(integrationsData) ? integrationsData.length : 0);
+
+      // Load stats if available
+      if (user?.workspaceId) {
+        try {
+          const statsData = await workspaceApi.getStats(user.workspaceId);
+          setStats(statsData);
+        } catch (err) {
+          console.log('Stats not available:', err);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load data:', err);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePortalUpdate = () => {
+    loadData();
   };
 
   const handleLogout = () => {
@@ -56,271 +101,326 @@ export default function DashboardPage() {
     }
   };
 
+  const filteredPortals = portals.filter((portal) =>
+    portal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    portal.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
+          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-lg text-gray-300">Loading your dashboard...</p>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950">
       {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{workspace?.name || 'Portal'}</h1>
-            <p className="text-sm text-gray-500">
-              {user?.firstName} {user?.lastName} • {user?.role}
-            </p>
-          </div>
-          <div className="flex gap-4">
-            <Link
-              href="/settings"
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
-            >
-              Settings
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700"
-            >
-              Logout
-            </button>
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-slate-900/30 border-b border-slate-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center gap-4">
+              <motion.div
+                whileHover={{ rotate: 360 }}
+                transition={{ duration: 0.5 }}
+                className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl"
+              >
+                <LayoutDashboard className="h-6 w-6 text-white" />
+              </motion.div>
+              <div>
+                <h1 className="text-2xl font-bold text-white">
+                  {workspace?.name || 'Dashboard'}
+                </h1>
+                <p className="text-sm text-gray-400">
+                  {user?.firstName} {user?.lastName} • {user?.role}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* WebSocket Status */}
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700/50">
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
+                <span className="text-xs text-gray-400">
+                  {isConnected ? 'Live' : 'Offline'}
+                </span>
+              </div>
+
+              {/* Notifications */}
+              <Link href="/dashboard/notifications">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="relative p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 text-gray-300 transition-colors"
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </motion.button>
+              </Link>
+
+              {/* Settings */}
+              <Link href="/dashboard/settings">
+                <motion.button
+                  whileHover={{ scale: 1.05, rotate: 90 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 text-gray-300 transition-colors"
+                >
+                  <Settings className="h-5 w-5" />
+                </motion.button>
+              </Link>
+
+              {/* Logout */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleLogout}
+                className="px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 font-medium transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+              </motion.button>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6 flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-900">Your Portals</h2>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        {/* Stats Cards */}
+        {stats && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
           >
-            Create Portal
-          </button>
-        </div>
+            <StatsCard
+              title="Total Portals"
+              value={stats.totalPortals}
+              description={`${stats.activePortals} active`}
+              icon={<LayoutDashboard className="h-6 w-6" />}
+              color="blue"
+              trend={stats.totalPortals > 0 ? { value: 12, isPositive: true } : undefined}
+            />
+            <StatsCard
+              title="Total Widgets"
+              value={stats.totalWidgets}
+              description="Across all portals"
+              icon={<Puzzle className="h-6 w-6" />}
+              color="purple"
+            />
+            <StatsCard
+              title="Integrations"
+              value={stats.totalIntegrations || integrationCount}
+              description={`${integrationCount} active connection${integrationCount !== 1 ? 's' : ''}`}
+              icon={<Zap className="h-6 w-6" />}
+              color="green"
+            />
+            <StatsCard
+              title="Team Members"
+              value={stats.totalMembers}
+              description="Workspace users"
+              icon={<Users className="h-6 w-6" />}
+              color="orange"
+            />
+          </motion.div>
+        )}
 
-        {portals.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg shadow">
-            <svg
-              className="mx-auto h-12 w-12 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+        {/* Quick Actions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+        >
+          <Link href="/dashboard/portals/new">
+            <motion.div
+              whileHover={{ scale: 1.05, y: -5 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-4 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/20 border border-blue-500/30 backdrop-blur-sm hover:border-blue-500/50 transition-all cursor-pointer"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No portals</h3>
-            <p className="mt-1 text-sm text-gray-500">Get started by creating a new portal.</p>
-            <div className="mt-6">
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              <Plus className="h-6 w-6 text-blue-400 mb-2" />
+              <h3 className="font-semibold text-white">New Portal</h3>
+              <p className="text-xs text-gray-400 mt-1">Create portal</p>
+            </motion.div>
+          </Link>
+
+          <Link href="/dashboard/portals">
+            <motion.div
+              whileHover={{ scale: 1.05, y: -5 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-4 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/20 border border-purple-500/30 backdrop-blur-sm hover:border-purple-500/50 transition-all cursor-pointer"
+            >
+              <LayoutDashboard className="h-6 w-6 text-purple-400 mb-2" />
+              <h3 className="font-semibold text-white">Portals</h3>
+              <p className="text-xs text-gray-400 mt-1">Manage all</p>
+            </motion.div>
+          </Link>
+
+          <Link href="/dashboard/integrations">
+            <motion.div
+              whileHover={{ scale: 1.05, y: -5 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-4 rounded-xl bg-gradient-to-br from-green-500/20 to-green-600/20 border border-green-500/30 backdrop-blur-sm hover:border-green-500/50 transition-all cursor-pointer"
+            >
+              <Zap className="h-6 w-6 text-green-400 mb-2" />
+              <h3 className="font-semibold text-white">Integrations</h3>
+              <p className="text-xs text-gray-400 mt-1">Connect services</p>
+            </motion.div>
+          </Link>
+
+          <Link href="/dashboard/settings">
+            <motion.div
+              whileHover={{ scale: 1.05, y: -5 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-4 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-600/20 border border-orange-500/30 backdrop-blur-sm hover:border-orange-500/50 transition-all cursor-pointer"
+            >
+              <Settings className="h-6 w-6 text-orange-400 mb-2" />
+              <h3 className="font-semibold text-white">Settings</h3>
+              <p className="text-xs text-gray-400 mt-1">Workspace config</p>
+            </motion.div>
+          </Link>
+        </motion.div>
+
+        {/* Recent Notifications Preview */}
+        {notifications.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="mb-8 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Bell className="h-5 w-5 text-blue-400" />
+                Recent Notifications
+              </h3>
+              <Link href="/dashboard/notifications" className="text-sm text-blue-400 hover:text-blue-300">
+                View All
+              </Link>
+            </div>
+            <div className="space-y-2">
+              {notifications.slice(0, 3).map((notification) => (
+                <div key={notification.id} className="text-sm text-gray-300 flex items-start gap-2">
+                  <span className="text-blue-400">•</span>
+                  <span>{notification.title}</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Portals Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <h2 className="text-3xl font-bold text-white flex items-center gap-2">
+              <Activity className="h-8 w-8 text-purple-400" />
+              Your Portals
+            </h2>
+
+            {/* Search and Filter */}
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search portals..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-4 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                />
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 text-gray-300 transition-colors"
+                title="Filter options (coming soon)"
               >
-                Create Portal
-              </button>
+                <Filter className="h-5 w-5" />
+              </motion.button>
             </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {portals.map((portal) => (
-              <div key={portal.id} className="bg-white rounded-lg shadow p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium text-gray-900">{portal.name}</h3>
-                    <p className="text-sm text-gray-500">{portal.slug}</p>
-                  </div>
-                  <span
-                    className={`px-2 py-1 text-xs font-medium rounded ${
-                      portal.isPublic
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
-                  >
-                    {portal.isPublic ? 'Public' : 'Private'}
-                  </span>
-                </div>
 
-                {portal.description && (
-                  <p className="text-sm text-gray-600 mb-4">{portal.description}</p>
-                )}
+          {filteredPortals.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center py-20 bg-slate-900/30 rounded-2xl border border-slate-800/50"
+            >
+              <LayoutDashboard className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">
+                {searchQuery ? 'No portals found' : 'No portals yet'}
+              </h3>
+              <p className="text-gray-400 mb-6">
+                {searchQuery
+                  ? 'Try adjusting your search'
+                  : 'Create your first portal to get started'}
+              </p>
+              {!searchQuery && (
+                <Link href="/dashboard/portals/new">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-xl transition-all"
+                  >
+                    <Plus className="inline-block h-5 w-5 mr-2" />
+                    Create Portal
+                  </motion.button>
+                </Link>
+              )}
+            </motion.div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredPortals.map((portal, index) => (
+                <motion.div
+                  key={portal.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + index * 0.05 }}
+                >
+                  <PortalCard
+                    {...portal}
+                    onView={(id) => router.push(`/dashboard/portals/${id}`)}
+                    onEdit={(id) => router.push(`/dashboard/portals/${id}/edit`)}
+                    onDelete={handleDeletePortal}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </motion.div>
 
-                <div className="flex items-center text-sm text-gray-500 mb-4">
-                  <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"
-                    />
-                  </svg>
-                  {portal.widgetCount || 0} widgets
-                </div>
-
-                <div className="flex gap-2">
-                  <Link
-                    href={`/portals/${portal.id}`}
-                    className="flex-1 text-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    Edit
-                  </Link>
-                  <a
-                    href={`${process.env.NEXT_PUBLIC_APP_URL}/share/${portal.shareToken}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 text-center px-3 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
-                  >
-                    View
-                  </a>
-                  <button
-                    onClick={() => handleDeletePortal(portal.id)}
-                    className="px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-600 hover:bg-red-50"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* Recent Activity */}
+        {stats && stats.recentActivity > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mt-8 p-6 bg-slate-900/30 rounded-2xl border border-slate-800/50"
+          >
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <TrendingUp className="h-6 w-6 text-green-400" />
+              Recent Activity
+            </h3>
+            <p className="text-gray-400">
+              {stats.recentActivity} actions in the last 24 hours
+            </p>
+          </motion.div>
         )}
       </main>
-
-      {/* Create Portal Modal */}
-      {showCreateModal && (
-        <CreatePortalModal
-          onClose={() => setShowCreateModal(false)}
-          onCreated={(portal) => {
-            setPortals([...portals, portal]);
-            setShowCreateModal(false);
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-function CreatePortalModal({
-  onClose,
-  onCreated,
-}: {
-  onClose: () => void;
-  onCreated: (portal: Portal) => void;
-}) {
-  const [name, setName] = useState('');
-  const [slug, setSlug] = useState('');
-  const [description, setDescription] = useState('');
-  const [isPublic, setIsPublic] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const portal = await portalApi.create({ name, slug, description, isPublic });
-      onCreated(portal);
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
-      setError(error.response?.data?.message || 'Failed to create portal');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setName(value);
-    setSlug(value.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-'));
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full p-6">
-        <h2 className="text-xl font-bold mb-4">Create New Portal</h2>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 text-red-800 rounded-md text-sm">{error}</div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Portal Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={handleNameChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="My Client Portal"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
-            <input
-              type="text"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="my-client-portal"
-              required
-            />
-            <p className="mt-1 text-xs text-gray-500">Used in the portal URL</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows={3}
-              placeholder="Optional description"
-            />
-          </div>
-
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="isPublic"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label htmlFor="isPublic" className="ml-2 block text-sm text-gray-900">
-              Make this portal public
-            </label>
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-            >
-              {isLoading ? 'Creating...' : 'Create Portal'}
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   );
 }

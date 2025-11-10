@@ -1,6 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+
+type Integration = any;
 
 @Injectable()
 export class AsanaService {
@@ -9,12 +12,12 @@ export class AsanaService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  async testConnection(integration: any): Promise<boolean> {
+  async testConnection(integration: Integration): Promise<boolean> {
     try {
       const response = await firstValueFrom(
         this.httpService.get(`${this.baseUrl}/users/me`, {
           headers: {
-            Authorization: `Bearer ${integration.accessToken}`,
+            Authorization: `Bearer ${integration.accessToken as string}`,
           },
         }),
       );
@@ -25,9 +28,13 @@ export class AsanaService {
     }
   }
 
-  async fetchData(integration: any, dataType: string, params?: any) {
+  async fetchData(
+    integration: Integration,
+    dataType: string,
+    params?: unknown,
+  ): Promise<unknown> {
     const headers = {
-      Authorization: `Bearer ${integration.accessToken}`,
+      Authorization: `Bearer ${integration.accessToken as string}`,
     };
 
     switch (dataType) {
@@ -45,17 +52,21 @@ export class AsanaService {
     }
   }
 
-  private async fetchProjects(headers: any, params?: any) {
+  private async fetchProjects(
+    headers: any,
+    params?: unknown,
+  ): Promise<unknown> {
     try {
       const response = await firstValueFrom(
         this.httpService.get(`${this.baseUrl}/projects`, {
           headers,
           params: {
-            workspace: params?.workspaceGid,
+            workspace: (params as { workspaceGid?: string }).workspaceGid,
             archived: false,
           },
         }),
       );
+
       return response.data.data;
     } catch (error) {
       this.logger.error('Failed to fetch Asana projects', error);
@@ -63,17 +74,20 @@ export class AsanaService {
     }
   }
 
-  private async fetchTasks(headers: any, params?: any) {
+  private async fetchTasks(headers: any, params?: unknown): Promise<unknown> {
     try {
       const response = await firstValueFrom(
         this.httpService.get(`${this.baseUrl}/tasks`, {
           headers,
           params: {
-            project: params?.projectGid,
-            completed_since: params?.completedSince || 'now',
+            project: (params as { projectGid?: string }).projectGid,
+
+            completed_since:
+              (params as { completedSince?: string }).completedSince || 'now',
           },
         }),
       );
+
       return response.data.data;
     } catch (error) {
       this.logger.error('Failed to fetch Asana tasks', error);
@@ -81,11 +95,12 @@ export class AsanaService {
     }
   }
 
-  private async fetchTeams(headers: any) {
+  private async fetchTeams(headers: any): Promise<unknown> {
     try {
       const response = await firstValueFrom(
         this.httpService.get(`${this.baseUrl}/teams`, { headers }),
       );
+
       return response.data.data;
     } catch (error) {
       this.logger.error('Failed to fetch Asana teams', error);

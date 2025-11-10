@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
-import type { Queue } from 'bull';
-import { QUEUE_NAMES } from './jobs.module';
+import type * as Bull from 'bull';
+import { QUEUE_NAMES } from './queue.constants';
 
 export interface EmailJobData {
   to: string | string[];
@@ -32,10 +33,10 @@ export class JobsService {
   private readonly logger = new Logger(JobsService.name);
 
   constructor(
-    @InjectQueue(QUEUE_NAMES.EMAIL) private emailQueue: Queue,
-    @InjectQueue(QUEUE_NAMES.REPORT) private reportQueue: Queue,
-    @InjectQueue(QUEUE_NAMES.DATA_SYNC) private dataSyncQueue: Queue,
-    @InjectQueue(QUEUE_NAMES.ANALYTICS) private analyticsQueue: Queue,
+    @InjectQueue(QUEUE_NAMES.EMAIL) private emailQueue: Bull.Queue,
+    @InjectQueue(QUEUE_NAMES.REPORT) private reportQueue: Bull.Queue,
+    @InjectQueue(QUEUE_NAMES.DATA_SYNC) private dataSyncQueue: Bull.Queue,
+    @InjectQueue(QUEUE_NAMES.ANALYTICS) private analyticsQueue: Bull.Queue,
   ) {}
 
   /**
@@ -92,8 +93,11 @@ export class JobsService {
         'waiting',
         'active',
       ]);
+
       const duplicate = existingJobs.find(
-        (job) => job.data.integrationId === data.integrationId,
+        (job: any) =>
+          (job.data as { integrationId: string }).integrationId ===
+          data.integrationId,
       );
 
       if (duplicate) {
@@ -151,6 +155,7 @@ export class JobsService {
     }
 
     const state = await job.getState();
+
     return {
       id: job.id,
       name: job.name,
@@ -160,6 +165,7 @@ export class JobsService {
       attemptsMade: job.attemptsMade,
       finishedOn: job.finishedOn,
       processedOn: job.processedOn,
+
       failedReason: job.failedReason,
     };
   }
@@ -217,7 +223,7 @@ export class JobsService {
     this.logger.log(`Cleaned old jobs from queue: ${queueName}`);
   }
 
-  private getQueue(queueName: keyof typeof QUEUE_NAMES): Queue {
+  private getQueue(queueName: keyof typeof QUEUE_NAMES): Bull.Queue {
     switch (queueName) {
       case 'EMAIL':
         return this.emailQueue;
@@ -228,7 +234,7 @@ export class JobsService {
       case 'ANALYTICS':
         return this.analyticsQueue;
       default:
-        throw new Error(`Unknown queue: ${queueName}`);
+        throw new Error(`Unknown queue: ${String(queueName)}`);
     }
   }
 }

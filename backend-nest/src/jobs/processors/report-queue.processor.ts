@@ -1,7 +1,7 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bull';
-import { QUEUE_NAMES } from '../jobs.module';
+import { QUEUE_NAMES } from '../queue.constants';
 import { ReportJobData } from '../jobs.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EmailService } from '../../email/email.service';
@@ -52,28 +52,33 @@ export class ReportQueueProcessor {
     }
   }
 
-  private async fetchReportData(jobData: ReportJobData) {
-    const { workspaceId, reportType, startDate, endDate, portalId } = jobData;
+  private fetchReportData(jobData: ReportJobData): Promise<unknown[]> {
+    const { reportType } = jobData;
+
+    this.logger.log(
+      `Fetching report data for workspace ${jobData.workspaceId}, type: ${reportType}, period: ${jobData.startDate?.toISOString()} to ${jobData.endDate?.toISOString()}${jobData.portalId ? `, portal: ${jobData.portalId}` : ''}`,
+    );
 
     switch (reportType) {
       case 'analytics':
         // TODO: Implement analytics event fetching
-        return [];
+        return Promise.resolve([]);
 
       case 'audit':
         // TODO: Implement audit log fetching
-        return [];
+        return Promise.resolve([]);
 
       case 'performance':
         // Implement performance metrics fetching
-        return [];
+        return Promise.resolve([]);
 
       default:
-        throw new Error(`Unknown report type: ${reportType}`);
+        throw new Error(`Unknown report type: ${reportType as string}`);
     }
   }
 
-  private async generateReport(data: any[], format: string): Promise<Buffer> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private generateReport(data: unknown[], _format: string): Promise<Buffer> {
     // This is a placeholder - implement actual report generation
     // You'd use libraries like:
     // - pdfkit or puppeteer for PDF
@@ -81,6 +86,6 @@ export class ReportQueueProcessor {
     // - exceljs for Excel
 
     const reportContent = JSON.stringify(data, null, 2);
-    return Buffer.from(reportContent);
+    return Promise.resolve(Buffer.from(reportContent));
   }
 }

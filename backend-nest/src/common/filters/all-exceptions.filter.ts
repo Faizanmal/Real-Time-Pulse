@@ -13,7 +13,7 @@ export interface ErrorResponse {
   statusCode: number;
   message: string;
   error: string;
-  errors?: any[];
+  errors?: unknown[];
   timestamp: string;
   path: string;
   stack?: string;
@@ -31,19 +31,23 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal server error';
     let error = 'Internal Server Error';
-    let errors: any[] | undefined;
+    let errors: unknown[] | undefined;
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
 
       if (typeof exceptionResponse === 'object') {
-        const exceptionData = exceptionResponse as any;
+        const exceptionData = exceptionResponse as {
+          message?: string;
+          error?: string;
+          errors?: unknown[];
+        };
         message = exceptionData.message || exception.message;
         error = exceptionData.error || exception.name;
         errors = exceptionData.errors;
       } else {
-        message = exceptionResponse;
+        message = String(exceptionResponse);
         error = exception.name;
       }
     } else if (exception instanceof Error) {

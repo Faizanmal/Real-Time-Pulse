@@ -7,13 +7,7 @@ import { DataSyncQueueProcessor } from './processors/data-sync-queue.processor';
 import { JobsService } from './jobs.service';
 import { EmailModule } from '../email/email.module';
 import { PrismaModule } from '../prisma/prisma.module';
-
-export const QUEUE_NAMES = {
-  EMAIL: 'email',
-  REPORT: 'report',
-  DATA_SYNC: 'data-sync',
-  ANALYTICS: 'analytics',
-} as const;
+import { QUEUE_NAMES } from './queue.constants';
 
 @Module({
   imports: [

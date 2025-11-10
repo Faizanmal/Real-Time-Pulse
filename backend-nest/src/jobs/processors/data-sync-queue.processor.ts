@@ -1,7 +1,7 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bull';
-import { QUEUE_NAMES } from '../jobs.module';
+import { QUEUE_NAMES } from '../queue.constants';
 import { DataSyncJobData } from '../jobs.service';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -13,10 +13,12 @@ export class DataSyncQueueProcessor {
 
   @Process('sync-data')
   async handleDataSync(job: Job<DataSyncJobData>) {
-    this.logger.log(`Processing data sync job ${job.id}`);
+    this.logger.log(
+      `Processing data sync job ${job.id} for workspace ${job.data.workspaceId}`,
+    );
 
     try {
-      const { workspaceId, integrationId, syncType } = job.data;
+      const { integrationId, syncType } = job.data;
 
       // Get integration details
       const integration = await this.prisma.integration.findUnique({
@@ -73,33 +75,39 @@ export class DataSyncQueueProcessor {
     }
   }
 
-  private async syncAsanaData(
-    integration: any,
+  private syncAsanaData(
+    integration: unknown,
     syncType: string,
   ): Promise<number> {
     // Implement Asana API integration
     // This is a placeholder
-    this.logger.log(`Syncing Asana data (${syncType})`);
-    return 0;
+    this.logger.log(
+      `Syncing Asana data for integration (${syncType})`,
+      integration,
+    );
+    return Promise.resolve(0);
   }
 
-  private async syncGoogleAnalyticsData(
-    integration: any,
+  private syncGoogleAnalyticsData(
+    integration: unknown,
     syncType: string,
   ): Promise<number> {
     // Implement Google Analytics API integration
     // This is a placeholder
-    this.logger.log(`Syncing Google Analytics data (${syncType})`);
-    return 0;
+    this.logger.log(
+      `Syncing Google Analytics data for integration (${syncType})`,
+      integration,
+    );
+    return Promise.resolve(0);
   }
 
-  private async syncHarvestData(
-    integration: any,
+  private syncHarvestData(
+    integration: unknown,
     syncType: string,
   ): Promise<number> {
     // Implement Harvest API integration
     // This is a placeholder
     this.logger.log(`Syncing Harvest data (${syncType})`);
-    return 0;
+    return Promise.resolve(0);
   }
 }

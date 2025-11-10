@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import type { Request, Response } from 'express';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -26,18 +27,21 @@ export class ResponseInterceptor<T>
     next: CallHandler,
   ): Observable<ApiResponse<T>> {
     const ctx = context.switchToHttp();
-    const request = ctx.getRequest();
-    const response = ctx.getResponse();
+    const request = ctx.getRequest<Request>();
+    const response = ctx.getResponse<Response>();
 
     return next.handle().pipe(
-      map((data) => ({
-        success: true,
-        statusCode: response.statusCode || HttpStatus.OK,
-        message: data?.message || 'Request successful',
-        data: data?.data || data,
-        timestamp: new Date().toISOString(),
-        path: request.url,
-      })),
+      map((data: unknown) => {
+        const dataObj = data as { message?: string; data?: T } | null;
+        return {
+          success: true,
+          statusCode: response.statusCode || HttpStatus.OK,
+          message: dataObj?.message || 'Request successful',
+          data: (dataObj?.data || data) as T,
+          timestamp: new Date().toISOString(),
+          path: request.url,
+        };
+      }),
     );
   }
 }

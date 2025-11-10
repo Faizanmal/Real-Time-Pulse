@@ -36,15 +36,23 @@ export class LoggingService implements NestLoggerService {
       formats.push(winston.format.json());
     } else {
       formats.push(
-        winston.format.printf(
-          ({ timestamp, level, message, context, metadata }) => {
-            const ctx = context ? `[${context}]` : '';
-            const meta = Object.keys(metadata || {}).length
+        winston.format.printf((info: winston.Logform.TransformableInfo) => {
+          const timestamp =
+            typeof info.timestamp === 'string' ? info.timestamp : '';
+          const level = typeof info.level === 'string' ? info.level : '';
+          const message =
+            typeof info.message === 'string'
+              ? info.message
+              : JSON.stringify(info.message);
+          const context = info.context as string | undefined;
+          const metadata = info.metadata as Record<string, unknown> | undefined;
+          const ctx = context ? `[${context}]` : '';
+          const meta =
+            metadata && Object.keys(metadata).length
               ? `\n${JSON.stringify(metadata, null, 2)}`
               : '';
-            return `${timestamp} [${level.toUpperCase()}] ${ctx} ${message}${meta}`;
-          },
-        ),
+          return `${timestamp} [${level.toUpperCase()}] ${ctx} ${message}${meta}`;
+        }),
       );
     }
 
@@ -80,7 +88,15 @@ export class LoggingService implements NestLoggerService {
         new winston.transports.Console({
           format: winston.format.combine(
             winston.format.colorize(),
-            winston.format.printf(({ timestamp, level, message, context }) => {
+            winston.format.printf((info: winston.Logform.TransformableInfo) => {
+              const timestamp =
+                typeof info.timestamp === 'string' ? info.timestamp : '';
+              const level = typeof info.level === 'string' ? info.level : '';
+              const message =
+                typeof info.message === 'string'
+                  ? info.message
+                  : JSON.stringify(info.message);
+              const context = info.context as string | undefined;
               const ctx = context ? `[${context}]` : '';
               return `${timestamp} ${level} ${ctx} ${message}`;
             }),
@@ -121,7 +137,7 @@ export class LoggingService implements NestLoggerService {
   logWithMetadata(
     level: string,
     message: string,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
     context?: string,
   ) {
     this.logger.log(level, message, {

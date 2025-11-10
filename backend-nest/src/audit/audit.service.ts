@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import type { AuditAction } from '@prisma/client';
+import type { AuditAction, Prisma } from '@prisma/client';
 
 export interface AuditLogData {
   workspaceId: string;
@@ -13,9 +13,9 @@ export interface AuditLogData {
   userAgent?: string;
   method: string;
   endpoint: string;
-  oldValues?: any;
-  newValues?: any;
-  metadata?: any;
+  oldValues?: Prisma.InputJsonValue;
+  newValues?: Prisma.InputJsonValue;
+  metadata?: Prisma.InputJsonValue;
   success?: boolean;
   errorMessage?: string;
 }
@@ -52,7 +52,18 @@ export class AuditService {
       endDate?: Date;
     },
   ) {
-    const where: any = { workspaceId };
+    interface WhereClause {
+      workspaceId: string;
+      action?: AuditAction;
+      entity?: string;
+      userId?: string;
+      createdAt?: {
+        gte?: Date;
+        lte?: Date;
+      };
+    }
+
+    const where: WhereClause = { workspaceId };
 
     if (options?.action) where.action = options.action;
     if (options?.entity) where.entity = options.entity;

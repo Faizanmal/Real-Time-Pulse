@@ -1,10 +1,10 @@
 /**
- * API Client for SyncQuote Backend
+ * API Client for Real-Time Pulse Backend
  */
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import type { User } from '../types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 // Create axios instance
 export const apiClient: AxiosInstance = axios.create({

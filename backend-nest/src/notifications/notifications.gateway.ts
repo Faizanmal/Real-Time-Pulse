@@ -8,7 +8,7 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, UseGuards } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
 interface AuthenticatedSocket extends Socket {
@@ -37,9 +37,13 @@ export class NotificationsGateway
   async handleConnection(client: AuthenticatedSocket) {
     try {
       // Authenticate WebSocket connection
+      /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
+
+      const authData = client.handshake.auth as any;
+      const authHeader = client.handshake.headers.authorization;
+
       const token =
-        client.handshake.auth.token ||
-        client.handshake.headers.authorization?.split(' ')[1];
+        (authData.token as string | undefined) || authHeader?.split(' ')[1];
 
       if (!token) {
         this.logger.warn(
@@ -50,24 +54,27 @@ export class NotificationsGateway
       }
 
       const payload = await this.jwtService.verifyAsync(token);
-      client.userId = payload.sub;
-      client.workspaceId = payload.workspaceId;
+      const userId = payload.sub as string;
+      const workspaceId = payload.workspaceId as string;
+
+      (client as any).userId = userId;
+
+      (client as any).workspaceId = workspaceId;
+
+      /* eslint-enable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 
       // Track user's sockets
-      if (client.userId && !this.userSockets.has(client.userId)) {
-        this.userSockets.set(client.userId, new Set());
+      if (!this.userSockets.has(userId)) {
+        this.userSockets.set(userId, new Set());
       }
-      if (client.userId) {
-        this.userSockets.get(client.userId)!.add(client.id);
-      }
+      this.userSockets.get(userId)!.add(client.id);
 
       // Join workspace room
-      if (client.workspaceId) {
-        client.join(`workspace:${client.workspaceId}`);
-      }
+      void client.join(`workspace:${workspaceId}`);
 
       this.logger.log(
-        `Client connected: ${client.id} (User: ${client.userId})`,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        `Client connected: ${client.id} (User: ${(client as any).userId as string})`,
       );
 
       // Send connection acknowledgment
@@ -100,7 +107,7 @@ export class NotificationsGateway
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { portalId: string },
   ) {
-    client.join(`portal:${data.portalId}`);
+    void client.join(`portal:${data.portalId}`);
     this.logger.log(
       `Client ${client.id} subscribed to portal ${data.portalId}`,
     );
@@ -112,7 +119,7 @@ export class NotificationsGateway
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { portalId: string },
   ) {
-    client.leave(`portal:${data.portalId}`);
+    void client.leave(`portal:${data.portalId}`);
     this.logger.log(
       `Client ${client.id} unsubscribed from portal ${data.portalId}`,
     );
@@ -122,7 +129,11 @@ export class NotificationsGateway
   /**
    * Notify a specific user
    */
-  notifyUser(userId: string, event: string, data: any) {
+  notifyUser(
+    userId: string,
+    event: string,
+    data: Record<string, unknown>,
+  ): void {
     const socketIds = this.userSockets.get(userId);
     if (socketIds) {
       socketIds.forEach((socketId) => {
@@ -135,7 +146,11 @@ export class NotificationsGateway
   /**
    * Notify all users in a workspace
    */
-  notifyWorkspace(workspaceId: string, event: string, data: any) {
+  notifyWorkspace(
+    workspaceId: string,
+    event: string,
+    data: Record<string, unknown>,
+  ): void {
     this.server.to(`workspace:${workspaceId}`).emit(event, data);
     this.logger.debug(
       `Notification sent to workspace ${workspaceId}: ${event}`,
@@ -145,7 +160,11 @@ export class NotificationsGateway
   /**
    * Notify all users subscribed to a portal
    */
-  notifyPortal(portalId: string, event: string, data: any) {
+  notifyPortal(
+    portalId: string,
+    event: string,
+    data: Record<string, unknown>,
+  ): void {
     this.server.to(`portal:${portalId}`).emit(event, data);
     this.logger.debug(`Notification sent to portal ${portalId}: ${event}`);
   }
@@ -153,7 +172,7 @@ export class NotificationsGateway
   /**
    * Broadcast to all connected clients
    */
-  broadcast(event: string, data: any) {
+  broadcast(event: string, data: Record<string, unknown>): void {
     this.server.emit(event, data);
     this.logger.debug(`Broadcast notification: ${event}`);
   }

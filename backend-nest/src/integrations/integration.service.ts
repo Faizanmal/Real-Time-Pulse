@@ -131,7 +131,11 @@ export class IntegrationService {
   /**
    * Fetch data from an integration
    */
-  async fetchData(integrationId: string, dataType: string, params?: any) {
+  async fetchData(
+    integrationId: string,
+    dataType: string,
+    params?: unknown,
+  ): Promise<unknown> {
     const integration = await this.getIntegration(integrationId);
 
     switch (integration.provider) {
@@ -207,7 +211,10 @@ export class IntegrationService {
         `Connection test failed for integration: ${integrationId}`,
         error,
       );
-      return { connected: false, error: error.message };
+      return {
+        connected: false,
+        error: (error as { message: string }).message,
+      };
     }
   }
 }

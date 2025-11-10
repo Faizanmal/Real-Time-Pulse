@@ -3,6 +3,13 @@ import { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { AsyncLocalStorage } from 'async_hooks';
 
+interface RequestUser {
+  id: string;
+  workspaceId: string;
+  email: string;
+  role?: string;
+}
+
 export interface RequestContext {
   requestId: string;
   userId?: string;
@@ -26,11 +33,15 @@ export class RequestContextMiddleware implements NestMiddleware {
     // Set request ID in response header for tracing
     res.setHeader('X-Request-ID', requestId);
 
+    // Type-safe user extraction
+    const requestWithUser = req as Request & { user?: RequestUser };
+    const user = requestWithUser.user;
+
     // Build context
     const context: RequestContext = {
       requestId,
-      userId: (req as any).user?.id,
-      workspaceId: (req as any).user?.workspaceId,
+      userId: user?.id,
+      workspaceId: user?.workspaceId,
       timestamp: new Date(),
       method: req.method,
       path: req.path,
