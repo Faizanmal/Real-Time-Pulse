@@ -45,7 +45,12 @@ model User {
   lastLoginAt DateTime?
 
   // Relations
-  createdPortals Portal[]
+  createdPortals     Portal[]
+  shareLinks         ShareLink[]
+  alerts             Alert[]
+  scheduledReports   ScheduledReport[]
+  webhooks           Webhook[]
+  comments           Comment[]
 
   @@index([workspaceId])
   @@index([email])
@@ -80,10 +85,14 @@ model Workspace {
   updatedAt DateTime @updatedAt
 
   // Relations
-  users        User[]
-  portals      Portal[]
-  integrations Integration[]
-  subscription Subscription?
+  users            User[]
+  portals          Portal[]
+  integrations     Integration[]
+  subscription     Subscription?
+  alerts           Alert[]
+  scheduledReports ScheduledReport[]
+  webhooks         Webhook[]
+  aiInsights       AIInsight[]
 
   @@map("workspaces")
 }
@@ -242,7 +251,10 @@ model Portal {
   updatedAt DateTime @updatedAt
 
   // Relations
-  widgets Widget[]
+  widgets          Widget[]
+  shareLinks       ShareLink[]
+  scheduledReports ScheduledReport[]
+  aiInsights       AIInsight[]
 
   @@unique([workspaceId, slug])
   @@index([workspaceId])
@@ -623,4 +635,430 @@ enum NotificationType {
   MEMBER_INVITED
   INTEGRATION_SYNCED
   INTEGRATION_FAILED
+  ALERT_TRIGGERED
+  REPORT_GENERATED
+}
+
+// ========================================
+// PUBLIC SHARE LINKS
+// ========================================
+
+model ShareLink {
+  id String @id @default(uuid())
+
+  // Portal reference
+  portalId String
+  portal   Portal @relation(fields: [portalId], references: [id], onDelete: Cascade)
+
+  // Share token (URL-friendly)
+  token String @unique @default(uuid())
+
+  // Access control
+  password     String? // Hashed password for protected links
+  expiresAt    DateTime?
+  maxViews     Int? // Limit number of views
+  currentViews Int       @default(0)
+
+  // Permissions
+  allowExport   Boolean @default(false) // Allow export from shared link
+  allowComments Boolean @default(false)
+
+  // Creator
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  // Status
+  isActive Boolean @default(true)
+
+  // Analytics
+  lastAccessedAt DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([portalId])
+  @@index([token])
+  @@index([isActive])
+  @@map("share_links")
+}
+
+// ========================================
+// ALERTS & MONITORING
+// ========================================
+
+model Alert {
+  id String @id @default(uuid())
+
+  // Workspace & Portal
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  portalId    String?
+  widgetId    String?
+
+  // Alert configuration
+  name        String
+  description String?
+  condition   Json // {metric: "value", operator: ">", threshold: 100}
+  
+  // Notification channels
+  channels Json // ["email", "slack", "webhook"]
+  
+  // Email settings
+  emailRecipients String[] // List of emails
+  
+  // Webhook settings
+  webhookUrl String?
+  
+  // Slack settings
+  slackWebhook String?
+  slackChannel String?
+
+  // Status
+  isActive Boolean @default(true)
+  
+  // Tracking
+  lastTriggeredAt DateTime?
+  triggerCount    Int       @default(0)
+
+  // Creator
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  history AlertHistory[]
+
+  @@index([workspaceId])
+  @@index([portalId])
+  @@index([isActive])
+  @@map("alerts")
+}
+
+model AlertHistory {
+  id String @id @default(uuid())
+
+  // Alert reference
+  alertId String
+  alert   Alert  @relation(fields: [alertId], references: [id], onDelete: Cascade)
+
+  // Trigger details
+  triggeredValue Json // The actual value that triggered the alert
+  condition      Json // Copy of condition at trigger time
+  
+  // Notification status
+  notificationsSent Json // {email: true, slack: false, webhook: true}
+  
+  // Timestamp
+  triggeredAt DateTime @default(now())
+
+  @@index([alertId])
+  @@index([triggeredAt])
+  @@map("alert_history")
+}
+
+// ========================================
+// SCHEDULED REPORTS
+// ========================================
+
+model ScheduledReport {
+  id String @id @default(uuid())
+
+  // Workspace & Portal
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  portalId    String
+  portal      Portal    @relation(fields: [portalId], references: [id], onDelete: Cascade)
+
+  // Report configuration
+  name        String
+  description String?
+  format      ReportFormat @default(PDF)
+  
+  // Schedule (cron expression)
+  schedule String // e.g., "0 9 * * 1" for every Monday at 9 AM
+  timezone String @default("UTC")
+
+  // Recipients
+  recipients String[] // Email addresses
+  
+  // Template
+  templateId String?
+  customTemplate Json? // Custom report template configuration
+
+  // Status
+  isActive Boolean @default(true)
+  
+  // Tracking
+  lastRunAt     DateTime?
+  nextRunAt     DateTime?
+  lastRunStatus ReportStatus?
+  runCount      Int          @default(0)
+
+  // Creator
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  runs ReportRun[]
+
+  @@index([workspaceId])
+  @@index([portalId])
+  @@index([isActive])
+  @@index([nextRunAt])
+  @@map("scheduled_reports")
+}
+
+model ReportRun {
+  id String @id @default(uuid())
+
+  // Report reference
+  reportId String
+  report   ScheduledReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  // Execution details
+  status    ReportStatus @default(PENDING)
+  startedAt DateTime?
+  completedAt DateTime?
+  
+  // Output
+  fileUrl String? // S3/R2 URL if stored
+  fileSize Int? // Bytes
+  
+  // Error tracking
+  error String?
+  
+  // Metadata
+  recipientsSent String[] // Successfully sent to these emails
+  metadata       Json?
+
+  // Timestamp
+  createdAt DateTime @default(now())
+
+  @@index([reportId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("report_runs")
+}
+
+enum ReportFormat {
+  PDF
+  CSV
+  EXCEL
+  JSON
+}
+
+enum ReportStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  PARTIALLY_SENT
+}
+
+// ========================================
+// WEBHOOKS
+// ========================================
+
+model Webhook {
+  id String @id @default(uuid())
+
+  // Workspace
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // Webhook configuration
+  name        String
+  url         String
+  secret      String? // For signature verification
+  events      String[] // List of events to subscribe to
+  
+  // Headers
+  headers Json? // Custom headers to send
+  
+  // Retry configuration
+  maxRetries     Int @default(3)
+  retryDelay     Int @default(60) // Seconds
+  timeoutSeconds Int @default(30)
+
+  // Status
+  isActive Boolean @default(true)
+  
+  // Tracking
+  lastTriggeredAt DateTime?
+  successCount    Int       @default(0)
+  failureCount    Int       @default(0)
+
+  // Creator
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  deliveries WebhookDelivery[]
+
+  @@index([workspaceId])
+  @@index([isActive])
+  @@map("webhooks")
+}
+
+model WebhookDelivery {
+  id String @id @default(uuid())
+
+  // Webhook reference
+  webhookId String
+  webhook   Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  // Event details
+  event     String
+  payload   Json
+  
+  // Delivery attempt
+  attempts      Int       @default(0)
+  lastAttemptAt DateTime?
+  nextAttemptAt DateTime?
+  
+  // Response
+  status         WebhookStatus @default(PENDING)
+  responseCode   Int?
+  responseBody   String?
+  responseTime   Int? // Milliseconds
+  
+  // Error
+  error String?
+
+  // Timestamp
+  createdAt DateTime @default(now())
+
+  @@index([webhookId])
+  @@index([status])
+  @@index([event])
+  @@index([nextAttemptAt])
+  @@map("webhook_deliveries")
+}
+
+enum WebhookStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  RETRYING
+}
+
+// ========================================
+// COMMENTS & COLLABORATION
+// ========================================
+
+model Comment {
+  id String @id @default(uuid())
+
+  // Location
+  portalId String
+  widgetId String?
+  
+  // Author
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Content
+  content  String   @db.Text
+  mentions String[] // User IDs mentioned in comment
+  
+  // Thread
+  parentId String?
+  parent   Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentThread")
+  
+  // Status
+  isEdited  Boolean   @default(false)
+  isDeleted Boolean   @default(false)
+  editedAt  DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([portalId])
+  @@index([widgetId])
+  @@index([authorId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+// ========================================
+// AI INSIGHTS
+// ========================================
+
+model AIInsight {
+  id String @id @default(uuid())
+
+  // Workspace & Portal
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  portalId    String
+  portal      Portal    @relation(fields: [portalId], references: [id], onDelete: Cascade)
+
+  // Insight details
+  type        InsightType
+  title       String
+  description String      @db.Text
+  severity    InsightSeverity @default(INFO)
+  confidence  Float // 0.0 to 1.0
+  
+  // Data
+  data Json // Supporting data for the insight
+  
+  // Recommendations
+  recommendations Json? // Suggested actions
+  
+  // Status
+  status     InsightStatus @default(NEW)
+  dismissedBy String?
+  dismissedAt DateTime?
+  
+  // Validity
+  validFrom DateTime @default(now())
+  validUntil DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([portalId])
+  @@index([type])
+  @@index([status])
+  @@map("ai_insights")
+}
+
+enum InsightType {
+  ANOMALY
+  TREND
+  PREDICTION
+  RECOMMENDATION
+  SUMMARY
+}
+
+enum InsightSeverity {
+  INFO
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum InsightStatus {
+  NEW
+  VIEWED
+  ACTIONED
+  DISMISSED
 }

@@ -17,6 +17,10 @@ import { AuditModule } from './audit/audit.module';
 import { JobsModule } from './jobs/jobs.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { IntegrationModule } from './integrations/integration.module';
+import { ExportModule } from './exports/export.module';
+import { AIInsightsModule } from './ai-insights/ai-insights.module';
+import { AlertsModule } from './alerts/alerts.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 import { RequestContextMiddleware } from './common/middleware/request-context.middleware';
 import { HttpLoggerMiddleware } from './common/middleware/http-logger.middleware';
 
@@ -72,6 +76,10 @@ import loggerConfig from './config/logger.config';
     WorkspaceModule,
     PortalModule,
     WidgetModule,
+    ExportModule,
+    AIInsightsModule,
+    AlertsModule,
+    WebhooksModule,
   ],
   controllers: [AppController],
   providers: [

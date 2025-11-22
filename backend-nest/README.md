@@ -1,18 +1,15 @@
 # Portal - Backend API
-<!--
-README for GitHub
-=================
-
-This README is ready for public sharing and GitHub upload. It includes:
-- Project overview
-- Features
-- Quick start instructions
-- Tech stack
-- Contribution and license info
--->
-# Portal - Backend API
 
 Production-ready multi-tenant B2B SaaS backend built with NestJS, PostgreSQL, Prisma, and Redis.
+
+## 🆕 New Enterprise Features
+
+- **📤 Export System** - PDF, CSV, Excel exports for portals and widgets
+- **🤖 AI-Powered Insights** - Automatic anomaly detection and recommendations
+- **🚨 Smart Alerts** - Multi-channel notifications (Email, Slack, Webhooks)
+- **🔌 Webhooks Platform** - Event-based integrations with signature verification
+
+📚 **Full Documentation:** See [FEATURES_GUIDE.md](../FEATURES_GUIDE.md) and [API_REFERENCE.md](../API_REFERENCE.md)
 ## 🤝 Contributing
 
 We welcome issues and feature requests! For major changes, please open an issue first to discuss what you would like to change.

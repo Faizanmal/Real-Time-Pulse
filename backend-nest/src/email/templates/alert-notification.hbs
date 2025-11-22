@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alert Notification</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .alert-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .alert-info {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .alert-info h3 {
+            margin: 0 0 10px 0;
+            color: #667eea;
+            font-size: 18px;
+        }
+        .alert-info p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .condition {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .condition h4 {
+            margin: 0 0 10px 0;
+            color: #856404;
+        }
+        .value {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .button:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="alert-icon">🚨</div>
+            <h1>Alert Triggered</h1>
+        </div>
+        
+        <div class="content">
+            <div class="alert-info">
+                <h3>{{alertName}}</h3>
+                {{#if description}}
+                <p>{{description}}</p>
+                {{/if}}
+                <p><strong>Workspace:</strong> {{workspaceName}}</p>
+            </div>
+
+            <div class="condition">
+                <h4>🎯 Condition Met</h4>
+                <p><strong>Metric:</strong> {{condition.metric}}</p>
+                <p><strong>Operator:</strong> {{condition.operator}}</p>
+                <p><strong>Threshold:</strong> {{condition.threshold}}</p>
+            </div>
+
+            <div class="value">
+                <strong>Current Value:</strong><br>
+                <code>{{triggeredValue}}</code>
+            </div>
+
+            <p style="margin-top: 20px;">
+                This alert was triggered because the monitored metric exceeded your defined threshold. 
+                Please review your dashboard for more details.
+            </p>
+
+            <center>
+                <a href="{{portalUrl}}" class="button">View Dashboard</a>
+            </center>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated alert from Real-Time Pulse</p>
+            <p>To manage your alert settings, visit your workspace settings</p>
+            <p>&copy; 2025 Real-Time Pulse. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
