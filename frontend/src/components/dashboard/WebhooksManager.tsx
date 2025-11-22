@@ -16,7 +16,6 @@ import {
 } from '@/src/components/ui/dialog';
 import { Input } from '@/src/components/ui/input';
 import { Label } from '@/src/components/ui/label';
-import { Textarea } from '@/src/components/ui/textarea';
 import { Switch } from '@/src/components/ui/switch';
 import { toast } from 'sonner';
 import { cn } from '@/src/lib/utils';
@@ -166,9 +165,7 @@ function WebhookCard({ webhook, onDelete, onTest, onToggle, onRegenerateSecret }
             )}
           </div>
 
-          {webhook.description && (
-            {/* Description property does not exist on Webhook, so remove this block */}
-          )}
+          
 
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2">
@@ -220,11 +217,7 @@ function WebhookCard({ webhook, onDelete, onTest, onToggle, onRegenerateSecret }
               </Button>
             </div>
 
-            {webhook.lastDeliveryAt && (
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                {/* lastDeliveryAt property does not exist on Webhook, so remove this block */}
-              </div>
-            )}
+            
 
             <div className="flex items-center gap-2 text-xs">
               <span className="text-gray-500">Deliveries:</span>
@@ -290,17 +283,6 @@ function WebhookDeliveries({ webhookId }: { webhookId: string }) {
   useEffect(() => {
     loadDeliveries();
   }, [loadDeliveries]);
-
-  const loadDeliveries = async () => {
-    try {
-      const data = await webhooksApi.getDeliveries(webhookId);
-      setDeliveries(data);
-    } catch {
-      console.error('Failed to load deliveries');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return <div className="mt-4 text-sm text-gray-500">Loading deliveries...</div>;
@@ -381,7 +363,10 @@ function WebhookForm({ onSuccess }: WebhookFormProps) {
     } catch {
       toast.error('Failed to create webhook');
     } finally {
-            {/* Removed: lastDeliveryAt property does not exist on Webhook */}
+      // Removed: lastDeliveryAt property does not exist on Webhook
+    }
+  };
+
   const eventGroups = {
     'Portal Events': WEBHOOK_EVENTS.PORTAL.map(e => e.value),
     'Widget Events': WEBHOOK_EVENTS.WIDGET.map(e => e.value),

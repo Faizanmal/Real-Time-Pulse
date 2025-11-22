@@ -12,17 +12,17 @@ export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
-  const { token, isAuthenticated } = useAuthStore();
+  const { accessToken, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated || !token) {
+    if (!isAuthenticated || !accessToken) {
       return;
     }
 
     // Create WebSocket connection
     const socket = io(`${WS_URL}/notifications`, {
       auth: {
-        token: token,
+        token: accessToken,
       },
       transports: ['websocket'],
       reconnection: true,
@@ -75,7 +75,7 @@ export function useNotifications() {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, accessToken]);
 
   const markAsRead = useCallback((notificationId: string) => {
     setNotifications((prev) =>

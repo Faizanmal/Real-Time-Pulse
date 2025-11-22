@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bell, Plus, Trash2, Edit, TestTube } from 'lucide-react';
+import { Bell, Plus, Trash2, TestTube } from 'lucide-react';
 import { alertsApi, Alert, CreateAlertDto } from '@/src/lib/enterprise-api';
 import { Button } from '@/src/components/ui/button';
 import { Card } from '@/src/components/ui/card';
@@ -55,7 +55,8 @@ export function AlertsManager({ className }: { className?: string }) {
       await alertsApi.deleteAlert(alertId);
       setAlerts(alerts.filter(a => a.id !== alertId));
       toast.success('Alert deleted');
-    } catch (error: any) {
+    } catch (error: unknown) {
+      console.error('Failed to delete alert:', error);
       toast.error('Failed to delete alert');
     }
   };
@@ -63,9 +64,10 @@ export function AlertsManager({ className }: { className?: string }) {
   const testAlert = async (alertId: string) => {
     try {
       await alertsApi.testAlert(alertId);
-      toast.success('Test alert sent! Check your notifications.');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to test alert');
+      toast.success('Test alert sent');
+    } catch (error: unknown) {
+      console.error('Failed to test alert:', error);
+      toast.error('Failed to test alert');
     }
   };
 
@@ -74,7 +76,8 @@ export function AlertsManager({ className }: { className?: string }) {
       await alertsApi.updateAlert(alertId, { isActive });
       setAlerts(alerts.map(a => a.id === alertId ? { ...a, isActive } : a));
       toast.success(`Alert ${isActive ? 'enabled' : 'disabled'}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      console.error('Failed to update alert:', error);
       toast.error('Failed to update alert');
     }
   };
@@ -259,8 +262,9 @@ function AlertForm({ onSuccess }: AlertFormProps) {
       await alertsApi.createAlert(formData);
       toast.success('Alert created successfully');
       onSuccess();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create alert');
+    } catch (error: unknown) {
+      console.error('Failed to create alert:', error);
+      toast.error('Failed to create alert');
     } finally {
       setSubmitting(false);
     }
@@ -315,7 +319,7 @@ function AlertForm({ onSuccess }: AlertFormProps) {
             <Label htmlFor="operator">Operator *</Label>
             <Select
               value={formData.condition.operator}
-              onValueChange={(value: any) => setFormData({
+              onValueChange={(value: '>' | '>=' | '<' | '<=' | '==' | '!=') => setFormData({
                 ...formData,
                 condition: { ...formData.condition, operator: value }
               })}

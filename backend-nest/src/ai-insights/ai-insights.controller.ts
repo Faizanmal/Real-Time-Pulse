@@ -46,10 +46,7 @@ export class AIInsightsController {
     @Param('portalId') portalId: string,
     @CurrentUser() user: RequestUser,
   ) {
-    return this.aiInsightsService.getPortalInsights(
-      portalId,
-      user.workspaceId,
-    );
+    return this.aiInsightsService.getPortalInsights(portalId, user.workspaceId);
   }
 
   /**
@@ -81,10 +78,7 @@ export class AIInsightsController {
    */
   @Patch(':id/action')
   @ApiOperation({ summary: 'Mark insight as actioned' })
-  async actionInsight(
-    @Param('id') id: string,
-    @CurrentUser() user: RequestUser,
-  ) {
+  async actionInsight(@Param('id') id: string) {
     return this.aiInsightsService.actionInsight(id);
   }
 }

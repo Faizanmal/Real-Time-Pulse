@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import * as PDFDocument from 'pdfkit';
+import PDFDocument from 'pdfkit';
 import * as ExcelJS from 'exceljs';
 
 interface ExportResult {
-  buffer: Buffer;
+  buffer: Uint8Array;
   contentType: string;
   extension: string;
 }
@@ -41,7 +41,7 @@ export class ExportService {
       const doc = new PDFDocument({ margin: 50 });
       const chunks: Buffer[] = [];
 
-      doc.on('data', (chunk) => chunks.push(chunk));
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
@@ -63,21 +63,31 @@ export class ExportService {
       doc.moveDown(2);
 
       // Widgets
-      doc.fontSize(18).fillColor('#000000').text('Widgets', { underline: true });
+      doc
+        .fontSize(18)
+        .fillColor('#000000')
+        .text('Widgets', { underline: true });
       doc.moveDown();
 
       portal.widgets.forEach((widget, index) => {
-        doc.fontSize(14).fillColor('#3B82F6').text(`${index + 1}. ${widget.name}`);
+        doc
+          .fontSize(14)
+          .fillColor('#3B82F6')
+          .text(`${index + 1}. ${widget.name}`);
         doc.fontSize(10).fillColor('#666666');
         doc.text(`Type: ${widget.type}`);
         if (widget.integration) {
           doc.text(`Integration: ${widget.integration.provider}`);
         }
-        doc.text(`Last Refreshed: ${widget.lastRefreshedAt?.toLocaleString() || 'Never'}`);
-        
+        doc.text(
+          `Last Refreshed: ${widget.lastRefreshedAt?.toLocaleString() || 'Never'}`,
+        );
+
         // Widget config preview
         doc.fontSize(9).fillColor('#999999');
-        doc.text(`Config: ${JSON.stringify(widget.config).substring(0, 100)}...`);
+        doc.text(
+          `Config: ${JSON.stringify(widget.config).substring(0, 100)}...`,
+        );
         doc.moveDown();
       });
 
@@ -154,7 +164,7 @@ export class ExportService {
   async exportPortalToExcel(
     portalId: string,
     workspaceId: string,
-  ): Promise<Buffer> {
+  ): Promise<Uint8Array> {
     const portal = await this.prisma.portal.findFirst({
       where: { id: portalId, workspaceId },
       include: {
@@ -239,7 +249,7 @@ export class ExportService {
       fgColor: { argb: 'FF3B82F6' },
     };
 
-    return (await workbook.xlsx.writeBuffer()) as Buffer;
+    return (await workbook.xlsx.writeBuffer()) as unknown as Uint8Array;
   }
 
   /**
@@ -273,7 +283,7 @@ export class ExportService {
           extension: 'json',
         };
 
-      case 'csv':
+      case 'csv': {
         const csv = [
           ['Property', 'Value'],
           ['Name', widget.name],
@@ -294,8 +304,9 @@ export class ExportService {
           contentType: 'text/csv',
           extension: 'csv',
         };
+      }
 
-      case 'excel':
+      case 'excel': {
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet('Widget Data');
 
@@ -308,32 +319,45 @@ export class ExportService {
           { property: 'Name', value: widget.name },
           { property: 'Type', value: widget.type },
           { property: 'Portal', value: widget.portal.name },
-          { property: 'Integration', value: widget.integration?.provider || 'N/A' },
-          { property: 'Grid Position', value: `${widget.gridX},${widget.gridY}` },
-          { property: 'Grid Size', value: `${widget.gridWidth}x${widget.gridHeight}` },
+          {
+            property: 'Integration',
+            value: widget.integration?.provider || 'N/A',
+          },
+          {
+            property: 'Grid Position',
+            value: `${widget.gridX},${widget.gridY}`,
+          },
+          {
+            property: 'Grid Size',
+            value: `${widget.gridWidth}x${widget.gridHeight}`,
+          },
           { property: 'Refresh Interval', value: `${widget.refreshInterval}s` },
-          { property: 'Last Refreshed', value: widget.lastRefreshedAt?.toISOString() || 'Never' },
+          {
+            property: 'Last Refreshed',
+            value: widget.lastRefreshedAt?.toISOString() || 'Never',
+          },
           { property: 'Config', value: JSON.stringify(widget.config) },
         ]);
 
         sheet.getRow(1).font = { bold: true };
 
         return {
-          buffer: (await workbook.xlsx.writeBuffer()) as Buffer,
+          buffer: (await workbook.xlsx.writeBuffer()) as unknown as Uint8Array,
           contentType:
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           extension: 'xlsx',
         };
+      }
     }
   }
 
   /**
    * Escape CSV fields
    */
-  private escapeCSV(field: string): string {
+  private escapeCSV = (field: string): string => {
     if (field.includes(',') || field.includes('"') || field.includes('\n')) {
       return `"${field.replace(/"/g, '""')}"`;
     }
     return field;
-  }
+  };
 }

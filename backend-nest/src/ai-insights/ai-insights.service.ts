@@ -2,6 +2,16 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { InsightType, InsightSeverity, InsightStatus } from '@prisma/client';
 
+interface GeneratedInsight {
+  type: InsightType;
+  title: string;
+  description: string;
+  severity: InsightSeverity;
+  confidence: number;
+  data: any;
+  recommendations: { actions: string[] };
+}
+
 @Injectable()
 export class AIInsightsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -76,7 +86,7 @@ export class AIInsightsService {
     }
 
     // Example insights generation logic
-    const insights = [];
+    const insights: GeneratedInsight[] = [];
 
     // Anomaly Detection: Check for stale data
     const staleWidgets = portal.widgets.filter((widget) => {
@@ -242,7 +252,7 @@ export class AIInsightsService {
   async generatePredictiveInsights(portalId: string, workspaceId: string) {
     // Example: Predict project completion based on historical data
     // This would integrate with ML services like TensorFlow, scikit-learn, or cloud AI services
-    
+
     const portal = await this.prisma.portal.findFirst({
       where: { id: portalId, workspaceId },
     });

@@ -19,7 +19,6 @@ import { Badge } from '@/src/components/ui/badge';
 export default function EnterpriseDashboard() {
   // In a real app, these would come from your state management or API
   const portalId = 'portal-123';
-  const workspaceId = 'workspace-456';
 
   return (
     <div className="container mx-auto py-8 space-y-8">
@@ -42,7 +41,6 @@ export default function EnterpriseDashboard() {
         <div className="flex flex-wrap gap-4">
           <ExportButton portalId={portalId} />
           <WidgetExportButton 
-            portalId={portalId} 
             widgetId="widget-789" 
             widgetTitle="Revenue Chart"
           />
@@ -52,7 +50,6 @@ export default function EnterpriseDashboard() {
       {/* AI Insights Section */}
       <AIInsightsPanel 
         portalId={portalId}
-        workspaceId={workspaceId}
       />
 
       {/* Alerts Management Section */}

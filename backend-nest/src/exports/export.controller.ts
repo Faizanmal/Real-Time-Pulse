@@ -2,12 +2,11 @@ import {
   Controller,
   Get,
   Param,
-  Query,
   UseGuards,
   Res,
   StreamableFile,
 } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { ExportService } from './export.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
@@ -113,11 +112,7 @@ export class ExportController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     const { buffer, contentType, extension } =
-      await this.exportService.exportWidget(
-        widgetId,
-        format,
-        user.workspaceId,
-      );
+      await this.exportService.exportWidget(widgetId, format, user.workspaceId);
 
     res.set({
       'Content-Type': contentType,

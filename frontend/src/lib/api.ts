@@ -1,5 +1,11 @@
 /**
  * API Client for Real-Time Pulse Backend
+ * 
+ * This is the main API client that handles authentication, token refresh,
+ * and provides axios instance for all API calls.
+ * 
+ * Enterprise features (alerts, webhooks, AI insights, exports) are defined
+ * in './enterprise-api.ts' but use this same apiClient instance.
  */
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import type { User } from '../types';

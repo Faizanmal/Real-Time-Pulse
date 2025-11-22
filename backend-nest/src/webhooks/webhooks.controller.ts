@@ -93,10 +93,7 @@ export class WebhooksController {
    */
   @Post(':id/test')
   @ApiOperation({ summary: 'Test webhook' })
-  async testWebhook(
-    @Param('id') id: string,
-    @CurrentUser() user: RequestUser,
-  ) {
+  async testWebhook(@Param('id') id: string, @CurrentUser() user: RequestUser) {
     return this.webhooksService.testWebhook(id, user.workspaceId);
   }
 

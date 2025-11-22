@@ -1,6 +1,10 @@
 /**
  * API Client for New Enterprise Features
  * Export, AI Insights, Alerts, and Webhooks
+ * 
+ * This module extends the main API client with enterprise features.
+ * All API calls use the shared apiClient from './api' for consistent
+ * authentication, error handling, and token refresh logic.
  */
 import { apiClient } from './api';
 
@@ -66,7 +70,7 @@ export interface AIInsight {
   severity: 'INFO' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   confidence: number;
   status: 'NEW' | 'VIEWED' | 'ACTIONED' | 'DISMISSED';
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   recommendations?: {
     actions: string[];
   };
@@ -169,7 +173,7 @@ export interface CreateAlertDto {
 export interface AlertHistory {
   id: string;
   alertId: string;
-  triggeredValue: Record<string, any>;
+  triggeredValue: Record<string, unknown>;
   condition: Alert['condition'];
   notificationsSent: Record<string, boolean>;
   triggeredAt: string;
@@ -269,7 +273,7 @@ export interface WebhookDelivery {
   id: string;
   webhookId: string;
   event: string;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   attempts: number;
   lastAttemptAt?: string;
   nextAttemptAt?: string;

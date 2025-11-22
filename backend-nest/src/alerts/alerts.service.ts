@@ -5,6 +5,8 @@ import { HttpService } from '@nestjs/axios';
 import { CreateAlertDto, UpdateAlertDto } from './dto/alert.dto';
 import { firstValueFrom } from 'rxjs';
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
+
 @Injectable()
 export class AlertsService {
   constructor(
@@ -140,9 +142,8 @@ export class AlertsService {
   private evaluateCondition(condition: any, currentValue: any): boolean {
     const { metric, operator, threshold } = condition;
 
-    const value = typeof currentValue === 'object' 
-      ? currentValue[metric] 
-      : currentValue;
+    const value =
+      typeof currentValue === 'object' ? currentValue[metric] : currentValue;
 
     switch (operator) {
       case '>':
@@ -189,7 +190,7 @@ export class AlertsService {
           ),
         );
         notificationResults.email = true;
-      } catch (error) {
+      } catch {
         notificationResults.email = false;
       }
     }
@@ -225,7 +226,7 @@ export class AlertsService {
           }),
         );
         notificationResults.slack = true;
-      } catch (error) {
+      } catch {
         notificationResults.slack = false;
       }
     }
@@ -245,7 +246,7 @@ export class AlertsService {
           }),
         );
         notificationResults.webhook = true;
-      } catch (error) {
+      } catch {
         notificationResults.webhook = false;
       }
     }
