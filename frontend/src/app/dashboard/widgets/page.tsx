@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -21,6 +21,30 @@ import {
 import { toast } from 'sonner';
 
 export default function WidgetsPage() {
+  return (
+    <Suspense fallback={<WidgetsPageLoading />}>
+      <WidgetsPageContent />
+    </Suspense>
+  );
+}
+
+function WidgetsPageLoading() {
+  return (
+    <div className="container py-8">
+      <div className="animate-pulse space-y-4">
+        <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+        <div className="h-12 bg-gray-200 rounded"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-64 bg-gray-200 rounded-lg"></div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WidgetsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const portalId = searchParams.get('portalId');

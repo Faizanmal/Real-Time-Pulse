@@ -12,7 +12,7 @@ import { AIInsightsService } from './ai-insights.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 import type { RequestUser } from '../common/interfaces/auth.interface';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 
 @ApiTags('AI Insights')
 @Controller('ai-insights')
@@ -59,6 +59,46 @@ export class AIInsightsController {
     @CurrentUser() user: RequestUser,
   ) {
     return this.aiInsightsService.generateInsights(portalId, user.workspaceId);
+  }
+
+  /**
+   * Generate predictive insights for a portal
+   */
+  @Post('portal/:portalId/predict')
+  @ApiOperation({ summary: 'Generate predictive insights for portal' })
+  async generatePredictiveInsights(
+    @Param('portalId') portalId: string,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.aiInsightsService.generatePredictiveInsights(
+      portalId,
+      user.workspaceId,
+    );
+  }
+
+  /**
+   * Natural language query
+   */
+  @Post('query')
+  @ApiOperation({ summary: 'Ask AI about your workspace data' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Natural language question' },
+        portalId: { type: 'string', description: 'Optional portal context' },
+      },
+      required: ['query'],
+    },
+  })
+  async processQuery(
+    @Body() body: { query: string; portalId?: string },
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.aiInsightsService.processNaturalLanguageQuery(
+      user.workspaceId,
+      body,
+    );
   }
 
   /**

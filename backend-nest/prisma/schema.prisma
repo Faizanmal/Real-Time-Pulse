@@ -206,6 +206,11 @@ enum IntegrationProvider {
   TOGGL
   GITHUB
   JIRA
+  HUBSPOT
+  SLACK
+  MONDAY
+  NOTION
+  STRIPE
 }
 
 enum IntegrationStatus {
@@ -1061,4 +1066,206 @@ enum InsightStatus {
   VIEWED
   ACTIONED
   DISMISSED
+}
+
+// ========================================
+// WIDGET TEMPLATES
+// ========================================
+
+model WidgetTemplate {
+  id String @id @default(uuid())
+
+  // Template details
+  name        String
+  description String?
+  category    TemplateCategory
+  thumbnail   String? // Preview image URL
+
+  // Template configuration
+  widgetType WidgetType
+  config     Json // Default widget configuration
+  layout     Json? // Default grid layout settings
+
+  // Visibility
+  isPublic    Boolean @default(false) // Available to all users
+  workspaceId String? // Null if public template
+  
+  // Creator (null for system templates)
+  createdById String?
+  
+  // Usage tracking
+  usageCount Int @default(0)
+
+  // Tags for filtering
+  tags String[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([widgetType])
+  @@index([isPublic])
+  @@index([workspaceId])
+  @@map("widget_templates")
+}
+
+enum TemplateCategory {
+  PROJECT_MANAGEMENT
+  ANALYTICS
+  TIME_TRACKING
+  MARKETING
+  SALES
+  DEVELOPMENT
+  CUSTOM
+}
+
+// ========================================
+// BILLING & USAGE
+// ========================================
+
+model BillingEvent {
+  id String @id @default(uuid())
+
+  // Workspace
+  workspaceId String
+  
+  // Stripe references
+  stripeEventId      String? @unique
+  stripeInvoiceId    String?
+  stripePaymentIntentId String?
+  
+  // Event details
+  type        BillingEventType
+  amount      Int? // In cents
+  currency    String @default("usd")
+  description String?
+  
+  // Status
+  status BillingEventStatus @default(PENDING)
+  
+  // Metadata
+  metadata Json?
+
+  // Timestamp
+  createdAt DateTime @default(now())
+
+  @@index([workspaceId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@map("billing_events")
+}
+
+enum BillingEventType {
+  SUBSCRIPTION_CREATED
+  SUBSCRIPTION_UPDATED
+  SUBSCRIPTION_CANCELED
+  INVOICE_PAID
+  INVOICE_FAILED
+  PAYMENT_SUCCEEDED
+  PAYMENT_FAILED
+  TRIAL_ENDED
+  PLAN_UPGRADED
+  PLAN_DOWNGRADED
+}
+
+enum BillingEventStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model UsageMetric {
+  id String @id @default(uuid())
+
+  // Workspace
+  workspaceId String
+  
+  // Metric details
+  metricType  UsageMetricType
+  value       Float
+  unit        String? // e.g., "count", "bytes", "ms"
+  
+  // Resource references
+  portalId String?
+  widgetId String?
+  userId   String?
+  
+  // Time bucket
+  period     DateTime // Rounded to hour/day for aggregation
+  periodType PeriodType @default(HOURLY)
+  
+  // Metadata
+  metadata Json?
+
+  // Timestamp
+  createdAt DateTime @default(now())
+
+  @@index([workspaceId])
+  @@index([metricType])
+  @@index([period])
+  @@index([portalId])
+  @@map("usage_metrics")
+}
+
+enum UsageMetricType {
+  PORTAL_VIEWS
+  WIDGET_LOADS
+  API_CALLS
+  EXPORT_COUNT
+  STORAGE_BYTES
+  INTEGRATION_SYNCS
+  REPORT_GENERATIONS
+  AI_INSIGHTS_GENERATED
+  BANDWIDTH_BYTES
+  ACTIVE_USERS
+}
+
+enum PeriodType {
+  HOURLY
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+// ========================================
+// PORTAL TEMPLATES (Full Dashboard)
+// ========================================
+
+model PortalTemplate {
+  id String @id @default(uuid())
+
+  // Template details
+  name        String
+  description String?
+  category    TemplateCategory
+  thumbnail   String? // Preview image URL
+
+  // Template configuration
+  layout        Json // Widget layout configuration
+  widgetConfigs Json // Array of widget configurations
+  settings      Json? // Portal-level settings
+
+  // Visibility
+  isPublic    Boolean @default(false)
+  workspaceId String? // Null if public template
+  
+  // Creator (null for system templates)
+  createdById String?
+  
+  // Usage tracking
+  usageCount Int @default(0)
+
+  // Tags for filtering
+  tags String[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([isPublic])
+  @@index([workspaceId])
+  @@map("portal_templates")
 }

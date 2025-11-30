@@ -1,6 +1,7 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -21,6 +22,13 @@ import { ExportModule } from './exports/export.module';
 import { AIInsightsModule } from './ai-insights/ai-insights.module';
 import { AlertsModule } from './alerts/alerts.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { ScheduledReportsModule } from './scheduled-reports/scheduled-reports.module';
+import { ShareLinksModule } from './share-links/share-links.module';
+import { CommentsModule } from './comments/comments.module';
+import { TemplatesModule } from './templates/templates.module';
+import { BillingModule } from './billing/billing.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { SecurityModule } from './security/security.module';
 import { RequestContextMiddleware } from './common/middleware/request-context.middleware';
 import { HttpLoggerMiddleware } from './common/middleware/http-logger.middleware';
 
@@ -34,6 +42,7 @@ import s3Config from './config/s3.config';
 import throttleConfig from './config/throttle.config';
 import emailConfig from './config/email.config';
 import loggerConfig from './config/logger.config';
+import billingConfig from './config/billing.config';
 
 @Module({
   imports: [
@@ -49,6 +58,7 @@ import loggerConfig from './config/logger.config';
         throttleConfig,
         emailConfig,
         loggerConfig,
+        billingConfig,
       ],
     }),
     // Rate limiting
@@ -80,6 +90,15 @@ import loggerConfig from './config/logger.config';
     AIInsightsModule,
     AlertsModule,
     WebhooksModule,
+    // New feature modules
+    ScheduleModule.forRoot(),
+    ScheduledReportsModule,
+    ShareLinksModule,
+    CommentsModule,
+    TemplatesModule,
+    BillingModule,
+    AnalyticsModule,
+    SecurityModule,
   ],
   controllers: [AppController],
   providers: [

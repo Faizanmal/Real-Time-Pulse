@@ -4,6 +4,11 @@ import { JobsService } from '../jobs/jobs.service';
 import { AsanaService } from './services/asana.service';
 import { GoogleAnalyticsService } from './services/google-analytics.service';
 import { HarvestService } from './services/harvest.service';
+import { JiraService } from './services/jira.service';
+import { TrelloService } from './services/trello.service';
+import { GitHubService } from './services/github.service';
+import { HubSpotService } from './services/hubspot.service';
+import { SlackService } from './services/slack.service';
 import type { IntegrationProvider } from '@prisma/client';
 
 export interface IntegrationConfig {
@@ -25,6 +30,11 @@ export class IntegrationService {
     private readonly asanaService: AsanaService,
     private readonly googleAnalyticsService: GoogleAnalyticsService,
     private readonly harvestService: HarvestService,
+    private readonly jiraService: JiraService,
+    private readonly trelloService: TrelloService,
+    private readonly githubService: GitHubService,
+    private readonly hubspotService: HubSpotService,
+    private readonly slackService: SlackService,
   ) {}
 
   /**
@@ -153,6 +163,21 @@ export class IntegrationService {
       case 'HARVEST':
         return this.harvestService.fetchData(integration, dataType, params);
 
+      case 'JIRA':
+        return this.jiraService.fetchData(integration, dataType, params);
+
+      case 'TRELLO':
+        return this.trelloService.fetchData(integration, dataType, params);
+
+      case 'GITHUB':
+        return this.githubService.fetchData(integration, dataType, params);
+
+      case 'HUBSPOT':
+        return this.hubspotService.fetchData(integration, dataType, params);
+
+      case 'SLACK':
+        return this.slackService.fetchData(integration, dataType, params);
+
       default:
         throw new Error(`Unsupported provider: ${integration.provider}`);
     }
@@ -199,6 +224,26 @@ export class IntegrationService {
 
         case 'HARVEST':
           result = await this.harvestService.testConnection(integration);
+          break;
+
+        case 'JIRA':
+          result = await this.jiraService.testConnection(integration);
+          break;
+
+        case 'TRELLO':
+          result = await this.trelloService.testConnection(integration);
+          break;
+
+        case 'GITHUB':
+          result = await this.githubService.testConnection(integration);
+          break;
+
+        case 'HUBSPOT':
+          result = await this.hubspotService.testConnection(integration);
+          break;
+
+        case 'SLACK':
+          result = await this.slackService.testConnection(integration);
           break;
 
         default:
