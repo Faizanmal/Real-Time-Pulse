@@ -32,6 +32,18 @@ import { SecurityModule } from './security/security.module';
 import { RequestContextMiddleware } from './common/middleware/request-context.middleware';
 import { HttpLoggerMiddleware } from './common/middleware/http-logger.middleware';
 
+// New Advanced Feature Modules
+import { CollaborationModule } from './collaboration/collaboration.module';
+import { ScriptingModule } from './scripting/scripting.module';
+import { PipelineModule } from './pipeline/pipeline.module';
+import { RoleManagementModule } from './role-management/role-management.module';
+import { FederatedSearchModule } from './federated-search/federated-search.module';
+import { MLMarketplaceModule } from './ml-marketplace/ml-marketplace.module';
+import { VoiceModule } from './voice/voice.module';
+import { BlockchainModule } from './blockchain/blockchain.module';
+import { ARVisualizationModule } from './ar-visualization/ar-visualization.module';
+import { ApiMarketplaceModule } from './api-marketplace/api-marketplace.module';
+
 // Config imports
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
@@ -99,6 +111,17 @@ import billingConfig from './config/billing.config';
     BillingModule,
     AnalyticsModule,
     SecurityModule,
+    // Advanced Feature Modules
+    CollaborationModule,
+    ScriptingModule,
+    PipelineModule,
+    RoleManagementModule,
+    FederatedSearchModule,
+    MLMarketplaceModule,
+    VoiceModule,
+    BlockchainModule,
+    ARVisualizationModule,
+    ApiMarketplaceModule,
   ],
   controllers: [AppController],
   providers: [

@@ -5,13 +5,19 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { EmailService } from '../email/email.service';
 import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
 
 @Injectable()
 export class CommentsService {
   private readonly logger = new Logger(CommentsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsGateway: NotificationsGateway,
+    private readonly emailService: EmailService,
+  ) {}
 
   /**
    * Create a comment
@@ -80,10 +86,119 @@ export class CommentsService {
 
     this.logger.log(`Comment created: ${comment.id}`);
 
-    // TODO: Send notifications to mentioned users
-    // TODO: Send WebSocket notification for real-time updates
+    // Send WebSocket notification for real-time updates
+    this.notificationsGateway.notifyPortal(dto.portalId, 'comment:created', {
+      comment,
+      portalId: dto.portalId,
+      widgetId: dto.widgetId,
+    });
+
+    // Send notifications to mentioned users
+    if (mentions.length > 0) {
+      await this.notifyMentionedUsers(comment, mentions);
+    }
+
+    // Notify parent comment author if this is a reply
+    if (dto.parentId) {
+      await this.notifyCommentReply(comment, dto.parentId);
+    }
 
     return comment;
+  }
+
+  /**
+   * Notify users mentioned in a comment
+   */
+  private async notifyMentionedUsers(comment: any, userIds: string[]): Promise<void> {
+    try {
+      const mentionedUsers = await this.prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, email: true, firstName: true, lastName: true },
+      });
+
+      const portal = await this.prisma.portal.findUnique({
+        where: { id: comment.portalId },
+        select: { name: true },
+      });
+
+      for (const user of mentionedUsers) {
+        // Send WebSocket notification
+        this.notificationsGateway.notifyUser(user.id, 'comment:mentioned', {
+          commentId: comment.id,
+          portalId: comment.portalId,
+          author: comment.author,
+          content: comment.content.substring(0, 100),
+        });
+
+        // Send email notification
+        try {
+          await this.emailService.sendEmail({
+            to: user.email,
+            subject: `You were mentioned in a comment on ${portal?.name || 'a portal'}`,
+            template: 'comment-mention',
+            context: {
+              recipientName: user.firstName || user.email.split('@')[0],
+              authorName: comment.author?.firstName || comment.author?.email?.split('@')[0] || 'Someone',
+              portalName: portal?.name || 'a portal',
+              commentContent: comment.content.substring(0, 200),
+              commentUrl: `${process.env.FRONTEND_URL}/portal/${comment.portalId}#comment-${comment.id}`,
+            },
+          });
+        } catch (emailError) {
+          this.logger.error(`Failed to send mention email to ${user.email}:`, emailError);
+        }
+      }
+    } catch (error) {
+      this.logger.error('Failed to notify mentioned users:', error);
+    }
+  }
+
+  /**
+   * Notify parent comment author of reply
+   */
+  private async notifyCommentReply(comment: any, parentId: string): Promise<void> {
+    try {
+      const parentComment = await this.prisma.comment.findUnique({
+        where: { id: parentId },
+        include: {
+          author: { select: { id: true, email: true, firstName: true } },
+        },
+      });
+
+      if (!parentComment || parentComment.authorId === comment.authorId) {
+        return; // Don't notify if replying to own comment
+      }
+
+      const portal = await this.prisma.portal.findUnique({
+        where: { id: comment.portalId },
+        select: { name: true },
+      });
+
+      // Send WebSocket notification
+      this.notificationsGateway.notifyUser(parentComment.authorId, 'comment:reply', {
+        commentId: comment.id,
+        parentId,
+        portalId: comment.portalId,
+        author: comment.author,
+      });
+
+      // Send email notification
+      await this.emailService.sendEmail({
+        to: parentComment.author.email,
+        subject: `New reply to your comment on ${portal?.name || 'a portal'}`,
+        template: 'comment-reply',
+        context: {
+          recipientName: parentComment.author.firstName || parentComment.author.email.split('@')[0],
+          authorName: comment.author?.firstName || comment.author?.email?.split('@')[0] || 'Someone',
+          portalName: portal?.name || 'a portal',
+          originalComment: parentComment.content.substring(0, 100),
+          replyContent: comment.content.substring(0, 200),
+          commentUrl: `${process.env.FRONTEND_URL}/portal/${comment.portalId}#comment-${comment.id}`,
+        },
+      });
+    } catch (error) {
+      this.logger.error('Failed to notify reply:', error);
+    }
   }
 
   /**

@@ -1219,3 +1219,633 @@ export const integrationsApi = {
     },
   },
 };
+
+// ========================================
+// BULK OPERATIONS API
+// ========================================
+
+export interface BulkOperationResult {
+  success: boolean;
+  totalProcessed: number;
+  successCount: number;
+  failureCount: number;
+  results: {
+    id: string;
+    success: boolean;
+    error?: string;
+  }[];
+}
+
+export interface BulkUpdateWidgetsDto {
+  widgetIds: string[];
+  updates: {
+    refreshInterval?: number;
+    isActive?: boolean;
+    settings?: Record<string, unknown>;
+  };
+}
+
+export interface BulkClonePortalsDto {
+  portalIds: string[];
+  options?: {
+    includeWidgets?: boolean;
+    includeSettings?: boolean;
+    nameSuffix?: string;
+  };
+}
+
+export interface BulkCreateAlertsDto {
+  alerts: {
+    name: string;
+    portalId?: string;
+    widgetId?: string;
+    condition: {
+      metric: string;
+      operator: string;
+      threshold: number;
+    };
+    channels: string[];
+  }[];
+}
+
+export interface BulkImportResult {
+  success: boolean;
+  imported: number;
+  errors: { row: number; error: string }[];
+}
+
+export const bulkOperationsApi = {
+  /**
+   * Bulk update widgets
+   */
+  updateWidgets: async (data: BulkUpdateWidgetsDto): Promise<BulkOperationResult> => {
+    const response = await apiClient.post('/bulk/widgets/update', data);
+    return response.data;
+  },
+
+  /**
+   * Bulk delete widgets
+   */
+  deleteWidgets: async (widgetIds: string[]): Promise<BulkOperationResult> => {
+    const response = await apiClient.post('/bulk/widgets/delete', { widgetIds });
+    return response.data;
+  },
+
+  /**
+   * Bulk clone portals
+   */
+  clonePortals: async (data: BulkClonePortalsDto): Promise<BulkOperationResult & { clonedPortals?: { originalId: string; clonedId: string }[] }> => {
+    const response = await apiClient.post('/bulk/portals/clone', data);
+    return response.data;
+  },
+
+  /**
+   * Bulk delete portals
+   */
+  deletePortals: async (portalIds: string[]): Promise<BulkOperationResult> => {
+    const response = await apiClient.post('/bulk/portals/delete', { portalIds });
+    return response.data;
+  },
+
+  /**
+   * Bulk create alerts
+   */
+  createAlerts: async (data: BulkCreateAlertsDto): Promise<BulkOperationResult> => {
+    const response = await apiClient.post('/bulk/alerts/create', data);
+    return response.data;
+  },
+
+  /**
+   * Bulk delete alerts
+   */
+  deleteAlerts: async (alertIds: string[]): Promise<BulkOperationResult> => {
+    const response = await apiClient.post('/bulk/alerts/delete', { alertIds });
+    return response.data;
+  },
+
+  /**
+   * Import data from CSV
+   */
+  importFromCSV: async (file: File, type: 'portals' | 'widgets' | 'alerts'): Promise<BulkImportResult> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type);
+    const response = await apiClient.post('/bulk/import/csv', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  /**
+   * Export data to CSV
+   */
+  exportToCSV: async (type: 'portals' | 'widgets' | 'alerts', ids?: string[]): Promise<Blob> => {
+    const response = await apiClient.post(
+      '/bulk/export/csv',
+      { type, ids },
+      { responseType: 'blob' }
+    );
+    return response.data;
+  },
+};
+
+// ========================================
+// ADVANCED SEARCH API
+// ========================================
+
+export interface SearchFilter {
+  field: string;
+  operator: 'eq' | 'ne' | 'contains' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'between';
+  value: unknown;
+}
+
+export interface SearchResult {
+  type: 'portal' | 'widget' | 'alert' | 'integration' | 'report' | 'comment';
+  id: string;
+  title: string;
+  description?: string;
+  metadata: Record<string, unknown>;
+  score: number;
+  highlights?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GlobalSearchResponse {
+  results: SearchResult[];
+  total: number;
+  facets: {
+    type: Record<string, number>;
+    dateRange: { min: string; max: string };
+  };
+  suggestions?: string[];
+}
+
+export interface SearchPreset {
+  id: string;
+  name: string;
+  filters: SearchFilter[];
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export const advancedSearchApi = {
+  /**
+   * Global search across all entities
+   */
+  globalSearch: async (params: {
+    query: string;
+    types?: string[];
+    filters?: SearchFilter[];
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    page?: number;
+    limit?: number;
+  }): Promise<GlobalSearchResponse> => {
+    const response = await apiClient.post('/search/global', params);
+    return response.data;
+  },
+
+  /**
+   * Get search suggestions/autocomplete
+   */
+  getSuggestions: async (query: string, types?: string[]): Promise<string[]> => {
+    const response = await apiClient.get('/search/suggestions', {
+      params: { query, types: types?.join(',') },
+    });
+    return response.data;
+  },
+
+  /**
+   * Get saved search presets
+   */
+  getPresets: async (): Promise<SearchPreset[]> => {
+    const response = await apiClient.get('/search/presets');
+    return response.data;
+  },
+
+  /**
+   * Save search preset
+   */
+  savePreset: async (data: {
+    name: string;
+    filters: SearchFilter[];
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    isDefault?: boolean;
+  }): Promise<SearchPreset> => {
+    const response = await apiClient.post('/search/presets', data);
+    return response.data;
+  },
+
+  /**
+   * Delete search preset
+   */
+  deletePreset: async (presetId: string): Promise<void> => {
+    await apiClient.delete(`/search/presets/${presetId}`);
+  },
+
+  /**
+   * Get recent searches
+   */
+  getRecentSearches: async (): Promise<{ query: string; timestamp: string }[]> => {
+    const response = await apiClient.get('/search/recent');
+    return response.data;
+  },
+};
+
+// ========================================
+// WIDGET CUSTOMIZATION API
+// ========================================
+
+export interface WidgetStyling {
+  backgroundColor?: string;
+  textColor?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  borderRadius?: number;
+  padding?: { top: number; right: number; bottom: number; left: number };
+  margin?: { top: number; right: number; bottom: number; left: number };
+  shadow?: {
+    enabled: boolean;
+    color?: string;
+    blur?: number;
+    spread?: number;
+    x?: number;
+    y?: number;
+  };
+  font?: {
+    family?: string;
+    size?: number;
+    weight?: number;
+    lineHeight?: number;
+  };
+  customCSS?: string;
+}
+
+export interface ConditionalFormat {
+  id: string;
+  field: string;
+  conditions: {
+    operator: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'contains' | 'between';
+    value: unknown;
+    style: Partial<WidgetStyling>;
+    icon?: string;
+    label?: string;
+  }[];
+  priority: number;
+}
+
+export interface DataTransformation {
+  id: string;
+  type: 'filter' | 'sort' | 'aggregate' | 'calculate' | 'format';
+  config: Record<string, unknown>;
+  enabled: boolean;
+}
+
+export interface WidgetTheme {
+  id: string;
+  name: string;
+  description?: string;
+  styling: WidgetStyling;
+  conditionalFormats?: ConditionalFormat[];
+  isDefault: boolean;
+  isPublic: boolean;
+  createdAt: string;
+}
+
+export const widgetCustomizationApi = {
+  /**
+   * Get widget styling
+   */
+  getStyling: async (widgetId: string): Promise<WidgetStyling> => {
+    const response = await apiClient.get(`/widgets/${widgetId}/styling`);
+    return response.data;
+  },
+
+  /**
+   * Update widget styling
+   */
+  updateStyling: async (widgetId: string, styling: Partial<WidgetStyling>): Promise<WidgetStyling> => {
+    const response = await apiClient.patch(`/widgets/${widgetId}/styling`, styling);
+    return response.data;
+  },
+
+  /**
+   * Get conditional formats
+   */
+  getConditionalFormats: async (widgetId: string): Promise<ConditionalFormat[]> => {
+    const response = await apiClient.get(`/widgets/${widgetId}/conditional-formats`);
+    return response.data;
+  },
+
+  /**
+   * Add conditional format
+   */
+  addConditionalFormat: async (widgetId: string, format: Omit<ConditionalFormat, 'id'>): Promise<ConditionalFormat> => {
+    const response = await apiClient.post(`/widgets/${widgetId}/conditional-formats`, format);
+    return response.data;
+  },
+
+  /**
+   * Update conditional format
+   */
+  updateConditionalFormat: async (
+    widgetId: string,
+    formatId: string,
+    format: Partial<ConditionalFormat>
+  ): Promise<ConditionalFormat> => {
+    const response = await apiClient.patch(`/widgets/${widgetId}/conditional-formats/${formatId}`, format);
+    return response.data;
+  },
+
+  /**
+   * Delete conditional format
+   */
+  deleteConditionalFormat: async (widgetId: string, formatId: string): Promise<void> => {
+    await apiClient.delete(`/widgets/${widgetId}/conditional-formats/${formatId}`);
+  },
+
+  /**
+   * Get data transformations
+   */
+  getTransformations: async (widgetId: string): Promise<DataTransformation[]> => {
+    const response = await apiClient.get(`/widgets/${widgetId}/transformations`);
+    return response.data;
+  },
+
+  /**
+   * Update data transformations
+   */
+  updateTransformations: async (widgetId: string, transformations: DataTransformation[]): Promise<DataTransformation[]> => {
+    const response = await apiClient.put(`/widgets/${widgetId}/transformations`, { transformations });
+    return response.data;
+  },
+
+  /**
+   * Preview widget with styling
+   */
+  preview: async (widgetId: string, styling: Partial<WidgetStyling>): Promise<{ html: string; css: string }> => {
+    const response = await apiClient.post(`/widgets/${widgetId}/preview`, { styling });
+    return response.data;
+  },
+
+  /**
+   * Get available themes
+   */
+  getThemes: async (): Promise<WidgetTheme[]> => {
+    const response = await apiClient.get('/widgets/themes');
+    return response.data;
+  },
+
+  /**
+   * Apply theme to widget
+   */
+  applyTheme: async (widgetId: string, themeId: string): Promise<WidgetStyling> => {
+    const response = await apiClient.post(`/widgets/${widgetId}/apply-theme`, { themeId });
+    return response.data;
+  },
+
+  /**
+   * Save widget styling as theme
+   */
+  saveAsTheme: async (widgetId: string, data: { name: string; description?: string; isPublic?: boolean }): Promise<WidgetTheme> => {
+    const response = await apiClient.post(`/widgets/${widgetId}/save-theme`, data);
+    return response.data;
+  },
+};
+
+// ========================================
+// ADMIN ANALYTICS API
+// ========================================
+
+export interface SystemMetrics {
+  users: {
+    total: number;
+    activeThisMonth: number;
+    newThisMonth: number;
+    byPlan: Record<string, number>;
+  };
+  workspaces: {
+    total: number;
+    activeThisMonth: number;
+    newThisMonth: number;
+  };
+  portals: {
+    total: number;
+    public: number;
+    private: number;
+    totalViews: number;
+  };
+  widgets: {
+    total: number;
+    byType: Record<string, number>;
+  };
+  integrations: {
+    total: number;
+    active: number;
+    byProvider: Record<string, number>;
+  };
+}
+
+export interface RevenueMetrics {
+  mrr: number;
+  arr: number;
+  churnRate: number;
+  averageRevenuePerUser: number;
+  byPlan: {
+    plan: string;
+    count: number;
+    revenue: number;
+  }[];
+  growth: {
+    period: string;
+    mrr: number;
+    subscribers: number;
+  }[];
+}
+
+export interface AdminSystemHealth {
+  status: 'healthy' | 'degraded' | 'critical';
+  database: {
+    status: string;
+    responseTime: number;
+    connectionCount: number;
+  };
+  cache: {
+    status: string;
+    hitRate: number;
+    memoryUsage: number;
+  };
+  jobs: {
+    pending: number;
+    failed: number;
+    completed: number;
+    failureRate: number;
+  };
+  integrations: {
+    healthy: number;
+    failing: number;
+    failingProviders: string[];
+  };
+  alerts: {
+    criticalCount: number;
+    unresolvedCount: number;
+  };
+}
+
+export interface UserActivityMetrics {
+  dailyActiveUsers: number;
+  weeklyActiveUsers: number;
+  monthlyActiveUsers: number;
+  sessionStats: {
+    avgSessionDuration: number;
+    avgSessionsPerUser: number;
+    bounceRate: number;
+  };
+  topFeatures: {
+    feature: string;
+    usageCount: number;
+    uniqueUsers: number;
+  }[];
+  retention: {
+    day1: number;
+    day7: number;
+    day30: number;
+  };
+}
+
+export interface AdminActivityItem {
+  id: string;
+  action: string;
+  entity: string;
+  entityId: string;
+  userEmail: string;
+  workspaceId?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  success: boolean;
+  errorMessage?: string;
+  timestamp: string;
+  type: string;
+}
+
+export interface WorkspaceComparison {
+  workspaceId: string;
+  name: string;
+  plan: string;
+  status: string;
+  portals: number;
+  members: number;
+  integrations: number;
+  insights: number;
+  totalActivity: number;
+  createdAt: string;
+}
+
+export const adminAnalyticsApi = {
+  /**
+   * Get system-wide metrics (admin only)
+   */
+  getSystemMetrics: async (): Promise<SystemMetrics> => {
+    const response = await apiClient.get('/admin/analytics/system');
+    return response.data;
+  },
+
+  /**
+   * Get revenue metrics (admin only)
+   */
+  getRevenueMetrics: async (): Promise<RevenueMetrics> => {
+    const response = await apiClient.get('/admin/analytics/revenue');
+    return response.data;
+  },
+
+  /**
+   * Get system health status (admin only)
+   */
+  getSystemHealth: async (): Promise<AdminSystemHealth> => {
+    const response = await apiClient.get('/admin/analytics/health');
+    return response.data;
+  },
+
+  /**
+   * Get user activity metrics (admin only)
+   */
+  getUserActivityMetrics: async (): Promise<UserActivityMetrics> => {
+    const response = await apiClient.get('/admin/analytics/user-activity');
+    return response.data;
+  },
+
+  /**
+   * Get admin activity feed (admin only)
+   */
+  getActivityFeed: async (limit?: number): Promise<AdminActivityItem[]> => {
+    const response = await apiClient.get('/admin/analytics/activity', {
+      params: { limit },
+    });
+    return response.data;
+  },
+
+  /**
+   * Get workspace comparison (admin only)
+   */
+  getWorkspaceComparison: async (workspaceIds?: string[]): Promise<WorkspaceComparison[]> => {
+    const response = await apiClient.get('/admin/analytics/workspaces', {
+      params: { workspaceIds: workspaceIds?.join(',') },
+    });
+    return response.data;
+  },
+
+  /**
+   * Export analytics data (admin only)
+   */
+  exportData: async (params: {
+    type: 'users' | 'revenue' | 'activity' | 'workspaces';
+    format: 'json' | 'csv';
+    startDate?: string;
+    endDate?: string;
+  }): Promise<Blob | unknown> => {
+    const response = await apiClient.get('/admin/analytics/export', {
+      params,
+      responseType: params.format === 'csv' ? 'blob' : 'json',
+    });
+    return response.data;
+  },
+};
+
+// ========================================
+// SHARE LINK ANALYTICS API (EXTENDED)
+// ========================================
+
+export interface ShareLinkAnalytics {
+  totalViews: number;
+  uniqueVisitors: number;
+  viewsByDate: { date: string; views: number }[];
+  viewsByCountry: { country: string; views: number }[];
+  viewsByDevice: { device: string; views: number }[];
+  averageViewDuration: number;
+  downloadCount: number;
+}
+
+export const shareLinkAnalyticsApi = {
+  /**
+   * Get share link analytics
+   */
+  getAnalytics: async (shareLinkId: string): Promise<ShareLinkAnalytics> => {
+    const response = await apiClient.get(`/share-links/${shareLinkId}/analytics`);
+    return response.data;
+  },
+
+  /**
+   * Get QR code for share link
+   */
+  getQRCode: async (shareLinkId: string, options?: { size?: number; format?: 'png' | 'svg' }): Promise<Blob> => {
+    const response = await apiClient.get(`/share-links/${shareLinkId}/qr-code`, {
+      params: options,
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+};

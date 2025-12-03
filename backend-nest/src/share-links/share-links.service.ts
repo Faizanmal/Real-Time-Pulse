@@ -6,15 +6,39 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
 import * as bcrypt from 'bcryptjs';
+import * as QRCode from 'qrcode';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateShareLinkDto, UpdateShareLinkDto } from './dto/share-link.dto';
+
+export interface AccessLog {
+  timestamp: Date;
+  ip?: string;
+  userAgent?: string;
+  referrer?: string;
+  country?: string;
+  city?: string;
+}
+
+export interface ShareLinkAnalytics {
+  totalViews: number;
+  uniqueVisitors: number;
+  viewsByDay: { date: string; views: number }[];
+  viewsByCountry: { country: string; views: number }[];
+  topReferrers: { referrer: string; count: number }[];
+  averageViewDuration?: number;
+}
 
 @Injectable()
 export class ShareLinksService {
   private readonly logger = new Logger(ShareLinksService.name);
+  private readonly ACCESS_LOG_PREFIX = 'sharelink:access:';
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cacheService: CacheService,
+  ) {}
 
   /**
    * Create a share link for a portal
@@ -320,6 +344,181 @@ export class ShareLinksService {
 
     return {
       passwordRequired: !!link.password,
+    };
+  }
+
+  /**
+   * Generate QR code for share link
+   */
+  async generateQRCode(id: string, workspaceId: string, options?: {
+    width?: number;
+    margin?: number;
+    darkColor?: string;
+    lightColor?: string;
+  }): Promise<{ qrCode: string; shareUrl: string }> {
+    const link = await this.prisma.shareLink.findFirst({
+      where: {
+        id,
+        portal: { workspaceId },
+      },
+    });
+
+    if (!link) {
+      throw new NotFoundException('Share link not found');
+    }
+
+    const shareUrl = this.generateShareUrl(link.token);
+    
+    const qrCode = await QRCode.toDataURL(shareUrl, {
+      width: options?.width || 256,
+      margin: options?.margin || 2,
+      color: {
+        dark: options?.darkColor || '#000000',
+        light: options?.lightColor || '#FFFFFF',
+      },
+    });
+
+    return { qrCode, shareUrl };
+  }
+
+  /**
+   * Get QR code as buffer for download
+   */
+  async getQRCodeBuffer(id: string, workspaceId: string, options?: {
+    width?: number;
+    format?: 'png' | 'svg';
+  }): Promise<Buffer> {
+    const link = await this.prisma.shareLink.findFirst({
+      where: {
+        id,
+        portal: { workspaceId },
+      },
+    });
+
+    if (!link) {
+      throw new NotFoundException('Share link not found');
+    }
+
+    const shareUrl = this.generateShareUrl(link.token);
+    
+    if (options?.format === 'svg') {
+      const svg = await QRCode.toString(shareUrl, { type: 'svg', width: options?.width || 256 });
+      return Buffer.from(svg);
+    }
+    
+    return await QRCode.toBuffer(shareUrl, {
+      width: options?.width || 256,
+      margin: 2,
+    });
+  }
+
+  /**
+   * Log access for analytics
+   */
+  async logAccess(token: string, accessData: {
+    ip?: string;
+    userAgent?: string;
+    referrer?: string;
+  }): Promise<void> {
+    const link = await this.prisma.shareLink.findUnique({
+      where: { token },
+      select: { id: true },
+    });
+
+    if (!link) return;
+
+    const accessLog: AccessLog = {
+      timestamp: new Date(),
+      ip: accessData.ip,
+      userAgent: accessData.userAgent,
+      referrer: accessData.referrer,
+    };
+
+    // Store access logs in Redis (keep last 1000)
+    const cacheKey = `${this.ACCESS_LOG_PREFIX}${link.id}`;
+    try {
+      const existing = await this.cacheService.get(cacheKey);
+      const logs: AccessLog[] = existing ? JSON.parse(existing) : [];
+      logs.unshift(accessLog);
+      const trimmedLogs = logs.slice(0, 1000);
+      await this.cacheService.set(cacheKey, JSON.stringify(trimmedLogs), 30 * 24 * 60 * 60); // 30 days
+    } catch (error) {
+      this.logger.error('Failed to log access:', error);
+    }
+  }
+
+  /**
+   * Get analytics for a share link
+   */
+  async getAnalytics(id: string, workspaceId: string): Promise<ShareLinkAnalytics> {
+    const link = await this.prisma.shareLink.findFirst({
+      where: {
+        id,
+        portal: { workspaceId },
+      },
+    });
+
+    if (!link) {
+      throw new NotFoundException('Share link not found');
+    }
+
+    // Get access logs from cache
+    const cacheKey = `${this.ACCESS_LOG_PREFIX}${id}`;
+    let logs: AccessLog[] = [];
+    
+    try {
+      const cached = await this.cacheService.get(cacheKey);
+      if (cached) {
+        logs = JSON.parse(cached);
+      }
+    } catch (error) {
+      this.logger.error('Failed to get access logs:', error);
+    }
+
+    // Calculate analytics
+    const uniqueIps = new Set(logs.map(l => l.ip).filter(Boolean));
+    
+    // Views by day (last 30 days)
+    const viewsByDay: { date: string; views: number }[] = [];
+    const now = new Date();
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      const views = logs.filter(l => 
+        new Date(l.timestamp).toISOString().split('T')[0] === dateStr
+      ).length;
+      viewsByDay.push({ date: dateStr, views });
+    }
+
+    // Views by country (from IP, simplified - in production use GeoIP)
+    const countryMap = new Map<string, number>();
+    logs.forEach(l => {
+      const country = l.country || 'Unknown';
+      countryMap.set(country, (countryMap.get(country) || 0) + 1);
+    });
+    const viewsByCountry = Array.from(countryMap.entries())
+      .map(([country, views]) => ({ country, views }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 10);
+
+    // Top referrers
+    const referrerMap = new Map<string, number>();
+    logs.forEach(l => {
+      const referrer = l.referrer || 'Direct';
+      referrerMap.set(referrer, (referrerMap.get(referrer) || 0) + 1);
+    });
+    const topReferrers = Array.from(referrerMap.entries())
+      .map(([referrer, count]) => ({ referrer, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    return {
+      totalViews: link.currentViews,
+      uniqueVisitors: uniqueIps.size,
+      viewsByDay,
+      viewsByCountry,
+      topReferrers,
     };
   }
 
