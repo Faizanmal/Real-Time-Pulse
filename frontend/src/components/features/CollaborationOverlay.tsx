@@ -3,11 +3,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useCollaboration } from '@/hooks/useAdvancedFeatures';
 
-interface CollaboratorCursor {
+interface Participant {
   odId: string;
   name: string;
   color: string;
-  cursor: { x: number; y: number };
+  cursor?: { x: number; y: number };
+  selection?: string;
 }
 
 interface CollaborationOverlayProps {
@@ -17,7 +18,6 @@ interface CollaborationOverlayProps {
 
 export function CollaborationOverlay({ portalId, children }: CollaborationOverlayProps) {
   const {
-    session,
     participants,
     isConnected,
     joinSession,
@@ -64,7 +64,7 @@ export function CollaborationOverlay({ portalId, children }: CollaborationOverla
           className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-gray-800 rounded-lg shadow-sm border text-sm"
         >
           <span className="flex -space-x-2">
-            {participants.slice(0, 3).map((p) => (
+            {participants.slice(0, 3).map((p: Participant) => (
               <div
                 key={p.odId}
                 className="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-medium text-white"
@@ -88,7 +88,7 @@ export function CollaborationOverlay({ portalId, children }: CollaborationOverla
         <div className="absolute top-12 right-2 z-50 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border p-3">
           <h4 className="font-medium mb-2 text-sm">Active Collaborators</h4>
           <div className="space-y-2">
-            {participants.map((p) => (
+            {participants.map((p: Participant) => (
               <div key={p.odId} className="flex items-center gap-2">
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium text-white"
@@ -110,8 +110,8 @@ export function CollaborationOverlay({ portalId, children }: CollaborationOverla
 
       {/* Remote Cursors */}
       {participants
-        .filter((p) => p.cursor)
-        .map((p) => (
+        .filter((p: Participant) => p.cursor)
+        .map((p: Participant) => (
           <div
             key={p.odId}
             className="absolute pointer-events-none z-40 transition-all duration-75"

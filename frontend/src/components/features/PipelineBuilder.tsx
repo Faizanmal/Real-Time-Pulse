@@ -1,14 +1,21 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { usePipelines } from '@/hooks/useAdvancedFeatures';
-import { pipelineAPI } from '@/lib/advanced-features-api';
 
 interface PipelineNode {
   id: string;
   type: string;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   position: { x: number; y: number };
+}
+
+interface Pipeline {
+  id: string;
+  name: string;
+  nodes?: PipelineNode[];
+  edges?: PipelineEdge[];
+  status?: 'error' | 'active' | 'draft' | 'paused';
 }
 
 interface PipelineEdge {
@@ -32,8 +39,8 @@ const NODE_TYPES = [
 ];
 
 interface PipelineBuilderProps {
-  pipeline?: any;
-  onSave?: (pipeline: any) => void;
+  pipeline?: Pipeline | undefined;
+  onSave?: (pipeline: Partial<Pipeline>) => void;
 }
 
 export function PipelineBuilder({ pipeline, onSave }: PipelineBuilderProps) {
@@ -306,10 +313,10 @@ export function PipelineBuilder({ pipeline, onSave }: PipelineBuilderProps) {
 export function PipelinesList() {
   const { pipelines, loading, createPipeline, executePipeline } = usePipelines();
   const [showBuilder, setShowBuilder] = useState(false);
-  const [selectedPipeline, setSelectedPipeline] = useState<any>(null);
+  const [selectedPipeline, setSelectedPipeline] = useState<Pipeline | null>(null);
   const [executing, setExecuting] = useState<string | null>(null);
 
-  const handleSave = async (pipelineData: any) => {
+  const handleSave = async (pipelineData: Partial<Pipeline>) => {
     await createPipeline(pipelineData);
     setShowBuilder(false);
   };
@@ -333,7 +340,7 @@ export function PipelinesList() {
           ← Back to Pipelines
         </button>
         <div className="flex-1">
-          <PipelineBuilder pipeline={selectedPipeline} onSave={handleSave} />
+          <PipelineBuilder pipeline={selectedPipeline ?? undefined} onSave={handleSave} />
         </div>
       </div>
     );
@@ -362,7 +369,7 @@ export function PipelinesList() {
         </div>
       ) : (
         <div className="grid gap-4">
-          {pipelines.map((pipeline) => (
+          {pipelines.map((pipeline: Pipeline) => (
             <div
               key={pipeline.id}
               className="p-4 bg-white dark:bg-gray-800 rounded-lg border"

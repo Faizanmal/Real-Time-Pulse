@@ -6,15 +6,12 @@ import {
   Star,
   Download,
   Search,
-  Filter,
   Plus,
   Eye,
-  Heart,
   Tag,
   User,
   MoreVertical,
   Trash2,
-  Edit2,
   Globe,
   Lock,
 } from 'lucide-react';
@@ -22,21 +19,20 @@ import {
   templatesApi,
   Template,
   CreateTemplateDto,
-  TemplateRating,
-} from '@/src/lib/enterprise-api';
-import { Button } from '@/src/components/ui/button';
-import { Card } from '@/src/components/ui/card';
-import { Badge } from '@/src/components/ui/badge';
-import { Input } from '@/src/components/ui/input';
-import { Label } from '@/src/components/ui/label';
-import { Textarea } from '@/src/components/ui/textarea';
+} from '@/lib/enterprise-api';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/src/components/ui/select';
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -44,22 +40,23 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/src/components/ui/dialog';
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/src/components/ui/dropdown-menu';
+} from '@/components/ui/dropdown-menu';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/src/components/ui/tabs';
-import { Switch } from '@/src/components/ui/switch';
+} from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { cn } from '@/src/lib/utils';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 interface TemplatesMarketplaceProps {
   className?: string;
@@ -241,7 +238,6 @@ export function TemplatesMarketplace({
                 <TemplateCard
                   key={template.id}
                   template={template}
-                  onUse={handleUseTemplate}
                   onView={setSelectedTemplate}
                 />
               ))}
@@ -261,7 +257,6 @@ export function TemplatesMarketplace({
                 <TemplateCard
                   key={template.id}
                   template={template}
-                  onUse={handleUseTemplate}
                   onView={setSelectedTemplate}
                   featured
                 />
@@ -274,7 +269,7 @@ export function TemplatesMarketplace({
           {myTemplates.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <User className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>You haven't created any templates yet.</p>
+              <p>You haven&apos;t created any templates yet.</p>
               <Button
                 className="mt-4"
                 onClick={() => setIsDialogOpen(true)}
@@ -288,7 +283,6 @@ export function TemplatesMarketplace({
                 <TemplateCard
                   key={template.id}
                   template={template}
-                  onUse={handleUseTemplate}
                   onView={setSelectedTemplate}
                   onDelete={handleDeleteTemplate}
                   isOwner
@@ -320,7 +314,6 @@ export function TemplatesMarketplace({
 
 interface TemplateCardProps {
   template: Template;
-  onUse: (template: Template) => void;
   onView: (template: Template) => void;
   onDelete?: (templateId: string) => void;
   featured?: boolean;
@@ -329,7 +322,6 @@ interface TemplateCardProps {
 
 function TemplateCard({
   template,
-  onUse,
   onView,
   onDelete,
   featured,
@@ -346,9 +338,11 @@ function TemplateCard({
       {/* Thumbnail */}
       <div className="h-32 bg-gradient-to-br from-gray-100 to-gray-200 relative">
         {template.thumbnail ? (
-          <img
+          <Image
             src={template.thumbnail}
             alt={template.name}
+            width={400}
+            height={200}
             className="w-full h-full object-cover"
           />
         ) : (
@@ -506,9 +500,11 @@ function TemplatePreview({ template, onUse, onClose }: TemplatePreviewProps) {
       {/* Preview Image */}
       <div className="h-48 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden">
         {template.thumbnail ? (
-          <img
+          <Image
             src={template.thumbnail}
             alt={template.name}
+            width={400}
+            height={200}
             className="w-full h-full object-cover"
           />
         ) : (

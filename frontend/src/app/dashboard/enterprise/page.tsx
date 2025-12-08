@@ -1,20 +1,28 @@
 'use client';
 
 import { useState } from 'react';
-import { ExportButton, WidgetExportButton } from '@/src/components/dashboard/ExportButton';
-import { AIInsightsPanel } from '@/src/components/dashboard/AIInsightsPanel';
-import { AlertsManager } from '@/src/components/dashboard/AlertsManager';
-import { WebhooksManager } from '@/src/components/dashboard/WebhooksManager';
-import { ScheduledReportsManager } from '@/src/components/dashboard/ScheduledReportsManager';
-import { ShareLinksManager } from '@/src/components/dashboard/ShareLinksManager';
-import { CommentsSection } from '@/src/components/dashboard/CommentsSection';
-import { TemplatesMarketplace } from '@/src/components/dashboard/TemplatesMarketplace';
-import { BillingDashboard } from '@/src/components/dashboard/BillingDashboard';
-import { AnalyticsDashboard } from '@/src/components/dashboard/AnalyticsDashboard';
-import { IntegrationsHub } from '@/src/components/dashboard/IntegrationsHub';
-import { Card } from '@/src/components/ui/card';
-import { Badge } from '@/src/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/src/components/ui/tabs';
+import { ExportButton, WidgetExportButton } from '@/components/dashboard/ExportButton';
+import { AIInsightsPanel } from '@/components/dashboard/AIInsightsPanel';
+import { AlertsManager } from '@/components/dashboard/AlertsManager';
+import { WebhooksManager } from '@/components/dashboard/WebhooksManager';
+import { ScheduledReportsManager } from '@/components/dashboard/ScheduledReportsManager';
+import { ShareLinksManager } from '@/components/dashboard/ShareLinksManager';
+import { CommentsSection } from '@/components/dashboard/CommentsSection';
+import { TemplatesMarketplace } from '@/components/dashboard/TemplatesMarketplace';
+import { BillingDashboard } from '@/components/dashboard/BillingDashboard';
+import { AnalyticsDashboard } from '@/components/dashboard/AnalyticsDashboard';
+import { IntegrationsHub } from '@/components/dashboard/IntegrationsHub';
+import { AuditLogViewer } from '@/components/dashboard/AuditLogViewer';
+import { RoleManagementPanel } from '@/components/dashboard/RoleManagementPanel';
+import { FederatedSearchPanel } from '@/components/dashboard/FederatedSearchPanel';
+import { MLMarketplacePanel } from '@/components/dashboard/MLMarketplacePanel';
+import { VoiceDashboardPanel } from '@/components/dashboard/VoiceDashboardPanel';
+import { BlockchainAuditPanel } from '@/components/dashboard/BlockchainAuditPanel';
+import { ARVisualizationPanel } from '@/components/dashboard/ARVisualizationPanel';
+import { APIMarketplacePanel } from '@/components/dashboard/APIMarketplacePanel';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Download, 
   Brain, 
@@ -26,7 +34,12 @@ import {
   Palette, 
   CreditCard, 
   BarChart3, 
-  Plug 
+  Plug,
+  Users,
+  Search,
+  Activity,
+  Zap,
+  Puzzle
 } from 'lucide-react';
 
 /**
@@ -112,6 +125,38 @@ export default function EnterpriseDashboard() {
           <TabsTrigger value="integrations" className="flex items-center gap-2 px-3 py-2">
             <Plug className="h-4 w-4" />
             Integrations
+          </TabsTrigger>
+          <TabsTrigger value="audit" className="flex items-center gap-2 px-3 py-2">
+            <Download className="h-4 w-4" />
+            Audit Logs
+          </TabsTrigger>
+          <TabsTrigger value="roles" className="flex items-center gap-2 px-3 py-2">
+            <Users className="h-4 w-4" />
+            Roles
+          </TabsTrigger>
+          <TabsTrigger value="federated-search" className="flex items-center gap-2 px-3 py-2">
+            <Search className="h-4 w-4" />
+            Federated Search
+          </TabsTrigger>
+          <TabsTrigger value="ml-marketplace" className="flex items-center gap-2 px-3 py-2">
+            <Brain className="h-4 w-4" />
+            ML Marketplace
+          </TabsTrigger>
+          <TabsTrigger value="voice" className="flex items-center gap-2 px-3 py-2">
+            <MessageSquare className="h-4 w-4" />
+            Voice
+          </TabsTrigger>
+          <TabsTrigger value="blockchain" className="flex items-center gap-2 px-3 py-2">
+            <Activity className="h-4 w-4" />
+            Blockchain
+          </TabsTrigger>
+          <TabsTrigger value="ar" className="flex items-center gap-2 px-3 py-2">
+            <Zap className="h-4 w-4" />
+            AR
+          </TabsTrigger>
+          <TabsTrigger value="api-marketplace" className="flex items-center gap-2 px-3 py-2">
+            <Puzzle className="h-4 w-4" />
+            API Marketplace
           </TabsTrigger>
         </TabsList>
 
@@ -301,6 +346,46 @@ export default function EnterpriseDashboard() {
         {/* Integrations Tab */}
         <TabsContent value="integrations">
           <IntegrationsHub />
+        </TabsContent>
+
+        {/* Audit Logs */}
+        <TabsContent value="audit">
+          <AuditLogViewer />
+        </TabsContent>
+
+        {/* Roles */}
+        <TabsContent value="roles">
+          <RoleManagementPanel />
+        </TabsContent>
+
+        {/* Federated Search */}
+        <TabsContent value="federated-search">
+          <FederatedSearchPanel />
+        </TabsContent>
+
+        {/* ML Marketplace */}
+        <TabsContent value="ml-marketplace">
+          <MLMarketplacePanel />
+        </TabsContent>
+
+        {/* Voice */}
+        <TabsContent value="voice">
+          <VoiceDashboardPanel />
+        </TabsContent>
+
+        {/* Blockchain */}
+        <TabsContent value="blockchain">
+          <BlockchainAuditPanel />
+        </TabsContent>
+
+        {/* AR Visualization */}
+        <TabsContent value="ar">
+          <ARVisualizationPanel />
+        </TabsContent>
+
+        {/* API Marketplace */}
+        <TabsContent value="api-marketplace">
+          <APIMarketplacePanel />
         </TabsContent>
       </Tabs>
 

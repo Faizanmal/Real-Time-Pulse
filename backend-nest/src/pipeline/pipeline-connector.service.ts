@@ -31,7 +31,10 @@ export class PipelineConnectorService {
   /**
    * Fetch data from a source
    */
-  async fetchData(connectorType: ConnectorType, config: ConnectorConfig): Promise<any[]> {
+  async fetchData(
+    connectorType: ConnectorType,
+    config: ConnectorConfig,
+  ): Promise<any[]> {
     this.logger.log(`Fetching data from ${connectorType}`);
 
     switch (connectorType) {
@@ -55,7 +58,9 @@ export class PipelineConnectorService {
         return this.fetchFromElasticsearch(config);
 
       default:
-        throw new BadRequestException(`Unsupported connector type: ${connectorType}`);
+        throw new BadRequestException(
+          `Unsupported connector type: ${connectorType}`,
+        );
     }
   }
 
@@ -100,7 +105,9 @@ export class PipelineConnectorService {
         break;
 
       default:
-        throw new BadRequestException(`Unsupported connector type: ${connectorType}`);
+        throw new BadRequestException(
+          `Unsupported connector type: ${connectorType}`,
+        );
     }
   }
 
@@ -243,13 +250,19 @@ export class PipelineConnectorService {
   /**
    * Test a connector configuration
    */
-  async testConnection(connectorType: ConnectorType, config: ConnectorConfig): Promise<{
+  async testConnection(
+    connectorType: ConnectorType,
+    config: ConnectorConfig,
+  ): Promise<{
     success: boolean;
     message: string;
     sampleData?: any[];
   }> {
     try {
-      const sampleData = await this.fetchData(connectorType, { ...config, limit: 5 });
+      const sampleData = await this.fetchData(connectorType, {
+        ...config,
+        limit: 5,
+      });
       return {
         success: true,
         message: 'Connection successful',
@@ -335,7 +348,9 @@ export class PipelineConnectorService {
   ): Promise<any[]> {
     // In production, use actual database connection
     // For now, return mock data
-    this.logger.warn(`Database connector ${connectorType} not fully implemented`);
+    this.logger.warn(
+      `Database connector ${connectorType} not fully implemented`,
+    );
     return [];
   }
 
@@ -345,15 +360,24 @@ export class PipelineConnectorService {
     return [];
   }
 
-  private async fetchFromElasticsearch(config: ConnectorConfig): Promise<any[]> {
-    const { url, index, query = { match_all: {} }, username, password } = config;
+  private async fetchFromElasticsearch(
+    config: ConnectorConfig,
+  ): Promise<any[]> {
+    const {
+      url,
+      index,
+      query = { match_all: {} },
+      username,
+      password,
+    } = config;
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
 
     if (username && password) {
-      headers['Authorization'] = `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;
+      headers['Authorization'] =
+        `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;
     }
 
     const response = await fetch(`${url}/${index}/_search`, {
@@ -372,7 +396,10 @@ export class PipelineConnectorService {
 
   // ==================== Destination Connectors ====================
 
-  private async writeToRestApi(config: ConnectorConfig, data: any[]): Promise<void> {
+  private async writeToRestApi(
+    config: ConnectorConfig,
+    data: any[],
+  ): Promise<void> {
     const { url, method = 'POST', headers = {}, batchSize = 100 } = config;
 
     // Send data in batches
@@ -394,12 +421,20 @@ export class PipelineConnectorService {
     }
   }
 
-  private async writeToJson(config: ConnectorConfig, data: any[]): Promise<void> {
+  private async writeToJson(
+    config: ConnectorConfig,
+    data: any[],
+  ): Promise<void> {
     // In production, write to file or storage
-    this.logger.log(`Would write JSON: ${JSON.stringify(data).slice(0, 100)}...`);
+    this.logger.log(
+      `Would write JSON: ${JSON.stringify(data).slice(0, 100)}...`,
+    );
   }
 
-  private async writeToCsv(config: ConnectorConfig, data: any[]): Promise<void> {
+  private async writeToCsv(
+    config: ConnectorConfig,
+    data: any[],
+  ): Promise<void> {
     // In production, write to file or storage
     const csv = this.generateCsv(data, config.delimiter || ',');
     this.logger.log(`Would write CSV: ${csv.slice(0, 100)}...`);
@@ -411,7 +446,9 @@ export class PipelineConnectorService {
     data: any[],
   ): Promise<void> {
     // In production, use actual database connection
-    this.logger.warn(`Database write to ${connectorType} not fully implemented`);
+    this.logger.warn(
+      `Database write to ${connectorType} not fully implemented`,
+    );
   }
 
   private async writeToS3(config: ConnectorConfig, data: any[]): Promise<void> {
@@ -419,7 +456,10 @@ export class PipelineConnectorService {
     this.logger.warn('S3 write not fully implemented');
   }
 
-  private async writeToWebhook(config: ConnectorConfig, data: any[]): Promise<void> {
+  private async writeToWebhook(
+    config: ConnectorConfig,
+    data: any[],
+  ): Promise<void> {
     const { url, method = 'POST', headers = {}, batchSize = 100 } = config;
 
     for (let i = 0; i < data.length; i += batchSize) {
@@ -431,7 +471,10 @@ export class PipelineConnectorService {
           'Content-Type': 'application/json',
           ...headers,
         },
-        body: JSON.stringify({ data: batch, timestamp: new Date().toISOString() }),
+        body: JSON.stringify({
+          data: batch,
+          timestamp: new Date().toISOString(),
+        }),
       });
 
       if (!response.ok) {
@@ -440,7 +483,10 @@ export class PipelineConnectorService {
     }
   }
 
-  private async writeToElasticsearch(config: ConnectorConfig, data: any[]): Promise<void> {
+  private async writeToElasticsearch(
+    config: ConnectorConfig,
+    data: any[],
+  ): Promise<void> {
     const { url, index, username, password } = config;
 
     const headers: Record<string, string> = {
@@ -448,16 +494,18 @@ export class PipelineConnectorService {
     };
 
     if (username && password) {
-      headers['Authorization'] = `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;
+      headers['Authorization'] =
+        `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;
     }
 
     // Prepare bulk request
-    const bulkBody = data
-      .flatMap((doc) => [
-        JSON.stringify({ index: { _index: index } }),
-        JSON.stringify(doc),
-      ])
-      .join('\n') + '\n';
+    const bulkBody =
+      data
+        .flatMap((doc) => [
+          JSON.stringify({ index: { _index: index } }),
+          JSON.stringify(doc),
+        ])
+        .join('\n') + '\n';
 
     const response = await fetch(`${url}/_bulk`, {
       method: 'POST',
@@ -466,7 +514,9 @@ export class PipelineConnectorService {
     });
 
     if (!response.ok) {
-      throw new Error(`Elasticsearch bulk write failed: ${response.statusText}`);
+      throw new Error(
+        `Elasticsearch bulk write failed: ${response.statusText}`,
+      );
     }
   }
 
@@ -486,7 +536,11 @@ export class PipelineConnectorService {
     return current;
   }
 
-  private parseCsv(content: string, delimiter: string, hasHeader: boolean): any[] {
+  private parseCsv(
+    content: string,
+    delimiter: string,
+    hasHeader: boolean,
+  ): any[] {
     const lines = content.split('\n').filter((line) => line.trim());
     if (lines.length === 0) return [];
 

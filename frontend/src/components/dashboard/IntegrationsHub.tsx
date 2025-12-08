@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Puzzle,
   Github,
@@ -17,7 +17,7 @@ import {
   MessageSquare,
   Users,
 } from 'lucide-react';
-import { api } from '@/src/lib/api';
+import { api } from '@/lib/api';
 import {
   integrationsApi,
   JiraProject,
@@ -25,36 +25,36 @@ import {
   GitHubRepo,
   SlackChannel,
   HubSpotContact,
-  HubSpotDeal,
-} from '@/src/lib/enterprise-api';
-import { Button } from '@/src/components/ui/button';
-import { Card } from '@/src/components/ui/card';
-import { Badge } from '@/src/components/ui/badge';
-import { Input } from '@/src/components/ui/input';
-import { Label } from '@/src/components/ui/label';
-import { Textarea } from '@/src/components/ui/textarea';
+
+} from '@/lib/enterprise-api';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/src/components/ui/dialog';
+} from '@/components/ui/dialog';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/src/components/ui/tabs';
+} from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/src/components/ui/select';
+} from '@/components/ui/select';
 import { toast } from 'sonner';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 interface Integration {
   id: string;
@@ -580,11 +580,7 @@ function IntegrationDataSection({ integration }: IntegrationDataSectionProps) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<unknown>(null);
 
-  useEffect(() => {
-    loadData();
-  }, [integration.id, integration.provider]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       let result;
@@ -612,7 +608,11 @@ function IntegrationDataSection({ integration }: IntegrationDataSectionProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [integration.id, integration.provider]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   if (loading) {
     return (
@@ -633,13 +633,13 @@ function IntegrationDataSection({ integration }: IntegrationDataSectionProps) {
 
   switch (integration.provider.toLowerCase()) {
     case 'jira':
-      return <JiraDataView data={data as JiraProject[]} integrationId={integration.id} />;
+      return <JiraDataView data={data as JiraProject[]} />;
     case 'trello':
-      return <TrelloDataView data={data as TrelloBoard[]} integrationId={integration.id} />;
+      return <TrelloDataView data={data as TrelloBoard[]} />;
     case 'github':
-      return <GitHubDataView data={data as GitHubRepo[]} integrationId={integration.id} />;
+      return <GitHubDataView data={data as GitHubRepo[]} />;
     case 'hubspot':
-      return <HubSpotDataView data={data as HubSpotContact[]} integrationId={integration.id} />;
+      return <HubSpotDataView data={data as HubSpotContact[]} />;
     case 'slack':
       return <SlackDataView data={data as SlackChannel[]} integrationId={integration.id} />;
     default:
@@ -647,7 +647,7 @@ function IntegrationDataSection({ integration }: IntegrationDataSectionProps) {
   }
 }
 
-function JiraDataView({ data, integrationId }: { data: JiraProject[]; integrationId: string }) {
+function JiraDataView({ data }: { data: JiraProject[] }) {
   return (
     <div className="space-y-4">
       <h5 className="font-medium">Projects ({data.length})</h5>
@@ -670,7 +670,7 @@ function JiraDataView({ data, integrationId }: { data: JiraProject[]; integratio
   );
 }
 
-function TrelloDataView({ data, integrationId }: { data: TrelloBoard[]; integrationId: string }) {
+function TrelloDataView({ data }: { data: TrelloBoard[] }) {
   return (
     <div className="space-y-4">
       <h5 className="font-medium">Boards ({data.length})</h5>
@@ -694,7 +694,7 @@ function TrelloDataView({ data, integrationId }: { data: TrelloBoard[]; integrat
   );
 }
 
-function GitHubDataView({ data, integrationId }: { data: GitHubRepo[]; integrationId: string }) {
+function GitHubDataView({ data }: { data: GitHubRepo[] }) {
   return (
     <div className="space-y-4">
       <h5 className="font-medium">Repositories ({data.length})</h5>
@@ -725,7 +725,7 @@ function GitHubDataView({ data, integrationId }: { data: GitHubRepo[]; integrati
   );
 }
 
-function HubSpotDataView({ data, integrationId }: { data: HubSpotContact[]; integrationId: string }) {
+function HubSpotDataView({ data }: { data: HubSpotContact[] }) {
   return (
     <div className="space-y-4">
       <h5 className="font-medium">Contacts ({data.length})</h5>

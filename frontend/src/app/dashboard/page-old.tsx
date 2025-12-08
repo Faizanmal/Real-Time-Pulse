@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/src/store/auth';
-import { portalApi, workspaceApi } from '@/src/lib/api-client';
-import type { Portal, Workspace } from '@/src/types';
+import { useAuthStore } from '@/store/auth';
+import { portalApi, workspaceApi } from '@/lib/api-client';
+import type { Portal, Workspace } from '@/types';
 import Link from 'next/link';
 
 export default function DashboardPage() {

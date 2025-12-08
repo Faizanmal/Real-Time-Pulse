@@ -28,7 +28,10 @@ export function RequirePermissions(...permissions: Permission[]) {
 /**
  * Decorator to specify resource for permission check
  */
-export function ForResource(type: ResourceInfo['type'], idParam: string = 'id') {
+export function ForResource(
+  type: ResourceInfo['type'],
+  idParam: string = 'id',
+) {
   return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
     Reflect.defineMetadata(RESOURCE_KEY, { type, idParam }, descriptor.value);
     return descriptor;

@@ -448,7 +448,15 @@ export class AnalyticsService {
         acc[key].value += metric.value;
         return acc;
       },
-      {} as Record<string, any>,
+      {} as Record<
+        string,
+        {
+          workspaceId: string;
+          metricType: UsageMetricType;
+          portalId: string | null;
+          value: number;
+        }
+      >,
     );
 
     // Create daily aggregates

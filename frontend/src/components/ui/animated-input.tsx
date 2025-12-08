@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@/lib/utils";
 import { forwardRef, InputHTMLAttributes, ReactNode, useState } from "react";
 import { Eye, EyeOff, Search, X } from "lucide-react";
 

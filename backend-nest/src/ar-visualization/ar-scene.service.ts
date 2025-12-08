@@ -18,7 +18,11 @@ export interface ARSceneDefinition {
   root: SceneObject;
   lighting: {
     ambient: { color: string; intensity: number };
-    directional: Array<{ color: string; intensity: number; direction: [number, number, number] }>;
+    directional: Array<{
+      color: string;
+      intensity: number;
+      direction: [number, number, number];
+    }>;
   };
   environment: {
     skybox?: string;
@@ -89,7 +93,9 @@ export class ARSceneService {
       root,
       lighting: {
         ambient: { color: '#ffffff', intensity: 0.5 },
-        directional: [{ color: '#ffffff', intensity: 0.8, direction: [1, 1, 1] }],
+        directional: [
+          { color: '#ffffff', intensity: 0.8, direction: [1, 1, 1] },
+        ],
       },
       environment: {
         ground: { visible: true, color: '#cccccc' },
@@ -97,7 +103,11 @@ export class ARSceneService {
     };
 
     // Cache the scene
-    await this.cache.set(`ar_scene_def:${sceneId}`, JSON.stringify(scene), 3600);
+    await this.cache.set(
+      `ar_scene_def:${sceneId}`,
+      JSON.stringify(scene),
+      3600,
+    );
 
     return scene;
   }
@@ -122,7 +132,7 @@ export class ARSceneService {
         id: `bar-${index}`,
         type: 'mesh',
         name: `Bar ${index + 1}`,
-        position: [index * 0.5 - (chartData.length * 0.25), value / 20, 0],
+        position: [index * 0.5 - chartData.length * 0.25, value / 20, 0],
         rotation: [0, 0, 0],
         scale: [0.4, value / 10, 0.4],
         properties: {
@@ -320,7 +330,11 @@ export class ARSceneService {
           scale: [0.15, 0.15, 0.15],
           properties: {
             geometry: 'sphere',
-            material: { color: '#0099ff', emissive: '#0099ff', emissiveIntensity: 0.5 },
+            material: {
+              color: '#0099ff',
+              emissive: '#0099ff',
+              emissiveIntensity: 0.5,
+            },
             interaction: {
               gesture: 'tap',
               action: 'showInfo',
@@ -368,7 +382,7 @@ export class ARSceneService {
           id: `label-${index}`,
           type: 'text',
           name: `Label ${index}`,
-          position: [index * 0.5 - (labels.length * 0.25), -0.3, 0],
+          position: [index * 0.5 - labels.length * 0.25, -0.3, 0],
           rotation: [-Math.PI / 4, 0, 0],
           scale: [1, 1, 1],
           properties: {
@@ -416,7 +430,10 @@ export class ARSceneService {
   <a-scene embedded arjs>
 `;
 
-    const renderObject = (obj: SceneObject, indent: string = '    '): string => {
+    const renderObject = (
+      obj: SceneObject,
+      indent: string = '    ',
+    ): string => {
       let result = '';
       const pos = obj.position.join(' ');
       const rot = obj.rotation.map((r) => (r * 180) / Math.PI).join(' ');
@@ -471,7 +488,12 @@ export class ARSceneService {
     const result: any[] = [];
 
     const threeObj: any = {
-      type: obj.type === 'mesh' ? 'Mesh' : obj.type === 'text' ? 'Text' : 'Object3D',
+      type:
+        obj.type === 'mesh'
+          ? 'Mesh'
+          : obj.type === 'text'
+            ? 'Text'
+            : 'Object3D',
       name: obj.name,
       position: obj.position,
       rotation: obj.rotation,

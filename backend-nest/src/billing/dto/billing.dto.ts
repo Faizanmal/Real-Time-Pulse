@@ -1,15 +1,24 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsEnum, IsUrl, IsOptional, IsBoolean, IsNumber, Min } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsUrl,
+  IsOptional,
+  IsBoolean,
+  IsNumber,
+  Min,
+} from 'class-validator';
 
 export enum SubscriptionPlanTier {
-  FREE = 'FREE',
-  STARTER = 'STARTER',
-  PROFESSIONAL = 'PROFESSIONAL',
-  ENTERPRISE = 'ENTERPRISE',
+  PRO = 'PRO',
+  AGENCY = 'AGENCY',
 }
 
 export class CreateCheckoutDto {
-  @ApiProperty({ description: 'Plan to subscribe to', enum: SubscriptionPlanTier })
+  @ApiProperty({
+    description: 'Plan to subscribe to',
+    enum: SubscriptionPlanTier,
+  })
   @IsEnum(SubscriptionPlanTier)
   plan: SubscriptionPlanTier;
 
@@ -21,7 +30,10 @@ export class CreateCheckoutDto {
   @IsUrl()
   cancelUrl: string;
 
-  @ApiPropertyOptional({ description: 'Billing interval', enum: ['month', 'year'] })
+  @ApiPropertyOptional({
+    description: 'Billing interval',
+    enum: ['month', 'year'],
+  })
   @IsOptional()
   @IsString()
   interval?: 'month' | 'year';
@@ -94,12 +106,12 @@ export interface PlanPricing {
 }
 
 export const PLAN_PRICING: Record<SubscriptionPlanTier, PlanPricing> = {
-  [SubscriptionPlanTier.FREE]: {
-    id: 'free',
-    name: 'Free',
-    description: 'Perfect for getting started',
-    monthlyPrice: 0,
-    yearlyPrice: 0,
+  [SubscriptionPlanTier.PRO]: {
+    id: 'pro',
+    name: 'Pro',
+    description: 'Advanced features for growing teams',
+    monthlyPrice: 29,
+    yearlyPrice: 290,
     features: {
       portals: 1,
       widgets: 5,
@@ -116,35 +128,12 @@ export const PLAN_PRICING: Record<SubscriptionPlanTier, PlanPricing> = {
       customDomain: false,
     },
   },
-  [SubscriptionPlanTier.STARTER]: {
-    id: 'starter',
-    name: 'Starter',
-    description: 'For small teams and projects',
-    monthlyPrice: 29,
-    yearlyPrice: 290, // ~17% discount
-    features: {
-      portals: 5,
-      widgets: 25,
-      integrations: 5,
-      users: 3,
-      storage: 10,
-      apiCalls: 10000,
-      scheduledReports: 5,
-      customBranding: true,
-      prioritySupport: false,
-      sso: false,
-      advancedAnalytics: false,
-      auditLogs: false,
-      customDomain: false,
-    },
-    popular: false,
-  },
-  [SubscriptionPlanTier.PROFESSIONAL]: {
-    id: 'professional',
-    name: 'Professional',
-    description: 'For growing businesses',
-    monthlyPrice: 79,
-    yearlyPrice: 790, // ~17% discount
+  [SubscriptionPlanTier.AGENCY]: {
+    id: 'agency',
+    name: 'Agency',
+    description: 'Full-featured for agencies and enterprises',
+    monthlyPrice: 99,
+    yearlyPrice: 990,
     features: {
       portals: 20,
       widgets: 100,
@@ -155,33 +144,11 @@ export const PLAN_PRICING: Record<SubscriptionPlanTier, PlanPricing> = {
       scheduledReports: 25,
       customBranding: true,
       prioritySupport: true,
-      sso: false,
-      advancedAnalytics: true,
-      auditLogs: true,
-      customDomain: true,
-    },
-    popular: true,
-  },
-  [SubscriptionPlanTier.ENTERPRISE]: {
-    id: 'enterprise',
-    name: 'Enterprise',
-    description: 'For large organizations',
-    monthlyPrice: 199,
-    yearlyPrice: 1990, // ~17% discount
-    features: {
-      portals: -1, // unlimited
-      widgets: -1,
-      integrations: -1,
-      users: -1,
-      storage: 500,
-      apiCalls: -1,
-      scheduledReports: -1,
-      customBranding: true,
-      prioritySupport: true,
       sso: true,
       advancedAnalytics: true,
       auditLogs: true,
       customDomain: true,
     },
+    popular: true,
   },
 };

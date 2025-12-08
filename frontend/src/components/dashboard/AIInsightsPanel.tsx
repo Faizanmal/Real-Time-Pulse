@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Sparkles, TrendingUp, AlertTriangle, Lightbulb, X, Check } from 'lucide-react';
-import { aiInsightsApi, AIInsight } from '@/src/lib/enterprise-api';
-import { Button } from '@/src/components/ui/button';
-import { Card } from '@/src/components/ui/card';
-import { Badge } from '@/src/components/ui/badge';
+import { aiInsightsApi, AIInsight } from '@/lib/enterprise-api';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 interface AIInsightsPanelProps {
   portalId: string;

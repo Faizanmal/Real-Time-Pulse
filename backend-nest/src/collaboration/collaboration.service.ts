@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 
-interface WidgetChange {
+export interface WidgetChange {
   widgetId: string;
   changeType: 'config' | 'position' | 'size' | 'content';
   oldValue: any;
@@ -11,9 +11,9 @@ interface WidgetChange {
   userId: string;
 }
 
-interface ActivityLog {
+export interface ActivityLog {
   portalId: string;
-  odId: string;
+  userId: string;
   action: string;
   widgetId?: string;
   changeType?: string;
@@ -21,9 +21,9 @@ interface ActivityLog {
   metadata?: any;
 }
 
-interface ChatMessage {
+export interface ChatMessage {
   id: string;
-  odId?: string;
+  userId?: string;
   userName?: string;
   avatar?: string;
   message: string;
@@ -34,10 +34,10 @@ interface ChatMessage {
 @Injectable()
 export class CollaborationService {
   private readonly logger = new Logger(CollaborationService.name);
-  
+
   // In-memory change history for operational transformation
   private changeHistory: Map<string, WidgetChange[]> = new Map();
-  
+
   // Version vectors for each portal
   private versionVectors: Map<string, Map<string, number>> = new Map();
 
@@ -78,16 +78,16 @@ export class CollaborationService {
   ): Promise<WidgetChange> {
     // Get history for this portal
     const history = this.changeHistory.get(portalId) || [];
-    
+
     // Get version vector for this portal
     if (!this.versionVectors.has(portalId)) {
       this.versionVectors.set(portalId, new Map());
     }
     const versionVector = this.versionVectors.get(portalId)!;
-    
+
     // Get user's last known version
     const userVersion = versionVector.get(change.userId) || 0;
-    
+
     // Find concurrent changes (changes made by others after user's last change)
     const concurrentChanges = history.filter(
       (h) =>
@@ -98,9 +98,12 @@ export class CollaborationService {
 
     // Apply transformation based on change type
     let transformedChange = { ...change };
-    
+
     for (const concurrent of concurrentChanges) {
-      transformedChange = this.applyTransformation(transformedChange, concurrent);
+      transformedChange = this.applyTransformation(
+        transformedChange,
+        concurrent,
+      );
     }
 
     // Update version vector
@@ -180,7 +183,11 @@ export class CollaborationService {
 
     const result = { ...target };
     for (const key of Object.keys(source)) {
-      if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      if (
+        source[key] &&
+        typeof source[key] === 'object' &&
+        !Array.isArray(source[key])
+      ) {
         result[key] = this.deepMerge(target[key] || {}, source[key]);
       } else {
         result[key] = source[key];
@@ -200,13 +207,15 @@ export class CollaborationService {
       // Store in Redis for persistence
       const key = `collaboration:history:${portalId}`;
       const historyJson = await this.cache.get(key);
-      const history: WidgetChange[] = historyJson ? JSON.parse(historyJson) : [];
-      
+      const history: WidgetChange[] = historyJson
+        ? JSON.parse(historyJson)
+        : [];
+
       history.push(change);
-      
+
       // Keep last 100 changes per portal
       const trimmedHistory = history.slice(-100);
-      
+
       await this.cache.set(key, JSON.stringify(trimmedHistory), 3600); // 1 hour TTL
     } catch (error) {
       this.logger.error(`Error saving change history: ${error}`);
@@ -223,7 +232,9 @@ export class CollaborationService {
     try {
       const key = `collaboration:history:${portalId}`;
       const historyJson = await this.cache.get(key);
-      const history: WidgetChange[] = historyJson ? JSON.parse(historyJson) : [];
+      const history: WidgetChange[] = historyJson
+        ? JSON.parse(historyJson)
+        : [];
       return history.slice(-limit);
     } catch (error) {
       this.logger.error(`Error getting change history: ${error}`);
@@ -238,13 +249,15 @@ export class CollaborationService {
     try {
       const key = `collaboration:activity:${activity.portalId}`;
       const activityJson = await this.cache.get(key);
-      const activities: ActivityLog[] = activityJson ? JSON.parse(activityJson) : [];
-      
+      const activities: ActivityLog[] = activityJson
+        ? JSON.parse(activityJson)
+        : [];
+
       activities.push(activity);
-      
+
       // Keep last 200 activities per portal
       const trimmedActivities = activities.slice(-200);
-      
+
       await this.cache.set(key, JSON.stringify(trimmedActivities), 86400); // 24 hour TTL
     } catch (error) {
       this.logger.error(`Error logging activity: ${error}`);
@@ -261,7 +274,9 @@ export class CollaborationService {
     try {
       const key = `collaboration:activity:${portalId}`;
       const activityJson = await this.cache.get(key);
-      const activities: ActivityLog[] = activityJson ? JSON.parse(activityJson) : [];
+      const activities: ActivityLog[] = activityJson
+        ? JSON.parse(activityJson)
+        : [];
       return activities.slice(-limit).reverse();
     } catch (error) {
       this.logger.error(`Error getting activity feed: ${error}`);
@@ -276,13 +291,15 @@ export class CollaborationService {
     try {
       const key = `collaboration:chat:${portalId}`;
       const messagesJson = await this.cache.get(key);
-      const messages: ChatMessage[] = messagesJson ? JSON.parse(messagesJson) : [];
-      
+      const messages: ChatMessage[] = messagesJson
+        ? JSON.parse(messagesJson)
+        : [];
+
       messages.push(message);
-      
+
       // Keep last 500 messages per portal
       const trimmedMessages = messages.slice(-500);
-      
+
       await this.cache.set(key, JSON.stringify(trimmedMessages), 86400); // 24 hour TTL
     } catch (error) {
       this.logger.error(`Error saving chat message: ${error}`);
@@ -299,7 +316,9 @@ export class CollaborationService {
     try {
       const key = `collaboration:chat:${portalId}`;
       const messagesJson = await this.cache.get(key);
-      const messages: ChatMessage[] = messagesJson ? JSON.parse(messagesJson) : [];
+      const messages: ChatMessage[] = messagesJson
+        ? JSON.parse(messagesJson)
+        : [];
       return messages.slice(-limit);
     } catch (error) {
       this.logger.error(`Error getting chat messages: ${error}`);
@@ -321,15 +340,19 @@ export class CollaborationService {
         this.cache.get(`collaboration:activity:${portalId}`),
       ]);
 
-      const history: WidgetChange[] = historyJson ? JSON.parse(historyJson) : [];
-      const activities: ActivityLog[] = activityJson ? JSON.parse(activityJson) : [];
+      const history: WidgetChange[] = historyJson
+        ? JSON.parse(historyJson)
+        : [];
+      const activities: ActivityLog[] = activityJson
+        ? JSON.parse(activityJson)
+        : [];
 
       // Count unique users in last hour
       const oneHourAgo = Date.now() - 3600000;
       const recentActivities = activities.filter(
         (a) => new Date(a.timestamp).getTime() > oneHourAgo,
       );
-      const activeUsers = new Set(recentActivities.map((a) => a.odId)).size;
+      const activeUsers = new Set(recentActivities.map((a) => a.userId)).size;
 
       return {
         totalEdits: history.length,
@@ -352,7 +375,7 @@ export class CollaborationService {
         this.cache.del(`collaboration:activity:${portalId}`),
         this.cache.del(`collaboration:chat:${portalId}`),
       ]);
-      
+
       this.changeHistory.delete(portalId);
       this.versionVectors.delete(portalId);
     } catch (error) {

@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import { Download, FileText, Table, File } from 'lucide-react';
-import { exportApi, downloadBlob } from '@/src/lib/enterprise-api';
-import { Button } from '@/src/components/ui/button';
+import { exportApi, downloadBlob } from '@/lib/enterprise-api';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/src/components/ui/dropdown-menu';
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 
 interface ExportButtonProps {

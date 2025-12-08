@@ -37,7 +37,10 @@ export class ScheduledReportsService {
     }
 
     // Calculate next run time
-    const nextRunAt = this.calculateNextRun(dto.schedule, dto.timezone || 'UTC');
+    const nextRunAt = this.calculateNextRun(
+      dto.schedule,
+      dto.timezone || 'UTC',
+    );
 
     const report = await this.prisma.scheduledReport.create({
       data: {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Link2,
   Plus,
@@ -8,7 +8,6 @@ import {
   Copy,
   RefreshCw,
   Eye,
-  EyeOff,
   Lock,
   Globe,
   Clock,
@@ -19,10 +18,10 @@ import {
   shareLinksApi,
   ShareLink,
   CreateShareLinkDto,
-} from '@/src/lib/enterprise-api';
-import { Button } from '@/src/components/ui/button';
-import { Card } from '@/src/components/ui/card';
-import { Badge } from '@/src/components/ui/badge';
+} from '@/lib/enterprise-api';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -30,25 +29,25 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/src/components/ui/dialog';
-import { Input } from '@/src/components/ui/input';
-import { Label } from '@/src/components/ui/label';
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/src/components/ui/select';
-import { Switch } from '@/src/components/ui/switch';
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/src/components/ui/dropdown-menu';
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 interface ShareLinksManagerProps {
   className?: string;
@@ -65,11 +64,7 @@ export function ShareLinksManager({
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  useEffect(() => {
-    loadLinks();
-  }, []);
-
-  const loadLinks = async () => {
+  const loadLinks = useCallback(async () => {
     try {
       const data = await shareLinksApi.getAll();
       // Filter by resource if specified
@@ -85,7 +80,11 @@ export function ShareLinksManager({
     } finally {
       setLoading(false);
     }
-  };
+  }, [resourceType, resourceId]);
+
+  useEffect(() => {
+    loadLinks();
+  }, [loadLinks]);
 
   const deleteLink = async (linkId: string) => {
     if (!confirm('Are you sure you want to delete this share link?')) return;

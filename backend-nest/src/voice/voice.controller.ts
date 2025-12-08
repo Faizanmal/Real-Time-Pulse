@@ -12,10 +12,18 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { VoiceService } from './voice.service';
 import { VoiceCommandService } from './voice-command.service';
+import { RequestUser } from '../common/interfaces/auth.interface';
 
 @ApiTags('Voice')
 @ApiBearerAuth()
@@ -41,16 +49,25 @@ export class VoiceController {
   @Post('command')
   @ApiOperation({ summary: 'Process voice command' })
   async processCommand(
-    @Request() req: any,
+    @Request() req: { user: RequestUser },
     @Body() dto: { transcript: string },
   ) {
-    return this.voiceService.processVoiceCommand(req.user.workspaceId, dto.transcript);
+    return this.voiceService.processVoiceCommand(
+      req.user.workspaceId,
+      dto.transcript,
+    );
   }
 
   @Post('synthesize')
   @ApiOperation({ summary: 'Generate speech from text' })
   async synthesize(
-    @Body() dto: { text: string; voice?: string; rate?: number; pitch?: number },
+    @Body()
+    dto: {
+      text: string;
+      voice?: string;
+      rate?: number;
+      pitch?: number;
+    },
   ) {
     return this.voiceService.synthesizeSpeech(dto.text, dto);
   }
@@ -58,16 +75,30 @@ export class VoiceController {
   @Post('annotations')
   @ApiOperation({ summary: 'Create voice annotation' })
   async createAnnotation(
-    @Request() req: any,
-    @Body() dto: { portalId: string; widgetId?: string; transcript: string; audioUrl?: string; timestamp?: number },
+    @Request() req: { user: RequestUser },
+    @Body()
+    dto: {
+      portalId: string;
+      widgetId?: string;
+      transcript: string;
+      audioUrl?: string;
+      timestamp?: number;
+    },
   ) {
-    return this.voiceService.createAnnotation(req.user.workspaceId, req.user.sub, dto);
+    return this.voiceService.createAnnotation(
+      req.user.workspaceId,
+      req.user.id,
+      dto,
+    );
   }
 
   @Get('annotations/:portalId')
   @ApiOperation({ summary: 'Get annotations for a portal' })
   @ApiParam({ name: 'portalId', description: 'Portal ID' })
-  async getAnnotations(@Request() req: any, @Param('portalId') portalId: string) {
+  async getAnnotations(
+    @Request() req: { user: RequestUser },
+    @Param('portalId') portalId: string,
+  ) {
     return this.voiceService.getAnnotations(req.user.workspaceId, portalId);
   }
 
@@ -76,11 +107,15 @@ export class VoiceController {
   @ApiParam({ name: 'portalId', description: 'Portal ID' })
   @ApiParam({ name: 'annotationId', description: 'Annotation ID' })
   async deleteAnnotation(
-    @Request() req: any,
+    @Request() req: { user: RequestUser },
     @Param('portalId') portalId: string,
     @Param('annotationId') annotationId: string,
   ) {
-    await this.voiceService.deleteAnnotation(req.user.workspaceId, portalId, annotationId);
+    await this.voiceService.deleteAnnotation(
+      req.user.workspaceId,
+      portalId,
+      annotationId,
+    );
     return { success: true };
   }
 
@@ -104,11 +139,14 @@ export class VoiceController {
 
   @Post('accessibility/describe')
   @ApiOperation({ summary: 'Generate accessibility description for widget' })
-  async generateDescription(@Body() dto: { widgetType: string; widgetData: any }) {
-    const description = await this.voiceService.generateAccessibilityDescription(
-      dto.widgetType,
-      dto.widgetData,
-    );
+  async generateDescription(
+    @Body() dto: { widgetType: string; widgetData: Record<string, unknown> },
+  ) {
+    const description =
+      await this.voiceService.generateAccessibilityDescription(
+        dto.widgetType,
+        dto.widgetData,
+      );
     return { description };
   }
 }

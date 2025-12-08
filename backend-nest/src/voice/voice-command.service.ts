@@ -15,7 +15,8 @@ export class VoiceCommandService {
   private readonly commandPatterns: CommandPattern[] = [
     // Navigation commands
     {
-      pattern: /(?:show|open|go to|navigate to)\s+(?:the\s+)?(.+?)(?:\s+dashboard|\s+portal)?$/i,
+      pattern:
+        /(?:show|open|go to|navigate to)\s+(?:the\s+)?(.+?)(?:\s+dashboard|\s+portal)?$/i,
       action: 'navigate',
       extractParams: (match) => ({ target: match[1].trim() }),
     },
@@ -32,9 +33,13 @@ export class VoiceCommandService {
 
     // Filter commands
     {
-      pattern: /(?:filter|show|display)\s+(?:by\s+)?(?:the\s+)?(?:last\s+)?(\d+)\s+(days?|weeks?|months?|years?)$/i,
+      pattern:
+        /(?:filter|show|display)\s+(?:by\s+)?(?:the\s+)?(?:last\s+)?(\d+)\s+(days?|weeks?|months?|years?)$/i,
       action: 'filter_time',
-      extractParams: (match) => ({ amount: parseInt(match[1]), unit: match[2].replace(/s$/, '') }),
+      extractParams: (match) => ({
+        amount: parseInt(match[1]),
+        unit: match[2].replace(/s$/, ''),
+      }),
     },
     {
       pattern: /(?:filter|show)\s+(?:from\s+)?(.+?)\s+to\s+(.+)$/i,
@@ -54,36 +59,42 @@ export class VoiceCommandService {
 
     // Data commands
     {
-      pattern: /(?:refresh|reload|update)\s+(?:the\s+)?(?:data|dashboard|view)?$/i,
+      pattern:
+        /(?:refresh|reload|update)\s+(?:the\s+)?(?:data|dashboard|view)?$/i,
       action: 'refresh',
       extractParams: () => ({}),
     },
     {
-      pattern: /(?:export|download)\s+(?:the\s+)?(?:data|report)?\s*(?:as\s+)?(?:to\s+)?(csv|excel|pdf)?$/i,
+      pattern:
+        /(?:export|download)\s+(?:the\s+)?(?:data|report)?\s*(?:as\s+)?(?:to\s+)?(csv|excel|pdf)?$/i,
       action: 'export',
       extractParams: (match) => ({ format: match[1] || 'csv' }),
     },
 
     // Widget commands
     {
-      pattern: /(?:zoom|focus)\s+(?:in\s+)?(?:on\s+)?(?:the\s+)?(.+?)(?:\s+widget|\s+chart)?$/i,
+      pattern:
+        /(?:zoom|focus)\s+(?:in\s+)?(?:on\s+)?(?:the\s+)?(.+?)(?:\s+widget|\s+chart)?$/i,
       action: 'zoom_widget',
       extractParams: (match) => ({ widgetName: match[1] }),
     },
     {
-      pattern: /(?:expand|maximize)\s+(?:the\s+)?(.+?)(?:\s+widget|\s+chart)?$/i,
+      pattern:
+        /(?:expand|maximize)\s+(?:the\s+)?(.+?)(?:\s+widget|\s+chart)?$/i,
       action: 'expand_widget',
       extractParams: (match) => ({ widgetName: match[1] }),
     },
     {
-      pattern: /(?:collapse|minimize)\s+(?:the\s+)?(.+?)(?:\s+widget|\s+chart)?$/i,
+      pattern:
+        /(?:collapse|minimize)\s+(?:the\s+)?(.+?)(?:\s+widget|\s+chart)?$/i,
       action: 'collapse_widget',
       extractParams: (match) => ({ widgetName: match[1] }),
     },
 
     // Insight commands
     {
-      pattern: /(?:what(?:'s| is)?|tell me)\s+(?:the\s+)?(?:current\s+)?(.+?)(?:\s+value|\s+metric)?$/i,
+      pattern:
+        /(?:what(?:'s| is)?|tell me)\s+(?:the\s+)?(?:current\s+)?(.+?)(?:\s+value|\s+metric)?$/i,
       action: 'get_metric',
       extractParams: (match) => ({ metric: match[1] }),
     },
@@ -100,7 +111,8 @@ export class VoiceCommandService {
 
     // Alert commands
     {
-      pattern: /(?:set|create)\s+(?:an?\s+)?alert\s+(?:for\s+)?(.+?)\s+(?:when|if)\s+(.+)$/i,
+      pattern:
+        /(?:set|create)\s+(?:an?\s+)?alert\s+(?:for\s+)?(.+?)\s+(?:when|if)\s+(.+)$/i,
       action: 'create_alert',
       extractParams: (match) => ({ metric: match[1], condition: match[2] }),
     },
@@ -121,7 +133,7 @@ export class VoiceCommandService {
   /**
    * Parse a voice command from transcript
    */
-  async parseCommand(transcript: string): Promise<VoiceCommand | null> {
+  parseCommand(transcript: string): VoiceCommand | null {
     const normalizedTranscript = transcript.trim().toLowerCase();
 
     for (const pattern of this.commandPatterns) {
@@ -152,18 +164,21 @@ export class VoiceCommandService {
   /**
    * Execute a parsed command
    */
-  async executeCommand(
+  executeCommand(
     workspaceId: string,
     command: VoiceCommand,
-  ): Promise<{
+  ): {
     response: string;
-    action?: { type: string; payload: any };
-  }> {
+    action?: { type: string; payload: Record<string, unknown> };
+  } {
     switch (command.action) {
       case 'navigate':
         return {
           response: `Opening ${command.parameters?.target}`,
-          action: { type: 'NAVIGATE', payload: { target: command.parameters?.target } },
+          action: {
+            type: 'NAVIGATE',
+            payload: { target: command.parameters?.target },
+          },
         };
 
       case 'navigate_back':
@@ -178,23 +193,30 @@ export class VoiceCommandService {
           action: { type: 'NAVIGATE_HOME', payload: {} },
         };
 
-      case 'filter_time':
+      case 'filter_time': {
         const { amount, unit } = command.parameters || {};
         return {
           response: `Filtering to show the last ${amount} ${unit}${amount > 1 ? 's' : ''}`,
           action: { type: 'FILTER_TIME', payload: { amount, unit } },
         };
+      }
 
       case 'filter_date_range':
         return {
           response: `Filtering from ${command.parameters?.from} to ${command.parameters?.to}`,
-          action: { type: 'FILTER_DATE_RANGE', payload: command.parameters },
+          action: {
+            type: 'FILTER_DATE_RANGE',
+            payload: command.parameters || {},
+          },
         };
 
       case 'filter_category':
         return {
           response: `Showing ${command.parameters?.category} data`,
-          action: { type: 'FILTER_CATEGORY', payload: { category: command.parameters?.category } },
+          action: {
+            type: 'FILTER_CATEGORY',
+            payload: { category: command.parameters?.category },
+          },
         };
 
       case 'clear_filters':
@@ -212,44 +234,59 @@ export class VoiceCommandService {
       case 'export':
         return {
           response: `Exporting data as ${command.parameters?.format || 'CSV'}`,
-          action: { type: 'EXPORT', payload: { format: command.parameters?.format } },
+          action: {
+            type: 'EXPORT',
+            payload: { format: command.parameters?.format },
+          },
         };
 
       case 'zoom_widget':
       case 'expand_widget':
         return {
           response: `Expanding ${command.parameters?.widgetName}`,
-          action: { type: 'EXPAND_WIDGET', payload: { widgetName: command.parameters?.widgetName } },
+          action: {
+            type: 'EXPAND_WIDGET',
+            payload: { widgetName: command.parameters?.widgetName },
+          },
         };
 
       case 'collapse_widget':
         return {
           response: `Minimizing ${command.parameters?.widgetName}`,
-          action: { type: 'COLLAPSE_WIDGET', payload: { widgetName: command.parameters?.widgetName } },
+          action: {
+            type: 'COLLAPSE_WIDGET',
+            payload: { widgetName: command.parameters?.widgetName },
+          },
         };
 
       case 'get_metric':
         return {
           response: `Looking up ${command.parameters?.metric}`,
-          action: { type: 'GET_METRIC', payload: { metric: command.parameters?.metric } },
+          action: {
+            type: 'GET_METRIC',
+            payload: { metric: command.parameters?.metric },
+          },
         };
 
       case 'summarize':
         return {
           response: `Generating summary for ${command.parameters?.target}`,
-          action: { type: 'SUMMARIZE', payload: { target: command.parameters?.target } },
+          action: {
+            type: 'SUMMARIZE',
+            payload: { target: command.parameters?.target },
+          },
         };
 
       case 'compare':
         return {
           response: `Comparing ${command.parameters?.item1} with ${command.parameters?.item2}`,
-          action: { type: 'COMPARE', payload: command.parameters },
+          action: { type: 'COMPARE', payload: command.parameters || {} },
         };
 
       case 'create_alert':
         return {
           response: `Creating alert for ${command.parameters?.metric}`,
-          action: { type: 'CREATE_ALERT', payload: command.parameters },
+          action: { type: 'CREATE_ALERT', payload: command.parameters || {} },
         };
 
       case 'show_alerts':
@@ -265,7 +302,8 @@ export class VoiceCommandService {
 
       default:
         return {
-          response: "I'm not sure how to do that. Try saying 'help' for available commands.",
+          response:
+            "I'm not sure how to do that. Try saying 'help' for available commands.",
         };
     }
   }
@@ -273,9 +311,14 @@ export class VoiceCommandService {
   /**
    * Fuzzy match for common variations
    */
-  private fuzzyMatch(transcript: string): Omit<VoiceCommand, 'confidence'> | null {
+  private fuzzyMatch(
+    transcript: string,
+  ): Omit<VoiceCommand, 'confidence'> | null {
     // Common phrase variations
-    const variations: Record<string, { action: string; parameters?: Record<string, any> }> = {
+    const variations: Record<
+      string,
+      { action: string; parameters?: Record<string, any> }
+    > = {
       'go back': { action: 'navigate_back' },
       'previous page': { action: 'navigate_back' },
       'main page': { action: 'navigate_home' },
@@ -321,12 +364,31 @@ export class VoiceCommandService {
    */
   getAvailableCommands() {
     return [
-      { category: 'Navigation', commands: ['Show [dashboard]', 'Go back', 'Go home'] },
-      { category: 'Filters', commands: ['Filter by last [N] [days/weeks/months]', 'Clear filters'] },
+      {
+        category: 'Navigation',
+        commands: ['Show [dashboard]', 'Go back', 'Go home'],
+      },
+      {
+        category: 'Filters',
+        commands: ['Filter by last [N] [days/weeks/months]', 'Clear filters'],
+      },
       { category: 'Data', commands: ['Refresh', 'Export as [CSV/Excel/PDF]'] },
-      { category: 'Widgets', commands: ['Expand [widget]', 'Collapse [widget]'] },
-      { category: 'Insights', commands: ["What's the [metric]?", 'Summarize [target]', 'Compare [A] and [B]'] },
-      { category: 'Alerts', commands: ['Set alert for [metric] when [condition]', 'Show alerts'] },
+      {
+        category: 'Widgets',
+        commands: ['Expand [widget]', 'Collapse [widget]'],
+      },
+      {
+        category: 'Insights',
+        commands: [
+          "What's the [metric]?",
+          'Summarize [target]',
+          'Compare [A] and [B]',
+        ],
+      },
+      {
+        category: 'Alerts',
+        commands: ['Set alert for [metric] when [condition]', 'Show alerts'],
+      },
     ];
   }
 }

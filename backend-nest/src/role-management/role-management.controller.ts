@@ -10,7 +10,13 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RoleManagementService, Permission } from './role-management.service';
 
@@ -46,7 +52,13 @@ export class RoleManagementController {
   @ApiOperation({ summary: 'Create a custom role' })
   async createRole(
     @Request() req: any,
-    @Body() dto: { name: string; description?: string; permissions: Permission[]; parentRoleId?: string },
+    @Body()
+    dto: {
+      name: string;
+      description?: string;
+      permissions: Permission[];
+      parentRoleId?: string;
+    },
   ) {
     return this.roleService.createRole(req.user.workspaceId, dto);
   }
@@ -57,7 +69,8 @@ export class RoleManagementController {
   async updateRole(
     @Request() req: any,
     @Param('roleId') roleId: string,
-    @Body() dto: { name?: string; description?: string; permissions?: Permission[] },
+    @Body()
+    dto: { name?: string; description?: string; permissions?: Permission[] },
   ) {
     return this.roleService.updateRole(req.user.workspaceId, roleId, dto);
   }
@@ -76,7 +89,8 @@ export class RoleManagementController {
   @ApiOperation({ summary: 'Grant resource-level permissions' })
   async grantResourcePermission(
     @Request() req: any,
-    @Body() dto: {
+    @Body()
+    dto: {
       userId: string;
       resourceType: 'portal' | 'widget' | 'workspace';
       resourceId: string;
@@ -86,7 +100,7 @@ export class RoleManagementController {
   ) {
     return this.roleService.grantResourcePermission(
       req.user.workspaceId,
-      req.user.sub,
+      req.user.id,
       {
         ...dto,
         expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : undefined,
@@ -107,7 +121,7 @@ export class RoleManagementController {
       req.user.workspaceId,
       userId,
       permissionId,
-      req.user.sub,
+      req.user.id,
     );
     return { success: true };
   }
@@ -119,14 +133,18 @@ export class RoleManagementController {
     @Request() req: any,
     @Param('userId') userId: string,
   ) {
-    return this.roleService.getUserResourcePermissions(req.user.workspaceId, userId);
+    return this.roleService.getUserResourcePermissions(
+      req.user.workspaceId,
+      userId,
+    );
   }
 
   @Post('check-permission')
   @ApiOperation({ summary: 'Check if user has permission' })
   async checkPermission(
     @Request() req: any,
-    @Body() dto: {
+    @Body()
+    dto: {
       userId: string;
       permission: Permission;
       resourceType?: 'portal' | 'widget' | 'workspace';
@@ -155,7 +173,8 @@ export class RoleManagementController {
   @ApiOperation({ summary: 'Create an approval workflow' })
   async createWorkflow(
     @Request() req: any,
-    @Body() dto: {
+    @Body()
+    dto: {
       name: string;
       triggerAction: string;
       requiredApprovers: number;
@@ -180,7 +199,8 @@ export class RoleManagementController {
   @ApiOperation({ summary: 'Create an approval request' })
   async createApprovalRequest(
     @Request() req: any,
-    @Body() dto: {
+    @Body()
+    dto: {
       workflowId: string;
       action: string;
       resourceType: string;
@@ -190,7 +210,7 @@ export class RoleManagementController {
   ) {
     return this.roleService.createApprovalRequest(
       req.user.workspaceId,
-      req.user.sub,
+      req.user.id,
       dto,
     );
   }
@@ -206,7 +226,7 @@ export class RoleManagementController {
     return this.roleService.processApprovalDecision(
       req.user.workspaceId,
       requestId,
-      req.user.sub,
+      req.user.id,
       dto.decision,
       dto.comment,
     );

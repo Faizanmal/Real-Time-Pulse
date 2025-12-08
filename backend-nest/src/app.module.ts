@@ -31,6 +31,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { SecurityModule } from './security/security.module';
 import { RequestContextMiddleware } from './common/middleware/request-context.middleware';
 import { HttpLoggerMiddleware } from './common/middleware/http-logger.middleware';
+import { SecurityMiddleware } from './common/middleware/security.middleware';
 
 // New Advanced Feature Modules
 import { CollaborationModule } from './collaboration/collaboration.module';
@@ -55,6 +56,8 @@ import throttleConfig from './config/throttle.config';
 import emailConfig from './config/email.config';
 import loggerConfig from './config/logger.config';
 import billingConfig from './config/billing.config';
+import securityConfig from './config/security.config';
+import firebaseConfig from './config/firebase.config';
 
 @Module({
   imports: [
@@ -71,20 +74,41 @@ import billingConfig from './config/billing.config';
         emailConfig,
         loggerConfig,
         billingConfig,
+        securityConfig,
+        firebaseConfig,
       ],
     }),
-    // Rate limiting
+    // Rate limiting - enhanced configuration
     ThrottlerModule.forRootAsync({
       useFactory: () => ({
         throttlers: [
           {
+            name: 'short',
+            ttl: 1000, // 1 second
+            limit: 10, // 10 requests per second
+          },
+          {
             name: 'default',
             ttl: 60000, // 1 minute
-            limit: 100,
+            limit: 100, // 100 requests per minute
+          },
+          {
+            name: 'long',
+            ttl: 3600000, // 1 hour
+            limit: 1000, // 1000 requests per hour
           },
         ],
+        // Skip throttling for whitelisted IPs (internal services)
+        skipIf: (context) => {
+          const request = context.switchToHttp().getRequest();
+          const whitelisted = ['127.0.0.1', '::1'];
+          return whitelisted.includes(request.ip);
+        },
       }),
     }),
+    // Schedule module for cron jobs (backups, cleanup)
+    ScheduleModule.forRoot(),
+    // Core modules
     PrismaModule,
     CommonModule,
     CacheModule,
@@ -102,8 +126,6 @@ import billingConfig from './config/billing.config';
     AIInsightsModule,
     AlertsModule,
     WebhooksModule,
-    // New feature modules
-    ScheduleModule.forRoot(),
     ScheduledReportsModule,
     ShareLinksModule,
     CommentsModule,
@@ -136,7 +158,7 @@ import billingConfig from './config/billing.config';
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(RequestContextMiddleware, HttpLoggerMiddleware)
+      .apply(RequestContextMiddleware, HttpLoggerMiddleware, SecurityMiddleware)
       .forRoutes('*');
   }
 }

@@ -325,7 +325,8 @@ export class AIInsightsService {
     const daysSinceCreation = Math.floor(
       (now.getTime() - portal.createdAt.getTime()) / (1000 * 60 * 60 * 24),
     );
-    const widgetGrowthRate = portal.widgets.length / Math.max(daysSinceCreation, 1);
+    const widgetGrowthRate =
+      portal.widgets.length / Math.max(daysSinceCreation, 1);
 
     if (widgetGrowthRate < 0.1 && daysSinceCreation > 7) {
       insights.push({
@@ -546,34 +547,32 @@ export class AIInsightsService {
   /**
    * Gather context for AI queries
    */
-  private async gatherWorkspaceContext(
-    workspaceId: string,
-    portalId?: string,
-  ) {
-    const [workspace, portals, integrations, recentInsights] = await Promise.all([
-      this.prisma.workspace.findUnique({
-        where: { id: workspaceId },
-        select: { name: true, createdAt: true },
-      }),
-      this.prisma.portal.findMany({
-        where: { workspaceId },
-        select: {
-          id: true,
-          name: true,
-          _count: { select: { widgets: true } },
-        },
-        take: 10,
-      }),
-      this.prisma.integration.findMany({
-        where: { workspaceId },
-        select: { provider: true, status: true },
-      }),
-      this.prisma.aIInsight.findMany({
-        where: { workspaceId, status: { not: 'DISMISSED' } },
-        select: { type: true, title: true, severity: true },
-        take: 5,
-      }),
-    ]);
+  private async gatherWorkspaceContext(workspaceId: string, portalId?: string) {
+    const [workspace, portals, integrations, recentInsights] =
+      await Promise.all([
+        this.prisma.workspace.findUnique({
+          where: { id: workspaceId },
+          select: { name: true, createdAt: true },
+        }),
+        this.prisma.portal.findMany({
+          where: { workspaceId },
+          select: {
+            id: true,
+            name: true,
+            _count: { select: { widgets: true } },
+          },
+          take: 10,
+        }),
+        this.prisma.integration.findMany({
+          where: { workspaceId },
+          select: { provider: true, status: true },
+        }),
+        this.prisma.aIInsight.findMany({
+          where: { workspaceId, status: { not: 'DISMISSED' } },
+          select: { type: true, title: true, severity: true },
+          take: 5,
+        }),
+      ]);
 
     return {
       workspace,

@@ -11,7 +11,7 @@ import {
   CreatePortalTemplateDto,
   UpdatePortalTemplateDto,
 } from './dto/template.dto';
-import { TemplateCategory } from '@prisma/client';
+import { TemplateCategory, WidgetType } from '@prisma/client';
 
 @Injectable()
 export class TemplatesService {
@@ -75,13 +75,20 @@ export class TemplatesService {
                 OR: [{ isPublic: true }, { workspaceId }],
               },
           ...(category ? [{ category }] : []),
-          ...(widgetType ? [{ widgetType: widgetType as any }] : []),
+          ...(widgetType ? [{ widgetType: widgetType as WidgetType }] : []),
           ...(search
             ? [
                 {
                   OR: [
-                    { name: { contains: search, mode: 'insensitive' as const } },
-                    { description: { contains: search, mode: 'insensitive' as const } },
+                    {
+                      name: { contains: search, mode: 'insensitive' as const },
+                    },
+                    {
+                      description: {
+                        contains: search,
+                        mode: 'insensitive' as const,
+                      },
+                    },
                     { tags: { has: search } },
                   ],
                 },
@@ -238,8 +245,15 @@ export class TemplatesService {
             ? [
                 {
                   OR: [
-                    { name: { contains: search, mode: 'insensitive' as const } },
-                    { description: { contains: search, mode: 'insensitive' as const } },
+                    {
+                      name: { contains: search, mode: 'insensitive' as const },
+                    },
+                    {
+                      description: {
+                        contains: search,
+                        mode: 'insensitive' as const,
+                      },
+                    },
                     { tags: { has: search } },
                   ],
                 },
@@ -359,14 +373,22 @@ export class TemplatesService {
     });
 
     // Create widgets from template
-    const widgetConfigs = template.widgetConfigs as any[];
+    const widgetConfigs = template.widgetConfigs as {
+      name?: string;
+      type: string;
+      config?: Record<string, unknown>;
+      gridX?: number;
+      gridY?: number;
+      gridWidth?: number;
+      gridHeight?: number;
+    }[];
     if (widgetConfigs && widgetConfigs.length > 0) {
       await this.prisma.widget.createMany({
         data: widgetConfigs.map((config, index) => ({
           portalId: portal.id,
           name: config.name || `Widget ${index + 1}`,
-          type: config.type,
-          config: config.config || {},
+          type: config.type as WidgetType,
+          config: (config.config as any) || {},
           gridX: config.gridX || 0,
           gridY: config.gridY || index * 4,
           gridWidth: config.gridWidth || 4,
@@ -403,12 +425,22 @@ export class TemplatesService {
       }),
     ]);
 
-    const categories = Object.values(TemplateCategory);
+    const categories = [
+      'PROJECT_MANAGEMENT',
+      'ANALYTICS',
+      'TIME_TRACKING',
+      'MARKETING',
+      'SALES',
+      'DEVELOPMENT',
+      'CUSTOM',
+    ];
 
     return categories.map((category) => ({
       category,
-      widgetTemplates: widgetCounts.find((c) => c.category === category)?._count || 0,
-      portalTemplates: portalCounts.find((c) => c.category === category)?._count || 0,
+      widgetTemplates:
+        widgetCounts.find((c) => c.category === category)?._count || 0,
+      portalTemplates:
+        portalCounts.find((c) => c.category === category)?._count || 0,
     }));
   }
 }

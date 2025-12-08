@@ -17,18 +17,43 @@ import {
   arVisualizationAPI,
   apiMarketplaceAPI,
 } from '../lib/advanced-features-api';
+import {
+  CollaborationSession,
+  CollaborationParticipant,
+  CollaborationOperation,
+  UserScript,
+  Role,
+  RoleTemplate,
+  SearchResult,
+  SearchResponse,
+  SearchSource,
+  SearchOptions,
+  MLModel,
+  MLTrainingConfig,
+  Voice,
+  VoiceCommand,
+  VoiceResult,
+  IntegrityResult,
+  AuditEntry,
+  ARScene,
+  APIConnector,
+  InstalledConnector,
+  CustomEndpoint,
+  EndpointCategory,
+} from './useAdvancedFeatures.types';
+import { Pipeline, ARSceneInput, EndpointCreationInput } from '../lib/advanced-features-api';
 
 // ==================== Collaboration Hooks ====================
 export function useCollaboration(portalId: string) {
-  const [session, setSession] = useState<any>(null);
-  const [participants, setParticipants] = useState<any[]>([]);
+  const [session, setSession] = useState<CollaborationSession | null>(null);
+  const [participants, setParticipants] = useState<CollaborationParticipant[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
 
   const joinSession = useCallback(async () => {
     try {
       const newSession = await collaborationAPI.createSession(portalId);
-      setSession(newSession);
+      setSession(newSession as CollaborationSession);
       
       // Connect to WebSocket for real-time updates
       const wsUrl = `${process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3000'}/collaboration`;
@@ -38,12 +63,12 @@ export function useCollaboration(portalId: string) {
         setIsConnected(true);
         wsRef.current?.send(JSON.stringify({
           event: 'join_session',
-          data: { sessionId: newSession.id, portalId },
+          data: { sessionId: (newSession as CollaborationSession).id, portalId },
         }));
       };
       
       wsRef.current.onmessage = (event) => {
-        const message = JSON.parse(event.data);
+        const message = JSON.parse(event.data) as { event: string; data: { participants: CollaborationParticipant[] } };
         if (message.event === 'participant_update') {
           setParticipants(message.data.participants);
         }
@@ -69,7 +94,7 @@ export function useCollaboration(portalId: string) {
     setIsConnected(false);
   }, []);
 
-  const sendOperation = useCallback((operation: any) => {
+  const sendOperation = useCallback((operation: CollaborationOperation) => {
     if (wsRef.current && isConnected) {
       wsRef.current.send(JSON.stringify({
         event: 'operation',
@@ -106,7 +131,7 @@ export function useCollaboration(portalId: string) {
 
 // ==================== Scripting Hooks ====================
 export function useScripts() {
-  const [scripts, setScripts] = useState<any[]>([]);
+  const [scripts, setScripts] = useState<UserScript[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -114,23 +139,20 @@ export function useScripts() {
     setLoading(true);
     try {
       const data = await scriptingAPI.listScripts();
-      setScripts(data);
+      setScripts(data as UserScript[]);
       setError(null);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const createScript = useCallback(async (scriptData: any) => {
+  const createScript = useCallback(async (scriptData: UserScript) => {
     const newScript = await scriptingAPI.createScript(scriptData);
-    setScripts((prev) => [...prev, newScript]);
+    setScripts((prev) => [...prev, newScript as UserScript]);
     return newScript;
-  }, []);
-
-  const executeScript = useCallback(async (scriptId: string, context: Record<string, any>) => {
-    return scriptingAPI.executeScript(scriptId, context);
   }, []);
 
   const validateScript = useCallback(async (code: string) => {
@@ -147,14 +169,13 @@ export function useScripts() {
     error,
     fetchScripts,
     createScript,
-    executeScript,
     validateScript,
   };
 }
 
 // ==================== Pipeline Hooks ====================
 export function usePipelines() {
-  const [pipelines, setPipelines] = useState<any[]>([]);
+  const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -162,22 +183,23 @@ export function usePipelines() {
     setLoading(true);
     try {
       const data = await pipelineAPI.listPipelines();
-      setPipelines(data);
+      setPipelines(data as Pipeline[]);
       setError(null);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const createPipeline = useCallback(async (pipelineData: any) => {
+  const createPipeline = useCallback(async (pipelineData: Partial<Pipeline>) => {
     const newPipeline = await pipelineAPI.createPipeline(pipelineData);
-    setPipelines((prev) => [...prev, newPipeline]);
+    setPipelines((prev) => [...prev, newPipeline as Pipeline]);
     return newPipeline;
   }, []);
 
-  const executePipeline = useCallback(async (pipelineId: string, inputData?: any) => {
+  const executePipeline = useCallback(async (pipelineId: string, inputData?: unknown) => {
     return pipelineAPI.executePipeline(pipelineId, inputData);
   }, []);
 
@@ -197,8 +219,8 @@ export function usePipelines() {
 
 // ==================== Role Management Hooks ====================
 export function useRoles() {
-  const [roles, setRoles] = useState<any[]>([]);
-  const [templates, setTemplates] = useState<any[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [templates, setTemplates] = useState<RoleTemplate[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchRoles = useCallback(async () => {
@@ -208,16 +230,16 @@ export function useRoles() {
         roleManagementAPI.listRoles(),
         roleManagementAPI.getTemplates(),
       ]);
-      setRoles(rolesData);
-      setTemplates(templatesData);
+      setRoles(rolesData as Role[]);
+      setTemplates(templatesData as RoleTemplate[]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const createRole = useCallback(async (roleData: any) => {
-    const newRole = await roleManagementAPI.createRole(roleData);
-    setRoles((prev) => [...prev, newRole]);
+  const createRole = useCallback(async (roleData: Partial<Role>) => {
+    const newRole = await roleManagementAPI.createRole(roleData as Partial<Role>);
+    setRoles((prev) => [...prev, newRole as Role]);
     return newRole;
   }, []);
 
@@ -244,26 +266,28 @@ export function useRoles() {
 
 // ==================== Federated Search Hooks ====================
 export function useFederatedSearch() {
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [sources, setSources] = useState<any[]>([]);
+  const [sources, setSources] = useState<SearchSource[]>([]);
 
-  const search = useCallback(async (query: string, options?: any) => {
+  const search = useCallback(async (query: string, options?: SearchOptions) => {
     setLoading(true);
     try {
       const data = await federatedSearchAPI.search(query, options);
-      setResults(data.results);
+      const response = data as SearchResponse;
+      setResults(response.results);
       return data;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const semanticSearch = useCallback(async (query: string, options?: any) => {
+  const semanticSearch = useCallback(async (query: string, options?: SearchOptions) => {
     setLoading(true);
     try {
       const data = await federatedSearchAPI.semanticSearch(query, options);
-      setResults(data.results);
+      const response = data as SearchResponse;
+      setResults(response.results);
       return data;
     } finally {
       setLoading(false);
@@ -272,7 +296,7 @@ export function useFederatedSearch() {
 
   const fetchSources = useCallback(async () => {
     const data = await federatedSearchAPI.getSources();
-    setSources(data);
+    setSources(data as SearchSource[]);
   }, []);
 
   useEffect(() => {
@@ -290,30 +314,30 @@ export function useFederatedSearch() {
 
 // ==================== ML Marketplace Hooks ====================
 export function useMLModels() {
-  const [models, setModels] = useState<any[]>([]);
-  const [marketplace, setMarketplace] = useState<any[]>([]);
+  const [models, setModels] = useState<MLModel[]>([]);
+  const [marketplace, setMarketplace] = useState<MLModel[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchModels = useCallback(async () => {
     setLoading(true);
     try {
       const data = await mlMarketplaceAPI.listModels();
-      setModels(data);
+      setModels(data as MLModel[]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const fetchMarketplace = useCallback(async (filters?: any) => {
+  const fetchMarketplace = useCallback(async (filters?: Record<string, unknown>) => {
     const data = await mlMarketplaceAPI.browseMarketplace(filters);
-    setMarketplace(data);
+    setMarketplace(data as MLModel[]);
   }, []);
 
-  const predict = useCallback(async (modelId: string, data: any) => {
+  const predict = useCallback(async (modelId: string, data: unknown) => {
     return mlMarketplaceAPI.predict(modelId, data);
   }, []);
 
-  const trainModel = useCallback(async (modelId: string, trainingData: any, config?: any) => {
+  const trainModel = useCallback(async (modelId: string, trainingData: unknown, config?: MLTrainingConfig) => {
     return mlMarketplaceAPI.trainModel(modelId, trainingData, config);
   }, []);
 
@@ -337,8 +361,8 @@ export function useMLModels() {
 export function useVoice() {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
-  const [voices, setVoices] = useState<any[]>([]);
-  const [commands, setCommands] = useState<any[]>([]);
+  const [voices, setVoices] = useState<Voice[]>([]);
+  const [commands, setCommands] = useState<VoiceCommand[]>([]);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
@@ -358,10 +382,11 @@ export function useVoice() {
         
         try {
           const result = await voiceAPI.transcribe(audioFile);
-          setTranscript(result.transcript);
+          const voiceResult = result as VoiceResult;
+          setTranscript(voiceResult.transcript || '');
           
           // Process as command
-          const commandResult = await voiceAPI.processCommand(result.transcript);
+          const commandResult = await voiceAPI.processCommand(voiceResult.transcript || '');
           return commandResult;
         } catch (error) {
           console.error('Transcription failed:', error);
@@ -383,10 +408,13 @@ export function useVoice() {
     }
   }, [isListening]);
 
-  const speak = useCallback(async (text: string, options?: any) => {
+  const speak = useCallback(async (text: string, options?: Record<string, unknown>) => {
     const result = await voiceAPI.synthesize(text, options);
-    const audio = new Audio(result.audioUrl);
-    await audio.play();
+    const voiceResult = result as VoiceResult;
+    if (voiceResult.audioUrl) {
+      const audio = new Audio(voiceResult.audioUrl);
+      await audio.play();
+    }
     return result;
   }, []);
 
@@ -395,12 +423,20 @@ export function useVoice() {
       voiceAPI.getVoices(),
       voiceAPI.getCommands(),
     ]);
-    setVoices(voicesData);
-    setCommands(commandsData);
+    return { voices: voicesData as Voice[], commands: commandsData as VoiceCommand[] };
   }, []);
 
   useEffect(() => {
-    fetchVoicesAndCommands();
+    let mounted = true;
+    (async () => {
+      const data = await fetchVoicesAndCommands();
+      if (!mounted) return;
+      setVoices(data.voices);
+      setCommands(data.commands);
+    })();
+    return () => {
+      mounted = false;
+    };
   }, [fetchVoicesAndCommands]);
 
   return {
@@ -416,29 +452,31 @@ export function useVoice() {
 
 // ==================== Blockchain Hooks ====================
 export function useBlockchain() {
-  const [integrity, setIntegrity] = useState<any>(null);
+  const [integrity, setIntegrity] = useState<IntegrityResult | null>(null);
   const [loading, setLoading] = useState(false);
 
   const verifyIntegrity = useCallback(async () => {
     setLoading(true);
     try {
       const result = await blockchainAPI.verifyIntegrity();
-      setIntegrity(result);
+      setIntegrity(result as IntegrityResult);
       return result;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const createAuditEntry = useCallback(async (data: any) => {
-    return blockchainAPI.createAuditEntry(data);
+  const createAuditEntry = useCallback(async (data: AuditEntry) => {
+    // Ensure data field exists for blockchain audit input
+    const input = { ...data, data: data.data || {} };
+    return blockchainAPI.createAuditEntry(input);
   }, []);
 
   const getAuditTrail = useCallback(async (entityType: string, entityId: string) => {
     return blockchainAPI.getAuditTrail(entityType, entityId);
   }, []);
 
-  const generateReport = useCallback(async (options?: any) => {
+  const generateReport = useCallback(async (options?: Record<string, unknown>) => {
     return blockchainAPI.generateComplianceReport(options);
   }, []);
 
@@ -454,26 +492,26 @@ export function useBlockchain() {
 
 // ==================== AR Visualization Hooks ====================
 export function useARVisualization() {
-  const [scenes, setScenes] = useState<any[]>([]);
+  const [scenes, setScenes] = useState<ARScene[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchScenes = useCallback(async () => {
     setLoading(true);
     try {
       const data = await arVisualizationAPI.getScenes();
-      setScenes(data);
+      setScenes(data as ARScene[]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const createScene = useCallback(async (sceneData: any) => {
+  const createScene = useCallback(async (sceneData: ARSceneInput) => {
     const newScene = await arVisualizationAPI.createScene(sceneData);
-    setScenes((prev) => [...prev, newScene]);
+    setScenes((prev) => [...prev, newScene as ARScene]);
     return newScene;
   }, []);
 
-  const convertTo3D = useCallback(async (widgetType: string, widgetData: any) => {
+  const convertTo3D = useCallback(async (widgetType: string, widgetData: unknown) => {
     return arVisualizationAPI.convertTo3D(widgetType, widgetData);
   }, []);
 
@@ -497,21 +535,21 @@ export function useARVisualization() {
 
 // ==================== API Marketplace Hooks ====================
 export function useAPIMarketplace() {
-  const [connectors, setConnectors] = useState<any[]>([]);
-  const [installedConnectors, setInstalledConnectors] = useState<any[]>([]);
-  const [endpoints, setEndpoints] = useState<any[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [connectors, setConnectors] = useState<APIConnector[]>([]);
+  const [installedConnectors, setInstalledConnectors] = useState<InstalledConnector[]>([]);
+  const [endpoints, setEndpoints] = useState<CustomEndpoint[]>([]);
+  const [categories, setCategories] = useState<EndpointCategory[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchConnectors = useCallback(async (filters?: any) => {
+  const fetchConnectors = useCallback(async (filters?: Record<string, unknown>) => {
     setLoading(true);
     try {
       const [connectorsData, categoriesData] = await Promise.all([
         apiMarketplaceAPI.getConnectors(filters),
         apiMarketplaceAPI.getCategories(),
       ]);
-      setConnectors(connectorsData);
-      setCategories(categoriesData);
+      setConnectors(connectorsData as APIConnector[]);
+      setCategories(categoriesData as EndpointCategory[]);
     } finally {
       setLoading(false);
     }
@@ -519,26 +557,26 @@ export function useAPIMarketplace() {
 
   const fetchInstalled = useCallback(async () => {
     const data = await apiMarketplaceAPI.getInstalledConnectors();
-    setInstalledConnectors(data);
+    setInstalledConnectors(data as InstalledConnector[]);
   }, []);
 
   const fetchEndpoints = useCallback(async () => {
     const data = await apiMarketplaceAPI.getEndpoints();
-    setEndpoints(data);
+    setEndpoints(data as CustomEndpoint[]);
   }, []);
 
   const installConnector = useCallback(
-    async (connectorId: string, config: any, credentials?: any) => {
+    async (connectorId: string, config: Record<string, unknown>, credentials?: Record<string, unknown>) => {
       const installed = await apiMarketplaceAPI.installConnector(connectorId, config, credentials);
-      setInstalledConnectors((prev) => [...prev, installed]);
+      setInstalledConnectors((prev) => [...prev, installed as InstalledConnector]);
       return installed;
     },
     []
   );
 
-  const createEndpoint = useCallback(async (endpointData: any) => {
+  const createEndpoint = useCallback(async (endpointData: EndpointCreationInput) => {
     const newEndpoint = await apiMarketplaceAPI.createEndpoint(endpointData);
-    setEndpoints((prev) => [...prev, newEndpoint]);
+    setEndpoints((prev) => [...prev, newEndpoint as CustomEndpoint]);
     return newEndpoint;
   }, []);
 

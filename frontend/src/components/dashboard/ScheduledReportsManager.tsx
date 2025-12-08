@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Calendar,
   Plus,
@@ -11,17 +11,16 @@ import {
   Mail,
   FileText,
   MoreVertical,
-  Pause,
 } from 'lucide-react';
 import {
   scheduledReportsApi,
   ScheduledReport,
   CreateScheduledReportDto,
   downloadBlob,
-} from '@/src/lib/enterprise-api';
-import { Button } from '@/src/components/ui/button';
-import { Card } from '@/src/components/ui/card';
-import { Badge } from '@/src/components/ui/badge';
+} from '@/lib/enterprise-api';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -29,26 +28,26 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/src/components/ui/dialog';
-import { Input } from '@/src/components/ui/input';
-import { Label } from '@/src/components/ui/label';
-import { Textarea } from '@/src/components/ui/textarea';
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/src/components/ui/select';
-import { Switch } from '@/src/components/ui/switch';
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/src/components/ui/dropdown-menu';
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 interface ScheduledReportsManagerProps {
   className?: string;
@@ -63,11 +62,7 @@ export function ScheduledReportsManager({
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  useEffect(() => {
-    loadReports();
-  }, []);
-
-  const loadReports = async () => {
+  const loadReports = useCallback(async () => {
     try {
       const data = await scheduledReportsApi.getAll();
       setReports(portalId ? data.filter((r) => r.portalId === portalId) : data);
@@ -77,7 +72,11 @@ export function ScheduledReportsManager({
     } finally {
       setLoading(false);
     }
-  };
+  }, [portalId]);
+
+  useEffect(() => {
+    loadReports();
+  }, [loadReports]);
 
   const deleteReport = async (reportId: string) => {
     if (!confirm('Are you sure you want to delete this scheduled report?')) return;

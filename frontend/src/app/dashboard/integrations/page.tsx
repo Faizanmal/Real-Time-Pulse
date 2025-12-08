@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useAuthStore } from '@/src/store/auth';
-import { integrationApi } from '@/src/lib/api-client';
-import { IntegrationCard } from '@/src/components/ui/feature-cards';
-import type { Integration } from '@/src/types';
+import { useAuthStore } from '@/store/auth';
+import { integrationApi } from '@/lib/api-client';
+import { IntegrationCard } from '@/components/ui/feature-cards';
+import type { Integration } from '@/types';
 import {
   Zap,
   Plus,
@@ -182,7 +182,7 @@ export default function IntegrationsPage() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-6 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-semibold rounded-xl transition-all flex items-center gap-2"
+                className="px-6 py-2.5 bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-semibold rounded-xl transition-all flex items-center gap-2"
               >
                 <Plus className="h-5 w-5" />
                 Add Integration
@@ -259,7 +259,7 @@ export default function IntegrationsPage() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-semibold rounded-xl transition-all"
+                  className="px-6 py-3 bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-semibold rounded-xl transition-all"
                 >
                   <Plus className="inline-block h-5 w-5 mr-2" />
                   Add Integration

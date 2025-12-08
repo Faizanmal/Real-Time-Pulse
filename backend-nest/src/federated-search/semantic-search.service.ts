@@ -19,7 +19,10 @@ export class SemanticSearchService {
   /**
    * Rerank search results using semantic similarity
    */
-  async rerank(query: string, results: SearchResult[]): Promise<SearchResult[]> {
+  async rerank(
+    query: string,
+    results: SearchResult[],
+  ): Promise<SearchResult[]> {
     if (!this.openAiApiKey || results.length === 0) {
       return results;
     }
@@ -32,7 +35,9 @@ export class SemanticSearchService {
       }
 
       // Get embeddings for result texts
-      const resultTexts = results.map((r) => `${r.title} ${r.description || ''}`);
+      const resultTexts = results.map(
+        (r) => `${r.title} ${r.description || ''}`,
+      );
       const resultEmbeddings = await this.getEmbeddings(resultTexts);
 
       // Calculate semantic similarity scores
@@ -197,9 +202,10 @@ export class SemanticSearchService {
   /**
    * Generate search query suggestions using AI
    */
-  async generateQuerySuggestions(
-    context: { recentQueries: string[]; popularQueries: string[] },
-  ): Promise<string[]> {
+  async generateQuerySuggestions(context: {
+    recentQueries: string[];
+    popularQueries: string[];
+  }): Promise<string[]> {
     // Simple suggestion generation (in production, use AI)
     const suggestions: string[] = [];
 

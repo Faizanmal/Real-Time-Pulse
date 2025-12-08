@@ -13,7 +13,6 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
-  MoreHorizontal,
   FileSpreadsheet,
   Layout,
   Bell,
@@ -22,14 +21,14 @@ import {
   bulkOperationsApi,
   BulkOperationResult,
   BulkUpdateWidgetsDto,
-} from '@/src/lib/enterprise-api';
-import { Button } from '@/src/components/ui/button';
-import { Card } from '@/src/components/ui/card';
-import { Input } from '@/src/components/ui/input';
-import { Badge } from '@/src/components/ui/badge';
-import { Checkbox } from '@/src/components/ui/checkbox';
-import { Label } from '@/src/components/ui/label';
-import { Switch } from '@/src/components/ui/switch';
+} from '@/lib/enterprise-api';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -38,36 +37,30 @@ import {
   DialogTitle,
   DialogFooter,
   DialogTrigger,
-} from '@/src/components/ui/dialog';
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/src/components/ui/select';
+} from '@/components/ui/select';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/src/components/ui/dropdown-menu';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/src/components/ui/tabs';
+} from '@/components/ui/dropdown-menu';
+// Tabs component is not used in this file
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/src/components/ui/accordion';
-import { Progress } from '@/src/components/ui/progress';
+} from '@/components/ui/accordion';
+
 import { toast } from 'sonner';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 interface BulkItem {
   id: string;
@@ -112,7 +105,6 @@ export function BulkOperationsPanel({
 
   const selectedItems = items.filter((item) => selectedIds.has(item.id));
   const allSelected = items.length > 0 && selectedIds.size === items.length;
-  const someSelected = selectedIds.size > 0 && selectedIds.size < items.length;
 
   const handleSelectAll = () => {
     if (allSelected) {

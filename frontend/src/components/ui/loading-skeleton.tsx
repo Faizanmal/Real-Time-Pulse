@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface SkeletonProps {
   className?: string;
@@ -45,7 +45,7 @@ export function LoadingSkeleton({
     <motion.div
       animate={animationVariants[animation]}
       className={cn(
-        "bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700",
+        "bg-linear-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700",
         variantStyles[variant],
         animation === "wave" && "bg-[length:200%_100%]",
         className

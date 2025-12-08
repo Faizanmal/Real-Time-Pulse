@@ -7,10 +7,22 @@ import {
   Request,
   Delete,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CollaborationService } from './collaboration.service';
 import { CollaborationGateway } from './collaboration.gateway';
+import type { UserPresence } from './collaboration.gateway';
+import type {
+  ActivityLog,
+  WidgetChange,
+  ChatMessage,
+} from './collaboration.service';
 
 @ApiTags('Collaboration')
 @ApiBearerAuth()
@@ -25,7 +37,9 @@ export class CollaborationController {
   @Get('portal/:portalId/users')
   @ApiOperation({ summary: 'Get active users in a portal' })
   @ApiParam({ name: 'portalId', description: 'Portal ID' })
-  async getPortalUsers(@Param('portalId') portalId: string) {
+  async getPortalUsers(
+    @Param('portalId') portalId: string,
+  ): Promise<{ success: boolean; users: UserPresence[]; count: number }> {
     const users = this.collaborationGateway.getPortalUsers(portalId);
     return {
       success: true,
@@ -37,11 +51,15 @@ export class CollaborationController {
   @Get('portal/:portalId/activity')
   @ApiOperation({ summary: 'Get activity feed for a portal' })
   @ApiParam({ name: 'portalId', description: 'Portal ID' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Number of activities to return' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of activities to return',
+  })
   async getActivityFeed(
     @Param('portalId') portalId: string,
     @Query('limit') limit?: number,
-  ) {
+  ): Promise<{ success: boolean; activities: ActivityLog[] }> {
     const activities = await this.collaborationService.getActivityFeed(
       portalId,
       limit || 50,
@@ -55,11 +73,15 @@ export class CollaborationController {
   @Get('portal/:portalId/history')
   @ApiOperation({ summary: 'Get change history for a portal' })
   @ApiParam({ name: 'portalId', description: 'Portal ID' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Number of changes to return' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of changes to return',
+  })
   async getChangeHistory(
     @Param('portalId') portalId: string,
     @Query('limit') limit?: number,
-  ) {
+  ): Promise<{ success: boolean; history: WidgetChange[] }> {
     const history = await this.collaborationService.getChangeHistory(
       portalId,
       limit || 50,
@@ -73,11 +95,15 @@ export class CollaborationController {
   @Get('portal/:portalId/chat')
   @ApiOperation({ summary: 'Get chat messages for a portal' })
   @ApiParam({ name: 'portalId', description: 'Portal ID' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Number of messages to return' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of messages to return',
+  })
   async getChatMessages(
     @Param('portalId') portalId: string,
     @Query('limit') limit?: number,
-  ) {
+  ): Promise<{ success: boolean; messages: ChatMessage[] }> {
     const messages = await this.collaborationService.getChatMessages(
       portalId,
       limit || 100,
@@ -92,7 +118,8 @@ export class CollaborationController {
   @ApiOperation({ summary: 'Get collaboration statistics for a portal' })
   @ApiParam({ name: 'portalId', description: 'Portal ID' })
   async getCollaborationStats(@Param('portalId') portalId: string) {
-    const stats = await this.collaborationService.getCollaborationStats(portalId);
+    const stats =
+      await this.collaborationService.getCollaborationStats(portalId);
     return {
       success: true,
       stats,
@@ -100,7 +127,9 @@ export class CollaborationController {
   }
 
   @Delete('portal/:portalId/data')
-  @ApiOperation({ summary: 'Clear collaboration data for a portal (admin only)' })
+  @ApiOperation({
+    summary: 'Clear collaboration data for a portal (admin only)',
+  })
   @ApiParam({ name: 'portalId', description: 'Portal ID' })
   async clearCollaborationData(
     @Param('portalId') portalId: string,

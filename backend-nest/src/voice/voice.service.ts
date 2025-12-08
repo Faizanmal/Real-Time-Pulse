@@ -29,6 +29,31 @@ export interface SpeechSynthesisOptions {
   language?: string;
 }
 
+export interface WhisperResponse {
+  text: string;
+  words?: Array<{ word: string; start: number; end: number }>;
+}
+
+export interface ChartData {
+  chartType?: string;
+  title?: string;
+  series?: Array<{ data: number[] }>;
+  labels?: string[];
+}
+
+export interface MetricData {
+  title?: string;
+  value: number;
+  change?: number;
+  unit?: string;
+}
+
+export interface TableData {
+  title?: string;
+  rows?: unknown[];
+  columns?: string[];
+}
+
 @Injectable()
 export class VoiceService {
   private readonly logger = new Logger(VoiceService.name);
@@ -45,7 +70,10 @@ export class VoiceService {
   /**
    * Transcribe audio to text using Whisper API
    */
-  async transcribeAudio(audioBuffer: Buffer, options?: { language?: string }): Promise<{
+  async transcribeAudio(
+    audioBuffer: Buffer,
+    options?: { language?: string },
+  ): Promise<{
     transcript: string;
     confidence: number;
     words?: Array<{ word: string; start: number; end: number }>;
@@ -56,7 +84,11 @@ export class VoiceService {
 
     try {
       const formData = new FormData();
-      formData.append('file', new Blob([audioBuffer]), 'audio.webm');
+      formData.append(
+        'file',
+        new Blob([new Uint8Array(audioBuffer)]),
+        'audio.webm',
+      );
       formData.append('model', 'whisper-1');
       formData.append('response_format', 'verbose_json');
 
@@ -64,27 +96,32 @@ export class VoiceService {
         formData.append('language', options.language);
       }
 
-      const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.openAiApiKey}`,
+      const response = await fetch(
+        'https://api.openai.com/v1/audio/transcriptions',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${this.openAiApiKey}`,
+          },
+          body: formData,
         },
-        body: formData,
-      });
+      );
 
       if (!response.ok) {
         throw new Error(`Whisper API error: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data: WhisperResponse = await response.json();
 
       return {
         transcript: data.text,
         confidence: 0.95, // Whisper doesn't return confidence, assume high
         words: data.words,
       };
-    } catch (error: any) {
-      this.logger.error(`Transcription failed: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Transcription failed: ${errorMessage}`);
       throw error;
     }
   }
@@ -106,12 +143,16 @@ export class VoiceService {
     if (!command) {
       return {
         command: null,
-        response: "I didn't understand that command. Try saying 'Show sales dashboard' or 'Filter by last month'.",
+        response:
+          "I didn't understand that command. Try saying 'Show sales dashboard' or 'Filter by last month'.",
       };
     }
 
     // Execute command
-    const result = await this.commandService.executeCommand(workspaceId, command);
+    const result = await this.commandService.executeCommand(
+      workspaceId,
+      command,
+    );
 
     return {
       command,
@@ -164,8 +205,10 @@ export class VoiceService {
         audioUrl,
         duration: text.length * 0.06, // Rough estimate
       };
-    } catch (error: any) {
-      this.logger.error(`Speech synthesis failed: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Speech synthesis failed: ${errorMessage}`);
       throw error;
     }
   }
@@ -200,7 +243,9 @@ export class VoiceService {
     // Save annotation
     const key = `voice_annotations:${workspaceId}:${data.portalId}`;
     const annotationsJson = await this.cache.get(key);
-    const annotations: VoiceAnnotation[] = annotationsJson ? JSON.parse(annotationsJson) : [];
+    const annotations: VoiceAnnotation[] = annotationsJson
+      ? JSON.parse(annotationsJson)
+      : [];
     annotations.push(annotation);
 
     await this.cache.set(key, JSON.stringify(annotations), 86400 * 365);
@@ -208,22 +253,38 @@ export class VoiceService {
     return annotation;
   }
 
-  /**
-   * Get annotations for a portal
-   */
-  async getAnnotations(workspaceId: string, portalId: string): Promise<VoiceAnnotation[]> {
+  async getAnnotations(
+    workspaceId: string,
+    portalId: string,
+  ): Promise<VoiceAnnotation[]> {
     const key = `voice_annotations:${workspaceId}:${portalId}`;
     const annotationsJson = await this.cache.get(key);
-    return annotationsJson ? JSON.parse(annotationsJson) : [];
+    if (!annotationsJson) return [];
+
+    try {
+      const annotations: VoiceAnnotation[] = JSON.parse(annotationsJson);
+      return annotations;
+    } catch {
+      return [];
+    }
   }
 
-  /**
-   * Delete annotation
-   */
-  async deleteAnnotation(workspaceId: string, portalId: string, annotationId: string): Promise<void> {
+  async deleteAnnotation(
+    workspaceId: string,
+    portalId: string,
+    annotationId: string,
+  ): Promise<void> {
     const key = `voice_annotations:${workspaceId}:${portalId}`;
     const annotationsJson = await this.cache.get(key);
-    const annotations: VoiceAnnotation[] = annotationsJson ? JSON.parse(annotationsJson) : [];
+    let annotations: VoiceAnnotation[] = [];
+
+    if (annotationsJson) {
+      try {
+        annotations = JSON.parse(annotationsJson);
+      } catch {
+        // If parsing fails, start with empty array
+      }
+    }
 
     const filtered = annotations.filter((a) => a.id !== annotationId);
     await this.cache.set(key, JSON.stringify(filtered), 86400 * 365);
@@ -234,12 +295,42 @@ export class VoiceService {
    */
   getAvailableVoices() {
     return [
-      { id: 'alloy', name: 'Alloy', gender: 'neutral', description: 'Balanced and versatile' },
-      { id: 'echo', name: 'Echo', gender: 'male', description: 'Clear and professional' },
-      { id: 'fable', name: 'Fable', gender: 'female', description: 'Warm and expressive' },
-      { id: 'onyx', name: 'Onyx', gender: 'male', description: 'Deep and authoritative' },
-      { id: 'nova', name: 'Nova', gender: 'female', description: 'Friendly and conversational' },
-      { id: 'shimmer', name: 'Shimmer', gender: 'female', description: 'Soft and calm' },
+      {
+        id: 'alloy',
+        name: 'Alloy',
+        gender: 'neutral',
+        description: 'Balanced and versatile',
+      },
+      {
+        id: 'echo',
+        name: 'Echo',
+        gender: 'male',
+        description: 'Clear and professional',
+      },
+      {
+        id: 'fable',
+        name: 'Fable',
+        gender: 'female',
+        description: 'Warm and expressive',
+      },
+      {
+        id: 'onyx',
+        name: 'Onyx',
+        gender: 'male',
+        description: 'Deep and authoritative',
+      },
+      {
+        id: 'nova',
+        name: 'Nova',
+        gender: 'female',
+        description: 'Friendly and conversational',
+      },
+      {
+        id: 'shimmer',
+        name: 'Shimmer',
+        gender: 'female',
+        description: 'Soft and calm',
+      },
     ];
   }
 
@@ -264,34 +355,36 @@ export class VoiceService {
   /**
    * Generate accessibility description
    */
-  async generateAccessibilityDescription(
+  generateAccessibilityDescription(
     widgetType: string,
-    widgetData: any,
-  ): Promise<string> {
+    widgetData: ChartData | MetricData | TableData | Record<string, unknown>,
+  ): string {
     // Generate natural language description of widget content
     switch (widgetType) {
       case 'chart':
-        return this.describeChart(widgetData);
+        return this.describeChart(widgetData as ChartData);
       case 'metric':
-        return this.describeMetric(widgetData);
+        return this.describeMetric(widgetData as MetricData);
       case 'table':
-        return this.describeTable(widgetData);
+        return this.describeTable(widgetData as TableData);
       default:
         return `This is a ${widgetType} widget.`;
     }
   }
 
-  private describeChart(data: any): string {
-    const { chartType, title, series, labels } = data;
+  private describeChart(data: ChartData): string {
+    const { chartType, title, series } = data;
     const dataPoints = series?.[0]?.data?.length || 0;
     const maxValue = series?.[0]?.data ? Math.max(...series[0].data) : 0;
     const minValue = series?.[0]?.data ? Math.min(...series[0].data) : 0;
 
-    return `${title || 'Chart'}. This is a ${chartType} chart with ${dataPoints} data points. ` +
-           `Values range from ${minValue} to ${maxValue}.`;
+    return (
+      `${title || 'Chart'}. This is a ${chartType || 'unknown'} chart with ${dataPoints} data points. ` +
+      `Values range from ${minValue} to ${maxValue}.`
+    );
   }
 
-  private describeMetric(data: any): string {
+  private describeMetric(data: MetricData): string {
     const { title, value, change, unit } = data;
     const changeText = change
       ? `${change > 0 ? 'up' : 'down'} ${Math.abs(change)}%`
@@ -300,7 +393,7 @@ export class VoiceService {
     return `${title || 'Metric'}. Current value is ${value}${unit || ''}. ${changeText}`;
   }
 
-  private describeTable(data: any): string {
+  private describeTable(data: TableData): string {
     const { title, rows, columns } = data;
     const rowCount = rows?.length || 0;
     const colCount = columns?.length || 0;

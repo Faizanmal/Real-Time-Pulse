@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   BarChart3,
   TrendingUp,
@@ -19,25 +19,25 @@ import {
   SystemHealth,
   UserActivity,
   UsageMetrics,
-} from '@/src/lib/enterprise-api';
-import { Button } from '@/src/components/ui/button';
-import { Card } from '@/src/components/ui/card';
-import { Badge } from '@/src/components/ui/badge';
+} from '@/lib/enterprise-api';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/src/components/ui/select';
+} from '@/components/ui/select';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/src/components/ui/tabs';
+} from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 interface AnalyticsDashboardProps {
   className?: string;
@@ -52,10 +52,6 @@ export function AnalyticsDashboard({ className, portalId }: AnalyticsDashboardPr
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState('7d');
   const [refreshing, setRefreshing] = useState(false);
-
-  useEffect(() => {
-    loadData();
-  }, [dateRange, portalId]);
 
   const getDateRange = () => {
     const end = new Date();
@@ -84,7 +80,7 @@ export function AnalyticsDashboard({ className, portalId }: AnalyticsDashboardPr
     };
   };
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const { startDate, endDate } = getDateRange();
 
@@ -107,7 +103,11 @@ export function AnalyticsDashboard({ className, portalId }: AnalyticsDashboardPr
     } finally {
       setLoading(false);
     }
-  };
+  }, [portalId]);
+
+  useEffect(() => {
+    loadData();
+  }, [dateRange, portalId, loadData]);
 
   const handleRefresh = async () => {
     setRefreshing(true);

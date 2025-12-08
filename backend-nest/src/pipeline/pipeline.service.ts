@@ -7,10 +7,17 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { PipelineExecutorService } from './pipeline-executor.service';
+import type { ExecutionResult } from './pipeline-executor.service';
 
 export interface PipelineNode {
   id: string;
-  type: 'source' | 'transform' | 'destination' | 'filter' | 'join' | 'aggregate';
+  type:
+    | 'source'
+    | 'transform'
+    | 'destination'
+    | 'filter'
+    | 'join'
+    | 'aggregate';
   name: string;
   config: Record<string, any>;
   position: { x: number; y: number };
@@ -108,7 +115,11 @@ export class PipelineService {
     // Add to index
     const index = await this.getPipelineIndex(workspaceId);
     index.push(pipelineId);
-    await this.cache.set(`pipeline:index:${workspaceId}`, JSON.stringify(index), 86400 * 30);
+    await this.cache.set(
+      `pipeline:index:${workspaceId}`,
+      JSON.stringify(index),
+      86400 * 30,
+    );
 
     this.logger.log(`Pipeline created: ${pipelineId}`);
 
@@ -123,7 +134,9 @@ export class PipelineService {
 
     const pipelines = await Promise.all(
       index.map(async (pipelineId) => {
-        const json = await this.cache.get(`pipeline:${workspaceId}:${pipelineId}`);
+        const json = await this.cache.get(
+          `pipeline:${workspaceId}:${pipelineId}`,
+        );
         return json ? JSON.parse(json) : null;
       }),
     );
@@ -134,7 +147,10 @@ export class PipelineService {
   /**
    * Get a pipeline by ID
    */
-  async getPipeline(workspaceId: string, pipelineId: string): Promise<Pipeline> {
+  async getPipeline(
+    workspaceId: string,
+    pipelineId: string,
+  ): Promise<Pipeline> {
     const json = await this.cache.get(`pipeline:${workspaceId}:${pipelineId}`);
 
     if (!json) {
@@ -181,7 +197,11 @@ export class PipelineService {
 
     const index = await this.getPipelineIndex(workspaceId);
     const newIndex = index.filter((id) => id !== pipelineId);
-    await this.cache.set(`pipeline:index:${workspaceId}`, JSON.stringify(newIndex), 86400 * 30);
+    await this.cache.set(
+      `pipeline:index:${workspaceId}`,
+      JSON.stringify(newIndex),
+      86400 * 30,
+    );
 
     // Delete run history
     await this.cache.del(`pipeline:runs:${workspaceId}:${pipelineId}`);
@@ -194,7 +214,7 @@ export class PipelineService {
     workspaceId: string,
     pipelineId: string,
     options?: { dryRun?: boolean },
-  ) {
+  ): Promise<ExecutionResult> {
     const pipeline = await this.getPipeline(workspaceId, pipelineId);
 
     // Update status
@@ -253,14 +273,19 @@ export class PipelineService {
    * Get pipeline run history
    */
   async getRunHistory(workspaceId: string, pipelineId: string) {
-    const json = await this.cache.get(`pipeline:runs:${workspaceId}:${pipelineId}`);
+    const json = await this.cache.get(
+      `pipeline:runs:${workspaceId}:${pipelineId}`,
+    );
     return json ? JSON.parse(json) : [];
   }
 
   /**
    * Validate pipeline structure
    */
-  private validatePipelineStructure(nodes: PipelineNode[], edges: PipelineEdge[]): void {
+  private validatePipelineStructure(
+    nodes: PipelineNode[],
+    edges: PipelineEdge[],
+  ): void {
     if (!nodes || nodes.length === 0) {
       throw new BadRequestException('Pipeline must have at least one node');
     }
@@ -268,23 +293,31 @@ export class PipelineService {
     // Check for source nodes
     const sourceNodes = nodes.filter((n) => n.type === 'source');
     if (sourceNodes.length === 0) {
-      throw new BadRequestException('Pipeline must have at least one source node');
+      throw new BadRequestException(
+        'Pipeline must have at least one source node',
+      );
     }
 
     // Check for destination nodes
     const destinationNodes = nodes.filter((n) => n.type === 'destination');
     if (destinationNodes.length === 0) {
-      throw new BadRequestException('Pipeline must have at least one destination node');
+      throw new BadRequestException(
+        'Pipeline must have at least one destination node',
+      );
     }
 
     // Validate edges reference valid nodes
     const nodeIds = new Set(nodes.map((n) => n.id));
     for (const edge of edges) {
       if (!nodeIds.has(edge.source)) {
-        throw new BadRequestException(`Edge references invalid source node: ${edge.source}`);
+        throw new BadRequestException(
+          `Edge references invalid source node: ${edge.source}`,
+        );
       }
       if (!nodeIds.has(edge.target)) {
-        throw new BadRequestException(`Edge references invalid target node: ${edge.target}`);
+        throw new BadRequestException(
+          `Edge references invalid target node: ${edge.target}`,
+        );
       }
     }
 

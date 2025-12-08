@@ -10,9 +10,16 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ScriptingService } from './scripting.service';
+import type { ScriptVersion } from './scripting.service';
 
 class CreateScriptDto {
   name: string;
@@ -54,13 +61,10 @@ export class ScriptingController {
   @Post('scripts')
   @ApiOperation({ summary: 'Create a new script' })
   @ApiBody({ type: CreateScriptDto })
-  async createScript(
-    @Request() req: any,
-    @Body() dto: CreateScriptDto,
-  ) {
+  async createScript(@Request() req: any, @Body() dto: CreateScriptDto) {
     return this.scriptingService.createScript(
       req.user.workspaceId,
-      req.user.sub,
+      req.user.id,
       dto,
     );
   }
@@ -74,10 +78,7 @@ export class ScriptingController {
   @Get('scripts/:scriptId')
   @ApiOperation({ summary: 'Get a script by ID' })
   @ApiParam({ name: 'scriptId', description: 'Script ID' })
-  async getScript(
-    @Request() req: any,
-    @Param('scriptId') scriptId: string,
-  ) {
+  async getScript(@Request() req: any, @Param('scriptId') scriptId: string) {
     return this.scriptingService.getScript(req.user.workspaceId, scriptId);
   }
 
@@ -93,7 +94,7 @@ export class ScriptingController {
     return this.scriptingService.updateScript(
       req.user.workspaceId,
       scriptId,
-      req.user.sub,
+      req.user.id,
       dto,
     );
   }
@@ -101,10 +102,7 @@ export class ScriptingController {
   @Delete('scripts/:scriptId')
   @ApiOperation({ summary: 'Delete a script' })
   @ApiParam({ name: 'scriptId', description: 'Script ID' })
-  async deleteScript(
-    @Request() req: any,
-    @Param('scriptId') scriptId: string,
-  ) {
+  async deleteScript(@Request() req: any, @Param('scriptId') scriptId: string) {
     return this.scriptingService.deleteScript(req.user.workspaceId, scriptId);
   }
 
@@ -137,7 +135,7 @@ export class ScriptingController {
   async getScriptVersions(
     @Request() req: any,
     @Param('scriptId') scriptId: string,
-  ) {
+  ): Promise<ScriptVersion[]> {
     return this.scriptingService.getScriptVersions(
       req.user.workspaceId,
       scriptId,
@@ -157,7 +155,7 @@ export class ScriptingController {
       req.user.workspaceId,
       scriptId,
       parseInt(version, 10),
-      req.user.sub,
+      req.user.id,
     );
   }
 

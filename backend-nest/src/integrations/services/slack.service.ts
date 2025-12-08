@@ -110,9 +110,7 @@ export class SlackService {
     },
   ): Promise<boolean> {
     try {
-      await firstValueFrom(
-        this.httpService.post(webhookUrl, message),
-      );
+      await firstValueFrom(this.httpService.post(webhookUrl, message));
       return true;
     } catch (error) {
       this.logger.error('Failed to send Slack webhook message', error);
@@ -169,7 +167,10 @@ export class SlackService {
     }
   }
 
-  private async fetchMessages(headers: any, params?: unknown): Promise<unknown> {
+  private async fetchMessages(
+    headers: any,
+    params?: unknown,
+  ): Promise<unknown> {
     try {
       const channel = (params as { channel?: string })?.channel;
       if (!channel) {
@@ -222,12 +223,10 @@ export class SlackService {
           totalUsers: (users as any[]).length,
           activeUsers,
           totalChannels: (channels as any[]).length,
-          publicChannels: (channels as any[]).filter(
-            (c: any) => !c.is_private,
-          ).length,
-          privateChannels: (channels as any[]).filter(
-            (c: any) => c.is_private,
-          ).length,
+          publicChannels: (channels as any[]).filter((c: any) => !c.is_private)
+            .length,
+          privateChannels: (channels as any[]).filter((c: any) => c.is_private)
+            .length,
         },
       };
     } catch (error) {

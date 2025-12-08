@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, HTMLMotionProps } from "framer-motion";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
 
 interface AnimatedCardProps extends Omit<HTMLMotionProps<"div">, "children"> {

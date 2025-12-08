@@ -95,17 +95,14 @@ export class JiraService {
         : 'ORDER BY updated DESC';
 
       const response = await firstValueFrom(
-        this.httpService.get(
-          `${this.baseUrl}/${cloudId}/rest/api/3/search`,
-          {
-            headers,
-            params: {
-              jql,
-              maxResults: 50,
-              fields: 'summary,status,assignee,priority,created,updated',
-            },
+        this.httpService.get(`${this.baseUrl}/${cloudId}/rest/api/3/search`, {
+          headers,
+          params: {
+            jql,
+            maxResults: 50,
+            fields: 'summary,status,assignee,priority,created,updated',
           },
-        ),
+        }),
       );
       return response.data.issues;
     } catch (error) {

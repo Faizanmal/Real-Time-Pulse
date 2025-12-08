@@ -2,6 +2,23 @@
 
 import { useEffect, useState, useCallback } from 'react';
 
+// Add a minimal type for BeforeInstallPromptEvent for TypeScript
+declare global {
+  interface BeforeInstallPromptEvent extends Event {
+    prompt(): Promise<void>;
+    userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+  }
+
+  // Extend Window with an optional deferredPrompt for the install event
+  interface WindowEventMap {
+    'beforeinstallprompt': BeforeInstallPromptEvent;
+  }
+
+  interface Window {
+    deferredPrompt?: BeforeInstallPromptEvent | null;
+  }
+}
+
 interface ServiceWorkerState {
   isSupported: boolean;
   isRegistered: boolean;
@@ -20,17 +37,16 @@ interface UsePWAReturn extends ServiceWorkerState {
 
 export function usePWA(): UsePWAReturn {
   const [state, setState] = useState<ServiceWorkerState>({
-    isSupported: false,
+    isSupported: 'serviceWorker' in navigator,
     isRegistered: false,
-    isOffline: false,
+    isOffline: typeof navigator !== 'undefined' ? !navigator.onLine : false,
     registration: null,
     updateAvailable: false,
   });
 
-  // Check if service workers are supported
+  // Check if service workers are supported and register
   useEffect(() => {
     const isSupported = 'serviceWorker' in navigator;
-    setState((prev) => ({ ...prev, isSupported }));
 
     if (!isSupported) return;
 
@@ -76,8 +92,6 @@ export function usePWA(): UsePWAReturn {
     const handleOnline = () => setState((prev) => ({ ...prev, isOffline: false }));
     const handleOffline = () => setState((prev) => ({ ...prev, isOffline: true }));
 
-    setState((prev) => ({ ...prev, isOffline: !navigator.onLine }));
-
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
@@ -89,16 +103,17 @@ export function usePWA(): UsePWAReturn {
 
   // Install PWA
   const install = useCallback(async () => {
-    const deferredPrompt = (window as any).deferredPrompt;
+    const deferredPrompt = (window as { deferredPrompt?: BeforeInstallPromptEvent }).deferredPrompt;
     if (!deferredPrompt) {
       console.log('PWA install prompt not available');
       return;
     }
 
     deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
+    const choice = await deferredPrompt.userChoice;
+    const { outcome } = choice || { outcome: 'dismissed' };
     console.log('PWA install outcome:', outcome);
-    (window as any).deferredPrompt = null;
+    (window as { deferredPrompt?: BeforeInstallPromptEvent }).deferredPrompt = undefined;
   }, []);
 
   // Update service worker
@@ -143,7 +158,7 @@ export function usePWA(): UsePWAReturn {
     try {
       // Get VAPID public key from server
       const response = await fetch('/api/push/vapid-public-key');
-      const { publicKey } = await response.json();
+      const { publicKey } = await response.json() as { publicKey: string };
 
       const keyArray = urlBase64ToUint8Array(publicKey);
       const subscription = await state.registration.pushManager.subscribe({
@@ -195,23 +210,23 @@ export function useInstallPrompt() {
   const [canInstall, setCanInstall] = useState(false);
 
   useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
+    const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
       e.preventDefault();
-      (window as any).deferredPrompt = e;
+      window.deferredPrompt = e;
       setCanInstall(true);
     };
 
     const handleAppInstalled = () => {
-      (window as any).deferredPrompt = null;
+      window.deferredPrompt = null;
       setCanInstall(false);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
+    window.addEventListener('appinstalled', handleAppInstalled as EventListener);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
+      window.removeEventListener('appinstalled', handleAppInstalled as EventListener);
     };
   }, []);
 

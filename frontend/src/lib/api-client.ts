@@ -1,4 +1,4 @@
-import { apiClient } from '@/src/lib/api';
+import { apiClient } from '@/lib/api';
 import type { 
   AuthResponse, 
   User, 
@@ -10,7 +10,7 @@ import type {
   AuditLog,
   WorkspaceStats,
   HealthStatus
-} from '@/src/types';
+} from '@/types';
 
 // Auth API
 export const authApi = {

@@ -35,7 +35,7 @@ interface ExecuteScriptDto {
   portalData?: any;
 }
 
-interface ScriptVersion {
+export interface ScriptVersion {
   version: number;
   code: string;
   createdAt: Date;
@@ -63,12 +63,14 @@ export class ScriptingService {
     // Validate code before saving
     const validationResult = await this.validateScript(dto.code);
     if (!validationResult.valid) {
-      throw new BadRequestException(`Invalid script: ${validationResult.errors.join(', ')}`);
+      throw new BadRequestException(
+        `Invalid script: ${validationResult.errors.join(', ')}`,
+      );
     }
 
     // Store script in cache (since we don't have a Script model in Prisma yet)
     const scriptId = `script_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const script = {
       id: scriptId,
       workspaceId,
@@ -118,10 +120,12 @@ export class ScriptingService {
    */
   async getWorkspaceScripts(workspaceId: string) {
     const scriptsIndex = await this.getWorkspaceScriptsIndex(workspaceId);
-    
+
     const scripts = await Promise.all(
       scriptsIndex.map(async (scriptId) => {
-        const scriptJson = await this.cache.get(`script:${workspaceId}:${scriptId}`);
+        const scriptJson = await this.cache.get(
+          `script:${workspaceId}:${scriptId}`,
+        );
         return scriptJson ? JSON.parse(scriptJson) : null;
       }),
     );
@@ -133,8 +137,10 @@ export class ScriptingService {
    * Get a script by ID
    */
   async getScript(workspaceId: string, scriptId: string) {
-    const scriptJson = await this.cache.get(`script:${workspaceId}:${scriptId}`);
-    
+    const scriptJson = await this.cache.get(
+      `script:${workspaceId}:${scriptId}`,
+    );
+
     if (!scriptJson) {
       throw new NotFoundException('Script not found');
     }
@@ -157,7 +163,9 @@ export class ScriptingService {
     if (dto.code) {
       const validationResult = await this.validateScript(dto.code);
       if (!validationResult.valid) {
-        throw new BadRequestException(`Invalid script: ${validationResult.errors.join(', ')}`);
+        throw new BadRequestException(
+          `Invalid script: ${validationResult.errors.join(', ')}`,
+        );
       }
 
       // Save new version if code changed
@@ -222,9 +230,14 @@ export class ScriptingService {
 
     // Validate input against schema
     if (script.inputSchema && Object.keys(script.inputSchema).length > 0) {
-      const validation = this.sandbox.validateInput(dto.input || {}, script.inputSchema);
+      const validation = this.sandbox.validateInput(
+        dto.input || {},
+        script.inputSchema,
+      );
       if (!validation.valid) {
-        throw new BadRequestException(`Invalid input: ${validation.errors.join(', ')}`);
+        throw new BadRequestException(
+          `Invalid input: ${validation.errors.join(', ')}`,
+        );
       }
     }
 
@@ -237,10 +250,10 @@ export class ScriptingService {
       input: dto.input || {},
       widgetData: dto.widgetData,
       portalData: dto.portalData,
-      
+
       // Library functions
       ...libraries,
-      
+
       // Helper to return result
       result: null as any,
       setResult: (value: any) => {
@@ -263,7 +276,9 @@ export class ScriptingService {
     });
 
     if (!executionResult.success) {
-      throw new BadRequestException(`Script execution failed: ${executionResult.error}`);
+      throw new BadRequestException(
+        `Script execution failed: ${executionResult.error}`,
+      );
     }
 
     return {
@@ -276,7 +291,9 @@ export class ScriptingService {
   /**
    * Validate a script without executing it
    */
-  async validateScript(code: string): Promise<{ valid: boolean; errors: string[] }> {
+  async validateScript(
+    code: string,
+  ): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
 
     try {
@@ -315,11 +332,17 @@ export class ScriptingService {
       { pattern: /require\s*\(/g, message: 'require() is not allowed' },
       { pattern: /import\s+/g, message: 'import statements are not allowed' },
       { pattern: /eval\s*\(/g, message: 'eval() is not allowed' },
-      { pattern: /Function\s*\(/g, message: 'Function constructor is not allowed' },
+      {
+        pattern: /Function\s*\(/g,
+        message: 'Function constructor is not allowed',
+      },
       { pattern: /process\./g, message: 'process object is not allowed' },
       { pattern: /global\./g, message: 'global object is not allowed' },
       { pattern: /__proto__/g, message: '__proto__ is not allowed' },
-      { pattern: /constructor\s*\[/g, message: 'constructor access is not allowed' },
+      {
+        pattern: /constructor\s*\[/g,
+        message: 'constructor access is not allowed',
+      },
     ];
 
     for (const { pattern, message } of dangerousPatterns) {
@@ -334,8 +357,13 @@ export class ScriptingService {
   /**
    * Get script versions
    */
-  async getScriptVersions(workspaceId: string, scriptId: string): Promise<ScriptVersion[]> {
-    const versionsJson = await this.cache.get(`script:versions:${workspaceId}:${scriptId}`);
+  async getScriptVersions(
+    workspaceId: string,
+    scriptId: string,
+  ): Promise<ScriptVersion[]> {
+    const versionsJson = await this.cache.get(
+      `script:versions:${workspaceId}:${scriptId}`,
+    );
     return versionsJson ? JSON.parse(versionsJson) : [];
   }
 
@@ -365,7 +393,7 @@ export class ScriptingService {
    */
   getAvailableLibraries() {
     const libraries = this.library.getLibraries();
-    
+
     // Return library documentation
     return Object.entries(libraries).map(([name, functions]) => ({
       name,
@@ -379,7 +407,9 @@ export class ScriptingService {
   /**
    * Helper: Get workspace scripts index
    */
-  private async getWorkspaceScriptsIndex(workspaceId: string): Promise<string[]> {
+  private async getWorkspaceScriptsIndex(
+    workspaceId: string,
+  ): Promise<string[]> {
     const indexJson = await this.cache.get(`scripts:index:${workspaceId}`);
     return indexJson ? JSON.parse(indexJson) : [];
   }
@@ -394,10 +424,10 @@ export class ScriptingService {
   ) {
     const versions = await this.getScriptVersions(workspaceId, scriptId);
     versions.push(version);
-    
+
     // Keep last 50 versions
     const trimmedVersions = versions.slice(-50);
-    
+
     await this.cache.set(
       `script:versions:${workspaceId}:${scriptId}`,
       JSON.stringify(trimmedVersions),
@@ -413,9 +443,11 @@ export class ScriptingService {
     scriptId: string,
     data: { success: boolean; executionTime: number; error?: string },
   ) {
-    const logsJson = await this.cache.get(`script:logs:${workspaceId}:${scriptId}`);
+    const logsJson = await this.cache.get(
+      `script:logs:${workspaceId}:${scriptId}`,
+    );
     const logs = logsJson ? JSON.parse(logsJson) : [];
-    
+
     logs.push({
       ...data,
       timestamp: new Date(),

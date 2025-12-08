@@ -1,24 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Palette,
-  Type,
-  Square,
   Droplet,
-  Sun,
-  Moon,
   Save,
   Eye,
   RotateCcw,
   Plus,
   Trash2,
-  ChevronDown,
-  ChevronUp,
   AlertCircle,
   Code2,
   Loader2,
-  Copy,
   BookTemplate,
 } from 'lucide-react';
 import {
@@ -26,15 +19,15 @@ import {
   WidgetStyling,
   ConditionalFormat,
   WidgetTheme,
-} from '@/src/lib/enterprise-api';
-import { Button } from '@/src/components/ui/button';
-import { Input } from '@/src/components/ui/input';
-import { Label } from '@/src/components/ui/label';
-import { Card } from '@/src/components/ui/card';
-import { Badge } from '@/src/components/ui/badge';
-import { Slider } from '@/src/components/ui/slider';
-import { Switch } from '@/src/components/ui/switch';
-import { Textarea } from '@/src/components/ui/textarea';
+} from '@/lib/enterprise-api';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -43,33 +36,33 @@ import {
   DialogTitle,
   DialogFooter,
   DialogTrigger,
-} from '@/src/components/ui/dialog';
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/src/components/ui/select';
+} from '@/components/ui/select';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/src/components/ui/tabs';
+} from '@/components/ui/tabs';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/src/components/ui/accordion';
+} from '@/components/ui/accordion';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/src/components/ui/popover';
+} from '@/components/ui/popover';
 import { toast } from 'sonner';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 interface WidgetStyleEditorProps {
   widgetId: string;
@@ -150,16 +143,11 @@ export function WidgetStyleEditor({
 
   // New conditional format form state
   const [newFormatField, setNewFormatField] = useState('');
-  const [newFormatOperator, setNewFormatOperator] = useState('gt');
+  const [newFormatOperator, setNewFormatOperator] = useState<ConditionalFormat['conditions'][0]['operator']>('gt');
   const [newFormatValue, setNewFormatValue] = useState('');
   const [newFormatColor, setNewFormatColor] = useState('#EF4444');
 
-  useEffect(() => {
-    loadStyling();
-    loadThemes();
-  }, [widgetId]);
-
-  const loadStyling = async () => {
+  const loadStyling = useCallback(async () => {
     try {
       const [stylingData, formatsData] = await Promise.all([
         widgetCustomizationApi.getStyling(widgetId),
@@ -176,16 +164,21 @@ export function WidgetStyleEditor({
     } finally {
       setLoading(false);
     }
-  };
+  }, [widgetId]);
 
-  const loadThemes = async () => {
+  const loadThemes = useCallback(async () => {
     try {
       const themesData = await widgetCustomizationApi.getThemes();
       setThemes(themesData);
     } catch (error) {
       console.error('Failed to load themes:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadStyling();
+    loadThemes();
+  }, [loadStyling, loadThemes]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -265,7 +258,7 @@ export function WidgetStyleEditor({
         field: newFormatField,
         conditions: [
           {
-            operator: newFormatOperator as any,
+            operator: newFormatOperator,
             value: isNaN(Number(newFormatValue))
               ? newFormatValue
               : Number(newFormatValue),
@@ -307,14 +300,14 @@ export function WidgetStyleEditor({
     }));
   };
 
-  const updateShadow = (key: keyof NonNullable<WidgetStyling['shadow']>, value: any) => {
+  const updateShadow = (key: keyof NonNullable<WidgetStyling['shadow']>, value: unknown) => {
     setStyling((prev) => ({
       ...prev,
       shadow: { ...prev.shadow!, [key]: value },
     }));
   };
 
-  const updateFont = (key: keyof NonNullable<WidgetStyling['font']>, value: any) => {
+  const updateFont = (key: keyof NonNullable<WidgetStyling['font']>, value: unknown) => {
     setStyling((prev) => ({
       ...prev,
       font: { ...prev.font!, [key]: value },
@@ -704,7 +697,7 @@ export function WidgetStyleEditor({
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Operator</Label>
-                    <Select value={newFormatOperator} onValueChange={setNewFormatOperator}>
+                    <Select value={newFormatOperator} onValueChange={(value) => setNewFormatOperator(value as "eq" | "ne" | "contains" | "gt" | "gte" | "lt" | "lte" | "between")}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>

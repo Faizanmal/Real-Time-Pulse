@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { useAuthStore } from '@/src/store/auth';
+import { useAuthStore } from '@/store/auth';
 import { 
   Activity, 
   Zap, 
@@ -118,7 +118,7 @@ export default function Home() {
         >
           <div className="flex items-center gap-2">
             <Sparkles className="h-8 w-8 text-purple-400" />
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
               Real-Time Pulse
             </h1>
           </div>
@@ -131,13 +131,13 @@ export default function Home() {
             </Link>
             <Link
               href="/auth/signup"
-              className="group relative px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-xl transition-all overflow-hidden"
+              className="group relative px-6 py-2 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-xl transition-all overflow-hidden"
             >
               <span className="relative z-10 flex items-center gap-2">
                 Sign Up
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 opacity-0 group-hover:opacity-20 transition-opacity" />
+              <div className="absolute inset-0 bg-linear-to-r from-purple-400 to-pink-400 opacity-0 group-hover:opacity-20 transition-opacity" />
             </Link>
           </div>
         </motion.nav>
@@ -150,7 +150,7 @@ export default function Home() {
             transition={{ duration: 0.5 }}
           >
             <motion.h1
-              className="text-7xl md:text-8xl font-black mb-6 bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent"
+              className="text-7xl md:text-8xl font-black mb-6 bg-linear-to-r from-white via-purple-200 to-white bg-clip-text text-transparent"
               animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
               transition={{ duration: 5, repeat: Infinity }}
             >
@@ -191,7 +191,7 @@ export default function Home() {
                 <div className="space-y-3">
                   <Link
                     href="/auth/signup"
-                    className="block w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold py-3 rounded-xl transition-all"
+                    className="block w-full bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold py-3 rounded-xl transition-all"
                   >
                     Create Account
                   </Link>
@@ -220,7 +220,7 @@ export default function Home() {
                 </p>
                 <Link
                   href="/dashboard"
-                  className="block w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold py-3 rounded-xl transition-all"
+                  className="block w-full bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold py-3 rounded-xl transition-all"
                 >
                   Go to Dashboard
                 </Link>
@@ -274,8 +274,8 @@ export default function Home() {
           transition={{ delay: 1.2 }}
           className="text-center py-20"
         >
-          <div className="relative overflow-hidden bg-gradient-to-r from-purple-900/50 via-pink-900/50 to-purple-900/50 backdrop-blur-xl border border-purple-500/50 rounded-3xl p-12 max-w-4xl mx-auto">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 animate-pulse" />
+          <div className="relative overflow-hidden bg-linear-to-r from-purple-900/50 via-pink-900/50 to-purple-900/50 backdrop-blur-xl border border-purple-500/50 rounded-3xl p-12 max-w-4xl mx-auto">
+            <div className="absolute inset-0 bg-linear-to-r from-purple-500/10 to-pink-500/10 animate-pulse" />
             <div className="relative z-10">
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
                 Ready to Get Started?
@@ -285,7 +285,7 @@ export default function Home() {
               </p>
               <Link
                 href="/auth/signup"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-lg font-bold rounded-xl transition-all transform hover:scale-105"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-lg font-bold rounded-xl transition-all transform hover:scale-105"
               >
                 Create Free Account
                 <ArrowRight className="h-5 w-5" />

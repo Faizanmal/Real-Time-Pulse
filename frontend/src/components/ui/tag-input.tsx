@@ -2,17 +2,17 @@
 
 import * as React from 'react';
 import { X, Plus } from 'lucide-react';
-import { Badge } from '@/src/components/ui/badge';
-import { Button } from '@/src/components/ui/button';
-import { Input } from '@/src/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/src/components/ui/popover';
-import { useTags, useCreateTag } from '@/src/hooks/use-api';
-import type { Tag } from '@/src/lib/api';
-import { cn } from '@/src/lib/utils';
+} from '@/components/ui/popover';
+import { useTags, useCreateTag } from '@/hooks/use-api';
+import type { Tag } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
 interface TagInputProps {
   selectedTags: Tag[];

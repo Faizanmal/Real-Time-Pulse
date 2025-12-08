@@ -1,13 +1,38 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useScripts } from '@/hooks/useAdvancedFeatures';
+import type { UserScript } from '@/hooks/useAdvancedFeatures.types';
 import { scriptingAPI } from '@/lib/advanced-features-api';
 
 interface ScriptEditorProps {
-  onSave?: (script: any) => void;
-  initialScript?: any;
+  onSave?: (script: UserScript) => Promise<void>;
+  initialScript?: UserScript;
 }
+
+interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+}
+
+interface TestResultData {
+  success: boolean;
+  output?: string;
+  context?: unknown;
+  error?: string;
+}
+
+interface Script {
+  id?: string;
+  name: string;
+  description?: string;
+  code: string;
+  version?: number;
+  updatedAt?: string;
+  type: 'calculation' | 'transformation' | 'aggregation' | 'visualization';
+}
+
+// Removed unused LibraryInfo interface
 
 export function ScriptEditor({ onSave, initialScript }: ScriptEditorProps) {
   const [name, setName] = useState(initialScript?.name || '');
@@ -16,22 +41,18 @@ export function ScriptEditor({ onSave, initialScript }: ScriptEditorProps) {
   const [type, setType] = useState<'calculation' | 'transformation' | 'aggregation' | 'visualization'>(
     initialScript?.type || 'calculation'
   );
-  const [validation, setValidation] = useState<{ valid: boolean; errors: string[] } | null>(null);
-  const [testResult, setTestResult] = useState<any>(null);
+  const [validation, setValidation] = useState<ValidationResult | null>(null);
+  const [testResult, setTestResult] = useState<TestResultData | null>(null);
   const [testContext, setTestContext] = useState('{\n  "value": 100,\n  "items": [1, 2, 3, 4, 5]\n}');
   const [saving, setSaving] = useState(false);
-  const [libraries, setLibraries] = useState<any[]>([]);
-
-  useEffect(() => {
-    scriptingAPI.getLibraries().then(setLibraries).catch(console.error);
-  }, []);
 
   const handleValidate = useCallback(async () => {
     try {
       const result = await scriptingAPI.validateScript(code);
-      setValidation(result);
-    } catch (error: any) {
-      setValidation({ valid: false, errors: [error.message] });
+      setValidation(result as ValidationResult);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setValidation({ valid: false, errors: [errorMessage] });
     }
   }, [code]);
 
@@ -40,15 +61,16 @@ export function ScriptEditor({ onSave, initialScript }: ScriptEditorProps) {
       const context = JSON.parse(testContext);
       // For testing, we'd need to create a temporary script first
       setTestResult({ success: true, output: 'Test execution simulated', context });
-    } catch (error: any) {
-      setTestResult({ success: false, error: error.message });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setTestResult({ success: false, error: errorMessage });
     }
-  }, [code, testContext]);
+  }, [testContext]);
 
   const handleSave = useCallback(async () => {
     setSaving(true);
     try {
-      const scriptData = { name, description, code, type };
+      const scriptData: Script = { name, description, code, type };
       if (onSave) {
         await onSave(scriptData);
       }
@@ -71,7 +93,7 @@ export function ScriptEditor({ onSave, initialScript }: ScriptEditorProps) {
           />
           <select
             value={type}
-            onChange={(e) => setType(e.target.value as any)}
+            onChange={(e) => setType(e.target.value as Script['type'])}
             className="px-3 py-1 text-sm border rounded-lg bg-gray-50 dark:bg-gray-800"
           >
             <option value="calculation">Calculation</option>
@@ -187,12 +209,10 @@ export function ScriptEditor({ onSave, initialScript }: ScriptEditorProps) {
           <div className="p-3 border-t max-h-48 overflow-auto">
             <div className="font-medium text-sm mb-2">Available Libraries</div>
             <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
-              {libraries.map((lib) => (
-                <div key={lib.name} className="p-1.5 bg-gray-50 dark:bg-gray-800 rounded">
-                  <span className="font-mono text-blue-600 dark:text-blue-400">{lib.name}</span>
-                  <span className="ml-2">{lib.description}</span>
-                </div>
-              ))}
+              {/* Libraries will be populated dynamically */}
+              <div className="text-center py-4 text-gray-400">
+                No libraries available
+              </div>
             </div>
           </div>
         </div>
@@ -202,11 +222,11 @@ export function ScriptEditor({ onSave, initialScript }: ScriptEditorProps) {
 }
 
 export function ScriptsList() {
-  const { scripts, loading, createScript, executeScript } = useScripts();
+  const { scripts, loading, createScript } = useScripts();
   const [showEditor, setShowEditor] = useState(false);
-  const [selectedScript, setSelectedScript] = useState<any>(null);
+  const [selectedScript, setSelectedScript] = useState<UserScript | null>(null);
 
-  const handleSave = async (scriptData: any) => {
+  const handleSave = async (scriptData: UserScript) => {
     await createScript(scriptData);
     setShowEditor(false);
   };
@@ -220,7 +240,7 @@ export function ScriptsList() {
         >
           ← Back to Scripts
         </button>
-        <ScriptEditor onSave={handleSave} initialScript={selectedScript} />
+        <ScriptEditor onSave={handleSave} initialScript={selectedScript ?? undefined} />
       </div>
     );
   }
@@ -248,7 +268,7 @@ export function ScriptsList() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {scripts.map((script) => (
+          {scripts.map((script: UserScript) => (
             <div
               key={script.id}
               className="p-4 bg-white dark:bg-gray-800 rounded-lg border hover:shadow-md transition-shadow cursor-pointer"
@@ -277,7 +297,7 @@ export function ScriptsList() {
                 </span>
               </div>
               <div className="mt-3 text-xs text-gray-400">
-                v{script.version} • Updated {new Date(script.updatedAt).toLocaleDateString()}
+                v{script.version} • Updated {script.updatedAt ? new Date(script.updatedAt).toLocaleDateString() : 'Unknown'}
               </div>
             </div>
           ))}

@@ -7,11 +7,12 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import Stripe from 'stripe';
+import { BillingEventType } from '@prisma/client';
 import {
   SubscriptionPlan,
   SubscriptionStatus,
-  BillingEventType,
-  BillingEventStatus,
+  // BillingEventType,
+  // BillingEventStatus,
 } from '@prisma/client';
 
 @Injectable()
@@ -42,7 +43,7 @@ export class BillingService {
     private readonly configService: ConfigService,
   ) {
     const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
-    
+
     if (stripeSecretKey) {
       this.stripe = new Stripe(stripeSecretKey, {
         apiVersion: '2025-02-24.acacia',
@@ -137,7 +138,9 @@ export class BillingService {
     });
 
     if (!subscription?.stripeCustomerId) {
-      throw new BadRequestException('Customer not found. Create customer first.');
+      throw new BadRequestException(
+        'Customer not found. Create customer first.',
+      );
     }
 
     const planConfig = this.plans[plan];
@@ -199,7 +202,9 @@ export class BillingService {
       throw new BadRequestException('Stripe not configured');
     }
 
-    const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET');
+    const webhookSecret = this.configService.get<string>(
+      'STRIPE_WEBHOOK_SECRET',
+    );
     if (!webhookSecret) {
       throw new BadRequestException('Webhook secret not configured');
     }
@@ -221,30 +226,24 @@ export class BillingService {
 
     switch (event.type) {
       case 'checkout.session.completed':
-        await this.handleCheckoutCompleted(
-          event.data.object as Stripe.Checkout.Session,
-        );
+        await this.handleCheckoutCompleted(event.data.object);
         break;
 
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
-        await this.handleSubscriptionUpdated(
-          event.data.object as Stripe.Subscription,
-        );
+        await this.handleSubscriptionUpdated(event.data.object);
         break;
 
       case 'customer.subscription.deleted':
-        await this.handleSubscriptionCanceled(
-          event.data.object as Stripe.Subscription,
-        );
+        await this.handleSubscriptionCanceled(event.data.object);
         break;
 
       case 'invoice.paid':
-        await this.handleInvoicePaid(event.data.object as Stripe.Invoice);
+        await this.handleInvoicePaid(event.data.object);
         break;
 
       case 'invoice.payment_failed':
-        await this.handleInvoiceFailed(event.data.object as Stripe.Invoice);
+        await this.handleInvoiceFailed(event.data.object);
         break;
 
       default:
@@ -281,7 +280,7 @@ export class BillingService {
       },
     });
 
-    await this.recordBillingEvent(workspaceId, BillingEventType.SUBSCRIPTION_CANCELED);
+    await this.recordBillingEvent(workspaceId, 'SUBSCRIPTION_CANCELED');
 
     return { message: 'Subscription will be canceled at period end' };
   }
@@ -324,7 +323,7 @@ export class BillingService {
 
     await this.recordBillingEvent(
       workspaceId,
-      isUpgrade ? BillingEventType.PLAN_UPGRADED : BillingEventType.PLAN_DOWNGRADED,
+      isUpgrade ? 'PLAN_UPGRADED' : 'PLAN_DOWNGRADED',
     );
 
     return { message: `Plan changed to ${newPlan}` };
@@ -436,7 +435,7 @@ export class BillingService {
       },
     });
 
-    await this.recordBillingEvent(workspaceId, BillingEventType.SUBSCRIPTION_CREATED);
+    await this.recordBillingEvent(workspaceId, 'SUBSCRIPTION_CREATED');
   }
 
   private async handleSubscriptionUpdated(subscription: Stripe.Subscription) {
@@ -465,14 +464,16 @@ export class BillingService {
       where: { id: dbSubscription.id },
       data: {
         status: statusMap[subscription.status] || 'ACTIVE',
-        stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        stripeCurrentPeriodEnd: new Date(
+          subscription.current_period_end * 1000,
+        ),
         stripePriceId: subscription.items.data[0]?.price.id,
       },
     });
 
     await this.recordBillingEvent(
       dbSubscription.workspaceId,
-      BillingEventType.SUBSCRIPTION_UPDATED,
+      'SUBSCRIPTION_UPDATED',
     );
   }
 
@@ -495,7 +496,7 @@ export class BillingService {
 
     await this.recordBillingEvent(
       dbSubscription.workspaceId,
-      BillingEventType.SUBSCRIPTION_CANCELED,
+      'SUBSCRIPTION_CANCELED',
     );
   }
 
@@ -508,14 +509,10 @@ export class BillingService {
 
     if (!subscription) return;
 
-    await this.recordBillingEvent(
-      subscription.workspaceId,
-      BillingEventType.INVOICE_PAID,
-      {
-        stripeInvoiceId: invoice.id,
-        amount: invoice.amount_paid,
-      },
-    );
+    await this.recordBillingEvent(subscription.workspaceId, 'INVOICE_PAID', {
+      stripeInvoiceId: invoice.id,
+      amount: invoice.amount_paid,
+    });
   }
 
   private async handleInvoiceFailed(invoice: Stripe.Invoice) {
@@ -527,14 +524,10 @@ export class BillingService {
 
     if (!subscription) return;
 
-    await this.recordBillingEvent(
-      subscription.workspaceId,
-      BillingEventType.INVOICE_FAILED,
-      {
-        stripeInvoiceId: invoice.id,
-        amount: invoice.amount_due,
-      },
-    );
+    await this.recordBillingEvent(subscription.workspaceId, 'INVOICE_FAILED', {
+      stripeInvoiceId: invoice.id,
+      amount: invoice.amount_due,
+    });
   }
 
   private async recordBillingEvent(
@@ -548,7 +541,7 @@ export class BillingService {
         type,
         stripeInvoiceId: data?.stripeInvoiceId,
         amount: data?.amount,
-        status: BillingEventStatus.COMPLETED,
+        status: 'COMPLETED',
       },
     });
   }

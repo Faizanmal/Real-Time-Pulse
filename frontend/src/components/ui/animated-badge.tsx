@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, HTMLMotionProps } from "framer-motion";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
 
 interface AnimatedBadgeProps extends Omit<HTMLMotionProps<"span">, "children"> {
@@ -18,7 +18,7 @@ const variantStyles = {
   warning: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100",
   error: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100",
   info: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100",
-  gradient: "bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white",
+  gradient: "bg-linear-to-r from-purple-600 via-pink-600 to-blue-600 text-white",
   pulse: "bg-purple-600 text-white",
 };
 

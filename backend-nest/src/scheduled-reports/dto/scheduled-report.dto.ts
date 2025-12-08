@@ -18,7 +18,10 @@ import { ReportFormat } from '@prisma/client';
 
 // Date range configuration for reports
 export class DateRangeDto {
-  @ApiProperty({ description: 'Date range type', enum: ['last_7_days', 'last_30_days', 'last_90_days', 'custom', 'all_time'] })
+  @ApiProperty({
+    description: 'Date range type',
+    enum: ['last_7_days', 'last_30_days', 'last_90_days', 'custom', 'all_time'],
+  })
   @IsString()
   type: 'last_7_days' | 'last_30_days' | 'last_90_days' | 'custom' | 'all_time';
 
@@ -82,7 +85,10 @@ export class EmailTemplateDto {
 
 // Delivery channel configuration
 export class DeliveryChannelDto {
-  @ApiProperty({ description: 'Channel type', enum: ['email', 'slack', 'webhook'] })
+  @ApiProperty({
+    description: 'Channel type',
+    enum: ['email', 'slack', 'webhook'],
+  })
   @IsString()
   type: 'email' | 'slack' | 'webhook';
 
@@ -191,7 +197,9 @@ export class CreateScheduledReportDto {
   @IsBoolean()
   isOneTime?: boolean;
 
-  @ApiPropertyOptional({ description: 'One-time report send date (ISO string)' })
+  @ApiPropertyOptional({
+    description: 'One-time report send date (ISO string)',
+  })
   @IsOptional()
   @IsString()
   sendAt?: string;
@@ -207,7 +215,10 @@ export class UpdateScheduledReportDto extends PartialType(
 ) {}
 
 export class ReportRunQueryDto {
-  @ApiPropertyOptional({ description: 'Number of records to return', default: 20 })
+  @ApiPropertyOptional({
+    description: 'Number of records to return',
+    default: 20,
+  })
   @IsOptional()
   @IsNumber()
   @Min(1)

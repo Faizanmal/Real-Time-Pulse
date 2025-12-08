@@ -6,7 +6,9 @@ export class CreateCommentDto {
   @IsString()
   portalId: string;
 
-  @ApiPropertyOptional({ description: 'Widget ID if commenting on a specific widget' })
+  @ApiPropertyOptional({
+    description: 'Widget ID if commenting on a specific widget',
+  })
   @IsString()
   @IsOptional()
   widgetId?: string;

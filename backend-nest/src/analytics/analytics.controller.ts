@@ -73,10 +73,7 @@ export class AnalyticsController {
   @Get('activity')
   @ApiOperation({ summary: 'Get activity feed' })
   @ApiResponse({ status: 200, description: 'Returns activity feed' })
-  async getActivityFeed(
-    @Request() req: any,
-    @Query('limit') limit?: number,
-  ) {
+  async getActivityFeed(@Request() req: any, @Query('limit') limit?: number) {
     return this.analyticsService.getActivityFeed(
       req.user.workspaceId,
       limit ? parseInt(String(limit), 10) : 50,

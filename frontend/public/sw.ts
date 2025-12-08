@@ -2,7 +2,6 @@
 
 declare const self: ServiceWorkerGlobalScope;
 
-const CACHE_NAME = 'rtpulse-v1';
 const STATIC_CACHE = 'rtpulse-static-v1';
 const DYNAMIC_CACHE = 'rtpulse-dynamic-v1';
 const API_CACHE = 'rtpulse-api-v1';
@@ -115,7 +114,7 @@ async function networkFirst(request: Request, cacheName: string): Promise<Respon
     }
     return response;
   } catch (error) {
-    console.log('[ServiceWorker] Network failed, trying cache');
+    console.log('[ServiceWorker] Network failed, trying cache:', error);
     const cached = await caches.match(request);
     if (cached) {
       return cached;

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, HTMLMotionProps } from "framer-motion";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@/lib/utils";
 import { ReactNode, forwardRef } from "react";
 import { Loader2 } from "lucide-react";
 
@@ -16,7 +16,7 @@ interface AnimatedButtonProps extends Omit<HTMLMotionProps<"button">, "children"
 
 const variantStyles = {
   default: "bg-purple-600 text-white hover:bg-purple-700 shadow-lg hover:shadow-xl",
-  gradient: "bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white shadow-lg hover:shadow-2xl hover:from-purple-700 hover:via-pink-700 hover:to-blue-700",
+  gradient: "bg-linear-to-r from-purple-600 via-pink-600 to-blue-600 text-white shadow-lg hover:shadow-2xl hover:from-purple-700 hover:via-pink-700 hover:to-blue-700",
   outline: "border-2 border-purple-600 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950",
   ghost: "text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950",
   destructive: "bg-red-600 text-white hover:bg-red-700 shadow-lg",

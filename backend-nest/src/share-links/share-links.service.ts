@@ -81,7 +81,9 @@ export class ShareLinksService {
       },
     });
 
-    this.logger.log(`Share link created: ${shareLink.id} for portal ${dto.portalId}`);
+    this.logger.log(
+      `Share link created: ${shareLink.id} for portal ${dto.portalId}`,
+    );
 
     return {
       ...shareLink,
@@ -285,7 +287,9 @@ export class ShareLinksService {
 
     // Check view limit
     if (link.maxViews && link.currentViews >= link.maxViews) {
-      throw new ForbiddenException('This share link has reached its view limit');
+      throw new ForbiddenException(
+        'This share link has reached its view limit',
+      );
     }
 
     // Check password
@@ -350,12 +354,16 @@ export class ShareLinksService {
   /**
    * Generate QR code for share link
    */
-  async generateQRCode(id: string, workspaceId: string, options?: {
-    width?: number;
-    margin?: number;
-    darkColor?: string;
-    lightColor?: string;
-  }): Promise<{ qrCode: string; shareUrl: string }> {
+  async generateQRCode(
+    id: string,
+    workspaceId: string,
+    options?: {
+      width?: number;
+      margin?: number;
+      darkColor?: string;
+      lightColor?: string;
+    },
+  ): Promise<{ qrCode: string; shareUrl: string }> {
     const link = await this.prisma.shareLink.findFirst({
       where: {
         id,
@@ -368,7 +376,7 @@ export class ShareLinksService {
     }
 
     const shareUrl = this.generateShareUrl(link.token);
-    
+
     const qrCode = await QRCode.toDataURL(shareUrl, {
       width: options?.width || 256,
       margin: options?.margin || 2,
@@ -384,10 +392,14 @@ export class ShareLinksService {
   /**
    * Get QR code as buffer for download
    */
-  async getQRCodeBuffer(id: string, workspaceId: string, options?: {
-    width?: number;
-    format?: 'png' | 'svg';
-  }): Promise<Buffer> {
+  async getQRCodeBuffer(
+    id: string,
+    workspaceId: string,
+    options?: {
+      width?: number;
+      format?: 'png' | 'svg';
+    },
+  ): Promise<Buffer> {
     const link = await this.prisma.shareLink.findFirst({
       where: {
         id,
@@ -400,12 +412,15 @@ export class ShareLinksService {
     }
 
     const shareUrl = this.generateShareUrl(link.token);
-    
+
     if (options?.format === 'svg') {
-      const svg = await QRCode.toString(shareUrl, { type: 'svg', width: options?.width || 256 });
+      const svg = await QRCode.toString(shareUrl, {
+        type: 'svg',
+        width: options?.width || 256,
+      });
       return Buffer.from(svg);
     }
-    
+
     return await QRCode.toBuffer(shareUrl, {
       width: options?.width || 256,
       margin: 2,
@@ -415,11 +430,14 @@ export class ShareLinksService {
   /**
    * Log access for analytics
    */
-  async logAccess(token: string, accessData: {
-    ip?: string;
-    userAgent?: string;
-    referrer?: string;
-  }): Promise<void> {
+  async logAccess(
+    token: string,
+    accessData: {
+      ip?: string;
+      userAgent?: string;
+      referrer?: string;
+    },
+  ): Promise<void> {
     const link = await this.prisma.shareLink.findUnique({
       where: { token },
       select: { id: true },
@@ -441,7 +459,11 @@ export class ShareLinksService {
       const logs: AccessLog[] = existing ? JSON.parse(existing) : [];
       logs.unshift(accessLog);
       const trimmedLogs = logs.slice(0, 1000);
-      await this.cacheService.set(cacheKey, JSON.stringify(trimmedLogs), 30 * 24 * 60 * 60); // 30 days
+      await this.cacheService.set(
+        cacheKey,
+        JSON.stringify(trimmedLogs),
+        30 * 24 * 60 * 60,
+      ); // 30 days
     } catch (error) {
       this.logger.error('Failed to log access:', error);
     }
@@ -450,7 +472,10 @@ export class ShareLinksService {
   /**
    * Get analytics for a share link
    */
-  async getAnalytics(id: string, workspaceId: string): Promise<ShareLinkAnalytics> {
+  async getAnalytics(
+    id: string,
+    workspaceId: string,
+  ): Promise<ShareLinkAnalytics> {
     const link = await this.prisma.shareLink.findFirst({
       where: {
         id,
@@ -465,7 +490,7 @@ export class ShareLinksService {
     // Get access logs from cache
     const cacheKey = `${this.ACCESS_LOG_PREFIX}${id}`;
     let logs: AccessLog[] = [];
-    
+
     try {
       const cached = await this.cacheService.get(cacheKey);
       if (cached) {
@@ -476,8 +501,8 @@ export class ShareLinksService {
     }
 
     // Calculate analytics
-    const uniqueIps = new Set(logs.map(l => l.ip).filter(Boolean));
-    
+    const uniqueIps = new Set(logs.map((l) => l.ip).filter(Boolean));
+
     // Views by day (last 30 days)
     const viewsByDay: { date: string; views: number }[] = [];
     const now = new Date();
@@ -485,15 +510,15 @@ export class ShareLinksService {
       const date = new Date(now);
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
-      const views = logs.filter(l => 
-        new Date(l.timestamp).toISOString().split('T')[0] === dateStr
+      const views = logs.filter(
+        (l) => new Date(l.timestamp).toISOString().split('T')[0] === dateStr,
       ).length;
       viewsByDay.push({ date: dateStr, views });
     }
 
     // Views by country (from IP, simplified - in production use GeoIP)
     const countryMap = new Map<string, number>();
-    logs.forEach(l => {
+    logs.forEach((l) => {
       const country = l.country || 'Unknown';
       countryMap.set(country, (countryMap.get(country) || 0) + 1);
     });
@@ -504,7 +529,7 @@ export class ShareLinksService {
 
     // Top referrers
     const referrerMap = new Map<string, number>();
-    logs.forEach(l => {
+    logs.forEach((l) => {
       const referrer = l.referrer || 'Direct';
       referrerMap.set(referrer, (referrerMap.get(referrer) || 0) + 1);
     });

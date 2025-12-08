@@ -1,7 +1,13 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CacheService } from '../cache/cache.service';
-import { NotificationsGateway } from '../notifications/notifications.gateway';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import { CacheService } from '../../cache/cache.service';
+import { NotificationsGateway } from '../../notifications/notifications.gateway';
+import { Prisma } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface BulkOperationResult<T = unknown> {
@@ -86,7 +92,9 @@ export class BulkOperationsService {
       results,
     };
 
-    this.logger.log(`Bulk widget update: ${summary.successful}/${summary.totalRequested} successful`);
+    this.logger.log(
+      `Bulk widget update: ${summary.successful}/${summary.totalRequested} successful`,
+    );
     return summary;
   }
 
@@ -174,7 +182,7 @@ export class BulkOperationsService {
         slug: `${sourcePortal.slug}-copy-${Date.now()}`,
         description: sourcePortal.description,
         isPublic: sourcePortal.isPublic,
-        layout: sourcePortal.layout,
+        layout: sourcePortal.layout as Prisma.InputJsonValue,
         cacheRefreshInterval: sourcePortal.cacheRefreshInterval,
         createdById: userId,
       },
@@ -190,7 +198,7 @@ export class BulkOperationsService {
             portalId: newPortal.id,
             name: widget.name,
             type: widget.type,
-            config: widget.config,
+            config: widget.config as Prisma.InputJsonValue,
             gridX: widget.gridX,
             gridY: widget.gridY,
             gridWidth: widget.gridWidth,
@@ -204,7 +212,9 @@ export class BulkOperationsService {
       }
     }
 
-    this.logger.log(`Portal ${portalId} cloned to ${newPortal.id} with ${widgetsCloned} widgets`);
+    this.logger.log(
+      `Portal ${portalId} cloned to ${newPortal.id} with ${widgetsCloned} widgets`,
+    );
 
     return {
       portalId: newPortal.id,
@@ -219,8 +229,13 @@ export class BulkOperationsService {
     workspaceId: string,
     userId: string,
     portalIds: string[],
-  ): Promise<BulkOperationSummary<{ portalId: string; widgetsCloned: number }>> {
-    const results: BulkOperationResult<{ portalId: string; widgetsCloned: number }>[] = [];
+  ): Promise<
+    BulkOperationSummary<{ portalId: string; widgetsCloned: number }>
+  > {
+    const results: BulkOperationResult<{
+      portalId: string;
+      widgetsCloned: number;
+    }>[] = [];
 
     for (const portalId of portalIds) {
       try {
@@ -289,7 +304,7 @@ export class BulkOperationsService {
             description: alertData.description,
             portalId: alertData.portalId,
             widgetId: alertData.widgetId,
-            condition: alertData.condition,
+            condition: alertData.condition as Prisma.InputJsonValue,
             channels: alertData.channels,
             emailRecipients: alertData.emailRecipients || [],
             createdById: userId,
@@ -333,7 +348,7 @@ export class BulkOperationsService {
       widgets: Record<string, unknown>[];
     }[];
   }> {
-    const portals = [];
+    const portals: any[] = [];
 
     for (const portalId of portalIds) {
       const portal = await this.prisma.portal.findFirst({
@@ -399,10 +414,11 @@ export class BulkOperationsService {
             workspaceId,
             name: config.name,
             slug: `${config.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
-            description: config.config.description as string || null,
-            isPublic: config.config.isPublic as boolean ?? true,
+            description: (config.config.description as string) || null,
+            isPublic: (config.config.isPublic as boolean) ?? true,
             layout: config.config.layout || [],
-            cacheRefreshInterval: config.config.cacheRefreshInterval as number || 30,
+            cacheRefreshInterval:
+              (config.config.cacheRefreshInterval as number) || 30,
             createdById: userId,
           },
         });
@@ -414,12 +430,12 @@ export class BulkOperationsService {
               portalId: portal.id,
               name: widget.name as string,
               type: widget.type as any,
-              config: widget.config as any || {},
-              gridX: widget.gridX as number || 0,
-              gridY: widget.gridY as number || 0,
-              gridWidth: widget.gridWidth as number || 4,
-              gridHeight: widget.gridHeight as number || 4,
-              refreshInterval: widget.refreshInterval as number || 300,
+              config: (widget.config as any) || {},
+              gridX: (widget.gridX as number) || 0,
+              gridY: (widget.gridY as number) || 0,
+              gridWidth: (widget.gridWidth as number) || 4,
+              gridHeight: (widget.gridHeight as number) || 4,
+              refreshInterval: (widget.refreshInterval as number) || 300,
             },
           });
         }

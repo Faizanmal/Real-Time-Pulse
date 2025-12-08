@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Webhook, Plus, Trash2, Eye, EyeOff, TestTube, RefreshCw, ExternalLink } from 'lucide-react';
 import { webhooksApi, Webhook as WebhookType, CreateWebhookDto, WEBHOOK_EVENTS, WebhookDelivery } from '../../lib/enterprise-api';
-import { Button } from '@/src/components/ui/button';
-import { Card } from '@/src/components/ui/card';
-import { Badge } from '@/src/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -13,12 +13,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/src/components/ui/dialog';
-import { Input } from '@/src/components/ui/input';
-import { Label } from '@/src/components/ui/label';
-import { Switch } from '@/src/components/ui/switch';
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 export function WebhooksManager({ className }: { className?: string }) {
   const [webhooks, setWebhooks] = useState<WebhookType[]>([]);

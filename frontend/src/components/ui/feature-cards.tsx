@@ -5,7 +5,7 @@
 
 import { motion } from 'framer-motion';
 import { ReactNode } from 'react';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 import { 
   Activity, 
   TrendingUp, 

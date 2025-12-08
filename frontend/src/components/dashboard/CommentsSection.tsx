@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   MessageCircle,
   Reply,
@@ -13,20 +13,20 @@ import {
   AtSign,
   X,
 } from 'lucide-react';
-import { commentsApi, Comment, CreateCommentDto } from '@/src/lib/enterprise-api';
-import { Button } from '@/src/components/ui/button';
-import { Card } from '@/src/components/ui/card';
-import { Badge } from '@/src/components/ui/badge';
-import { Textarea } from '@/src/components/ui/textarea';
-import { Avatar, AvatarFallback } from '@/src/components/ui/avatar';
+import { commentsApi, Comment, CreateCommentDto } from '@/lib/enterprise-api';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/src/components/ui/dropdown-menu';
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 interface CommentsSectionProps {
   className?: string;
@@ -47,11 +47,7 @@ export function CommentsSection({
   const [submitting, setSubmitting] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadComments();
-  }, [resourceType, resourceId]);
-
-  const loadComments = async () => {
+  const loadComments = useCallback(async () => {
     try {
       const data = await commentsApi.getByResource(resourceType, resourceId);
       // Sort: pinned first, then by date
@@ -67,7 +63,11 @@ export function CommentsSection({
     } finally {
       setLoading(false);
     }
-  };
+  }, [resourceType, resourceId]);
+
+  useEffect(() => {
+    loadComments();
+  }, [loadComments]);
 
   const addComment = async (parentId?: string) => {
     if (!newComment.trim()) return;

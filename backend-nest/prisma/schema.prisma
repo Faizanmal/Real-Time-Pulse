@@ -20,17 +20,29 @@ model User {
   password  String? // Nullable for OAuth-only users
   firstName String?
   lastName  String?
+  name      String? // Full name for analytics
   avatar    String?
 
   // OAuth providers
-  googleId String? @unique
+  googleId    String? @unique
+  githubId    String? @unique
+  firebaseUid String? @unique
 
   // Email verification
-  emailVerified Boolean @default(false)
+  emailVerified      Boolean   @default(false)
+  emailVerifyToken   String?   @unique
+  emailVerifyExpiry  DateTime?
 
   // Password reset
   resetToken       String?   @unique
   resetTokenExpiry DateTime?
+
+  // Security
+  twoFactorEnabled  Boolean  @default(false)
+  twoFactorSecret   String?
+  passwordChangedAt DateTime?
+  failedLoginCount  Int      @default(0)
+  lockedUntil       DateTime?
 
   // Multi-tenant relationship
   workspaceId String
@@ -51,9 +63,16 @@ model User {
   scheduledReports   ScheduledReport[]
   webhooks           Webhook[]
   comments           Comment[]
+  workspaceMembers   WorkspaceMember[]
+  sessions           UserSession[]
+  auditLogs          AuditLog[]       @relation("UserAuditLogs")
+  apiKeys            ApiKey[]
 
   @@index([workspaceId])
   @@index([email])
+  @@index([googleId])
+  @@index([githubId])
+  @@index([firebaseUid])
   @@map("users")
 }
 
@@ -93,6 +112,7 @@ model Workspace {
   scheduledReports ScheduledReport[]
   webhooks         Webhook[]
   aiInsights       AIInsight[]
+  members          WorkspaceMember[]
 
   @@map("workspaces")
 }
@@ -113,6 +133,7 @@ model Subscription {
   stripeSubscriptionId   String?   @unique
   stripePriceId          String?
   stripeCurrentPeriodEnd DateTime?
+  currentPeriodStart     DateTime?
 
   // Plan details
   plan   SubscriptionPlan   @default(TRIAL)
@@ -146,6 +167,7 @@ enum SubscriptionStatus {
   ACTIVE
   PAST_DUE
   CANCELED
+  CANCELLED
   INCOMPLETE
   INCOMPLETE_EXPIRED
   UNPAID
@@ -399,6 +421,7 @@ model AuditLog {
   workspaceId String
   userId      String?
   userEmail   String
+  user        User?         @relation("UserAuditLogs", fields: [userId], references: [id])
 
   // Action details
   action   AuditAction
@@ -501,7 +524,9 @@ model WorkspaceMember {
 
   // Relationships
   workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Role & Permissions
   role WorkspaceMemberRole @default(VIEWER)
@@ -705,6 +730,7 @@ model Alert {
   name        String
   description String?
   condition   Json // {metric: "value", operator: ">", threshold: 100}
+  severity    AlertSeverity @default(MEDIUM)
   
   // Notification channels
   channels Json // ["email", "slack", "webhook"]
@@ -1268,4 +1294,173 @@ model PortalTemplate {
   @@index([isPublic])
   @@index([workspaceId])
   @@map("portal_templates")
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// ========================================
+// SECURITY MODELS
+// ========================================
+
+model UserSession {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Session details
+  token        String   @unique
+  refreshToken String?  @unique
+  
+  // Device/Client info
+  ipAddress  String
+  userAgent  String
+  deviceType String?
+  location   String?
+  
+  // Status
+  isActive   Boolean  @default(true)
+  lastActive DateTime @default(now())
+  expiresAt  DateTime
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([token])
+  @@index([isActive])
+  @@map("user_sessions")
+}
+
+model ApiKey {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId String
+  
+  // Key details
+  name        String
+  keyHash     String   @unique
+  keyPrefix   String   // First 8 chars for identification
+  
+  // Permissions
+  scopes      String[]
+  
+  // Rate limiting
+  rateLimit   Int      @default(1000)
+  
+  // Status
+  isActive    Boolean  @default(true)
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  revokedAt   DateTime?
+  
+  @@index([workspaceId])
+  @@index([keyHash])
+  @@index([isActive])
+  @@map("api_keys")
+}
+
+model SecurityEvent {
+  id        String   @id @default(uuid())
+  
+  // Event details
+  eventType   String    // login_failed, suspicious_activity, etc.
+  severity    String    // low, medium, high, critical
+  
+  // Actor
+  userId      String?
+  ipAddress   String
+  userAgent   String?
+  
+  // Context
+  resourceType String?
+  resourceId   String?
+  workspaceId  String?
+  
+  // Details
+  description String
+  metadata    Json?
+  
+  // Resolution
+  resolved    Boolean   @default(false)
+  resolvedAt  DateTime?
+  resolvedBy  String?
+  
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  
+  @@index([eventType])
+  @@index([severity])
+  @@index([userId])
+  @@index([ipAddress])
+  @@index([createdAt])
+  @@map("security_events")
+}
+
+model IpBlocklist {
+  id        String   @id @default(uuid())
+  
+  ipAddress   String   @unique
+  reason      String
+  blockedBy   String?
+  expiresAt   DateTime?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([ipAddress])
+  @@index([expiresAt])
+  @@map("ip_blocklist")
+}
+
+// ========================================
+// SYSTEM METRICS & ANALYTICS
+// ========================================
+
+model SystemMetrics {
+  id String @id @default(uuid())
+  
+  metricType String
+  value      Float
+  unit       String?
+  timestamp  DateTime @default(now())
+  metadata   Json?
+  
+  @@index([metricType])
+  @@index([timestamp])
+  @@map("system_metrics")
+}
+
+model RevenueMetrics {
+  id String @id @default(uuid())
+  
+  metricType String
+  value      Float
+  currency   String @default("usd")
+  timestamp  DateTime @default(now())
+  metadata   Json?
+  
+  @@index([metricType])
+  @@index([timestamp])
+  @@map("revenue_metrics")
+}
+
+model UserActivityMetrics {
+  id String @id @default(uuid())
+  
+  metricType String
+  value      Float
+  timestamp  DateTime @default(now())
+  metadata   Json?
+  
+  @@index([metricType])
+  @@index([timestamp])
+  @@map("user_activity_metrics")
 }

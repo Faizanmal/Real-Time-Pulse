@@ -15,7 +15,6 @@ import {
   XCircle,
   RefreshCw,
   Download,
-  Clock,
   Database,
   Zap,
   Shield,
@@ -32,24 +31,24 @@ import {
   UserActivityMetrics,
   AdminActivityItem,
   WorkspaceComparison,
-} from '@/src/lib/enterprise-api';
-import { Button } from '@/src/components/ui/button';
-import { Card } from '@/src/components/ui/card';
-import { Badge } from '@/src/components/ui/badge';
-import { Progress } from '@/src/components/ui/progress';
+} from '@/lib/enterprise-api';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/src/components/ui/select';
+} from '@/components/ui/select';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/src/components/ui/tabs';
+} from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -57,9 +56,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/src/components/ui/table';
+} from '@/components/ui/table';
 import { toast } from 'sonner';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 interface AdminDashboardProps {
   className?: string;
@@ -472,7 +471,7 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
                     MRR Growth (Last 6 Months)
                   </h3>
                   <div className="h-64 flex items-end gap-4">
-                    {revenueMetrics.growth.map((month, index) => {
+                    {revenueMetrics.growth.map((month) => {
                       const maxMrr = Math.max(...revenueMetrics.growth.map((g) => g.mrr));
                       const height = maxMrr > 0 ? (month.mrr / maxMrr) * 100 : 0;
 

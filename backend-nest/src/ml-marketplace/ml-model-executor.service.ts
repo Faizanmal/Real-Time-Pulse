@@ -13,7 +13,9 @@ export class MLModelExecutorService {
     input: Record<string, any>,
     config: Record<string, any>,
   ): Promise<any> {
-    this.logger.debug(`Executing model ${model.id} with category ${model.category}`);
+    this.logger.debug(
+      `Executing model ${model.id} with category ${model.category}`,
+    );
 
     switch (model.category) {
       case 'forecasting':
@@ -51,21 +53,24 @@ export class MLModelExecutorService {
     const values = data.map((d: any) => d.value || d);
     const windowSize = Math.min(7, values.length);
     const lastValues = values.slice(-windowSize);
-    const avg = lastValues.reduce((a: number, b: number) => a + b, 0) / windowSize;
+    const avg =
+      lastValues.reduce((a: number, b: number) => a + b, 0) / windowSize;
 
     // Calculate trend
-    const trend = values.length > 1
-      ? (values[values.length - 1] - values[0]) / values.length
-      : 0;
+    const trend =
+      values.length > 1
+        ? (values[values.length - 1] - values[0]) / values.length
+        : 0;
 
     // Generate predictions
-    const predictions = [];
+    const predictions: any[] = [];
     const lastDate = data[data.length - 1]?.date
       ? new Date(data[data.length - 1].date)
       : new Date();
 
     for (let i = 1; i <= periods; i++) {
-      const predictedValue = avg + trend * i + (Math.random() - 0.5) * avg * 0.1;
+      const predictedValue =
+        avg + trend * i + (Math.random() - 0.5) * avg * 0.1;
       const date = new Date(lastDate);
 
       switch (frequency) {
@@ -84,8 +89,8 @@ export class MLModelExecutorService {
         date: date.toISOString().split('T')[0],
         predicted: Math.round(predictedValue * 100) / 100,
         confidence: 0.85 - i * 0.02,
-        lower: Math.round((predictedValue * 0.9) * 100) / 100,
-        upper: Math.round((predictedValue * 1.1) * 100) / 100,
+        lower: Math.round(predictedValue * 0.9 * 100) / 100,
+        upper: Math.round(predictedValue * 1.1 * 100) / 100,
       });
     }
 
@@ -108,15 +113,20 @@ export class MLModelExecutorService {
 
     // Calculate statistics
     const values = data.map((d: any) => (typeof d === 'number' ? d : d.value));
-    const mean = values.reduce((a: number, b: number) => a + b, 0) / values.length;
-    const variance = values.reduce((sum: number, val: number) => sum + Math.pow(val - mean, 2), 0) / values.length;
+    const mean =
+      values.reduce((a: number, b: number) => a + b, 0) / values.length;
+    const variance =
+      values.reduce(
+        (sum: number, val: number) => sum + Math.pow(val - mean, 2),
+        0,
+      ) / values.length;
     const stdDev = Math.sqrt(variance);
 
     // Z-score threshold based on sensitivity
     const zThreshold = 1.5 + (1 - sensitivity) * 2;
 
     // Detect anomalies
-    const anomalies = [];
+    const anomalies: any[] = [];
     for (let i = 0; i < values.length; i++) {
       const zScore = Math.abs((values[i] - mean) / stdDev);
       if (zScore > zThreshold) {
@@ -205,10 +215,14 @@ export class MLModelExecutorService {
 
     // Simple K-means implementation (in production, use proper ML library)
     const k = Math.min(numClusters, data.length);
-    const featureList = features || Object.keys(data[0]).filter((key) => typeof data[0][key] === 'number');
+    const featureList =
+      features ||
+      Object.keys(data[0]).filter((key) => typeof data[0][key] === 'number');
 
     // Extract feature values
-    const points = data.map((item: any) => featureList.map((f: string) => item[f] || 0));
+    const points = data.map((item: any) =>
+      featureList.map((f: string) => item[f] || 0),
+    );
 
     // Initialize random centroids
     const centroids = points.slice(0, k).map((p: number[]) => [...p]);
@@ -230,9 +244,11 @@ export class MLModelExecutorService {
     });
 
     // Create cluster summaries
-    const clusters = [];
+    const clusters: any[] = [];
     for (let i = 0; i < k; i++) {
-      const clusterPoints = data.filter((_: any, idx: number) => labels[idx] === i);
+      const clusterPoints = data.filter(
+        (_: any, idx: number) => labels[idx] === i,
+      );
       clusters.push({
         id: i,
         size: clusterPoints.length,
@@ -267,8 +283,30 @@ export class MLModelExecutorService {
     }
 
     // Simple sentiment analysis (in production, use proper NLP model)
-    const positiveWords = ['good', 'great', 'excellent', 'amazing', 'love', 'best', 'happy', 'wonderful', 'fantastic', 'perfect'];
-    const negativeWords = ['bad', 'terrible', 'awful', 'hate', 'worst', 'poor', 'disappointed', 'horrible', 'failure', 'wrong'];
+    const positiveWords = [
+      'good',
+      'great',
+      'excellent',
+      'amazing',
+      'love',
+      'best',
+      'happy',
+      'wonderful',
+      'fantastic',
+      'perfect',
+    ];
+    const negativeWords = [
+      'bad',
+      'terrible',
+      'awful',
+      'hate',
+      'worst',
+      'poor',
+      'disappointed',
+      'horrible',
+      'failure',
+      'wrong',
+    ];
 
     const words = text.toLowerCase().split(/\s+/);
     let positiveCount = 0;
@@ -299,7 +337,8 @@ export class MLModelExecutorService {
       scores: {
         positive: positiveCount / Math.max(words.length, 1),
         negative: negativeCount / Math.max(words.length, 1),
-        neutral: 1 - (positiveCount + negativeCount) / Math.max(words.length, 1),
+        neutral:
+          1 - (positiveCount + negativeCount) / Math.max(words.length, 1),
       },
       emotions: {
         joy: sentiment === 'positive' ? 0.7 : 0.2,
@@ -319,14 +358,20 @@ export class MLModelExecutorService {
     input: Record<string, any>,
     config: Record<string, any>,
   ): Promise<any> {
-    const { userId, interactions, itemCatalog, numRecommendations = 10 } = input;
+    const {
+      userId,
+      interactions,
+      itemCatalog,
+      numRecommendations = 10,
+    } = input;
 
     if (!itemCatalog || itemCatalog.length === 0) {
       throw new Error('Item catalog is required');
     }
 
     // Simple content-based recommendations (in production, use proper recommendation engine)
-    const userInteractions = interactions?.filter((i: any) => i.userId === userId) || [];
+    const userInteractions =
+      interactions?.filter((i: any) => i.userId === userId) || [];
     const interactedItems = new Set(userInteractions.map((i: any) => i.itemId));
 
     // Score items not yet interacted with
@@ -352,19 +397,26 @@ export class MLModelExecutorService {
    * Calculate Euclidean distance
    */
   private euclideanDistance(a: number[], b: number[]): number {
-    return Math.sqrt(a.reduce((sum, val, i) => sum + Math.pow(val - b[i], 2), 0));
+    return Math.sqrt(
+      a.reduce((sum, val, i) => sum + Math.pow(val - b[i], 2), 0),
+    );
   }
 
   /**
    * Summarize cluster characteristics
    */
-  private summarizeCluster(points: any[], features: string[]): Record<string, any> {
+  private summarizeCluster(
+    points: any[],
+    features: string[],
+  ): Record<string, any> {
     if (points.length === 0) return {};
 
     const summary: Record<string, any> = {};
 
     for (const feature of features) {
-      const values = points.map((p) => p[feature]).filter((v) => v !== undefined);
+      const values = points
+        .map((p) => p[feature])
+        .filter((v) => v !== undefined);
       if (values.length > 0) {
         summary[feature] = {
           avg: values.reduce((a, b) => a + b, 0) / values.length,

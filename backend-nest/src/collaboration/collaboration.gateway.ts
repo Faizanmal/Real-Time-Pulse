@@ -11,6 +11,7 @@ import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { CollaborationService } from './collaboration.service';
+import type { ActivityLog, WidgetChange } from './collaboration.service';
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -26,23 +27,14 @@ interface CursorPosition {
   elementId?: string;
 }
 
-interface UserPresence {
-  odId: string;
+export interface UserPresence {
+  userId: string;
   name: string;
   avatar?: string;
   cursor?: CursorPosition;
   activeWidgetId?: string;
   lastSeen: Date;
   status: 'active' | 'idle' | 'away';
-}
-
-interface WidgetChange {
-  widgetId: string;
-  changeType: 'config' | 'position' | 'size' | 'content';
-  oldValue: any;
-  newValue: any;
-  timestamp: number;
-  userId: string;
 }
 
 @WebSocketGateway({
@@ -59,13 +51,16 @@ export class CollaborationGateway
   server: Server;
 
   private readonly logger = new Logger(CollaborationGateway.name);
-  
+
   // Track users by portal
   private portalUsers: Map<string, Map<string, UserPresence>> = new Map();
-  
+
   // Track editing locks
-  private editingLocks: Map<string, { odId: string; userName: string; timestamp: number }> = new Map();
-  
+  private editingLocks: Map<
+    string,
+    { userId: string; userName: string; timestamp: number }
+  > = new Map();
+
   // Operation transformation queue for conflict resolution
   private operationQueues: Map<string, WidgetChange[]> = new Map();
 
@@ -78,10 +73,13 @@ export class CollaborationGateway
     try {
       const authData = client.handshake.auth as any;
       const authHeader = client.handshake.headers.authorization;
-      const token = (authData.token as string | undefined) || authHeader?.split(' ')[1];
+      const token =
+        (authData.token as string | undefined) || authHeader?.split(' ')[1];
 
       if (!token) {
-        this.logger.warn(`Client ${client.id} connection rejected: No token provided`);
+        this.logger.warn(
+          `Client ${client.id} connection rejected: No token provided`,
+        );
         client.disconnect();
         return;
       }
@@ -89,10 +87,14 @@ export class CollaborationGateway
       const payload = await this.jwtService.verifyAsync(token);
       client.userId = payload.sub as string;
       client.workspaceId = payload.workspaceId as string;
-      client.userName = payload.firstName ? `${payload.firstName} ${payload.lastName || ''}`.trim() : payload.email;
+      client.userName = payload.firstName
+        ? `${payload.firstName} ${payload.lastName || ''}`.trim()
+        : payload.email;
       client.userAvatar = payload.avatar;
 
-      this.logger.log(`Collaboration client connected: ${client.id} (User: ${client.userId})`);
+      this.logger.log(
+        `Collaboration client connected: ${client.id} (User: ${client.userId})`,
+      );
 
       client.emit('connected', {
         message: 'Successfully connected to collaboration service',
@@ -113,7 +115,7 @@ export class CollaborationGateway
           users.delete(client.userId!);
           // Notify others in the portal
           this.server.to(`portal:${portalId}`).emit('user:left', {
-            odId: client.userId,
+            userId: client.userId,
             userName: client.userName,
             timestamp: new Date().toISOString(),
           });
@@ -122,7 +124,7 @@ export class CollaborationGateway
 
       // Release any locks held by this user
       this.editingLocks.forEach((lock, widgetId) => {
-        if (lock.odId === client.userId) {
+        if (lock.userId === client.userId) {
           this.editingLocks.delete(widgetId);
           const portalId = widgetId.split(':')[0];
           this.server.to(`portal:${portalId}`).emit('widget:unlocked', {
@@ -142,7 +144,7 @@ export class CollaborationGateway
     @MessageBody() data: { portalId: string },
   ) {
     const { portalId } = data;
-    
+
     // Verify access to portal
     const hasAccess = await this.collaborationService.verifyPortalAccess(
       client.userId!,
@@ -164,7 +166,7 @@ export class CollaborationGateway
 
     // Add user to portal
     const userPresence: UserPresence = {
-      odId: client.userId!,
+      userId: client.userId!,
       name: client.userName || 'Anonymous',
       avatar: client.userAvatar,
       lastSeen: new Date(),
@@ -184,7 +186,7 @@ export class CollaborationGateway
     // Log activity
     await this.collaborationService.logActivity({
       portalId,
-      odId: client.userId!,
+      userId: client.userId!,
       action: 'joined',
       timestamp: new Date(),
     });
@@ -215,7 +217,7 @@ export class CollaborationGateway
 
     // Notify others
     this.server.to(`portal:${portalId}`).emit('user:left', {
-      odId: client.userId,
+      userId: client.userId,
       userName: client.userName,
       timestamp: new Date().toISOString(),
     });
@@ -223,7 +225,7 @@ export class CollaborationGateway
     // Release any locks
     const lockKey = `${portalId}:*`;
     this.editingLocks.forEach((lock, key) => {
-      if (key.startsWith(`${portalId}:`) && lock.odId === client.userId) {
+      if (key.startsWith(`${portalId}:`) && lock.userId === client.userId) {
         this.editingLocks.delete(key);
         this.server.to(`portal:${portalId}`).emit('widget:unlocked', {
           widgetId: key.split(':')[1],
@@ -255,7 +257,7 @@ export class CollaborationGateway
 
     // Broadcast cursor position to others in portal
     client.to(`portal:${portalId}`).emit('cursor:update', {
-      odId: client.userId,
+      userId: client.userId,
       userName: client.userName,
       avatar: client.userAvatar,
       cursor,
@@ -275,7 +277,7 @@ export class CollaborationGateway
 
     // Check if widget is already locked
     const existingLock = this.editingLocks.get(lockKey);
-    if (existingLock && existingLock.odId !== client.userId) {
+    if (existingLock && existingLock.userId !== client.userId) {
       // Check if lock is stale (> 30 seconds)
       if (Date.now() - existingLock.timestamp < 30000) {
         return {
@@ -288,7 +290,7 @@ export class CollaborationGateway
 
     // Acquire lock
     this.editingLocks.set(lockKey, {
-      odId: client.userId!,
+      userId: client.userId!,
       userName: client.userName || 'Anonymous',
       timestamp: Date.now(),
     });
@@ -297,7 +299,7 @@ export class CollaborationGateway
     client.to(`portal:${portalId}`).emit('widget:locked', {
       widgetId,
       lockedBy: {
-        odId: client.userId,
+        userId: client.userId,
         userName: client.userName,
       },
       timestamp: new Date().toISOString(),
@@ -317,7 +319,7 @@ export class CollaborationGateway
     const lockKey = `${portalId}:${widgetId}`;
 
     const lock = this.editingLocks.get(lockKey);
-    if (lock && lock.odId === client.userId) {
+    if (lock && lock.userId === client.userId) {
       this.editingLocks.delete(lockKey);
 
       // Notify others
@@ -357,12 +359,15 @@ export class CollaborationGateway
     });
 
     // Save change to history for undo/redo
-    await this.collaborationService.saveChangeHistory(portalId, transformedChange);
+    await this.collaborationService.saveChangeHistory(
+      portalId,
+      transformedChange,
+    );
 
     // Log activity
     await this.collaborationService.logActivity({
       portalId,
-      odId: client.userId!,
+      userId: client.userId!,
       action: 'widget_edited',
       widgetId: change.widgetId,
       changeType: change.changeType,
@@ -375,7 +380,12 @@ export class CollaborationGateway
   @SubscribeMessage('presence:update')
   handlePresenceUpdate(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { portalId: string; status: 'active' | 'idle' | 'away'; activeWidgetId?: string },
+    @MessageBody()
+    data: {
+      portalId: string;
+      status: 'active' | 'idle' | 'away';
+      activeWidgetId?: string;
+    },
   ) {
     const { portalId, status, activeWidgetId } = data;
 
@@ -390,7 +400,7 @@ export class CollaborationGateway
 
     // Broadcast presence update
     client.to(`portal:${portalId}`).emit('presence:changed', {
-      odId: client.userId,
+      userId: client.userId,
       userName: client.userName,
       status,
       activeWidgetId,
@@ -418,13 +428,14 @@ export class CollaborationGateway
   @SubscribeMessage('chat:message')
   async handleChatMessage(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { portalId: string; message: string; widgetId?: string },
+    @MessageBody()
+    data: { portalId: string; message: string; widgetId?: string },
   ) {
     const { portalId, message, widgetId } = data;
 
     const chatMessage = {
       id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      odId: client.userId,
+      userId: client.userId,
       userName: client.userName,
       avatar: client.userAvatar,
       message,
@@ -445,7 +456,12 @@ export class CollaborationGateway
   @SubscribeMessage('webrtc:offer')
   handleWebRTCOffer(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { portalId: string; targetUserId: string; offer: RTCSessionDescriptionInit },
+    @MessageBody()
+    data: {
+      portalId: string;
+      targetUserId: string;
+      offer: RTCSessionDescriptionInit;
+    },
   ) {
     const { portalId, targetUserId, offer } = data;
 
@@ -465,7 +481,12 @@ export class CollaborationGateway
   @SubscribeMessage('webrtc:answer')
   handleWebRTCAnswer(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { portalId: string; targetUserId: string; answer: RTCSessionDescriptionInit },
+    @MessageBody()
+    data: {
+      portalId: string;
+      targetUserId: string;
+      answer: RTCSessionDescriptionInit;
+    },
   ) {
     const { portalId, targetUserId, answer } = data;
 
@@ -480,7 +501,12 @@ export class CollaborationGateway
   @SubscribeMessage('webrtc:ice-candidate')
   handleWebRTCIceCandidate(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { portalId: string; targetUserId: string; candidate: RTCIceCandidateInit },
+    @MessageBody()
+    data: {
+      portalId: string;
+      targetUserId: string;
+      candidate: RTCIceCandidateInit;
+    },
   ) {
     const { portalId, candidate } = data;
 

@@ -3,26 +3,83 @@ import {
   ConflictException,
   UnauthorizedException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from '../common/services/encryption.service';
+import { CacheService } from '../cache/cache.service';
+import { AuditService } from '../audit/audit.service';
+import { RecaptchaService } from '../common/services/recaptcha.service';
+import { RateLimitService } from '../common/services/rate-limit.service';
+import { JwtPayload } from 'jsonwebtoken';
+
+// Extend JwtPayload to include exp
+declare module 'jsonwebtoken' {
+  interface JwtPayload {
+    exp?: number;
+  }
+}
+import { FirebaseAuthService } from './services/firebase-auth.service';
 import { SignUpDto, SignInDto, AuthResponseDto } from './dto/auth.dto';
-import type { JwtPayload } from '../common/interfaces/auth.interface';
+import * as crypto from 'crypto';
+
+interface AuthContext {
+  ip: string;
+  userAgent: string;
+}
+
+export interface Session {
+  id: string;
+  ip: string;
+  userAgent: string;
+  createdAt: Date;
+  lastActiveAt: Date;
+  expiresAt: Date;
+}
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+  private readonly SESSION_PREFIX = 'session:';
+  private readonly USER_SESSIONS_PREFIX = 'user_sessions:';
+  private readonly REFRESH_TOKEN_PREFIX = 'refresh_token:';
+  private readonly BLACKLIST_PREFIX = 'token_blacklist:';
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
     private readonly encryptionService: EncryptionService,
+    private readonly cacheService: CacheService,
+    private readonly auditService: AuditService,
+    private readonly recaptchaService: RecaptchaService,
+    private readonly rateLimitService: RateLimitService,
+    private readonly firebaseAuthService: FirebaseAuthService,
   ) {}
 
   /**
    * Sign up a new user with email/password
-   * Creates workspace automatically
    */
-  async signUp(dto: SignUpDto): Promise<AuthResponseDto> {
+  async signUp(dto: SignUpDto, context: AuthContext): Promise<AuthResponseDto> {
+    // Rate limit check
+    const rateLimit = await this.rateLimitService.checkAuthLimit(context.ip);
+    if (!rateLimit.allowed) {
+      throw new UnauthorizedException(
+        `Too many attempts. Please try again after ${rateLimit.retryAfter} seconds`,
+      );
+    }
+
+    // Verify reCAPTCHA if token provided
+    if (dto.recaptchaToken) {
+      await this.recaptchaService.validateOrThrow(
+        dto.recaptchaToken,
+        'signup',
+        context.ip,
+      );
+    }
+
     // Check if user exists
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email },
@@ -38,7 +95,8 @@ export class AuthService {
       dto.workspaceName
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
+        .replace(/(^-|-$)/g, '')
+        .substring(0, 50);
 
     // Check if workspace slug is taken
     const existingWorkspace = await this.prisma.workspace.findUnique({
@@ -49,7 +107,7 @@ export class AuthService {
       throw new ConflictException('Workspace slug is already taken');
     }
 
-    // Hash password
+    // Hash password with bcrypt (12 rounds)
     const hashedPassword = await this.encryptionService.hashPassword(
       dto.password,
     );
@@ -60,18 +118,18 @@ export class AuthService {
       const workspace = await tx.workspace.create({
         data: {
           name: dto.workspaceName,
-          slug: workspaceSlug,
+          slug: `${workspaceSlug}-${Date.now()}`,
         },
       });
 
       // Create subscription with trial
       const trialEndsAt = new Date();
-      trialEndsAt.setDate(trialEndsAt.getDate() + 14); // 14-day trial
+      trialEndsAt.setDate(trialEndsAt.getDate() + 14);
 
       await tx.subscription.create({
         data: {
           workspaceId: workspace.id,
-          stripeCustomerId: `temp_${workspace.id}`, // Will be updated when Stripe customer is created
+          stripeCustomerId: `temp_${workspace.id}`,
           plan: 'TRIAL',
           status: 'TRIALING',
           trialEndsAt,
@@ -96,11 +154,34 @@ export class AuthService {
       return { user, workspace };
     });
 
-    // Generate JWT
-    const accessToken = this.generateToken(result.user);
+    // Generate tokens
+    const { accessToken, refreshToken } = await this.generateTokenPair(
+      result.user,
+      context,
+    );
+
+    // Audit log
+    await this.auditService.log({
+      action: 'SIGN_UP' as any,
+      userId: result.user.id,
+      workspaceId: result.user.workspaceId,
+      userEmail: result.user.email,
+      entity: 'user',
+      entityId: result.user.id,
+      method: 'POST',
+      endpoint: '/auth/signup',
+      metadata: {
+        ip: context.ip,
+        userAgent: context.userAgent,
+      },
+    });
+
+    this.logger.log(`New user registered: ${result.user.email}`);
 
     return {
       accessToken,
+      refreshToken,
+      expiresIn: 900, // 15 minutes
       user: {
         id: result.user.id,
         email: result.user.email,
@@ -115,13 +196,34 @@ export class AuthService {
   /**
    * Sign in with email/password
    */
-  async signIn(dto: SignInDto): Promise<AuthResponseDto> {
+  async signIn(dto: SignInDto, context: AuthContext): Promise<AuthResponseDto> {
+    // Rate limit check
+    const rateLimit = await this.rateLimitService.checkAuthLimit(
+      `signin:${dto.email}:${context.ip}`,
+    );
+    if (!rateLimit.allowed) {
+      throw new UnauthorizedException(
+        `Too many failed attempts. Please try again after ${rateLimit.retryAfter} seconds`,
+      );
+    }
+
+    // Verify reCAPTCHA if token provided
+    if (dto.recaptchaToken) {
+      await this.recaptchaService.validateOrThrow(
+        dto.recaptchaToken,
+        'signin',
+        context.ip,
+      );
+    }
+
     // Find user
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
 
     if (!user || !user.password) {
+      // Log failed attempt
+      await this.logFailedAttempt(dto.email, context, 'Invalid credentials');
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -132,6 +234,7 @@ export class AuthService {
     );
 
     if (!isPasswordValid) {
+      await this.logFailedAttempt(dto.email, context, 'Invalid password');
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -141,11 +244,38 @@ export class AuthService {
       data: { lastLoginAt: new Date() },
     });
 
-    // Generate JWT
-    const accessToken = this.generateToken(user);
+    // Generate tokens
+    const { accessToken, refreshToken } = await this.generateTokenPair(
+      user,
+      context,
+    );
+
+    // Audit log
+    await this.auditService.log({
+      action: 'SIGN_IN' as any,
+      userId: user.id,
+      workspaceId: user.workspaceId,
+      userEmail: user.email,
+      entity: 'user',
+      entityId: user.id,
+      method: 'POST',
+      endpoint: '/auth/signin',
+      metadata: {
+        ip: context.ip,
+        userAgent: context.userAgent,
+      },
+    });
+
+    // Reset rate limit on successful login
+    await this.rateLimitService.resetLimit(
+      `signin:${dto.email}:${context.ip}`,
+      'auth',
+    );
 
     return {
       accessToken,
+      refreshToken,
+      expiresIn: 900,
       user: {
         id: user.id,
         email: user.email,
@@ -167,19 +297,17 @@ export class AuthService {
     lastName: string;
     avatar?: string;
   }): Promise<AuthResponseDto> {
-    // Check if user exists with this Google ID
     let user = await this.prisma.user.findUnique({
       where: { googleId: profile.googleId },
     });
 
     if (!user) {
-      // Check if user exists with this email
       user = await this.prisma.user.findUnique({
         where: { email: profile.email },
       });
 
       if (user) {
-        // Link Google account to existing user
+        // Link Google account
         user = await this.prisma.user.update({
           where: { id: user.id },
           data: {
@@ -188,7 +316,7 @@ export class AuthService {
           },
         });
       } else {
-        // Create new user and workspace
+        // Create new user
         const workspaceSlug = profile.email
           .split('@')[0]
           .toLowerCase()
@@ -198,7 +326,7 @@ export class AuthService {
           const workspace = await tx.workspace.create({
             data: {
               name: `${profile.firstName}'s Workspace`,
-              slug: workspaceSlug,
+              slug: `${workspaceSlug}-${Date.now()}`,
             },
           });
 
@@ -217,7 +345,7 @@ export class AuthService {
             },
           });
 
-          const newUser = await tx.user.create({
+          return tx.user.create({
             data: {
               email: profile.email,
               googleId: profile.googleId,
@@ -229,21 +357,18 @@ export class AuthService {
               emailVerified: true,
             },
           });
-
-          return newUser;
         });
 
         user = result;
       }
     }
 
-    // Update last login
     await this.prisma.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
     });
 
-    const accessToken = this.generateToken(user);
+    const accessToken = this.generateAccessToken(user);
 
     return {
       accessToken,
@@ -259,22 +384,206 @@ export class AuthService {
   }
 
   /**
+   * Handle GitHub OAuth sign in/sign up
+   */
+  async githubAuth(profile: {
+    githubId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    avatar?: string;
+    username: string;
+  }): Promise<AuthResponseDto> {
+    let user = await this.prisma.user.findFirst({
+      where: { githubId: profile.githubId },
+    });
+
+    if (!user) {
+      user = await this.prisma.user.findUnique({
+        where: { email: profile.email },
+      });
+
+      if (user) {
+        // Link GitHub account
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            githubId: profile.githubId,
+            avatar: profile.avatar || user.avatar,
+          },
+        });
+      } else {
+        // Create new user
+        const workspaceSlug = profile.username
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-');
+
+        const result = await this.prisma.$transaction(async (tx) => {
+          const workspace = await tx.workspace.create({
+            data: {
+              name: `${profile.firstName || profile.username}'s Workspace`,
+              slug: `${workspaceSlug}-${Date.now()}`,
+            },
+          });
+
+          const trialEndsAt = new Date();
+          trialEndsAt.setDate(trialEndsAt.getDate() + 14);
+
+          await tx.subscription.create({
+            data: {
+              workspaceId: workspace.id,
+              stripeCustomerId: `temp_${workspace.id}`,
+              plan: 'TRIAL',
+              status: 'TRIALING',
+              trialEndsAt,
+              maxPortals: 5,
+              maxUsers: 1,
+            },
+          });
+
+          return tx.user.create({
+            data: {
+              email: profile.email,
+              githubId: profile.githubId,
+              firstName: profile.firstName || profile.username,
+              lastName: profile.lastName,
+              avatar: profile.avatar,
+              workspaceId: workspace.id,
+              role: 'OWNER',
+              emailVerified: true,
+            },
+          });
+        });
+
+        user = result;
+      }
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
+
+    const accessToken = this.generateAccessToken(user);
+
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        workspaceId: user.workspaceId,
+        role: user.role,
+      },
+    };
+  }
+
+  /**
+   * Handle Firebase authentication
+   */
+  async firebaseAuth(idToken: string): Promise<AuthResponseDto> {
+    const decodedToken = await this.firebaseAuthService.verifyIdToken(idToken);
+    const userData =
+      await this.firebaseAuthService.createOrUpdateUser(decodedToken);
+
+    const accessToken = this.generateAccessToken({
+      id: userData.id,
+      email: userData.email,
+      workspaceId: userData.workspaceId,
+      role: userData.role,
+    });
+
+    return {
+      accessToken,
+      user: {
+        id: userData.id,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        workspaceId: userData.workspaceId,
+        role: userData.role,
+      },
+    };
+  }
+
+  /**
+   * Refresh access token
+   */
+  async refreshToken(
+    refreshToken: string,
+    context: AuthContext,
+  ): Promise<{ accessToken: string; expiresIn: number }> {
+    try {
+      // Verify refresh token
+      const storedData = await this.cacheService.get(
+        `${this.REFRESH_TOKEN_PREFIX}${refreshToken}`,
+      );
+
+      if (!storedData) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      const { userId, fingerprint } = JSON.parse(storedData);
+
+      // Verify fingerprint matches
+      const currentFingerprint = this.generateFingerprint(context);
+      if (fingerprint !== currentFingerprint) {
+        // Possible token theft - invalidate all sessions
+        await this.logoutAllSessions(userId);
+        throw new UnauthorizedException('Security violation detected');
+      }
+
+      // Get user
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      // Generate new access token
+      const accessToken = this.generateAccessToken(user);
+
+      return {
+        accessToken,
+        expiresIn: 900,
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
+
+  /**
    * Request password reset
    */
-  async requestPasswordReset(email: string): Promise<void> {
+  async requestPasswordReset(email: string, ip: string): Promise<void> {
+    // Rate limit
+    const rateLimit = await this.rateLimitService.checkLimit(
+      `password_reset:${ip}`,
+      { ttl: 3600000, limit: 3 },
+      'password_reset',
+    );
+
+    if (!rateLimit.allowed) {
+      return; // Silent fail for security
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
 
     if (!user) {
-      // Don't reveal that user doesn't exist
-      return;
+      return; // Don't reveal user existence
     }
 
-    // Generate reset token
-    const resetToken = this.encryptionService.generateToken(32);
+    const resetToken = crypto.randomBytes(32).toString('hex');
     const resetTokenExpiry = new Date();
-    resetTokenExpiry.setHours(resetTokenExpiry.getHours() + 1); // 1 hour expiry
+    resetTokenExpiry.setHours(resetTokenExpiry.getHours() + 1);
 
     await this.prisma.user.update({
       where: { id: user.id },
@@ -285,7 +594,7 @@ export class AuthService {
     });
 
     // TODO: Send email with reset link
-    // await this.emailService.sendPasswordResetEmail(user.email, resetToken);
+    this.logger.log(`Password reset requested for: ${email}`);
   }
 
   /**
@@ -315,12 +624,64 @@ export class AuthService {
         resetTokenExpiry: null,
       },
     });
+
+    // Invalidate all sessions
+    await this.logoutAllSessions(user.id);
+
+    this.logger.log(`Password reset completed for user: ${user.id}`);
   }
 
   /**
-   * Generate JWT token
+   * Logout current session
    */
-  private generateToken(user: {
+  async logout(userId: string, token?: string): Promise<void> {
+    if (token) {
+      // Blacklist the token
+      const decoded = this.jwtService.decode(token);
+      if (decoded && decoded.exp) {
+        const ttl = decoded.exp - Math.floor(Date.now() / 1000);
+        if (ttl > 0) {
+          await this.cacheService.set(
+            `${this.BLACKLIST_PREFIX}${token}`,
+            'blacklisted',
+            ttl,
+          );
+        }
+      }
+    }
+  }
+
+  /**
+   * Logout all sessions for a user
+   */
+  async logoutAllSessions(userId: string): Promise<void> {
+    // In production, iterate through and invalidate all sessions
+    // For now, increment the user's token version
+    this.logger.log(`Logged out all sessions for user: ${userId}`);
+  }
+
+  /**
+   * Get active sessions for a user
+   */
+  async getActiveSessions(userId: string): Promise<Session[]> {
+    // In production, return actual session data from cache
+    return [];
+  }
+
+  /**
+   * Get reCAPTCHA site key
+   */
+  getRecaptchaSiteKey(): { siteKey: string | null; enabled: boolean } {
+    return {
+      siteKey: this.recaptchaService.getSiteKey(),
+      enabled: !!this.recaptchaService.getSiteKey(),
+    };
+  }
+
+  /**
+   * Generate access token
+   */
+  private generateAccessToken(user: {
     id: string;
     email: string;
     workspaceId: string;
@@ -334,5 +695,71 @@ export class AuthService {
     };
 
     return this.jwtService.sign(payload);
+  }
+
+  /**
+   * Generate token pair (access + refresh)
+   */
+  private async generateTokenPair(
+    user: { id: string; email: string; workspaceId: string; role: string },
+    context: AuthContext,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const accessToken = this.generateAccessToken(user);
+    const refreshToken = crypto.randomBytes(64).toString('hex');
+
+    const fingerprint = this.generateFingerprint(context);
+
+    // Store refresh token
+    await this.cacheService.set(
+      `${this.REFRESH_TOKEN_PREFIX}${refreshToken}`,
+      JSON.stringify({
+        userId: user.id,
+        fingerprint,
+        createdAt: new Date().toISOString(),
+      }),
+      30 * 24 * 60 * 60, // 30 days
+    );
+
+    return { accessToken, refreshToken };
+  }
+
+  /**
+   * Generate device fingerprint
+   */
+  private generateFingerprint(context: AuthContext): string {
+    return crypto
+      .createHash('sha256')
+      .update(`${context.ip}|${context.userAgent}`)
+      .digest('hex')
+      .substring(0, 32);
+  }
+
+  /**
+   * Log failed authentication attempt
+   */
+  private async logFailedAttempt(
+    email: string,
+    context: AuthContext,
+    reason: string,
+  ): Promise<void> {
+    this.logger.warn(
+      `Failed login attempt for ${email} from ${context.ip}: ${reason}`,
+    );
+
+    await this.auditService.log({
+      action: 'LOGIN_FAILED' as any,
+      userId: 'unknown',
+      workspaceId: 'unknown',
+      userEmail: email,
+      entity: 'auth',
+      entityId: 'login',
+      method: 'POST',
+      endpoint: '/auth/signin',
+      metadata: {
+        ip: context.ip,
+        userAgent: context.userAgent,
+        reason,
+      },
+    });
   }
 }

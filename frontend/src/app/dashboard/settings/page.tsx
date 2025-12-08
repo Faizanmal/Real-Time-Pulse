@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuthStore } from '@/src/store/auth';
-import { workspaceApi } from '@/src/lib/api-client';
-import type { Workspace, WorkspaceMember } from '@/src/types';
+import { useAuthStore } from '@/store/auth';
+import { workspaceApi } from '@/lib/api-client';
+import type { Workspace, WorkspaceMember } from '@/types';
 import {
   Settings,
   ArrowLeft,
@@ -296,7 +296,7 @@ export default function SettingsPage() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={handleSaveGeneral}
-                    className="px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-semibold rounded-xl transition-all flex items-center gap-2"
+                    className="px-6 py-3 bg-linear-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-semibold rounded-xl transition-all flex items-center gap-2"
                   >
                     <Save className="h-4 w-4" />
                     Save Changes
@@ -339,7 +339,7 @@ export default function SettingsPage() {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         type="submit"
-                        className="px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+                        className="px-6 py-3 bg-linear-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
                       >
                         <Mail className="h-4 w-4" />
                         Send Invite
@@ -492,7 +492,7 @@ export default function SettingsPage() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={handleSaveBranding}
-                    className="px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-semibold rounded-xl transition-all flex items-center gap-2"
+                    className="px-6 py-3 bg-linear-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-semibold rounded-xl transition-all flex items-center gap-2"
                   >
                     <Save className="h-4 w-4" />
                     Save Changes

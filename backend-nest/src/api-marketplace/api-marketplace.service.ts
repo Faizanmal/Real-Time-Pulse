@@ -81,8 +81,19 @@ export class ApiMarketplaceService {
             method: 'GET',
             path: '/charges',
             parameters: [
-              { name: 'limit', type: 'query', dataType: 'number', required: false, default: 10 },
-              { name: 'starting_after', type: 'query', dataType: 'string', required: false },
+              {
+                name: 'limit',
+                type: 'query',
+                dataType: 'number',
+                required: false,
+                default: 10,
+              },
+              {
+                name: 'starting_after',
+                type: 'query',
+                dataType: 'string',
+                required: false,
+              },
             ],
           },
           {
@@ -91,7 +102,13 @@ export class ApiMarketplaceService {
             method: 'GET',
             path: '/customers',
             parameters: [
-              { name: 'limit', type: 'query', dataType: 'number', required: false, default: 10 },
+              {
+                name: 'limit',
+                type: 'query',
+                dataType: 'number',
+                required: false,
+                default: 10,
+              },
             ],
           },
           {
@@ -131,7 +148,13 @@ export class ApiMarketplaceService {
             method: 'GET',
             path: '/services/data/v57.0/query',
             parameters: [
-              { name: 'q', type: 'query', dataType: 'string', required: true, description: 'SOQL query' },
+              {
+                name: 'q',
+                type: 'query',
+                dataType: 'string',
+                required: true,
+                description: 'SOQL query',
+              },
             ],
           },
           {
@@ -149,7 +172,11 @@ export class ApiMarketplaceService {
           properties: {
             instanceUrl: { type: 'string', title: 'Instance URL' },
             clientId: { type: 'string', title: 'Client ID' },
-            clientSecret: { type: 'string', title: 'Client Secret', format: 'password' },
+            clientSecret: {
+              type: 'string',
+              title: 'Client Secret',
+              format: 'password',
+            },
           },
           required: ['instanceUrl', 'clientId', 'clientSecret'],
         },
@@ -175,10 +202,30 @@ export class ApiMarketplaceService {
             method: 'POST',
             path: '/v1beta/{property}:runReport',
             parameters: [
-              { name: 'property', type: 'path', dataType: 'string', required: true },
-              { name: 'dateRanges', type: 'body', dataType: 'array', required: true },
-              { name: 'dimensions', type: 'body', dataType: 'array', required: false },
-              { name: 'metrics', type: 'body', dataType: 'array', required: true },
+              {
+                name: 'property',
+                type: 'path',
+                dataType: 'string',
+                required: true,
+              },
+              {
+                name: 'dateRanges',
+                type: 'body',
+                dataType: 'array',
+                required: true,
+              },
+              {
+                name: 'dimensions',
+                type: 'body',
+                dataType: 'array',
+                required: false,
+              },
+              {
+                name: 'metrics',
+                type: 'body',
+                dataType: 'array',
+                required: true,
+              },
             ],
           },
         ],
@@ -213,8 +260,18 @@ export class ApiMarketplaceService {
             method: 'POST',
             path: '/chat.postMessage',
             parameters: [
-              { name: 'channel', type: 'body', dataType: 'string', required: true },
-              { name: 'text', type: 'body', dataType: 'string', required: true },
+              {
+                name: 'channel',
+                type: 'body',
+                dataType: 'string',
+                required: true,
+              },
+              {
+                name: 'text',
+                type: 'body',
+                dataType: 'string',
+                required: true,
+              },
             ],
           },
           {
@@ -228,7 +285,11 @@ export class ApiMarketplaceService {
         configSchema: {
           type: 'object',
           properties: {
-            botToken: { type: 'string', title: 'Bot Token', format: 'password' },
+            botToken: {
+              type: 'string',
+              title: 'Bot Token',
+              format: 'password',
+            },
           },
           required: ['botToken'],
         },
@@ -255,8 +316,18 @@ export class ApiMarketplaceService {
             method: 'GET',
             path: '/user/repos',
             parameters: [
-              { name: 'sort', type: 'query', dataType: 'string', required: false },
-              { name: 'per_page', type: 'query', dataType: 'number', required: false },
+              {
+                name: 'sort',
+                type: 'query',
+                dataType: 'string',
+                required: false,
+              },
+              {
+                name: 'per_page',
+                type: 'query',
+                dataType: 'number',
+                required: false,
+              },
             ],
           },
           {
@@ -265,15 +336,29 @@ export class ApiMarketplaceService {
             method: 'GET',
             path: '/repos/{owner}/{repo}/stats/contributors',
             parameters: [
-              { name: 'owner', type: 'path', dataType: 'string', required: true },
-              { name: 'repo', type: 'path', dataType: 'string', required: true },
+              {
+                name: 'owner',
+                type: 'path',
+                dataType: 'string',
+                required: true,
+              },
+              {
+                name: 'repo',
+                type: 'path',
+                dataType: 'string',
+                required: true,
+              },
             ],
           },
         ],
         configSchema: {
           type: 'object',
           properties: {
-            personalAccessToken: { type: 'string', title: 'Personal Access Token', format: 'password' },
+            personalAccessToken: {
+              type: 'string',
+              title: 'Personal Access Token',
+              format: 'password',
+            },
           },
           required: ['personalAccessToken'],
         },
@@ -300,7 +385,12 @@ export class ApiMarketplaceService {
             path: '/rest/api/3/search',
             parameters: [
               { name: 'jql', type: 'body', dataType: 'string', required: true },
-              { name: 'maxResults', type: 'body', dataType: 'number', required: false },
+              {
+                name: 'maxResults',
+                type: 'body',
+                dataType: 'number',
+                required: false,
+              },
             ],
           },
           {
@@ -309,7 +399,12 @@ export class ApiMarketplaceService {
             method: 'GET',
             path: '/rest/api/3/project/{projectIdOrKey}',
             parameters: [
-              { name: 'projectIdOrKey', type: 'path', dataType: 'string', required: true },
+              {
+                name: 'projectIdOrKey',
+                type: 'path',
+                dataType: 'string',
+                required: true,
+              },
             ],
           },
         ],
@@ -318,7 +413,11 @@ export class ApiMarketplaceService {
           properties: {
             domain: { type: 'string', title: 'Jira Domain' },
             email: { type: 'string', title: 'Email' },
-            apiToken: { type: 'string', title: 'API Token', format: 'password' },
+            apiToken: {
+              type: 'string',
+              title: 'API Token',
+              format: 'password',
+            },
           },
           required: ['domain', 'email', 'apiToken'],
         },
@@ -331,7 +430,11 @@ export class ApiMarketplaceService {
     ];
 
     // Save built-in connectors
-    await this.cache.set('marketplace:connectors', JSON.stringify(builtInConnectors), 86400 * 365);
+    await this.cache.set(
+      'marketplace:connectors',
+      JSON.stringify(builtInConnectors),
+      86400 * 365,
+    );
   }
 
   /**
@@ -343,7 +446,9 @@ export class ApiMarketplaceService {
     verified?: boolean;
   }): Promise<MarketplaceConnector[]> {
     const connectorsJson = await this.cache.get('marketplace:connectors');
-    let connectors: MarketplaceConnector[] = connectorsJson ? JSON.parse(connectorsJson) : [];
+    let connectors: MarketplaceConnector[] = connectorsJson
+      ? JSON.parse(connectorsJson)
+      : [];
 
     if (options?.category) {
       connectors = connectors.filter((c) => c.category === options.category);
@@ -368,7 +473,9 @@ export class ApiMarketplaceService {
   /**
    * Get connector by ID
    */
-  async getConnector(connectorId: string): Promise<MarketplaceConnector | null> {
+  async getConnector(
+    connectorId: string,
+  ): Promise<MarketplaceConnector | null> {
     const connectors = await this.getMarketplaceConnectors();
     return connectors.find((c) => c.id === connectorId) || null;
   }
@@ -401,7 +508,9 @@ export class ApiMarketplaceService {
     // Save installed connector
     const key = `installed_connectors:${workspaceId}`;
     const installedJson = await this.cache.get(key);
-    const installedList: InstalledConnector[] = installedJson ? JSON.parse(installedJson) : [];
+    const installedList: InstalledConnector[] = installedJson
+      ? JSON.parse(installedJson)
+      : [];
     installedList.push(installed);
 
     await this.cache.set(key, JSON.stringify(installedList), 86400 * 365);
@@ -415,7 +524,9 @@ export class ApiMarketplaceService {
   /**
    * Get installed connectors for workspace
    */
-  async getInstalledConnectors(workspaceId: string): Promise<InstalledConnector[]> {
+  async getInstalledConnectors(
+    workspaceId: string,
+  ): Promise<InstalledConnector[]> {
     const key = `installed_connectors:${workspaceId}`;
     const installedJson = await this.cache.get(key);
     return installedJson ? JSON.parse(installedJson) : [];
@@ -424,10 +535,15 @@ export class ApiMarketplaceService {
   /**
    * Uninstall connector
    */
-  async uninstallConnector(workspaceId: string, installationId: string): Promise<void> {
+  async uninstallConnector(
+    workspaceId: string,
+    installationId: string,
+  ): Promise<void> {
     const key = `installed_connectors:${workspaceId}`;
     const installedJson = await this.cache.get(key);
-    const installedList: InstalledConnector[] = installedJson ? JSON.parse(installedJson) : [];
+    const installedList: InstalledConnector[] = installedJson
+      ? JSON.parse(installedJson)
+      : [];
 
     const filtered = installedList.filter((i) => i.id !== installationId);
     await this.cache.set(key, JSON.stringify(filtered), 86400 * 365);
@@ -443,7 +559,9 @@ export class ApiMarketplaceService {
   ): Promise<InstalledConnector | null> {
     const key = `installed_connectors:${workspaceId}`;
     const installedJson = await this.cache.get(key);
-    const installedList: InstalledConnector[] = installedJson ? JSON.parse(installedJson) : [];
+    const installedList: InstalledConnector[] = installedJson
+      ? JSON.parse(installedJson)
+      : [];
 
     const index = installedList.findIndex((i) => i.id === installationId);
     if (index === -1) return null;
@@ -467,7 +585,10 @@ export class ApiMarketplaceService {
    * Publish custom connector to marketplace
    */
   async publishConnector(
-    connector: Omit<MarketplaceConnector, 'id' | 'rating' | 'downloads' | 'createdAt' | 'updatedAt'>,
+    connector: Omit<
+      MarketplaceConnector,
+      'id' | 'rating' | 'downloads' | 'createdAt' | 'updatedAt'
+    >,
   ): Promise<MarketplaceConnector> {
     const newConnector: MarketplaceConnector = {
       ...connector,
@@ -480,22 +601,34 @@ export class ApiMarketplaceService {
     };
 
     const connectorsJson = await this.cache.get('marketplace:connectors');
-    const connectors: MarketplaceConnector[] = connectorsJson ? JSON.parse(connectorsJson) : [];
+    const connectors: MarketplaceConnector[] = connectorsJson
+      ? JSON.parse(connectorsJson)
+      : [];
     connectors.push(newConnector);
 
-    await this.cache.set('marketplace:connectors', JSON.stringify(connectors), 86400 * 365);
+    await this.cache.set(
+      'marketplace:connectors',
+      JSON.stringify(connectors),
+      86400 * 365,
+    );
 
     return newConnector;
   }
 
   private async incrementDownloads(connectorId: string): Promise<void> {
     const connectorsJson = await this.cache.get('marketplace:connectors');
-    const connectors: MarketplaceConnector[] = connectorsJson ? JSON.parse(connectorsJson) : [];
+    const connectors: MarketplaceConnector[] = connectorsJson
+      ? JSON.parse(connectorsJson)
+      : [];
 
     const index = connectors.findIndex((c) => c.id === connectorId);
     if (index !== -1) {
       connectors[index].downloads++;
-      await this.cache.set('marketplace:connectors', JSON.stringify(connectors), 86400 * 365);
+      await this.cache.set(
+        'marketplace:connectors',
+        JSON.stringify(connectors),
+        86400 * 365,
+      );
     }
   }
 }

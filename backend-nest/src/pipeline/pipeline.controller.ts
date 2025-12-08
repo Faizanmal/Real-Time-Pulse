@@ -10,10 +10,21 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { PipelineService, CreatePipelineDto, UpdatePipelineDto } from './pipeline.service';
-import { PipelineConnectorService, ConnectorType } from './pipeline-connector.service';
+import { PipelineService } from './pipeline.service';
+import type { CreatePipelineDto, UpdatePipelineDto } from './pipeline.service';
+import {
+  PipelineConnectorService,
+  ConnectorType,
+} from './pipeline-connector.service';
+import type { ExecutionResult } from './pipeline-executor.service';
 
 @ApiTags('Data Pipeline')
 @ApiBearerAuth()
@@ -30,7 +41,7 @@ export class PipelineController {
   async createPipeline(@Request() req: any, @Body() dto: CreatePipelineDto) {
     return this.pipelineService.createPipeline(
       req.user.workspaceId,
-      req.user.sub,
+      req.user.id,
       dto,
     );
   }
@@ -50,7 +61,10 @@ export class PipelineController {
   @Get(':pipelineId')
   @ApiOperation({ summary: 'Get a pipeline by ID' })
   @ApiParam({ name: 'pipelineId', description: 'Pipeline ID' })
-  async getPipeline(@Request() req: any, @Param('pipelineId') pipelineId: string) {
+  async getPipeline(
+    @Request() req: any,
+    @Param('pipelineId') pipelineId: string,
+  ) {
     return this.pipelineService.getPipeline(req.user.workspaceId, pipelineId);
   }
 
@@ -72,7 +86,10 @@ export class PipelineController {
   @Delete(':pipelineId')
   @ApiOperation({ summary: 'Delete a pipeline' })
   @ApiParam({ name: 'pipelineId', description: 'Pipeline ID' })
-  async deletePipeline(@Request() req: any, @Param('pipelineId') pipelineId: string) {
+  async deletePipeline(
+    @Request() req: any,
+    @Param('pipelineId') pipelineId: string,
+  ) {
     await this.pipelineService.deletePipeline(req.user.workspaceId, pipelineId);
     return { success: true };
   }
@@ -84,7 +101,7 @@ export class PipelineController {
     @Request() req: any,
     @Param('pipelineId') pipelineId: string,
     @Query('dryRun') dryRun?: string,
-  ) {
+  ): Promise<ExecutionResult> {
     return this.pipelineService.executePipeline(
       req.user.workspaceId,
       pipelineId,
@@ -95,7 +112,10 @@ export class PipelineController {
   @Get(':pipelineId/history')
   @ApiOperation({ summary: 'Get pipeline run history' })
   @ApiParam({ name: 'pipelineId', description: 'Pipeline ID' })
-  async getRunHistory(@Request() req: any, @Param('pipelineId') pipelineId: string) {
+  async getRunHistory(
+    @Request() req: any,
+    @Param('pipelineId') pipelineId: string,
+  ) {
     return this.pipelineService.getRunHistory(req.user.workspaceId, pipelineId);
   }
 

@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useAuthStore } from '@/src/store/auth';
-import { portalApi, workspaceApi, integrationApi } from '@/src/lib/api-client';
-import { useNotifications } from '@/src/hooks/useNotifications';
-import { StatsCard, PortalCard } from '@/src/components/ui/feature-cards';
-import type { Portal, Workspace, WorkspaceStats } from '@/src/types';
+import { useAuthStore } from '@/store/auth';
+import { portalApi, workspaceApi, integrationApi } from '@/lib/api-client';
+import { useNotifications } from '@/hooks/useNotifications';
+import { StatsCard, PortalCard } from '@/components/ui/feature-cards';
+import type { Portal, Workspace, WorkspaceStats } from '@/types';
 import {
   LayoutDashboard,
   Plus,
@@ -374,7 +374,7 @@ export default function DashboardPage() {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-xl transition-all"
+                    className="px-6 py-3 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-xl transition-all"
                   >
                     <Plus className="inline-block h-5 w-5 mr-2" />
                     Create Portal

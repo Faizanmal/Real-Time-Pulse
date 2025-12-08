@@ -1,4 +1,9 @@
-import { Injectable, Logger, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
@@ -50,6 +55,27 @@ export interface SsoUser {
   provider: string;
 }
 
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+  expires_in?: number;
+  refresh_token?: string;
+  id_token?: string;
+}
+
+export interface UserInfo {
+  sub: string;
+  email: string;
+  name: string;
+  [key: string]: any;
+}
+
+export interface SsoLink {
+  provider: string;
+  externalId: string;
+  linkedAt: string;
+}
+
 @Injectable()
 export class SsoService {
   private readonly logger = new Logger(SsoService.name);
@@ -67,14 +93,19 @@ export class SsoService {
    * Get SSO providers for a workspace
    */
   async getSsoProviders(workspaceId: string): Promise<SsoProvider[]> {
-    const cached = await this.cacheService.get(`${this.SSO_PREFIX}${workspaceId}`);
-    return cached ? JSON.parse(cached) : [];
+    const cached = await this.cacheService.get(
+      `${this.SSO_PREFIX}${workspaceId}`,
+    );
+    return cached ? (JSON.parse(cached) as SsoProvider[]) : [];
   }
 
   /**
    * Save SSO providers for a workspace
    */
-  private async saveSsoProviders(workspaceId: string, providers: SsoProvider[]): Promise<void> {
+  private async saveSsoProviders(
+    workspaceId: string,
+    providers: SsoProvider[],
+  ): Promise<void> {
     await this.cacheService.set(
       `${this.SSO_PREFIX}${workspaceId}`,
       JSON.stringify(providers),
@@ -114,7 +145,9 @@ export class SsoService {
       metadata: { providerType: provider.type, providerName: provider.name },
     });
 
-    this.logger.log(`SSO provider ${provider.name} configured for workspace ${workspaceId}`);
+    this.logger.log(
+      `SSO provider ${provider.name} configured for workspace ${workspaceId}`,
+    );
     return provider;
   }
 
@@ -143,7 +176,9 @@ export class SsoService {
       metadata: {},
     });
 
-    this.logger.log(`SSO provider ${providerId} removed from workspace ${workspaceId}`);
+    this.logger.log(
+      `SSO provider ${providerId} removed from workspace ${workspaceId}`,
+    );
   }
 
   /**
@@ -164,7 +199,11 @@ export class SsoService {
     const state = crypto.randomBytes(32).toString('hex');
 
     // Store state for verification
-    await this.cacheService.set(`sso:state:${state}`, JSON.stringify({ workspaceId, providerId }), 10 * 60);
+    await this.cacheService.set(
+      `sso:state:${state}`,
+      JSON.stringify({ workspaceId, providerId }),
+      10 * 60,
+    );
 
     const params = new URLSearchParams({
       client_id: config.clientId,
@@ -186,7 +225,7 @@ export class SsoService {
     workspaceId: string,
     providerId: string,
     code: string,
-    _state: string,
+    _state: string, // eslint-disable-line @typescript-eslint/no-unused-vars
   ): Promise<SsoUser> {
     const providers = await this.getSsoProviders(workspaceId);
     const provider = providers.find((p) => p.id === providerId);
@@ -216,7 +255,7 @@ export class SsoService {
       throw new UnauthorizedException('Failed to exchange code for tokens');
     }
 
-    const tokens = await tokenResponse.json();
+    const tokens = (await tokenResponse.json()) as TokenResponse;
 
     // Get user info
     const userInfoResponse = await fetch(`${config.issuer}/userinfo`, {
@@ -229,7 +268,7 @@ export class SsoService {
       throw new UnauthorizedException('Failed to get user info');
     }
 
-    const userInfo = await userInfoResponse.json();
+    const userInfo = (await userInfoResponse.json()) as UserInfo;
 
     // Map attributes
     const ssoUser: SsoUser = {
@@ -260,7 +299,11 @@ export class SsoService {
     const config = provider.config as OAuth2Config;
     const state = crypto.randomBytes(32).toString('hex');
 
-    await this.cacheService.set(`sso:state:${state}`, JSON.stringify({ workspaceId, providerId }), 10 * 60);
+    await this.cacheService.set(
+      `sso:state:${state}`,
+      JSON.stringify({ workspaceId, providerId }),
+      10 * 60,
+    );
 
     const params = new URLSearchParams({
       client_id: config.clientId,
@@ -282,7 +325,7 @@ export class SsoService {
     workspaceId: string,
     providerId: string,
     code: string,
-    _state: string,
+    _state: string, // eslint-disable-line @typescript-eslint/no-unused-vars
   ): Promise<SsoUser> {
     const providers = await this.getSsoProviders(workspaceId);
     const provider = providers.find((p) => p.id === providerId);
@@ -312,7 +355,7 @@ export class SsoService {
       throw new UnauthorizedException('Failed to exchange code for tokens');
     }
 
-    const tokens = await tokenResponse.json();
+    const tokens = (await tokenResponse.json()) as TokenResponse;
 
     // Get user info
     const userInfoResponse = await fetch(config.userInfoUrl, {
@@ -325,7 +368,7 @@ export class SsoService {
       throw new UnauthorizedException('Failed to get user info');
     }
 
-    const userInfo = await userInfoResponse.json();
+    const userInfo = (await userInfoResponse.json()) as UserInfo;
 
     // Map attributes
     const ssoUser: SsoUser = {
@@ -342,15 +385,17 @@ export class SsoService {
   /**
    * Get SSO links for a user
    */
-  private async getSsoLinks(userId: string): Promise<any[]> {
-    const cached = await this.cacheService.get(`${this.SSO_LINKS_PREFIX}${userId}`);
-    return cached ? JSON.parse(cached) : [];
+  private async getSsoLinks(userId: string): Promise<SsoLink[]> {
+    const cached = await this.cacheService.get(
+      `${this.SSO_LINKS_PREFIX}${userId}`,
+    );
+    return cached ? (JSON.parse(cached) as SsoLink[]) : [];
   }
 
   /**
    * Save SSO links for a user
    */
-  private async saveSsoLinks(userId: string, links: any[]): Promise<void> {
+  private async saveSsoLinks(userId: string, links: SsoLink[]): Promise<void> {
     await this.cacheService.set(
       `${this.SSO_LINKS_PREFIX}${userId}`,
       JSON.stringify(links),
@@ -392,10 +437,16 @@ export class SsoService {
       entityId: userId,
       method: 'POST',
       endpoint: '/security/sso/link',
-      metadata: { provider: ssoUser.provider, externalId: ssoUser.id, type: 'sso_link' },
+      metadata: {
+        provider: ssoUser.provider,
+        externalId: ssoUser.id,
+        type: 'sso_link',
+      },
     });
 
-    this.logger.log(`SSO account linked for user ${userId} with provider ${ssoUser.provider}`);
+    this.logger.log(
+      `SSO account linked for user ${userId} with provider ${ssoUser.provider}`,
+    );
   }
 
   /**
@@ -413,7 +464,8 @@ export class SsoService {
     for (const user of users) {
       const links = await this.getSsoLinks(user.id);
       const match = links.find(
-        (link: any) => link.provider === provider && link.externalId === externalId,
+        (link: SsoLink) =>
+          link.provider === provider && link.externalId === externalId,
       );
       if (match) {
         return user.id;
@@ -452,7 +504,9 @@ export class SsoService {
         },
       });
 
-      this.logger.log(`User ${user.id} provisioned from SSO provider ${ssoUser.provider}`);
+      this.logger.log(
+        `User ${user.id} provisioned from SSO provider ${ssoUser.provider}`,
+      );
     }
 
     // Link SSO account

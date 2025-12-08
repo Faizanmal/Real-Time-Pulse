@@ -130,13 +130,31 @@ export class RoleManagementService {
       name: 'Admin',
       description: 'Administrative access',
       permissions: [
-        'portal:view', 'portal:create', 'portal:edit', 'portal:delete', 'portal:share', 'portal:publish',
-        'widget:view', 'widget:create', 'widget:edit', 'widget:delete',
-        'workspace:view', 'workspace:edit', 'workspace:manage_members',
-        'integration:view', 'integration:create', 'integration:edit', 'integration:delete',
-        'report:view', 'report:create', 'report:schedule', 'report:export',
-        'ai:insights', 'ai:query',
-        'admin:audit_logs', 'admin:analytics',
+        'portal:view',
+        'portal:create',
+        'portal:edit',
+        'portal:delete',
+        'portal:share',
+        'portal:publish',
+        'widget:view',
+        'widget:create',
+        'widget:edit',
+        'widget:delete',
+        'workspace:view',
+        'workspace:edit',
+        'workspace:manage_members',
+        'integration:view',
+        'integration:create',
+        'integration:edit',
+        'integration:delete',
+        'report:view',
+        'report:create',
+        'report:schedule',
+        'report:export',
+        'ai:insights',
+        'ai:query',
+        'admin:audit_logs',
+        'admin:analytics',
       ],
       isSystem: true,
       createdAt: new Date(),
@@ -147,11 +165,19 @@ export class RoleManagementService {
       name: 'Editor',
       description: 'Can create and edit content',
       permissions: [
-        'portal:view', 'portal:create', 'portal:edit', 'portal:share',
-        'widget:view', 'widget:create', 'widget:edit',
+        'portal:view',
+        'portal:create',
+        'portal:edit',
+        'portal:share',
+        'widget:view',
+        'widget:create',
+        'widget:edit',
         'integration:view',
-        'report:view', 'report:create', 'report:export',
-        'ai:insights', 'ai:query',
+        'report:view',
+        'report:create',
+        'report:export',
+        'ai:insights',
+        'ai:query',
       ],
       isSystem: true,
       createdAt: new Date(),
@@ -186,7 +212,9 @@ export class RoleManagementService {
    */
   async getRoles(workspaceId: string): Promise<Role[]> {
     const customRolesJson = await this.cache.get(`roles:${workspaceId}`);
-    const customRoles: Role[] = customRolesJson ? JSON.parse(customRolesJson) : [];
+    const customRoles: Role[] = customRolesJson
+      ? JSON.parse(customRolesJson)
+      : [];
     return [...this.systemRoles, ...customRoles];
   }
 
@@ -232,7 +260,9 @@ export class RoleManagementService {
     let permissions = data.permissions;
     if (data.parentRoleId) {
       const parentRole = await this.getRole(workspaceId, data.parentRoleId);
-      permissions = [...new Set([...parentRole.permissions, ...data.permissions])];
+      permissions = [
+        ...new Set([...parentRole.permissions, ...data.permissions]),
+      ];
     }
 
     const roleId = `role_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -250,10 +280,16 @@ export class RoleManagementService {
 
     // Save role
     const customRolesJson = await this.cache.get(`roles:${workspaceId}`);
-    const customRoles: Role[] = customRolesJson ? JSON.parse(customRolesJson) : [];
+    const customRoles: Role[] = customRolesJson
+      ? JSON.parse(customRolesJson)
+      : [];
     customRoles.push(role);
 
-    await this.cache.set(`roles:${workspaceId}`, JSON.stringify(customRoles), 86400 * 365);
+    await this.cache.set(
+      `roles:${workspaceId}`,
+      JSON.stringify(customRoles),
+      86400 * 365,
+    );
 
     // Log audit
     await this.logPermissionChange(workspaceId, {
@@ -301,12 +337,18 @@ export class RoleManagementService {
 
     // Save role
     const customRolesJson = await this.cache.get(`roles:${workspaceId}`);
-    const customRoles: Role[] = customRolesJson ? JSON.parse(customRolesJson) : [];
+    const customRoles: Role[] = customRolesJson
+      ? JSON.parse(customRolesJson)
+      : [];
     const index = customRoles.findIndex((r) => r.id === roleId);
 
     if (index !== -1) {
       customRoles[index] = updatedRole;
-      await this.cache.set(`roles:${workspaceId}`, JSON.stringify(customRoles), 86400 * 365);
+      await this.cache.set(
+        `roles:${workspaceId}`,
+        JSON.stringify(customRoles),
+        86400 * 365,
+      );
     }
 
     // Log audit
@@ -330,10 +372,16 @@ export class RoleManagementService {
     }
 
     const customRolesJson = await this.cache.get(`roles:${workspaceId}`);
-    const customRoles: Role[] = customRolesJson ? JSON.parse(customRolesJson) : [];
+    const customRoles: Role[] = customRolesJson
+      ? JSON.parse(customRolesJson)
+      : [];
     const filtered = customRoles.filter((r) => r.id !== roleId);
 
-    await this.cache.set(`roles:${workspaceId}`, JSON.stringify(filtered), 86400 * 365);
+    await this.cache.set(
+      `roles:${workspaceId}`,
+      JSON.stringify(filtered),
+      86400 * 365,
+    );
 
     // Log audit
     await this.logPermissionChange(workspaceId, {
@@ -476,7 +524,10 @@ export class RoleManagementService {
 
     // Check resource-level permissions if resource specified
     if (resourceType && resourceId) {
-      const resourcePerms = await this.getUserResourcePermissions(workspaceId, userId);
+      const resourcePerms = await this.getUserResourcePermissions(
+        workspaceId,
+        userId,
+      );
       const matchingPerm = resourcePerms.find(
         (p) => p.resourceType === resourceType && p.resourceId === resourceId,
       );
@@ -508,7 +559,9 @@ export class RoleManagementService {
 
     const key = `workflows:${workspaceId}`;
     const workflowsJson = await this.cache.get(key);
-    const workflows: ApprovalWorkflow[] = workflowsJson ? JSON.parse(workflowsJson) : [];
+    const workflows: ApprovalWorkflow[] = workflowsJson
+      ? JSON.parse(workflowsJson)
+      : [];
     workflows.push(workflow);
 
     await this.cache.set(key, JSON.stringify(workflows), 86400 * 365);
@@ -566,7 +619,9 @@ export class RoleManagementService {
 
     const key = `approval_requests:${workspaceId}`;
     const requestsJson = await this.cache.get(key);
-    const requests: ApprovalRequest[] = requestsJson ? JSON.parse(requestsJson) : [];
+    const requests: ApprovalRequest[] = requestsJson
+      ? JSON.parse(requestsJson)
+      : [];
     requests.push(request);
 
     await this.cache.set(key, JSON.stringify(requests), 86400 * 30);
@@ -586,7 +641,9 @@ export class RoleManagementService {
   ): Promise<ApprovalRequest> {
     const key = `approval_requests:${workspaceId}`;
     const requestsJson = await this.cache.get(key);
-    const requests: ApprovalRequest[] = requestsJson ? JSON.parse(requestsJson) : [];
+    const requests: ApprovalRequest[] = requestsJson
+      ? JSON.parse(requestsJson)
+      : [];
 
     const requestIndex = requests.findIndex((r) => r.id === requestId);
     if (requestIndex === -1) {
@@ -612,8 +669,12 @@ export class RoleManagementService {
     const workflow = workflows.find((w) => w.id === request.workflowId);
 
     if (workflow) {
-      const approvedCount = request.approvals.filter((a) => a.decision === 'approved').length;
-      const rejectedCount = request.approvals.filter((a) => a.decision === 'rejected').length;
+      const approvedCount = request.approvals.filter(
+        (a) => a.decision === 'approved',
+      ).length;
+      const rejectedCount = request.approvals.filter(
+        (a) => a.decision === 'rejected',
+      ).length;
 
       if (rejectedCount > 0) {
         request.status = 'rejected';
@@ -640,10 +701,14 @@ export class RoleManagementService {
   /**
    * Get pending approval requests
    */
-  async getPendingApprovalRequests(workspaceId: string): Promise<ApprovalRequest[]> {
+  async getPendingApprovalRequests(
+    workspaceId: string,
+  ): Promise<ApprovalRequest[]> {
     const key = `approval_requests:${workspaceId}`;
     const requestsJson = await this.cache.get(key);
-    const requests: ApprovalRequest[] = requestsJson ? JSON.parse(requestsJson) : [];
+    const requests: ApprovalRequest[] = requestsJson
+      ? JSON.parse(requestsJson)
+      : [];
 
     return requests.filter((r) => r.status === 'pending');
   }

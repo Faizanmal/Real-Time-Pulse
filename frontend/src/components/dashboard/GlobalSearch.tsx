@@ -12,7 +12,6 @@ import {
   FileText,
   Layout,
   Bell,
-  Link2,
   MessageSquare,
   Plug,
 } from 'lucide-react';
@@ -22,35 +21,35 @@ import {
   SearchFilter,
   SearchPreset,
   GlobalSearchResponse,
-} from '@/src/lib/enterprise-api';
-import { Button } from '@/src/components/ui/button';
-import { Input } from '@/src/components/ui/input';
-import { Card } from '@/src/components/ui/card';
-import { Badge } from '@/src/components/ui/badge';
+} from '@/lib/enterprise-api';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/src/components/ui/dialog';
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/src/components/ui/select';
+} from '@/components/ui/select';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from '@/src/components/ui/dropdown-menu';
-import { Checkbox } from '@/src/components/ui/checkbox';
+} from '@/components/ui/dropdown-menu';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 import { useDebouncedCallback } from 'use-debounce';
 
 interface GlobalSearchProps {
@@ -533,7 +532,7 @@ export function GlobalSearch({
               ) : (
                 <div className="p-8 text-center">
                   <Search className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-gray-500">No results found for "{query}"</p>
+                  <p className="text-gray-500">No results found for &quot;{query}&quot;</p>
                   {suggestions.length > 0 && (
                     <div className="mt-4">
                       <p className="text-sm text-gray-400 mb-2">Did you mean:</p>

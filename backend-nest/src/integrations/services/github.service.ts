@@ -110,7 +110,10 @@ export class GitHubService {
     }
   }
 
-  private async fetchPullRequests(headers: any, params?: unknown): Promise<unknown> {
+  private async fetchPullRequests(
+    headers: any,
+    params?: unknown,
+  ): Promise<unknown> {
     try {
       const { owner, repo } = params as { owner: string; repo: string };
       if (!owner || !repo) {
@@ -161,7 +164,10 @@ export class GitHubService {
     }
   }
 
-  private async fetchWorkflows(headers: any, params?: unknown): Promise<unknown> {
+  private async fetchWorkflows(
+    headers: any,
+    params?: unknown,
+  ): Promise<unknown> {
     try {
       const { owner, repo } = params as { owner: string; repo: string };
       if (!owner || !repo) {
@@ -196,7 +202,10 @@ export class GitHubService {
     }
   }
 
-  private async fetchRepoStats(headers: any, params?: unknown): Promise<unknown> {
+  private async fetchRepoStats(
+    headers: any,
+    params?: unknown,
+  ): Promise<unknown> {
     try {
       const { owner, repo } = params as { owner: string; repo: string };
       if (!owner || !repo) {

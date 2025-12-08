@@ -59,7 +59,10 @@ export class HubSpotService {
     }
   }
 
-  private async fetchContacts(headers: any, params?: unknown): Promise<unknown> {
+  private async fetchContacts(
+    headers: any,
+    params?: unknown,
+  ): Promise<unknown> {
     try {
       const limit = (params as { limit?: number })?.limit || 50;
 
@@ -68,7 +71,8 @@ export class HubSpotService {
           headers,
           params: {
             limit,
-            properties: 'firstname,lastname,email,phone,company,createdate,hs_lead_status',
+            properties:
+              'firstname,lastname,email,phone,company,createdate,hs_lead_status',
           },
         }),
       );
@@ -79,7 +83,10 @@ export class HubSpotService {
     }
   }
 
-  private async fetchCompanies(headers: any, params?: unknown): Promise<unknown> {
+  private async fetchCompanies(
+    headers: any,
+    params?: unknown,
+  ): Promise<unknown> {
     try {
       const limit = (params as { limit?: number })?.limit || 50;
 
@@ -88,7 +95,8 @@ export class HubSpotService {
           headers,
           params: {
             limit,
-            properties: 'name,domain,industry,numberofemployees,annualrevenue,createdate',
+            properties:
+              'name,domain,industry,numberofemployees,annualrevenue,createdate',
           },
         }),
       );
@@ -108,7 +116,8 @@ export class HubSpotService {
           headers,
           params: {
             limit,
-            properties: 'dealname,amount,dealstage,pipeline,closedate,createdate,hubspot_owner_id',
+            properties:
+              'dealname,amount,dealstage,pipeline,closedate,createdate,hubspot_owner_id',
           },
         }),
       );
@@ -119,7 +128,10 @@ export class HubSpotService {
     }
   }
 
-  private async fetchPipeline(headers: any, params?: unknown): Promise<unknown> {
+  private async fetchPipeline(
+    headers: any,
+    params?: unknown,
+  ): Promise<unknown> {
     try {
       const pipelineId = (params as { pipelineId?: string })?.pipelineId;
       const url = pipelineId
@@ -164,7 +176,10 @@ export class HubSpotService {
     }
   }
 
-  private async fetchAnalytics(headers: any, params?: unknown): Promise<unknown> {
+  private async fetchAnalytics(
+    headers: any,
+    params?: unknown,
+  ): Promise<unknown> {
     try {
       // Aggregate analytics from various sources
       const [contacts, companies, deals] = await Promise.all([

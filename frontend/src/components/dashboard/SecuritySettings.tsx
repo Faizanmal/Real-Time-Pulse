@@ -16,8 +16,6 @@ import {
   Lock,
   Unlock,
   Settings,
-  Eye,
-  EyeOff,
 } from 'lucide-react';
 import {
   securityApi,
@@ -26,33 +24,34 @@ import {
   Session,
   SSOProvider,
   SecuritySettings as SecuritySettingsType,
-} from '@/src/lib/enterprise-api';
-import { Button } from '@/src/components/ui/button';
-import { Card } from '@/src/components/ui/card';
-import { Badge } from '@/src/components/ui/badge';
-import { Input } from '@/src/components/ui/input';
-import { Label } from '@/src/components/ui/label';
+} from '@/lib/enterprise-api';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/src/components/ui/dialog';
+} from '@/components/ui/dialog';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/src/components/ui/tabs';
-import { Switch } from '@/src/components/ui/switch';
+} from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
-} from '@/src/components/ui/input-otp';
+} from '@/components/ui/input-otp';
 import { toast } from 'sonner';
-import { cn } from '@/src/lib/utils';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 interface SecuritySettingsProps {
   className?: string;
@@ -123,7 +122,6 @@ export function SecuritySettings({ className }: SecuritySettingsProps) {
             status={twoFactorStatus}
             onSetup={() => setShow2FASetup(true)}
             onDisable={() => setShow2FADisable(true)}
-            onRefresh={loadData}
           />
         </TabsContent>
 
@@ -132,7 +130,7 @@ export function SecuritySettings({ className }: SecuritySettingsProps) {
         </TabsContent>
 
         <TabsContent value="sso">
-          <SSOSection providers={ssoProviders} onRefresh={loadData} />
+          <SSOSection providers={ssoProviders} />
         </TabsContent>
 
         <TabsContent value="settings">
@@ -179,10 +177,10 @@ interface TwoFactorSectionProps {
   status: TwoFactorStatus | null;
   onSetup: () => void;
   onDisable: () => void;
-  onRefresh: () => void;
+  // onRefresh: () => void; // Removed unused parameter
 }
 
-function TwoFactorSection({ status, onSetup, onDisable, onRefresh }: TwoFactorSectionProps) {
+function TwoFactorSection({ status, onSetup, onDisable }: TwoFactorSectionProps) {
   const [regenerating, setRegenerating] = useState(false);
   const [showBackupCodes, setShowBackupCodes] = useState(false);
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
@@ -418,7 +416,7 @@ function TwoFactorSetupDialog({ open, onClose }: TwoFactorSetupDialogProps) {
             {method === 'totp' && setupData.qrCode && (
               <>
                 <div className="flex justify-center p-4 bg-white rounded-lg">
-                  <img src={setupData.qrCode} alt="QR Code" className="w-48 h-48" />
+                  <Image src={setupData.qrCode} alt="QR Code" width={192} height={192} />
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-gray-500 mb-2">Or enter this code manually:</p>
@@ -443,12 +441,12 @@ function TwoFactorSetupDialog({ open, onClose }: TwoFactorSetupDialogProps) {
             {method === 'email' && (
               <div className="text-center py-8">
                 <Mail className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-                <p>We've sent a verification code to your email.</p>
+                <p>We&apos;ve sent a verification code to your email.</p>
               </div>
             )}
 
             <Button className="w-full" onClick={() => setStep('verify')}>
-              I've Set It Up
+              I&apos;ve Set It Up
             </Button>
           </div>
         )}
@@ -490,7 +488,7 @@ function TwoFactorSetupDialog({ open, onClose }: TwoFactorSetupDialogProps) {
                 <span className="font-medium text-yellow-800">Save these backup codes!</span>
               </div>
               <p className="text-sm text-yellow-700">
-                You'll need these if you lose access to your authenticator.
+                You&apos;ll need these if you lose access to your authenticator.
               </p>
             </div>
 
@@ -708,13 +706,13 @@ function SessionsSection({ sessions, onRefresh }: SessionsSectionProps) {
 
 interface SSOSectionProps {
   providers: SSOProvider[];
-  onRefresh: () => void;
+  // onRefresh: () => void; // Removed unused parameter
 }
 
-function SSOSection({ providers, onRefresh }: SSOSectionProps) {
+function SSOSection({ providers }: SSOSectionProps) {
   const handleConfigureSSO = async (provider: SSOProvider) => {
     // In a real app, this would open a configuration dialog
-    toast.info('SSO configuration coming soon');
+    toast.info(`Configuring ${provider.name} SSO`);
   };
 
   const handleInitiateLogin = async (providerId: string) => {

@@ -8,7 +8,6 @@ import {
   Clock,
   FileText,
   ExternalLink,
-  ChevronRight,
   Zap,
   BarChart3,
   Users,
@@ -22,26 +21,26 @@ import {
   Subscription,
   Invoice,
   UsageStats,
-} from '@/src/lib/enterprise-api';
-import { Button } from '@/src/components/ui/button';
-import { Card } from '@/src/components/ui/card';
-import { Badge } from '@/src/components/ui/badge';
-import { Progress } from '@/src/components/ui/progress';
+} from '@/lib/enterprise-api';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/src/components/ui/dialog';
+} from '@/components/ui/dialog';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/src/components/ui/tabs';
+} from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 interface BillingDashboardProps {
   className?: string;
@@ -225,7 +224,7 @@ export function BillingDashboard({ className }: BillingDashboardProps) {
             <DialogHeader>
               <DialogTitle>Subscribe to {selectedPlan.name}</DialogTitle>
               <DialogDescription>
-                You're about to subscribe to the {selectedPlan.name} plan for $
+                You are about to subscribe to the {selectedPlan.name} plan for $
                 {selectedPlan.price}/{selectedPlan.interval}.
               </DialogDescription>
             </DialogHeader>
@@ -276,7 +275,7 @@ function CurrentPlanCard({ subscription, onCancel, onResume }: CurrentPlanCardPr
   };
 
   return (
-    <div className="border rounded-lg p-6 bg-gradient-to-r from-emerald-50 to-teal-50">
+    <div className="border rounded-lg p-6 bg-linear-to-r from-emerald-50 to-teal-50">
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2 mb-2">

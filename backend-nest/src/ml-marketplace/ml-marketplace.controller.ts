@@ -8,7 +8,13 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MLMarketplaceService } from './ml-marketplace.service';
 
@@ -53,7 +59,8 @@ export class MLMarketplaceController {
   @ApiOperation({ summary: 'Deploy a model' })
   async deployModel(
     @Request() req: any,
-    @Body() dto: { modelId: string; widgetId?: string; config?: Record<string, any> },
+    @Body()
+    dto: { modelId: string; widgetId?: string; config?: Record<string, any> },
   ) {
     return this.mlService.deployModel(req.user.workspaceId, dto.modelId, dto);
   }
@@ -79,7 +86,8 @@ export class MLMarketplaceController {
   @ApiOperation({ summary: 'Start training job' })
   async startTraining(
     @Request() req: any,
-    @Body() dto: {
+    @Body()
+    dto: {
       modelId: string;
       trainingData: { source: string; config: Record<string, any> };
       config?: Record<string, any>;

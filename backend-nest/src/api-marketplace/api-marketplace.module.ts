@@ -9,7 +9,15 @@ import { CacheModule } from '../cache/cache.module';
 @Module({
   imports: [PrismaModule, CacheModule],
   controllers: [ApiMarketplaceController],
-  providers: [ApiMarketplaceService, CustomEndpointService, EndpointBuilderService],
-  exports: [ApiMarketplaceService, CustomEndpointService, EndpointBuilderService],
+  providers: [
+    ApiMarketplaceService,
+    CustomEndpointService,
+    EndpointBuilderService,
+  ],
+  exports: [
+    ApiMarketplaceService,
+    CustomEndpointService,
+    EndpointBuilderService,
+  ],
 })
 export class ApiMarketplaceModule {}

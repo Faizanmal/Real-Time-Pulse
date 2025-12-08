@@ -60,7 +60,15 @@ export class FederatedSearchService {
     sources: string[];
     correlations?: any[];
   }> {
-    const { query, sources, types, limit = 20, offset = 0, semantic = true, correlate = false } = options;
+    const {
+      query,
+      sources,
+      types,
+      limit = 20,
+      offset = 0,
+      semantic = true,
+      correlate = false,
+    } = options;
 
     this.logger.log(`Searching for: "${query}" in workspace ${workspaceId}`);
 
@@ -73,7 +81,9 @@ export class FederatedSearchService {
     // Perform parallel searches across all sources
     const searchPromises = sourcesToSearch.map((source) =>
       this.searchSource(workspaceId, source, query, options).catch((error) => {
-        this.logger.error(`Search failed for source ${source.id}: ${error.message}`);
+        this.logger.error(
+          `Search failed for source ${source.id}: ${error.message}`,
+        );
         return [];
       }),
     );
@@ -170,7 +180,10 @@ export class FederatedSearchService {
             source: 'portals',
             title: portal.name,
             description: portal.description || undefined,
-            relevanceScore: this.calculateRelevance(searchTerms, [portal.name, portal.description || '']),
+            relevanceScore: this.calculateRelevance(searchTerms, [
+              portal.name,
+              portal.description || '',
+            ]),
             metadata: {
               widgetCount: portal._count.widgets,
               isPublic: portal.isPublic,
@@ -228,14 +241,19 @@ export class FederatedSearchService {
         });
 
         for (const user of users) {
-          const name = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
+          const name =
+            [user.firstName, user.lastName].filter(Boolean).join(' ') ||
+            user.email;
           results.push({
             id: user.id,
             type: 'user',
             source: 'users',
             title: name,
             description: user.email,
-            relevanceScore: this.calculateRelevance(searchTerms, [name, user.email]),
+            relevanceScore: this.calculateRelevance(searchTerms, [
+              name,
+              user.email,
+            ]),
             metadata: {
               role: user.role,
               avatar: user.avatar,
@@ -267,7 +285,10 @@ export class FederatedSearchService {
             title: insight.title,
             description: insight.description,
             snippet: insight.description.slice(0, 200),
-            relevanceScore: this.calculateRelevance(searchTerms, [insight.title, insight.description]),
+            relevanceScore: this.calculateRelevance(searchTerms, [
+              insight.title,
+              insight.description,
+            ]),
             metadata: {
               type: insight.type,
               severity: insight.severity,
@@ -284,9 +305,7 @@ export class FederatedSearchService {
         const integrations = await this.prisma.integration.findMany({
           where: {
             workspaceId,
-            OR: [
-              { accountName: { contains: query, mode: 'insensitive' } },
-            ],
+            OR: [{ accountName: { contains: query, mode: 'insensitive' } }],
           },
           take: 20,
         });
@@ -437,7 +456,12 @@ export class FederatedSearchService {
       { id: 'widgets', name: 'Widgets', type: 'internal', isActive: true },
       { id: 'users', name: 'Users', type: 'internal', isActive: true },
       { id: 'insights', name: 'AI Insights', type: 'internal', isActive: true },
-      { id: 'integrations', name: 'Integrations', type: 'internal', isActive: true },
+      {
+        id: 'integrations',
+        name: 'Integrations',
+        type: 'internal',
+        isActive: true,
+      },
     ];
 
     // Add connected integrations as sources
@@ -498,7 +522,11 @@ export class FederatedSearchService {
   /**
    * Get recent searches
    */
-  async getRecentSearches(workspaceId: string, userId: string, limit: number = 10): Promise<string[]> {
+  async getRecentSearches(
+    workspaceId: string,
+    userId: string,
+    limit: number = 10,
+  ): Promise<string[]> {
     const key = `recent_searches:${workspaceId}:${userId}`;
     const json = await this.cache.get(key);
     const searches: string[] = json ? JSON.parse(json) : [];
@@ -508,11 +536,17 @@ export class FederatedSearchService {
   /**
    * Log search for analytics and recent searches
    */
-  private async logSearch(workspaceId: string, query: string, resultCount: number): Promise<void> {
+  private async logSearch(
+    workspaceId: string,
+    query: string,
+    resultCount: number,
+  ): Promise<void> {
     // Log to analytics (simplified)
     const statsKey = `search_stats:${workspaceId}`;
     const statsJson = await this.cache.get(statsKey);
-    const stats = statsJson ? JSON.parse(statsJson) : { totalSearches: 0, queries: {} };
+    const stats = statsJson
+      ? JSON.parse(statsJson)
+      : { totalSearches: 0, queries: {} };
 
     stats.totalSearches++;
     stats.queries[query] = (stats.queries[query] || 0) + 1;
@@ -529,7 +563,9 @@ export class FederatedSearchService {
   }> {
     const statsKey = `search_stats:${workspaceId}`;
     const statsJson = await this.cache.get(statsKey);
-    const stats = statsJson ? JSON.parse(statsJson) : { totalSearches: 0, queries: {} };
+    const stats = statsJson
+      ? JSON.parse(statsJson)
+      : { totalSearches: 0, queries: {} };
 
     const topQueries = Object.entries(stats.queries as Record<string, number>)
       .sort(([, a], [, b]) => b - a)

@@ -4,10 +4,10 @@ import { Suspense, useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useAuthStore } from '@/src/store/auth';
-import { widgetApi, portalApi } from '@/src/lib/api-client';
-import { WidgetCard } from '@/src/components/ui/feature-cards';
-import type { Widget, Portal } from '@/src/types';
+import { useAuthStore } from '@/store/auth';
+import { widgetApi, portalApi } from '@/lib/api-client';
+import { WidgetCard } from '@/components/ui/feature-cards';
+import type { Widget, Portal } from '@/types';
 import {
   Puzzle,
   Plus,
@@ -210,7 +210,7 @@ function WidgetsPageContent() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold rounded-xl transition-all flex items-center gap-2"
+                className="px-6 py-2.5 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold rounded-xl transition-all flex items-center gap-2"
               >
                 <Plus className="h-5 w-5" />
                 New Widget
@@ -375,7 +375,7 @@ function WidgetsPageContent() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold rounded-xl transition-all"
+                  className="px-6 py-3 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold rounded-xl transition-all"
                 >
                   <Plus className="inline-block h-5 w-5 mr-2" />
                   Create Widget

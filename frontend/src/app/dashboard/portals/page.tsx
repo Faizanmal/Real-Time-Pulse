@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useAuthStore } from '@/src/store/auth';
-import { portalApi } from '@/src/lib/api-client';
-import { PortalCard } from '@/src/components/ui/feature-cards';
-import type { Portal } from '@/src/types';
+import { useAuthStore } from '@/store/auth';
+import { portalApi } from '@/lib/api-client';
+import { PortalCard } from '@/components/ui/feature-cards';
+import type { Portal } from '@/types';
 import {
   LayoutDashboard,
   Plus,
@@ -126,7 +126,7 @@ export default function PortalsPage() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-xl transition-all flex items-center gap-2"
+                className="px-6 py-2.5 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-xl transition-all flex items-center gap-2"
               >
                 <Plus className="h-5 w-5" />
                 New Portal
@@ -238,7 +238,7 @@ export default function PortalsPage() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-xl transition-all"
+                  className="px-6 py-3 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-xl transition-all"
                 >
                   <Plus className="inline-block h-5 w-5 mr-2" />
                   Create Portal

@@ -11,7 +11,12 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 import type { RequestUser } from '../common/interfaces/auth.interface';
@@ -125,8 +130,14 @@ export class SecurityController {
     @CurrentUser() user: RequestUser,
     @Body('token') token: string,
   ) {
-    const success = await this.twoFactorService.completeTotpSetup(user.id, token);
-    return { success, message: success ? 'TOTP enabled' : 'Verification failed' };
+    const success = await this.twoFactorService.completeTotpSetup(
+      user.id,
+      token,
+    );
+    return {
+      success,
+      message: success ? 'TOTP enabled' : 'Verification failed',
+    };
   }
 
   @Post('2fa/email/enable')

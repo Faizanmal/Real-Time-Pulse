@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
 import { ArrowUp, ArrowDown, TrendingUp } from "lucide-react";
 
@@ -116,7 +116,7 @@ export function StatsCard({
         whileHover={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
       >
-        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 opacity-0 group-hover:opacity-20 blur-xl transition-opacity" />
+        <div className="absolute inset-0 rounded-xl bg-linear-to-r from-purple-500 via-pink-500 to-blue-500 opacity-0 group-hover:opacity-20 blur-xl transition-opacity" />
       </motion.div>
     </motion.div>
   );

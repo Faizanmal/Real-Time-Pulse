@@ -70,7 +70,13 @@ export default registerAs('billing', () => ({
     },
   },
   trialDays: parseInt(process.env.TRIAL_DAYS || '14', 10),
-  billingPortalReturnUrl: process.env.BILLING_PORTAL_RETURN_URL || 'http://localhost:3000/settings/billing',
-  checkoutSuccessUrl: process.env.CHECKOUT_SUCCESS_URL || 'http://localhost:3000/settings/billing?success=true',
-  checkoutCancelUrl: process.env.CHECKOUT_CANCEL_URL || 'http://localhost:3000/settings/billing?canceled=true',
+  billingPortalReturnUrl:
+    process.env.BILLING_PORTAL_RETURN_URL ||
+    'http://localhost:3000/settings/billing',
+  checkoutSuccessUrl:
+    process.env.CHECKOUT_SUCCESS_URL ||
+    'http://localhost:3000/settings/billing?success=true',
+  checkoutCancelUrl:
+    process.env.CHECKOUT_CANCEL_URL ||
+    'http://localhost:3000/settings/billing?canceled=true',
 }));

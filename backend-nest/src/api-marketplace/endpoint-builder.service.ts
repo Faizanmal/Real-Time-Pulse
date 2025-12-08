@@ -92,9 +92,12 @@ export class EndpointBuilderService {
       case 'parameters':
         const params = step.data.parameters || [];
         params.forEach((param: any, index: number) => {
-          if (!param.name) errors.push(`Parameter ${index + 1}: Name is required`);
-          if (!param.type) errors.push(`Parameter ${index + 1}: Type is required`);
-          if (!param.dataType) errors.push(`Parameter ${index + 1}: Data type is required`);
+          if (!param.name)
+            errors.push(`Parameter ${index + 1}: Name is required`);
+          if (!param.type)
+            errors.push(`Parameter ${index + 1}: Type is required`);
+          if (!param.dataType)
+            errors.push(`Parameter ${index + 1}: Data type is required`);
         });
         break;
 
@@ -196,7 +199,9 @@ export class EndpointBuilderService {
                     },
                     {} as Record<string, any>,
                   ),
-                  required: bodyParams.filter((p) => p.required).map((p) => p.name),
+                  required: bodyParams
+                    .filter((p) => p.required)
+                    .map((p) => p.name),
                 },
               },
             },

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CacheService } from '../cache/cache.service';
+import { PrismaService } from '../../prisma/prisma.service';
+import { CacheService } from '../../cache/cache.service';
 
 export interface SearchResult {
   type: 'portal' | 'widget' | 'integration' | 'alert' | 'report' | 'user';
@@ -70,7 +70,13 @@ export class AdvancedSearchService {
     const results: SearchResult[] = [];
     const limit = options?.limit || 20;
     const offset = options?.offset || 0;
-    const searchTypes = filters?.types || ['portal', 'widget', 'integration', 'alert', 'report'];
+    const searchTypes = filters?.types || [
+      'portal',
+      'widget',
+      'integration',
+      'alert',
+      'report',
+    ];
 
     // Search portals
     if (searchTypes.includes('portal')) {
@@ -86,7 +92,11 @@ export class AdvancedSearchService {
 
     // Search integrations
     if (searchTypes.includes('integration')) {
-      const integrations = await this.searchIntegrations(workspaceId, query, filters);
+      const integrations = await this.searchIntegrations(
+        workspaceId,
+        query,
+        filters,
+      );
       results.push(...integrations);
     }
 
@@ -143,7 +153,9 @@ export class AdvancedSearchService {
         ...(filters?.dateRange?.start && {
           createdAt: {
             gte: new Date(filters.dateRange.start),
-            ...(filters.dateRange.end && { lte: new Date(filters.dateRange.end) }),
+            ...(filters.dateRange.end && {
+              lte: new Date(filters.dateRange.end),
+            }),
           },
         }),
         ...(filters?.createdBy && { createdById: filters.createdBy }),
@@ -171,7 +183,11 @@ export class AdvancedSearchService {
         createdBy: portal.createdBy,
         createdAt: portal.createdAt,
       },
-      relevanceScore: this.calculateRelevance(query, portal.name, portal.description),
+      relevanceScore: this.calculateRelevance(
+        query,
+        portal.name,
+        portal.description,
+      ),
       highlightedText: this.highlightText(portal.name, query),
     }));
   }
@@ -188,9 +204,7 @@ export class AdvancedSearchService {
       where: {
         portal: { workspaceId },
         OR: query
-          ? [
-              { name: { contains: query, mode: 'insensitive' } },
-            ]
+          ? [{ name: { contains: query, mode: 'insensitive' } }]
           : undefined,
         ...(filters?.integrationProvider && {
           integration: { provider: filters.integrationProvider as any },
@@ -235,10 +249,7 @@ export class AdvancedSearchService {
       where: {
         workspaceId,
         OR: query
-          ? [
-              { provider: { contains: query, mode: 'insensitive' } },
-              { accountName: { contains: query, mode: 'insensitive' } },
-            ]
+          ? [{ accountName: { contains: query, mode: 'insensitive' } }]
           : undefined,
         ...(filters?.status && { status: { in: filters.status as any[] } }),
       },
@@ -255,7 +266,11 @@ export class AdvancedSearchService {
         status: integration.status,
         lastSyncedAt: integration.lastSyncedAt,
       },
-      relevanceScore: this.calculateRelevance(query, integration.provider, integration.accountName),
+      relevanceScore: this.calculateRelevance(
+        query,
+        integration.provider,
+        integration.accountName,
+      ),
       highlightedText: this.highlightText(integration.provider, query),
     }));
   }
@@ -292,7 +307,11 @@ export class AdvancedSearchService {
         lastTriggeredAt: alert.lastTriggeredAt,
         triggerCount: alert.triggerCount,
       },
-      relevanceScore: this.calculateRelevance(query, alert.name, alert.description),
+      relevanceScore: this.calculateRelevance(
+        query,
+        alert.name,
+        alert.description,
+      ),
       highlightedText: this.highlightText(alert.name, query),
     }));
   }
@@ -334,7 +353,11 @@ export class AdvancedSearchService {
         schedule: report.schedule,
         portalName: report.portal.name,
       },
-      relevanceScore: this.calculateRelevance(query, report.name, report.description),
+      relevanceScore: this.calculateRelevance(
+        query,
+        report.name,
+        report.description,
+      ),
       highlightedText: this.highlightText(report.name, query),
     }));
   }
@@ -342,7 +365,10 @@ export class AdvancedSearchService {
   /**
    * Calculate relevance score
    */
-  private calculateRelevance(query: string, ...fields: (string | null | undefined)[]): number {
+  private calculateRelevance(
+    query: string,
+    ...fields: (string | null | undefined)[]
+  ): number {
     if (!query) return 0.5;
 
     const queryLower = query.toLowerCase();
@@ -365,7 +391,9 @@ export class AdvancedSearchService {
         score += 0.5;
       }
       // Word match
-      else if (fieldLower.split(/\s+/).some((word) => word.startsWith(queryLower))) {
+      else if (
+        fieldLower.split(/\s+/).some((word) => word.startsWith(queryLower))
+      ) {
         score += 0.3;
       }
     }
@@ -398,7 +426,10 @@ export class AdvancedSearchService {
       // Count by integration provider
       const provider = result.metadata.integrationProvider as string;
       if (provider) {
-        integrationCounts.set(provider, (integrationCounts.get(provider) || 0) + 1);
+        integrationCounts.set(
+          provider,
+          (integrationCounts.get(provider) || 0) + 1,
+        );
       }
 
       // Count tags if present
@@ -411,19 +442,30 @@ export class AdvancedSearchService {
     }
 
     return {
-      types: Array.from(typeCounts.entries()).map(([type, count]) => ({ type, count })),
-      integrations: Array.from(integrationCounts.entries()).map(([provider, count]) => ({
-        provider,
+      types: Array.from(typeCounts.entries()).map(([type, count]) => ({
+        type,
         count,
       })),
-      tags: Array.from(tagCounts.entries()).map(([tag, count]) => ({ tag, count })),
+      integrations: Array.from(integrationCounts.entries()).map(
+        ([provider, count]) => ({
+          provider,
+          count,
+        }),
+      ),
+      tags: Array.from(tagCounts.entries()).map(([tag, count]) => ({
+        tag,
+        count,
+      })),
     };
   }
 
   /**
    * Generate search suggestions based on query
    */
-  private async generateSuggestions(workspaceId: string, query: string): Promise<string[]> {
+  private async generateSuggestions(
+    workspaceId: string,
+    query: string,
+  ): Promise<string[]> {
     if (!query || query.length < 2) return [];
 
     const suggestions: string[] = [];
@@ -487,7 +529,9 @@ export class AdvancedSearchService {
    * Get saved filters for user
    */
   async getSavedFilters(userId: string): Promise<SavedFilter[]> {
-    const cached = await this.cacheService.get(`${this.SAVED_FILTERS_PREFIX}${userId}`);
+    const cached = await this.cacheService.get(
+      `${this.SAVED_FILTERS_PREFIX}${userId}`,
+    );
     return cached ? JSON.parse(cached) : [];
   }
 
@@ -497,7 +541,7 @@ export class AdvancedSearchService {
   async deleteSavedFilter(userId: string, filterId: string): Promise<void> {
     const filters = await this.getSavedFilters(userId);
     const updated = filters.filter((f) => f.id !== filterId);
-    
+
     await this.cacheService.set(
       `${this.SAVED_FILTERS_PREFIX}${userId}`,
       JSON.stringify(updated),
@@ -520,14 +564,20 @@ export class AdvancedSearchService {
     // Keep only last 10
     const trimmed = filtered.slice(0, 10);
 
-    await this.cacheService.set(key, JSON.stringify(trimmed), 30 * 24 * 60 * 60);
+    await this.cacheService.set(
+      key,
+      JSON.stringify(trimmed),
+      30 * 24 * 60 * 60,
+    );
   }
 
   /**
    * Get recent searches
    */
   async getRecentSearches(userId: string): Promise<string[]> {
-    const cached = await this.cacheService.get(`${this.RECENT_SEARCHES_PREFIX}${userId}`);
+    const cached = await this.cacheService.get(
+      `${this.RECENT_SEARCHES_PREFIX}${userId}`,
+    );
     return cached ? JSON.parse(cached) : [];
   }
 

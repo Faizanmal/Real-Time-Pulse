@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { meetingsAPI, actionItemsAPI, notesAPI, tagsAPI, activitiesAPI, templatesAPI, integrationsAPI, notificationLogsAPI, calendarAPI, workspacesAPI } from '@/src/lib/api';
-import type { Meeting, ActionItem, Tag, MeetingTemplate, NotificationIntegration, CalendarConnection, Workspace, WorkspaceMember } from '@/src/lib/api';
+import { meetingsAPI, actionItemsAPI, notesAPI, tagsAPI, activitiesAPI, templatesAPI, integrationsAPI, notificationLogsAPI, calendarAPI, workspacesAPI } from '@/lib/api';
+import type { Meeting, ActionItem, Tag, MeetingTemplate, NotificationIntegration, CalendarConnection, Workspace, WorkspaceMember } from '@/lib/api';
 
 // Meetings
 export function useMeetings(params?: {

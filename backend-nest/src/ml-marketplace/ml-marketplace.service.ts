@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { MLModelExecutorService } from './ml-model-executor.service';
@@ -7,7 +12,13 @@ export interface MLModel {
   id: string;
   name: string;
   description: string;
-  category: 'forecasting' | 'anomaly_detection' | 'classification' | 'clustering' | 'nlp' | 'recommendation';
+  category:
+    | 'forecasting'
+    | 'anomaly_detection'
+    | 'classification'
+    | 'clustering'
+    | 'nlp'
+    | 'recommendation';
   version: string;
   author: string;
   isPublic: boolean;
@@ -62,7 +73,8 @@ export class MLMarketplaceService {
     {
       id: 'model_forecast_timeseries',
       name: 'Time Series Forecaster',
-      description: 'Predict future values based on historical time series data using ARIMA and Prophet algorithms',
+      description:
+        'Predict future values based on historical time series data using ARIMA and Prophet algorithms',
       category: 'forecasting',
       version: '1.2.0',
       author: 'Real-Time Pulse',
@@ -71,12 +83,25 @@ export class MLMarketplaceService {
       rating: 4.7,
       downloads: 1250,
       inputSchema: {
-        data: { type: 'array', items: { type: 'object', properties: { date: { type: 'string' }, value: { type: 'number' } } } },
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: { date: { type: 'string' }, value: { type: 'number' } },
+          },
+        },
         periods: { type: 'number', default: 7 },
         frequency: { type: 'string', enum: ['daily', 'weekly', 'monthly'] },
       },
       outputSchema: {
-        predictions: { type: 'array', items: { date: { type: 'string' }, predicted: { type: 'number' }, confidence: { type: 'number' } } },
+        predictions: {
+          type: 'array',
+          items: {
+            date: { type: 'string' },
+            predicted: { type: 'number' },
+            confidence: { type: 'number' },
+          },
+        },
       },
       config: { algorithm: 'auto', seasonality: true },
       tags: ['forecasting', 'time-series', 'prediction'],
@@ -86,7 +111,8 @@ export class MLMarketplaceService {
     {
       id: 'model_anomaly_statistical',
       name: 'Anomaly Detector',
-      description: 'Detect anomalies in metric data using statistical methods and isolation forests',
+      description:
+        'Detect anomalies in metric data using statistical methods and isolation forests',
       category: 'anomaly_detection',
       version: '2.0.1',
       author: 'Real-Time Pulse',
@@ -100,7 +126,14 @@ export class MLMarketplaceService {
         windowSize: { type: 'number', default: 30 },
       },
       outputSchema: {
-        anomalies: { type: 'array', items: { index: { type: 'number' }, value: { type: 'number' }, score: { type: 'number' } } },
+        anomalies: {
+          type: 'array',
+          items: {
+            index: { type: 'number' },
+            value: { type: 'number' },
+            score: { type: 'number' },
+          },
+        },
         threshold: { type: 'number' },
       },
       config: { method: 'isolation_forest' },
@@ -125,7 +158,10 @@ export class MLMarketplaceService {
         language: { type: 'string', default: 'en' },
       },
       outputSchema: {
-        sentiment: { type: 'string', enum: ['positive', 'negative', 'neutral'] },
+        sentiment: {
+          type: 'string',
+          enum: ['positive', 'negative', 'neutral'],
+        },
         confidence: { type: 'number' },
         emotions: { type: 'object' },
       },
@@ -137,7 +173,8 @@ export class MLMarketplaceService {
     {
       id: 'model_customer_segmentation',
       name: 'Customer Segmentation',
-      description: 'Automatically segment customers based on behavior and attributes using K-means clustering',
+      description:
+        'Automatically segment customers based on behavior and attributes using K-means clustering',
       category: 'clustering',
       version: '1.1.0',
       author: 'Real-Time Pulse',
@@ -189,7 +226,8 @@ export class MLMarketplaceService {
     {
       id: 'model_recommendation_engine',
       name: 'Smart Recommender',
-      description: 'Generate personalized recommendations using collaborative filtering',
+      description:
+        'Generate personalized recommendations using collaborative filtering',
       category: 'recommendation',
       version: '1.3.0',
       author: 'Real-Time Pulse',
@@ -205,7 +243,10 @@ export class MLMarketplaceService {
         numRecommendations: { type: 'number', default: 10 },
       },
       outputSchema: {
-        recommendations: { type: 'array', items: { itemId: { type: 'string' }, score: { type: 'number' } } },
+        recommendations: {
+          type: 'array',
+          items: { itemId: { type: 'string' }, score: { type: 'number' } },
+        },
       },
       config: { algorithm: 'collaborative_filtering', similarity: 'cosine' },
       tags: ['recommendation', 'personalization', 'collaborative-filtering'],
@@ -303,7 +344,9 @@ export class MLMarketplaceService {
     // Save deployment
     const key = `ml:deployments:${workspaceId}`;
     const deploymentsJson = await this.cache.get(key);
-    const deployments: ModelDeployment[] = deploymentsJson ? JSON.parse(deploymentsJson) : [];
+    const deployments: ModelDeployment[] = deploymentsJson
+      ? JSON.parse(deploymentsJson)
+      : [];
     deployments.push(deployment);
 
     await this.cache.set(key, JSON.stringify(deployments), 86400 * 365);
@@ -346,13 +389,18 @@ export class MLMarketplaceService {
 
     try {
       // Execute model
-      const result = await this.executor.execute(model, input, deployment.config);
+      const result = await this.executor.execute(
+        model,
+        input,
+        deployment.config,
+      );
 
       // Update metrics
       const latency = Date.now() - startTime;
       deployment.metrics.predictions++;
       deployment.metrics.avgLatency =
-        (deployment.metrics.avgLatency * (deployment.metrics.predictions - 1) + latency) /
+        (deployment.metrics.avgLatency * (deployment.metrics.predictions - 1) +
+          latency) /
         deployment.metrics.predictions;
       deployment.lastUsedAt = new Date();
 
@@ -432,7 +480,10 @@ export class MLMarketplaceService {
   /**
    * Run training job (simulated)
    */
-  private async runTrainingJob(workspaceId: string, jobId: string): Promise<void> {
+  private async runTrainingJob(
+    workspaceId: string,
+    jobId: string,
+  ): Promise<void> {
     const key = `ml:training_jobs:${workspaceId}`;
 
     // Update status to running
@@ -450,7 +501,9 @@ export class MLMarketplaceService {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const currentJobsJson = await this.cache.get(key);
-      const currentJobs: TrainingJob[] = currentJobsJson ? JSON.parse(currentJobsJson) : [];
+      const currentJobs: TrainingJob[] = currentJobsJson
+        ? JSON.parse(currentJobsJson)
+        : [];
       const currentJobIndex = currentJobs.findIndex((j) => j.id === jobId);
 
       if (currentJobIndex !== -1) {
@@ -479,12 +532,32 @@ export class MLMarketplaceService {
    */
   getCategories() {
     return [
-      { id: 'forecasting', name: 'Forecasting', description: 'Predict future values' },
-      { id: 'anomaly_detection', name: 'Anomaly Detection', description: 'Detect unusual patterns' },
-      { id: 'classification', name: 'Classification', description: 'Categorize data' },
-      { id: 'clustering', name: 'Clustering', description: 'Group similar items' },
+      {
+        id: 'forecasting',
+        name: 'Forecasting',
+        description: 'Predict future values',
+      },
+      {
+        id: 'anomaly_detection',
+        name: 'Anomaly Detection',
+        description: 'Detect unusual patterns',
+      },
+      {
+        id: 'classification',
+        name: 'Classification',
+        description: 'Categorize data',
+      },
+      {
+        id: 'clustering',
+        name: 'Clustering',
+        description: 'Group similar items',
+      },
       { id: 'nlp', name: 'NLP', description: 'Natural language processing' },
-      { id: 'recommendation', name: 'Recommendation', description: 'Personalized suggestions' },
+      {
+        id: 'recommendation',
+        name: 'Recommendation',
+        description: 'Personalized suggestions',
+      },
     ];
   }
 }

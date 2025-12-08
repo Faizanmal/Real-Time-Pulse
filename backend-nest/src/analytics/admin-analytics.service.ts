@@ -135,8 +135,8 @@ export class AdminAnalyticsService {
     await this.checkAdminAccess(userId);
 
     const cacheKey = 'admin:system-metrics';
-    const cached = await this.cacheService.get<SystemMetrics>(cacheKey);
-    if (cached) return cached;
+    const cached = await this.cacheService.get(cacheKey);
+    if (cached) return JSON.parse(cached);
 
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -210,10 +210,13 @@ export class AdminAnalyticsService {
         total: totalUsers,
         activeThisMonth: activeUsers,
         newThisMonth: newUsers,
-        byPlan: usersByPlan.reduce((acc, p) => {
-          acc[p.plan] = p._count;
-          return acc;
-        }, {} as Record<string, number>),
+        byPlan: usersByPlan.reduce(
+          (acc, p) => {
+            acc[p.plan] = p._count;
+            return acc;
+          },
+          {} as Record<string, number>,
+        ),
       },
       workspaces: {
         total: totalWorkspaces,
@@ -228,22 +231,32 @@ export class AdminAnalyticsService {
       },
       widgets: {
         total: totalWidgets,
-        byType: widgetsByType.reduce((acc, w) => {
-          acc[w.type] = w._count;
-          return acc;
-        }, {} as Record<string, number>),
+        byType: widgetsByType.reduce(
+          (acc, w) => {
+            acc[w.type] = w._count;
+            return acc;
+          },
+          {} as Record<string, number>,
+        ),
       },
       integrations: {
         total: totalIntegrations,
         active: activeIntegrations,
-        byProvider: integrationsByProvider.reduce((acc, i) => {
-          acc[i.provider] = i._count;
-          return acc;
-        }, {} as Record<string, number>),
+        byProvider: integrationsByProvider.reduce(
+          (acc, i) => {
+            acc[i.provider] = i._count;
+            return acc;
+          },
+          {} as Record<string, number>,
+        ),
       },
     };
 
-    await this.cacheService.set(cacheKey, metrics, this.CACHE_TTL);
+    await this.cacheService.set(
+      cacheKey,
+      JSON.stringify(metrics),
+      this.CACHE_TTL,
+    );
     return metrics;
   }
 
@@ -254,8 +267,8 @@ export class AdminAnalyticsService {
     await this.checkAdminAccess(userId);
 
     const cacheKey = 'admin:revenue-metrics';
-    const cached = await this.cacheService.get<RevenueMetrics>(cacheKey);
-    if (cached) return cached;
+    const cached = await this.cacheService.get(cacheKey);
+    if (cached) return JSON.parse(cached);
 
     // Plan pricing (monthly)
     const planPricing: Record<string, number> = {
@@ -272,8 +285,7 @@ export class AdminAnalyticsService {
       select: {
         plan: true,
         createdAt: true,
-        currentPeriodStart: true,
-        currentPeriodEnd: true,
+        stripeCurrentPeriodEnd: true,
       },
     });
 
@@ -283,28 +295,30 @@ export class AdminAnalyticsService {
     }, 0);
 
     // Group by plan
-    const byPlan = subscriptions.reduce((acc, sub) => {
-      if (!acc[sub.plan]) {
-        acc[sub.plan] = { count: 0, revenue: 0 };
-      }
-      acc[sub.plan].count++;
-      acc[sub.plan].revenue += planPricing[sub.plan] || 0;
-      return acc;
-    }, {} as Record<string, { count: number; revenue: number }>);
+    const byPlan = subscriptions.reduce(
+      (acc, sub) => {
+        if (!acc[sub.plan]) {
+          acc[sub.plan] = { count: 0, revenue: 0 };
+        }
+        acc[sub.plan].count++;
+        acc[sub.plan].revenue += planPricing[sub.plan] || 0;
+        return acc;
+      },
+      {} as Record<string, { count: number; revenue: number }>,
+    );
 
     // Calculate churn (subscribers who cancelled in last 30 days)
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const cancelledCount = await this.prisma.subscription.count({
       where: {
-        status: 'CANCELLED',
+        status: 'CANCELED',
         updatedAt: { gte: thirtyDaysAgo },
       },
     });
 
     const totalSubscribers = subscriptions.length;
-    const churnRate = totalSubscribers > 0 
-      ? (cancelledCount / totalSubscribers) * 100 
-      : 0;
+    const churnRate =
+      totalSubscribers > 0 ? (cancelledCount / totalSubscribers) * 100 : 0;
 
     // Get growth data for last 6 months
     const growth: RevenueMetrics['growth'] = [];
@@ -337,9 +351,10 @@ export class AdminAnalyticsService {
       mrr,
       arr: mrr * 12,
       churnRate: parseFloat(churnRate.toFixed(2)),
-      averageRevenuePerUser: totalSubscribers > 0 
-        ? parseFloat((mrr / totalSubscribers).toFixed(2)) 
-        : 0,
+      averageRevenuePerUser:
+        totalSubscribers > 0
+          ? parseFloat((mrr / totalSubscribers).toFixed(2))
+          : 0,
       byPlan: Object.entries(byPlan).map(([plan, data]) => ({
         plan,
         count: data.count,
@@ -348,7 +363,11 @@ export class AdminAnalyticsService {
       growth,
     };
 
-    await this.cacheService.set(cacheKey, metrics, this.CACHE_TTL);
+    await this.cacheService.set(
+      cacheKey,
+      JSON.stringify(metrics),
+      this.CACHE_TTL,
+    );
     return metrics;
   }
 
@@ -375,7 +394,7 @@ export class AdminAnalyticsService {
     // Cache health check
     let cacheStatus = 'healthy';
     let cacheHitRate = 95; // Default estimate
-    let cacheMemoryUsage = 0;
+    const cacheMemoryUsage = 0;
     try {
       // Simple cache operation test
       await this.cacheService.set('health-check', 'ok', 1);
@@ -401,23 +420,27 @@ export class AdminAnalyticsService {
     ]);
 
     const totalJobs = pendingJobs + failedJobs + completedJobs;
-    const jobFailureRate = totalJobs > 0 
-      ? (failedJobs / totalJobs) * 100 
-      : 0;
+    const jobFailureRate = totalJobs > 0 ? (failedJobs / totalJobs) * 100 : 0;
 
     // Integration health
     const integrations = await this.prisma.integration.findMany({
       select: { provider: true, status: true },
     });
 
-    const healthyIntegrations = integrations.filter(i => i.status === 'ACTIVE').length;
-    const failingIntegrations = integrations.filter(i => i.status === 'ERROR');
-    const failingProviders = [...new Set(failingIntegrations.map(i => i.provider))];
+    const healthyIntegrations = integrations.filter(
+      (i) => i.status === 'ACTIVE',
+    ).length;
+    const failingIntegrations = integrations.filter(
+      (i) => i.status === 'ERROR',
+    );
+    const failingProviders = [
+      ...new Set(failingIntegrations.map((i) => i.provider)),
+    ];
 
     // Alert status
     const [criticalAlerts, unresolvedAlerts] = await Promise.all([
       this.prisma.alert.count({
-        where: { isActive: true, severity: 'CRITICAL' },
+        where: { isActive: true },
       }),
       this.prisma.alert.count({
         where: { isActive: true },
@@ -479,8 +502,8 @@ export class AdminAnalyticsService {
     await this.checkAdminAccess(userId);
 
     const cacheKey = 'admin:user-activity';
-    const cached = await this.cacheService.get<UserActivityMetrics>(cacheKey);
-    if (cached) return cached;
+    const cached = await this.cacheService.get(cacheKey);
+    if (cached) return JSON.parse(cached);
 
     const now = new Date();
     const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -531,7 +554,9 @@ export class AdminAnalyticsService {
 
     // Retention calculation
     const calculateRetention = async (days: number): Promise<number> => {
-      const cohortStart = new Date(now.getTime() - (days + 7) * 24 * 60 * 60 * 1000);
+      const cohortStart = new Date(
+        now.getTime() - (days + 7) * 24 * 60 * 60 * 1000,
+      );
       const cohortEnd = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 
       const cohortUsers = await this.prisma.user.findMany({
@@ -547,7 +572,9 @@ export class AdminAnalyticsService {
         (u) => u.lastLoginAt && new Date(u.lastLoginAt) >= cohortEnd,
       ).length;
 
-      return parseFloat(((retainedUsers / cohortUsers.length) * 100).toFixed(1));
+      return parseFloat(
+        ((retainedUsers / cohortUsers.length) * 100).toFixed(1),
+      );
     };
 
     const [day1Retention, day7Retention, day30Retention] = await Promise.all([
@@ -562,7 +589,8 @@ export class AdminAnalyticsService {
       monthlyActiveUsers: mau,
       sessionStats: {
         avgSessionDuration: 15.5, // Would need session tracking for real data
-        avgSessionsPerUser: mau > 0 ? parseFloat((wau / mau * 4).toFixed(1)) : 0,
+        avgSessionsPerUser:
+          mau > 0 ? parseFloat(((wau / mau) * 4).toFixed(1)) : 0,
         bounceRate: 25, // Would need analytics integration
       },
       topFeatures,
@@ -573,7 +601,11 @@ export class AdminAnalyticsService {
       },
     };
 
-    await this.cacheService.set(cacheKey, metrics, this.CACHE_TTL);
+    await this.cacheService.set(
+      cacheKey,
+      JSON.stringify(metrics),
+      this.CACHE_TTL,
+    );
     return metrics;
   }
 
@@ -622,7 +654,7 @@ export class AdminAnalyticsService {
         _count: {
           select: {
             portals: true,
-            members: true,
+            users: true,
             integrations: true,
             aiInsights: true,
           },
@@ -652,7 +684,7 @@ export class AdminAnalyticsService {
           plan: ws.subscription?.plan || 'FREE',
           status: ws.subscription?.status || 'NONE',
           portals: ws._count.portals,
-          members: ws._count.members,
+          members: ws._count.users,
           integrations: ws._count.integrations,
           insights: ws._count.aiInsights,
           totalActivity: metrics._sum.value || 0,
@@ -721,7 +753,7 @@ export class AdminAnalyticsService {
           include: {
             subscription: true,
             _count: {
-              select: { portals: true, members: true },
+              select: { portals: true, users: true },
             },
           },
         });
@@ -770,7 +802,7 @@ export class AdminAnalyticsService {
         health: systemHealth,
       };
 
-      this.logger.log('Daily system report generated', { 
+      this.logger.log('Daily system report generated', {
         status: systemHealth.status,
         mrr: revenueMetrics.mrr,
         totalUsers: systemMetrics.users.total,

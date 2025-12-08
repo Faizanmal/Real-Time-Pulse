@@ -49,7 +49,7 @@ export const collaborationAPI = {
     return response.data;
   },
 
-  applyOperation: async (sessionId: string, operation: any) => {
+  applyOperation: async (sessionId: string, operation: Record<string, unknown>) => {
     const response = await apiClient.post(`/collaboration/sessions/${sessionId}/operations`, operation);
     return response.data;
   },
@@ -64,8 +64,8 @@ export interface UserScript {
   type: 'calculation' | 'transformation' | 'aggregation' | 'visualization';
   version: number;
   isPublic: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export const scriptingAPI = {
@@ -94,7 +94,7 @@ export const scriptingAPI = {
     return response.data;
   },
 
-  executeScript: async (scriptId: string, context: Record<string, any>) => {
+  executeScript: async (scriptId: string, context: Record<string, unknown>) => {
     const response = await apiClient.post(`/scripting/scripts/${scriptId}/execute`, { context });
     return response.data;
   },
@@ -130,14 +130,14 @@ export interface Pipeline {
   status: 'draft' | 'active' | 'paused' | 'error';
   schedule?: string;
   lastRunAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface PipelineNode {
   id: string;
   type: string;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   position: { x: number; y: number };
 }
 
@@ -175,7 +175,7 @@ export const pipelineAPI = {
     return response.data;
   },
 
-  executePipeline: async (pipelineId: string, inputData?: any) => {
+  executePipeline: async (pipelineId: string, inputData?: unknown) => {
     const response = await apiClient.post(`/pipeline/pipelines/${pipelineId}/execute`, { inputData });
     return response.data;
   },
@@ -185,7 +185,7 @@ export const pipelineAPI = {
     return response.data;
   },
 
-  testConnection: async (connectorType: string, config: Record<string, any>) => {
+  testConnection: async (connectorType: string, config: Record<string, unknown>) => {
     const response = await apiClient.post('/pipeline/connectors/test', { type: connectorType, config });
     return response.data;
   },
@@ -203,8 +203,8 @@ export interface CustomRole {
   description?: string;
   permissions: RolePermission[];
   isSystemRole: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface RolePermission {
@@ -278,24 +278,23 @@ export interface SearchResult {
   url?: string;
   score: number;
   highlights: string[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
+}
+
+export interface SearchOptions {
+  sources?: string[];
+  filters?: Record<string, unknown>;
+  limit?: number;
+  offset?: number;
 }
 
 export const federatedSearchAPI = {
-  search: async (query: string, options?: {
-    sources?: string[];
-    filters?: Record<string, any>;
-    limit?: number;
-    offset?: number;
-  }) => {
+  search: async (query: string, options?: SearchOptions) => {
     const response = await apiClient.post('/federated-search/search', { query, ...options });
     return response.data;
   },
 
-  semanticSearch: async (query: string, options?: {
-    sources?: string[];
-    limit?: number;
-  }) => {
+  semanticSearch: async (query: string, options?: SearchOptions) => {
     const response = await apiClient.post('/federated-search/semantic', { query, ...options });
     return response.data;
   },
@@ -320,8 +319,8 @@ export interface MLModel {
   version: string;
   accuracy?: number;
   isPublic: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface TrainingJob {
@@ -332,6 +331,13 @@ export interface TrainingJob {
   metrics?: Record<string, number>;
   startedAt?: Date;
   completedAt?: Date;
+}
+
+export interface MLTrainingConfig {
+  epochs?: number;
+  batchSize?: number;
+  learningRate?: number;
+  [key: string]: unknown;
 }
 
 export const mlMarketplaceAPI = {
@@ -350,12 +356,12 @@ export const mlMarketplaceAPI = {
     return response.data;
   },
 
-  predict: async (modelId: string, data: any) => {
+  predict: async (modelId: string, data: unknown) => {
     const response = await apiClient.post(`/ml-marketplace/models/${modelId}/predict`, { data });
     return response.data;
   },
 
-  trainModel: async (modelId: string, trainingData: any, config?: Record<string, any>) => {
+  trainModel: async (modelId: string, trainingData: unknown, config?: MLTrainingConfig) => {
     const response = await apiClient.post(`/ml-marketplace/models/${modelId}/train`, {
       trainingData,
       config,
@@ -387,7 +393,7 @@ export interface VoiceAnnotation {
   transcript: string;
   audioUrl?: string;
   timestamp: number;
-  createdAt: Date;
+  createdAt?: string | Date;
 }
 
 export const voiceAPI = {
@@ -442,7 +448,7 @@ export const voiceAPI = {
     return response.data;
   },
 
-  describeWidget: async (widgetType: string, widgetData: any) => {
+  describeWidget: async (widgetType: string, widgetData: unknown) => {
     const response = await apiClient.post('/voice/accessibility/describe', { widgetType, widgetData });
     return response.data;
   },
@@ -455,8 +461,8 @@ export interface AuditEntry {
   entityId: string;
   action: string;
   userId: string;
-  data: Record<string, any>;
-  timestamp: Date;
+  data: Record<string, unknown>;
+  timestamp?: string | Date;
   hash: string;
 }
 
@@ -466,16 +472,25 @@ export interface IntegrityVerification {
   entriesVerified: number;
   invalidBlocks: string[];
   invalidEntries: string[];
-  verifiedAt: Date;
+  verifiedAt?: string | Date;
+}
+
+export interface BlockchainAuditInput {
+  entityType: string;
+  entityId: string;
+  action: string;
+  data: Record<string, unknown>;
+}
+
+export interface ComplianceReportOptions {
+  startDate?: string;
+  endDate?: string;
+  entityTypes?: string[];
+  actions?: string[];
 }
 
 export const blockchainAPI = {
-  createAuditEntry: async (data: {
-    entityType: string;
-    entityId: string;
-    action: string;
-    data: Record<string, any>;
-  }) => {
+  createAuditEntry: async (data: BlockchainAuditInput) => {
     const response = await apiClient.post('/blockchain/audit', data);
     return response.data;
   },
@@ -495,12 +510,7 @@ export const blockchainAPI = {
     return response.data;
   },
 
-  generateComplianceReport: async (options?: {
-    startDate?: string;
-    endDate?: string;
-    entityTypes?: string[];
-    actions?: string[];
-  }) => {
+  generateComplianceReport: async (options?: ComplianceReportOptions) => {
     const response = await apiClient.get('/blockchain/compliance', { params: options });
     return response.data;
   },
@@ -520,8 +530,8 @@ export interface ARScene {
   targetId?: string;
   config: ARSceneConfig;
   qrCode?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface ARSceneConfig {
@@ -530,18 +540,26 @@ export interface ARSceneConfig {
   position: { x: number; y: number; z: number };
   rotation: { x: number; y: number; z: number };
   scale: number;
-  animations: any[];
-  interactions: any[];
+  animations: unknown[];
+  interactions: unknown[];
+}
+
+export interface ARSceneInput {
+  name: string;
+  description?: string;
+  type: 'portal' | 'widget' | 'custom';
+  targetId?: string;
+  config?: Partial<ARSceneConfig>;
+  visualizationType?: string;
+}
+
+export interface ARMarkerInput {
+  type: 'qr' | 'image' | 'location';
+  location?: { lat: number; lng: number; radius: number };
 }
 
 export const arVisualizationAPI = {
-  createScene: async (data: {
-    name: string;
-    description?: string;
-    type: 'portal' | 'widget' | 'custom';
-    targetId?: string;
-    config?: Partial<ARSceneConfig>;
-  }) => {
+  createScene: async (data: ARSceneInput) => {
     const response = await apiClient.post('/ar/scenes', data);
     return response.data;
   },
@@ -571,10 +589,7 @@ export const arVisualizationAPI = {
     return response.data;
   },
 
-  createMarker: async (sceneId: string, data: {
-    type: 'qr' | 'image' | 'location';
-    location?: { lat: number; lng: number; radius: number };
-  }) => {
+  createMarker: async (sceneId: string, data: ARMarkerInput) => {
     const response = await apiClient.post(`/ar/scenes/${sceneId}/markers`, data);
     return response.data;
   },
@@ -584,7 +599,7 @@ export const arVisualizationAPI = {
     return response.data;
   },
 
-  convertTo3D: async (widgetType: string, widgetData: any) => {
+  convertTo3D: async (widgetType: string, widgetData: unknown) => {
     const response = await apiClient.post('/ar/convert', { widgetType, widgetData });
     return response.data;
   },
@@ -593,18 +608,18 @@ export const arVisualizationAPI = {
     type: 'portal' | 'widget';
     targetId: string;
     visualizationType: string;
-    data: any;
+    data: unknown;
   }) => {
     const response = await apiClient.post('/ar/scene-definition', data);
     return response.data;
   },
 
-  exportToAFrame: async (sceneDefinition: any) => {
+  exportToAFrame: async (sceneDefinition: unknown) => {
     const response = await apiClient.post('/ar/export/aframe', { sceneDefinition });
     return response.data;
   },
 
-  exportToThreeJS: async (sceneDefinition: any) => {
+  exportToThreeJS: async (sceneDefinition: unknown) => {
     const response = await apiClient.post('/ar/export/threejs', { sceneDefinition });
     return response.data;
   },
@@ -619,8 +634,8 @@ export interface MarketplaceConnector {
   publisher: string;
   version: string;
   authType: 'none' | 'api_key' | 'oauth2' | 'basic';
-  endpoints: any[];
-  configSchema: Record<string, any>;
+  endpoints: unknown[];
+  configSchema: Record<string, unknown>;
   rating: number;
   downloads: number;
   verified: boolean;
@@ -639,9 +654,23 @@ export interface CustomEndpoint {
   usageCount: number;
 }
 
+export interface EndpointCreationInput extends Partial<CustomEndpoint> {
+  dataSource: unknown;
+}
+
+export interface MarketplaceFilters {
+  category?: string;
+  search?: string;
+  verified?: boolean;
+}
+
+export interface BuilderStep {
+  [key: string]: unknown;
+}
+
 export const apiMarketplaceAPI = {
   // Marketplace Connectors
-  getConnectors: async (filters?: { category?: string; search?: string; verified?: boolean }) => {
+  getConnectors: async (filters?: MarketplaceFilters) => {
     const response = await apiClient.get('/api-marketplace/connectors', { params: filters });
     return response.data;
   },
@@ -656,7 +685,7 @@ export const apiMarketplaceAPI = {
     return response.data;
   },
 
-  installConnector: async (connectorId: string, config: Record<string, any>, credentials?: Record<string, any>) => {
+  installConnector: async (connectorId: string, config: Record<string, unknown>, credentials?: Record<string, unknown>) => {
     const response = await apiClient.post(`/api-marketplace/connectors/${connectorId}/install`, {
       config,
       credentials,
@@ -674,7 +703,7 @@ export const apiMarketplaceAPI = {
     return response.data;
   },
 
-  updateConnectorConfig: async (installationId: string, config: Record<string, any>) => {
+  updateConnectorConfig: async (installationId: string, config: Record<string, unknown>) => {
     const response = await apiClient.put(`/api-marketplace/installed/${installationId}/config`, { config });
     return response.data;
   },
@@ -685,7 +714,7 @@ export const apiMarketplaceAPI = {
   },
 
   // Custom Endpoints
-  createEndpoint: async (data: Partial<CustomEndpoint> & { dataSource: any }) => {
+  createEndpoint: async (data: EndpointCreationInput) => {
     const response = await apiClient.post('/api-marketplace/endpoints', data);
     return response.data;
   },
@@ -725,7 +754,7 @@ export const apiMarketplaceAPI = {
     return response.data;
   },
 
-  executeEndpoint: async (endpointId: string, params: Record<string, any>) => {
+  executeEndpoint: async (endpointId: string, params: Record<string, unknown>) => {
     const response = await apiClient.post(`/api-marketplace/endpoints/${endpointId}/execute`, params);
     return response.data;
   },
@@ -743,22 +772,22 @@ export const apiMarketplaceAPI = {
     return response.data;
   },
 
-  validateBuilderStep: async (step: any) => {
+  validateBuilderStep: async (step: BuilderStep) => {
     const response = await apiClient.post('/api-marketplace/builder/validate', step);
     return response.data;
   },
 
-  buildEndpoint: async (steps: any[]) => {
+  buildEndpoint: async (steps: BuilderStep[]) => {
     const response = await apiClient.post('/api-marketplace/builder/build', steps);
     return response.data;
   },
 
-  generateOpenAPI: async (endpoint: any) => {
+  generateOpenAPI: async (endpoint: unknown) => {
     const response = await apiClient.post('/api-marketplace/builder/openapi', endpoint);
     return response.data;
   },
 
-  generateCodeSamples: async (endpoint: any, baseUrl: string, apiKey?: string) => {
+  generateCodeSamples: async (endpoint: unknown, baseUrl: string, apiKey?: string) => {
     const response = await apiClient.post('/api-marketplace/builder/code-samples', {
       endpoint,
       baseUrl,

@@ -7,9 +7,17 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { FederatedSearchService, SearchOptions } from './federated-search.service';
+import {
+  FederatedSearchService,
+  SearchOptions,
+} from './federated-search.service';
 import { SemanticSearchService } from './semantic-search.service';
 
 @ApiTags('Federated Search')
@@ -25,12 +33,32 @@ export class FederatedSearchController {
   @Get()
   @ApiOperation({ summary: 'Search across all data sources' })
   @ApiQuery({ name: 'q', required: true, description: 'Search query' })
-  @ApiQuery({ name: 'sources', required: false, description: 'Comma-separated source IDs' })
-  @ApiQuery({ name: 'types', required: false, description: 'Comma-separated result types' })
+  @ApiQuery({
+    name: 'sources',
+    required: false,
+    description: 'Comma-separated source IDs',
+  })
+  @ApiQuery({
+    name: 'types',
+    required: false,
+    description: 'Comma-separated result types',
+  })
   @ApiQuery({ name: 'limit', required: false, description: 'Max results' })
-  @ApiQuery({ name: 'offset', required: false, description: 'Offset for pagination' })
-  @ApiQuery({ name: 'semantic', required: false, description: 'Enable semantic search' })
-  @ApiQuery({ name: 'correlate', required: false, description: 'Find correlations' })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    description: 'Offset for pagination',
+  })
+  @ApiQuery({
+    name: 'semantic',
+    required: false,
+    description: 'Enable semantic search',
+  })
+  @ApiQuery({
+    name: 'correlate',
+    required: false,
+    description: 'Find correlations',
+  })
   async search(
     @Request() req: any,
     @Query('q') query: string,
@@ -61,7 +89,9 @@ export class FederatedSearchController {
     @Body() dto: { query: string },
   ) {
     // Parse natural language query
-    const parsed = await this.semanticService.parseNaturalLanguageQuery(dto.query);
+    const parsed = await this.semanticService.parseNaturalLanguageQuery(
+      dto.query,
+    );
 
     // Perform search with extracted filters
     const results = await this.searchService.search(req.user.workspaceId, {
@@ -85,17 +115,17 @@ export class FederatedSearchController {
   @Get('suggestions')
   @ApiOperation({ summary: 'Get search suggestions' })
   @ApiQuery({ name: 'prefix', required: true, description: 'Search prefix' })
-  async getSuggestions(
-    @Request() req: any,
-    @Query('prefix') prefix: string,
-  ) {
+  async getSuggestions(@Request() req: any, @Query('prefix') prefix: string) {
     return this.searchService.getSuggestions(req.user.workspaceId, prefix);
   }
 
   @Get('recent')
   @ApiOperation({ summary: 'Get recent searches' })
   async getRecentSearches(@Request() req: any) {
-    return this.searchService.getRecentSearches(req.user.workspaceId, req.user.sub);
+    return this.searchService.getRecentSearches(
+      req.user.workspaceId,
+      req.user.id,
+    );
   }
 
   @Get('analytics')

@@ -117,10 +117,7 @@ export class BillingController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get billing history' })
   @ApiResponse({ status: 200, description: 'Returns billing events' })
-  async getBillingHistory(
-    @Request() req: any,
-    @Query('limit') limit?: number,
-  ) {
+  async getBillingHistory(@Request() req: any, @Query('limit') limit?: number) {
     return this.billingService.getBillingHistory(
       req.user.workspaceId,
       limit || 20,
