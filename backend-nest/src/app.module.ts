@@ -45,6 +45,19 @@ import { BlockchainModule } from './blockchain/blockchain.module';
 import { ARVisualizationModule } from './ar-visualization/ar-visualization.module';
 import { ApiMarketplaceModule } from './api-marketplace/api-marketplace.module';
 
+// New Data Quality & BI Modules
+import { DataHealthModule } from './data-health/data-health.module';
+import { DataValidationModule } from './data-validation/data-validation.module';
+import { ProfitabilityModule } from './profitability/profitability.module';
+import { ClientReportModule } from './client-report/client-report.module';
+import { GdprModule } from './gdpr/gdpr.module';
+
+// New Enterprise Features
+import { BackupModule } from './backup/backup.module';
+import { IntegrationBuilderModule } from './integration-builder/integration-builder.module';
+import { RateLimitModule } from './rate-limit/rate-limit.module';
+import { VoiceControlModule } from './voice-control/voice-control.module';
+
 // Config imports
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
@@ -127,12 +140,6 @@ import firebaseConfig from './config/firebase.config';
     AlertsModule,
     WebhooksModule,
     ScheduledReportsModule,
-    ShareLinksModule,
-    CommentsModule,
-    TemplatesModule,
-    BillingModule,
-    AnalyticsModule,
-    SecurityModule,
     // Advanced Feature Modules
     CollaborationModule,
     ScriptingModule,
@@ -144,6 +151,23 @@ import firebaseConfig from './config/firebase.config';
     BlockchainModule,
     ARVisualizationModule,
     ApiMarketplaceModule,
+    // Data Quality & BI Modules
+    DataHealthModule,
+    DataValidationModule,
+    ProfitabilityModule,
+    ClientReportModule,
+    GdprModule,
+    // New Enterprise Features
+    BackupModule,
+    IntegrationBuilderModule,
+    RateLimitModule,
+    VoiceControlModule,
+    // Data Quality & BI Modules
+    DataHealthModule,
+    DataValidationModule,
+    ProfitabilityModule,
+    ClientReportModule,
+    GdprModule,
   ],
   controllers: [AppController],
   providers: [

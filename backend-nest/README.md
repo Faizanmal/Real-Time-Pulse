@@ -1,4 +1,4 @@
-# Portal - Backend API
+# Real-Time Pulse - Backend API
 
 Production-ready multi-tenant B2B SaaS backend built with NestJS, PostgreSQL, Prisma, and Redis.
 

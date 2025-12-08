@@ -104,15 +104,22 @@ model Workspace {
   updatedAt DateTime @updatedAt
 
   // Relations
-  users            User[]
-  portals          Portal[]
-  integrations     Integration[]
-  subscription     Subscription?
-  alerts           Alert[]
-  scheduledReports ScheduledReport[]
-  webhooks         Webhook[]
-  aiInsights       AIInsight[]
-  members          WorkspaceMember[]
+  users                 User[]
+  portals               Portal[]
+  integrations          Integration[]
+  subscription          Subscription?
+  alerts                Alert[]
+  scheduledReports      ScheduledReport[]
+  webhooks              Webhook[]
+  aiInsights            AIInsight[]
+  members               WorkspaceMember[]
+  dataSourceHealth      DataSourceHealth[]
+  dataValidationRules   DataValidationRule[]
+  projects              Project[]
+  clientReports         ClientReport[]
+  gdprConsents          GDPRConsent[]
+  gdprDataRequests      GDPRDataRequest[]
+  complianceReports     ComplianceReport[]
 
   @@map("workspaces")
 }
@@ -210,7 +217,9 @@ model Integration {
   updatedAt DateTime @updatedAt
 
   // Relations
-  widgets Widget[]
+  widgets              Widget[]
+  dataSourceHealth     DataSourceHealth?
+  dataValidationRules  DataValidationRule[]
 
   @@unique([workspaceId, provider])
   @@index([workspaceId])
@@ -1463,4 +1472,525 @@ model UserActivityMetrics {
   @@index([metricType])
   @@index([timestamp])
   @@map("user_activity_metrics")
+}
+
+// ========================================
+// DATA QUALITY & RELIABILITY FEATURES
+// ========================================
+
+model DataSourceHealth {
+  id String @id @default(uuid())
+  
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  integrationId String
+  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  
+  // Health Status
+  status            HealthStatus @default(HEALTHY)
+  lastCheckAt       DateTime @default(now())
+  lastSuccessAt     DateTime?
+  lastErrorAt       DateTime?
+  consecutiveErrors Int @default(0)
+  
+  // Performance Metrics
+  responseTime      Float? // milliseconds
+  dataFreshness     Int? // minutes since last data update
+  freshnessThreshold Int @default(60) // alert if data older than this
+  
+  // Error Tracking
+  lastError         String?
+  errorCount        Int @default(0)
+  rateLimit         Boolean @default(false)
+  rateLimitResetAt  DateTime?
+  
+  // Schema Tracking
+  lastKnownSchema   Json? // Store data structure
+  schemaChangedAt   DateTime?
+  schemaChangeDetected Boolean @default(false)
+  
+  // Alerting
+  alertsEnabled     Boolean @default(true)
+  alertThreshold    Int @default(3) // consecutive errors before alert
+  lastAlertSentAt   DateTime?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  healthChecks      DataSourceHealthCheck[]
+  
+  @@unique([integrationId])
+  @@index([workspaceId])
+  @@index([status])
+  @@index([lastCheckAt])
+  @@map("data_source_health")
+}
+
+enum HealthStatus {
+  HEALTHY
+  DEGRADED
+  DOWN
+  RATE_LIMITED
+  SCHEMA_CHANGED
+}
+
+model DataSourceHealthCheck {
+  id String @id @default(uuid())
+  
+  dataSourceHealthId String
+  dataSourceHealth   DataSourceHealth @relation(fields: [dataSourceHealthId], references: [id], onDelete: Cascade)
+  
+  timestamp         DateTime @default(now())
+  status            HealthStatus
+  responseTime      Float? // milliseconds
+  errorMessage      String?
+  dataFreshness     Int? // minutes
+  recordsChecked    Int?
+  
+  metadata          Json?
+  
+  @@index([dataSourceHealthId])
+  @@index([timestamp])
+  @@map("data_source_health_checks")
+}
+
+model DataValidationRule {
+  id String @id @default(uuid())
+  
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  name            String
+  description     String?
+  enabled         Boolean @default(true)
+  
+  // Target
+  integrationId   String?
+  integration     Integration? @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  dataSource      String? // Generic data source identifier
+  fieldPath       String // JSON path to field to validate
+  
+  // Rule Type
+  ruleType        ValidationRuleType
+  
+  // Rule Configuration
+  config          Json // Rule-specific config (thresholds, allowed values, etc)
+  
+  // Severity
+  severity        ValidationSeverity @default(WARNING)
+  
+  // Notifications
+  notifyOnFailure Boolean @default(true)
+  notifyEmails    String[] // Array of emails to notify
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  violations      DataValidationViolation[]
+  
+  @@index([workspaceId])
+  @@index([enabled])
+  @@map("data_validation_rules")
+}
+
+enum ValidationRuleType {
+  NO_NEGATIVE_VALUES
+  RANGE_CHECK
+  SPIKE_DETECTION
+  MISSING_FIELD
+  REQUIRED_FIELD
+  CROSS_SOURCE_CONSISTENCY
+  CUSTOM_REGEX
+  DATA_TYPE_CHECK
+}
+
+enum ValidationSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+model DataValidationViolation {
+  id String @id @default(uuid())
+  
+  ruleId String
+  rule   DataValidationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  
+  timestamp       DateTime @default(now())
+  fieldPath       String
+  actualValue     String? // Stringified value
+  expectedValue   String? // What was expected
+  violationType   String
+  severity        ValidationSeverity
+  
+  resolved        Boolean @default(false)
+  resolvedAt      DateTime?
+  resolvedBy      String?
+  resolutionNotes String?
+  
+  metadata        Json?
+  
+  @@index([ruleId])
+  @@index([timestamp])
+  @@index([resolved])
+  @@map("data_validation_violations")
+}
+
+// ========================================
+// BUSINESS INTELLIGENCE FEATURES
+// ========================================
+
+model Project {
+  id String @id @default(uuid())
+  
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  name            String
+  clientName      String
+  description     String?
+  
+  // Financial
+  budgetAmount    Float?
+  hourlyRate      Float?
+  currency        String @default("USD")
+  
+  // Status
+  status          ProjectStatus @default(ACTIVE)
+  startDate       DateTime?
+  endDate         DateTime?
+  
+  // Tracking
+  totalHours      Float @default(0)
+  billableHours   Float @default(0)
+  actualCosts     Float @default(0)
+  
+  metadata        Json?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  timeEntries     ProjectTimeEntry[]
+  expenses        ProjectExpense[]
+  profitability   ProjectProfitability?
+  clientReports   ClientReport[]
+  
+  @@index([workspaceId])
+  @@index([status])
+  @@index([clientName])
+  @@map("projects")
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+model ProjectTimeEntry {
+  id String @id @default(uuid())
+  
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  userId      String
+  description String?
+  
+  hours       Float
+  billable    Boolean @default(true)
+  hourlyRate  Float?
+  
+  date        DateTime
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([projectId])
+  @@index([date])
+  @@map("project_time_entries")
+}
+
+model ProjectExpense {
+  id String @id @default(uuid())
+  
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  description String
+  amount      Float
+  category    String?
+  billable    Boolean @default(true)
+  
+  date        DateTime
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([projectId])
+  @@index([date])
+  @@map("project_expenses")
+}
+
+model ProjectProfitability {
+  id String @id @default(uuid())
+  
+  projectId String @unique
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  // Revenue
+  totalRevenue      Float @default(0)
+  billableRevenue   Float @default(0)
+  
+  // Costs
+  laborCosts        Float @default(0)
+  expenseCosts      Float @default(0)
+  totalCosts        Float @default(0)
+  
+  // Profitability
+  grossProfit       Float @default(0)
+  profitMargin      Float @default(0) // Percentage
+  
+  // Efficiency
+  utilizationRate   Float @default(0) // Percentage
+  billableRatio     Float @default(0) // Percentage
+  
+  // Scoring
+  profitabilityScore Float @default(0) // 0-100
+  
+  lastCalculatedAt  DateTime @default(now())
+  
+  @@index([profitabilityScore])
+  @@map("project_profitability")
+}
+
+model ClientReport {
+  id String @id @default(uuid())
+  
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  title           String
+  clientName      String
+  reportType      ReportType @default(WEEKLY)
+  
+  // Content
+  executiveSummary String?
+  keyInsights      Json? // Array of insight objects
+  metrics          Json? // Key metrics data
+  recommendations  Json? // Array of recommendations
+  
+  // Generation
+  aiGenerated     Boolean @default(false)
+  generatedBy     String?
+  
+  // Delivery
+  status          ClientReportStatus @default(DRAFT)
+  scheduledFor    DateTime?
+  sentAt          DateTime?
+  recipientEmails String[]
+  
+  // Attachments
+  pdfUrl          String?
+  presentationUrl String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([workspaceId])
+  @@index([projectId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@map("client_reports")
+}
+
+enum ReportType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  MILESTONE
+  CUSTOM
+}
+
+enum ClientReportStatus {
+  DRAFT
+  SCHEDULED
+  GENERATING
+  SENT
+  FAILED
+}
+
+// ========================================
+// GDPR COMPLIANCE & SECURITY
+// ========================================
+
+model GDPRConsent {
+  id String @id @default(uuid())
+  
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  userId      String?
+  
+  // Subject Info
+  subjectEmail String
+  subjectName  String?
+  
+  // Consent Details
+  consentType     ConsentType
+  purpose         String
+  consented       Boolean @default(false)
+  consentedAt     DateTime?
+  
+  // Tracking
+  ipAddress       String?
+  userAgent       String?
+  
+  // Revocation
+  revokedAt       DateTime?
+  revocationReason String?
+  
+  // Expiry
+  expiresAt       DateTime?
+  
+  metadata        Json?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([workspaceId])
+  @@index([subjectEmail])
+  @@index([consentType])
+  @@map("gdpr_consents")
+}
+
+enum ConsentType {
+  DATA_PROCESSING
+  MARKETING
+  ANALYTICS
+  THIRD_PARTY_SHARING
+  PROFILING
+}
+
+model GDPRDataRequest {
+  id String @id @default(uuid())
+  
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  // Requester Info
+  requesterEmail  String
+  requesterName   String?
+  
+  // Request Details
+  requestType     GDPRRequestType
+  status          GDPRRequestStatus @default(PENDING)
+  
+  // Processing
+  submittedAt     DateTime @default(now())
+  processedAt     DateTime?
+  processedBy     String?
+  
+  // Data Export
+  dataExportUrl   String?
+  dataExportExpiry DateTime?
+  
+  // Deletion
+  deletionCompletedAt DateTime?
+  dataRetained    Json? // What data was retained and why
+  
+  notes           String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  auditTrail      GDPRDataRequestAudit[]
+  
+  @@index([workspaceId])
+  @@index([requesterEmail])
+  @@index([status])
+  @@map("gdpr_data_requests")
+}
+
+enum GDPRRequestType {
+  ACCESS // Right to access
+  RECTIFICATION // Right to rectification
+  ERASURE // Right to be forgotten
+  PORTABILITY // Right to data portability
+  RESTRICTION // Right to restrict processing
+  OBJECTION // Right to object
+}
+
+enum GDPRRequestStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+model GDPRDataRequestAudit {
+  id String @id @default(uuid())
+  
+  requestId String
+  request   GDPRDataRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  
+  action      String
+  performedBy String?
+  timestamp   DateTime @default(now())
+  details     Json?
+  
+  @@index([requestId])
+  @@index([timestamp])
+  @@map("gdpr_data_request_audit")
+}
+
+model ComplianceReport {
+  id String @id @default(uuid())
+  
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  reportType      ComplianceReportType
+  period          String // e.g., "2024-Q1"
+  
+  // Metrics
+  totalDataSubjects       Int @default(0)
+  activeConsents          Int @default(0)
+  revokedConsents         Int @default(0)
+  dataRequests            Int @default(0)
+  dataRequestsCompleted   Int @default(0)
+  averageResponseTime     Float? // hours
+  
+  // Compliance Score
+  complianceScore         Float @default(0) // 0-100
+  
+  // Report Content
+  summary                 String?
+  findings                Json?
+  recommendations         Json?
+  
+  // Generation
+  generatedAt             DateTime @default(now())
+  generatedBy             String?
+  
+  reportUrl               String?
+  
+  @@index([workspaceId])
+  @@index([reportType])
+  @@index([generatedAt])
+  @@map("compliance_reports")
+}
+
+enum ComplianceReportType {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+  AD_HOC
 }

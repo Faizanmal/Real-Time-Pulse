@@ -1,8 +1,8 @@
-# 🚀 Portal - Real-Time Client Dashboard Platform
+# 🚀 Real-Time Pulse - Enterprise Client Dashboard Platform
 
 > Transform 2-hour weekly status reports into beautiful, auto-updating client dashboards with enterprise-grade features and modern animations.
 
-**Portal** is a production-ready, enterprise-grade, multi-tenant B2B SaaS platform that enables agencies and freelancers to create branded, real-time client dashboards that automatically pull data from tools like Asana, Google Analytics, and Harvest.
+**Real-Time Pulse** is a production-ready, enterprise-grade, multi-tenant B2B SaaS platform that enables agencies and freelancers to create branded, real-time client dashboards that automatically pull data from tools like Asana, Google Analytics, and Harvest.
 
 ## ✨ What's New - Enterprise Edition
 
@@ -66,6 +66,7 @@ npx prisma migrate dev --name init
 npm run start:dev
 
 # Frontend (separate terminal)
+cd ../frontend
 npm install
 cp .env.example .env.local  # Edit with API URL
 npm run dev
@@ -408,7 +409,7 @@ Key variables:
 
 ```bash
 # Build Docker image
-docker build -t portal-backend .
+docker build -t real-time-pulse-backend .
 
 # Run migrations
 npx prisma migrate deploy

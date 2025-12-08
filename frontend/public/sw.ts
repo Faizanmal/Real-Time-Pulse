@@ -2,9 +2,21 @@
 
 declare const self: ServiceWorkerGlobalScope;
 
-const STATIC_CACHE = 'rtpulse-static-v1';
-const DYNAMIC_CACHE = 'rtpulse-dynamic-v1';
-const API_CACHE = 'rtpulse-api-v1';
+interface SyncEvent extends Event {
+  tag: string;
+  waitUntil(promise: Promise<unknown>): void;
+}
+
+interface PeriodicSyncEvent extends Event {
+  tag: string;
+  waitUntil(promise: Promise<unknown>): void;
+}
+
+const STATIC_CACHE = 'rtpulse-static-v2';
+const DYNAMIC_CACHE = 'rtpulse-dynamic-v2';
+const API_CACHE = 'rtpulse-api-v2';
+const PENDING_SYNC = 'rtpulse-pending-sync';
+const OFFLINE_URL = '/offline.html';
 
 // Assets to cache immediately on install
 const STATIC_ASSETS = [
@@ -18,6 +30,8 @@ const API_ROUTES = [
   '/api/portals',
   '/api/widgets',
   '/api/insights',
+  '/api/dashboards',
+  '/api/alerts',
 ];
 
 // Install event - cache static assets
@@ -25,7 +39,9 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
       console.log('[ServiceWorker] Caching static assets');
-      return cache.addAll(STATIC_ASSETS);
+      return cache.addAll(STATIC_ASSETS).catch(err => {
+        console.error('[ServiceWorker] Failed to cache assets:', err);
+      });
     })
   );
   self.skipWaiting();
@@ -37,7 +53,12 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name !== STATIC_CACHE && name !== DYNAMIC_CACHE && name !== API_CACHE)
+          .filter((name) => 
+            name !== STATIC_CACHE && 
+            name !== DYNAMIC_CACHE && 
+            name !== API_CACHE && 
+            name !== PENDING_SYNC
+          )
           .map((name) => {
             console.log('[ServiceWorker] Deleting old cache:', name);
             return caches.delete(name);
@@ -176,33 +197,19 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
-      // Focus existing window if open
       for (const client of clients) {
-        if (client.url.includes(url) && 'focus' in client) {
+        if (client.url === url) {
           return client.focus();
         }
       }
-      // Open new window
       return self.clients.openWindow(url);
     })
   );
 });
 
-// Background sync for offline actions
-self.addEventListener('sync', (event: Event) => {
-  const syncEvent = event as SyncEvent;
-  if (syncEvent.tag === 'sync-pending-actions') {
-    syncEvent.waitUntil(syncPendingActions());
-  }
-});
-
-interface SyncEvent extends Event {
-  tag: string;
-  waitUntil(promise: Promise<unknown>): void;
-}
 
 async function syncPendingActions(): Promise<void> {
-  const cache = await caches.open('pending-actions');
+  const cache = await caches.open(PENDING_SYNC);
   const requests = await cache.keys();
 
   for (const request of requests) {
@@ -211,6 +218,15 @@ async function syncPendingActions(): Promise<void> {
       if (response.ok) {
         await cache.delete(request);
         console.log('[ServiceWorker] Synced pending action:', request.url);
+        
+        // Notify all clients
+        const clients = await self.clients.matchAll();
+        clients.forEach(client => {
+          client.postMessage({
+            type: 'SYNC_COMPLETE',
+            url: request.url,
+          });
+        });
       }
     } catch (error) {
       console.error('[ServiceWorker] Failed to sync action:', error);
@@ -218,18 +234,72 @@ async function syncPendingActions(): Promise<void> {
   }
 }
 
+async function syncDashboards(): Promise<void> {
+  const cache = await caches.open(PENDING_SYNC);
+  const requests = await cache.keys();
+
+  for (const request of requests) {
+    if (request.url.includes('/dashboards')) {
+      try {
+        const cachedResponse = await cache.match(request);
+        if (cachedResponse) {
+          const data = await cachedResponse.json();
+          
+          // Send the pending data to the server
+          const response = await fetch(request.url, {
+            method: request.method,
+            headers: request.headers,
+            body: JSON.stringify(data),
+          });
+
+          if (response.ok) {
+            await cache.delete(request);
+            console.log('[ServiceWorker] Dashboard synced:', request.url);
+          }
+        }
+      } catch (error) {
+        console.error('[ServiceWorker] Dashboard sync failed:', error);
+      }
+    }
+  }
+}
+
+async function syncAlerts(): Promise<void> {
+  const cache = await caches.open(PENDING_SYNC);
+  const requests = await cache.keys();
+
+  for (const request of requests) {
+    if (request.url.includes('/alerts')) {
+      try {
+        const cachedResponse = await cache.match(request);
+        if (cachedResponse) {
+          const data = await cachedResponse.json();
+          
+          const response = await fetch(request.url, {
+            method: request.method,
+            headers: request.headers,
+            body: JSON.stringify(data),
+          });
+
+          if (response.ok) {
+            await cache.delete(request);
+            console.log('[ServiceWorker] Alert synced:', request.url);
+          }
+        }
+      } catch (error) {
+        console.error('[ServiceWorker] Alert sync failed:', error);
+      }
+    }
+  }
+} 
+
 interface PeriodicSyncEvent extends Event {
   tag: string;
   waitUntil(promise: Promise<unknown>): void;
 }
 
 // Periodic background sync
-self.addEventListener('periodicsync', (event: Event) => {
-  const periodicEvent = event as PeriodicSyncEvent;
-  if (periodicEvent.tag === 'update-data') {
-    periodicEvent.waitUntil(updateCachedData());
-  }
-});
+// Periodic background sync
 
 async function updateCachedData(): Promise<void> {
   const apiCache = await caches.open(API_CACHE);

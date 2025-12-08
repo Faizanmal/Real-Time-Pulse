@@ -267,3 +267,347 @@ export const auditApi = {
     return response.data;
   },
 };
+
+// ========================================
+// DATA HEALTH MONITORING API
+// ========================================
+
+export const dataHealthApi = {
+  createMonitor: async (data: {
+    workspaceId: string;
+    integrationId: string;
+    freshnessThreshold?: number;
+    alertThreshold?: number;
+  }) => {
+    const response = await apiClient.post('/data-health', data);
+    return response.data;
+  },
+
+  getWorkspaceHealth: async (workspaceId: string) => {
+    const response = await apiClient.get(`/data-health/workspace/${workspaceId}`);
+    return response.data;
+  },
+
+  getHealthDetails: async (healthId: string) => {
+    const response = await apiClient.get(`/data-health/${healthId}`);
+    return response.data;
+  },
+
+  triggerCheck: async (healthId: string) => {
+    const response = await apiClient.post(`/data-health/${healthId}/check`);
+    return response.data;
+  },
+
+  getMetrics: async (workspaceId: string, days: number = 7) => {
+    const response = await apiClient.get(`/data-health/workspace/${workspaceId}/metrics`, {
+      params: { days },
+    });
+    return response.data;
+  },
+
+  updateSettings: async (healthId: string, settings: any) => {
+    const response = await apiClient.patch(`/data-health/${healthId}/settings`, settings);
+    return response.data;
+  },
+
+  acknowledgeSchemaChange: async (healthId: string) => {
+    const response = await apiClient.post(`/data-health/${healthId}/acknowledge-schema-change`);
+    return response.data;
+  },
+
+  getDegradedSources: async (workspaceId: string) => {
+    const response = await apiClient.get(`/data-health/workspace/${workspaceId}/degraded`);
+    return response.data;
+  },
+};
+
+// ========================================
+// DATA VALIDATION API
+// ========================================
+
+export const dataValidationApi = {
+  createRule: async (data: any) => {
+    const response = await apiClient.post('/data-validation/rules', data);
+    return response.data;
+  },
+
+  getRules: async (workspaceId: string, enabled?: boolean) => {
+    const response = await apiClient.get(`/data-validation/rules/workspace/${workspaceId}`, {
+      params: enabled !== undefined ? { enabled } : {},
+    });
+    return response.data;
+  },
+
+  getRuleById: async (ruleId: string) => {
+    const response = await apiClient.get(`/data-validation/rules/${ruleId}`);
+    return response.data;
+  },
+
+  updateRule: async (ruleId: string, data: any) => {
+    const response = await apiClient.patch(`/data-validation/rules/${ruleId}`, data);
+    return response.data;
+  },
+
+  deleteRule: async (ruleId: string) => {
+    const response = await apiClient.delete(`/data-validation/rules/${ruleId}`);
+    return response.data;
+  },
+
+  getViolations: async (workspaceId: string, filters?: any) => {
+    const response = await apiClient.get(`/data-validation/violations/workspace/${workspaceId}`, {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  resolveViolation: async (violationId: string, resolvedBy: string, notes?: string) => {
+    const response = await apiClient.patch(`/data-validation/violations/${violationId}/resolve`, {
+      resolvedBy,
+      notes,
+    });
+    return response.data;
+  },
+
+  getStats: async (workspaceId: string, days: number = 7) => {
+    const response = await apiClient.get(`/data-validation/violations/workspace/${workspaceId}/stats`, {
+      params: { days },
+    });
+    return response.data;
+  },
+
+  validateOnDemand: async (workspaceId: string, data: any, fieldPath: string) => {
+    const response = await apiClient.post('/data-validation/validate-on-demand', {
+      workspaceId,
+      data,
+      fieldPath,
+    });
+    return response.data;
+  },
+};
+
+// ========================================
+// PROFITABILITY ANALYTICS API
+// ========================================
+
+export const profitabilityApi = {
+  createProject: async (data: any) => {
+    const response = await apiClient.post('/profitability/projects', data);
+    return response.data;
+  },
+
+  getProjects: async (workspaceId: string, status?: string) => {
+    const response = await apiClient.get(`/profitability/projects/workspace/${workspaceId}`, {
+      params: status ? { status } : {},
+    });
+    return response.data;
+  },
+
+  getProjectById: async (projectId: string) => {
+    const response = await apiClient.get(`/profitability/projects/${projectId}`);
+    return response.data;
+  },
+
+  updateProject: async (projectId: string, data: any) => {
+    const response = await apiClient.patch(`/profitability/projects/${projectId}`, data);
+    return response.data;
+  },
+
+  deleteProject: async (projectId: string) => {
+    const response = await apiClient.delete(`/profitability/projects/${projectId}`);
+    return response.data;
+  },
+
+  addTimeEntry: async (projectId: string, data: any) => {
+    const response = await apiClient.post(`/profitability/projects/${projectId}/time-entries`, data);
+    return response.data;
+  },
+
+  updateTimeEntry: async (entryId: string, data: any) => {
+    const response = await apiClient.patch(`/profitability/time-entries/${entryId}`, data);
+    return response.data;
+  },
+
+  deleteTimeEntry: async (entryId: string) => {
+    const response = await apiClient.delete(`/profitability/time-entries/${entryId}`);
+    return response.data;
+  },
+
+  addExpense: async (projectId: string, data: any) => {
+    const response = await apiClient.post(`/profitability/projects/${projectId}/expenses`, data);
+    return response.data;
+  },
+
+  updateExpense: async (expenseId: string, data: any) => {
+    const response = await apiClient.patch(`/profitability/expenses/${expenseId}`, data);
+    return response.data;
+  },
+
+  deleteExpense: async (expenseId: string) => {
+    const response = await apiClient.delete(`/profitability/expenses/${expenseId}`);
+    return response.data;
+  },
+
+  calculateProfitability: async (projectId: string) => {
+    const response = await apiClient.post(`/profitability/projects/${projectId}/calculate`);
+    return response.data;
+  },
+
+  getHeatmap: async (workspaceId: string) => {
+    const response = await apiClient.get(`/profitability/workspace/${workspaceId}/heatmap`);
+    return response.data;
+  },
+
+  getClientScoring: async (workspaceId: string) => {
+    const response = await apiClient.get(`/profitability/workspace/${workspaceId}/client-scoring`);
+    return response.data;
+  },
+
+  getResourceUtilization: async (workspaceId: string) => {
+    const response = await apiClient.get(`/profitability/workspace/${workspaceId}/resource-utilization`);
+    return response.data;
+  },
+
+  getSummary: async (workspaceId: string, period?: string) => {
+    const response = await apiClient.get(`/profitability/workspace/${workspaceId}/summary`, {
+      params: period ? { period } : {},
+    });
+    return response.data;
+  },
+};
+
+// ========================================
+// CLIENT REPORTING API
+// ========================================
+
+export const clientReportApi = {
+  createReport: async (data: any) => {
+    const response = await apiClient.post('/client-reports', data);
+    return response.data;
+  },
+
+  getReports: async (workspaceId: string, filters?: any) => {
+    const response = await apiClient.get(`/client-reports/workspace/${workspaceId}`, {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  getReportById: async (reportId: string) => {
+    const response = await apiClient.get(`/client-reports/${reportId}`);
+    return response.data;
+  },
+
+  updateReport: async (reportId: string, data: any) => {
+    const response = await apiClient.patch(`/client-reports/${reportId}`, data);
+    return response.data;
+  },
+
+  deleteReport: async (reportId: string) => {
+    const response = await apiClient.delete(`/client-reports/${reportId}`);
+    return response.data;
+  },
+
+  generateReport: async (reportId: string) => {
+    const response = await apiClient.post(`/client-reports/${reportId}/generate`);
+    return response.data;
+  },
+
+  getStats: async (workspaceId: string) => {
+    const response = await apiClient.get(`/client-reports/workspace/${workspaceId}/stats`);
+    return response.data;
+  },
+};
+
+// ========================================
+// GDPR COMPLIANCE API
+// ========================================
+
+export const gdprApi = {
+  recordConsent: async (data: any) => {
+    const response = await apiClient.post('/gdpr/consents', data);
+    return response.data;
+  },
+
+  getConsents: async (workspaceId: string, filters?: any) => {
+    const response = await apiClient.get(`/gdpr/consents/workspace/${workspaceId}`, {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  revokeConsent: async (consentId: string, reason?: string) => {
+    const response = await apiClient.patch(`/gdpr/consents/${consentId}/revoke`, { reason });
+    return response.data;
+  },
+
+  getConsentBySubject: async (workspaceId: string, subjectEmail: string) => {
+    const response = await apiClient.get(`/gdpr/consents/workspace/${workspaceId}/subject/${subjectEmail}`);
+    return response.data;
+  },
+
+  createDataRequest: async (data: any) => {
+    const response = await apiClient.post('/gdpr/data-requests', data);
+    return response.data;
+  },
+
+  getDataRequests: async (workspaceId: string, filters?: any) => {
+    const response = await apiClient.get(`/gdpr/data-requests/workspace/${workspaceId}`, {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  getDataRequestById: async (requestId: string) => {
+    const response = await apiClient.get(`/gdpr/data-requests/${requestId}`);
+    return response.data;
+  },
+
+  processDataRequest: async (requestId: string, processedBy: string) => {
+    const response = await apiClient.post(`/gdpr/data-requests/${requestId}/process`, { processedBy });
+    return response.data;
+  },
+
+  rejectDataRequest: async (requestId: string, processedBy: string, reason?: string) => {
+    const response = await apiClient.post(`/gdpr/data-requests/${requestId}/reject`, {
+      processedBy,
+      reason,
+    });
+    return response.data;
+  },
+
+  getConsentStats: async (workspaceId: string) => {
+    const response = await apiClient.get(`/gdpr/consents/workspace/${workspaceId}/stats`);
+    return response.data;
+  },
+
+  getRequestStats: async (workspaceId: string) => {
+    const response = await apiClient.get(`/gdpr/data-requests/workspace/${workspaceId}/stats`);
+    return response.data;
+  },
+
+  generateComplianceReport: async (workspaceId: string, reportType: string, generatedBy?: string) => {
+    const response = await apiClient.post(`/gdpr/compliance/reports`, {
+      workspaceId,
+      reportType,
+      generatedBy,
+    });
+    return response.data;
+  },
+
+  getComplianceReports: async (workspaceId: string, reportType?: string) => {
+    const response = await apiClient.get(`/gdpr/compliance/reports/workspace/${workspaceId}`, {
+      params: reportType ? { reportType } : {},
+    });
+    return response.data;
+  },
+
+  getComplianceReportById: async (reportId: string) => {
+    const response = await apiClient.get(`/gdpr/compliance/reports/${reportId}`);
+    return response.data;
+  },
+
+  getDashboard: async (workspaceId: string) => {
+    const response = await apiClient.get(`/gdpr/compliance/dashboard/${workspaceId}`);
+    return response.data;
+  },
+};

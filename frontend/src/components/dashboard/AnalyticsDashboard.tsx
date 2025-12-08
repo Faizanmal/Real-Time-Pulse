@@ -53,34 +53,34 @@ export function AnalyticsDashboard({ className, portalId }: AnalyticsDashboardPr
   const [dateRange, setDateRange] = useState('7d');
   const [refreshing, setRefreshing] = useState(false);
 
-  const getDateRange = () => {
-    const end = new Date();
-    const start = new Date();
-
-    switch (dateRange) {
-      case '24h':
-        start.setHours(start.getHours() - 24);
-        break;
-      case '7d':
-        start.setDate(start.getDate() - 7);
-        break;
-      case '30d':
-        start.setDate(start.getDate() - 30);
-        break;
-      case '90d':
-        start.setDate(start.getDate() - 90);
-        break;
-      default:
-        start.setDate(start.getDate() - 7);
-    }
-
-    return {
-      startDate: start.toISOString(),
-      endDate: end.toISOString(),
-    };
-  };
-
   const loadData = useCallback(async () => {
+    const getDateRange = () => {
+      const end = new Date();
+      const start = new Date();
+
+      switch (dateRange) {
+        case '24h':
+          start.setHours(start.getHours() - 24);
+          break;
+        case '7d':
+          start.setDate(start.getDate() - 7);
+          break;
+        case '30d':
+          start.setDate(start.getDate() - 30);
+          break;
+        case '90d':
+          start.setDate(start.getDate() - 90);
+          break;
+        default:
+          start.setDate(start.getDate() - 7);
+      }
+
+      return {
+        startDate: start.toISOString(),
+        endDate: end.toISOString(),
+      };
+    };
+
     try {
       const { startDate, endDate } = getDateRange();
 
@@ -103,7 +103,7 @@ export function AnalyticsDashboard({ className, portalId }: AnalyticsDashboardPr
     } finally {
       setLoading(false);
     }
-  }, [portalId]);
+  }, [portalId, dateRange]);
 
   useEffect(() => {
     loadData();
