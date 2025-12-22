@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { seedAdvancedFeatures } from './seed-advanced';
 
 const prisma = new PrismaClient();
 
@@ -318,6 +319,9 @@ async function main() {
   ]);
 
   console.log(`✅ Created ${dataRequests.length} data requests`);
+
+  // Seed advanced features
+  await seedAdvancedFeatures();
 
   console.log('\n🎉 Seeding complete!');
   console.log('\n📋 Summary:');

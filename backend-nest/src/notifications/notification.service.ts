@@ -9,6 +9,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { PrismaService } from '../prisma/prisma.service';
 
 // Types
 interface NotificationPayload {
@@ -94,6 +95,7 @@ export class NotificationService implements OnModuleInit {
   constructor(
     private config: ConfigService,
     private eventEmitter: EventEmitter2,
+    private prisma: PrismaService,
   ) {}
 
   async onModuleInit() {
@@ -652,25 +654,109 @@ export class NotificationService implements OnModuleInit {
 </html>`;
   }
 
-  // Placeholder methods - in production these would query the database
+  // User data fetching methods - query the database for real user information
   private async getUserEmail(userId: string): Promise<string | null> {
-    return `user_${userId}@example.com`;
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true },
+      });
+      return user?.email ?? null;
+    } catch (error) {
+      this.logger.error(`Failed to get email for user ${userId}`, error);
+      return null;
+    }
   }
 
   private async getUserPushTokens(userId: string): Promise<string[]> {
-    return [];
+    try {
+      // Check if user has notification settings with push tokens stored
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { 
+          id: true,
+          // Attempt to get push tokens from user settings if available
+        },
+      });
+      
+      if (!user) return [];
+      
+      // Push tokens would typically be stored in a separate table or user settings
+      // Return empty array if not implemented - can be extended when push notifications are set up
+      return [];
+    } catch (error) {
+      this.logger.error(`Failed to get push tokens for user ${userId}`, error);
+      return [];
+    }
   }
 
   private async getUserPhone(userId: string): Promise<string | null> {
-    return null;
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { phone: true },
+      });
+      return user?.phone ?? null;
+    } catch (error) {
+      this.logger.error(`Failed to get phone for user ${userId}`, error);
+      return null;
+    }
   }
 
   private async getUserSlackWebhook(userId: string): Promise<string | null> {
-    return null;
+    try {
+      // Look for Slack integration in user's workspace
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { workspaceId: true },
+      });
+      
+      if (!user?.workspaceId) return null;
+      
+      const slackIntegration = await this.prisma.integration.findFirst({
+        where: {
+          workspaceId: user.workspaceId,
+          provider: 'SLACK',
+          status: 'CONNECTED',
+        },
+        select: { settings: true },
+      });
+      
+      if (slackIntegration?.settings && typeof slackIntegration.settings === 'object') {
+        const settings = slackIntegration.settings as Record<string, unknown>;
+        return (settings.webhookUrl as string) ?? null;
+      }
+      return null;
+    } catch (error) {
+      this.logger.error(`Failed to get Slack webhook for user ${userId}`, error);
+      return null;
+    }
   }
 
   private async getUserWebhook(userId: string): Promise<string | null> {
-    return null;
+    try {
+      // Look for custom webhook in user's workspace
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { workspaceId: true },
+      });
+      
+      if (!user?.workspaceId) return null;
+      
+      const webhook = await this.prisma.webhook.findFirst({
+        where: {
+          workspaceId: user.workspaceId,
+          isActive: true,
+          events: { has: 'notification.sent' },
+        },
+        select: { url: true },
+      });
+      
+      return webhook?.url ?? null;
+    } catch (error) {
+      this.logger.error(`Failed to get webhook for user ${userId}`, error);
+      return null;
+    }
   }
 
   // Queue processor

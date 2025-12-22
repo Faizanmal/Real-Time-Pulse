@@ -13,6 +13,7 @@ import { CommonModule } from '../common/common.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { CacheModule } from '../cache/cache.module';
 import { AuditModule } from '../audit/audit.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { AuditModule } from '../audit/audit.module';
     PrismaModule,
     CacheModule,
     AuditModule,
+    EmailModule,
   ],
   controllers: [AuthController],
   providers: [

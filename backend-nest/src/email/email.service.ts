@@ -5,6 +5,7 @@ import { Transporter } from 'nodemailer';
 import * as handlebars from 'handlebars';
 import * as fs from 'fs';
 import * as path from 'path';
+import { ValidationSeverity } from '@prisma/client';
 
 export interface EmailOptions {
   to: string | string[];
@@ -130,7 +131,7 @@ export class EmailService {
       template: 'password-reset',
       context: {
         resetUrl,
-        expiryHours: 24,
+        expiryHours: 1,
       },
     });
   }
@@ -151,6 +152,53 @@ export class EmailService {
         inviterName,
         workspaceName,
         inviteUrl,
+      },
+    });
+  }
+
+  async sendWorkspaceInvitationEmail(options: {
+    to: string;
+    inviterName: string;
+    workspaceName: string;
+    tempPassword: string;
+  }) {
+    const loginUrl = `${this.configService.get('app.frontendUrl')}/auth/signin`;
+
+    return this.sendEmail({
+      to: options.to,
+      subject: `Access to ${options.workspaceName}`,
+      template: 'workspace-invitation',
+      context: {
+        inviterName: options.inviterName,
+        workspaceName: options.workspaceName,
+        tempPassword: options.tempPassword,
+        loginUrl,
+      },
+    });
+  }
+
+  async sendValidationViolationEmail(options: {
+    to: string[];
+    ruleName: string;
+    ruleSeverity: ValidationSeverity;
+    workspaceName: string;
+    fieldPath: string;
+    expectedValue?: string;
+    actualValue?: string;
+    violationType: string;
+  }) {
+    return this.sendEmail({
+      to: options.to,
+      subject: `Data validation alert: ${options.ruleName}`,
+      template: 'data-validation-violation',
+      context: {
+        ruleName: options.ruleName,
+        ruleSeverity: options.ruleSeverity,
+        workspaceName: options.workspaceName,
+        fieldPath: options.fieldPath,
+        expectedValue: options.expectedValue,
+        actualValue: options.actualValue,
+        violationType: options.violationType,
       },
     });
   }

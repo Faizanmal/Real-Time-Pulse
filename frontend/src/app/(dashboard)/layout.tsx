@@ -35,6 +35,10 @@ import {
   Database,
   Plug,
   Layers,
+  Sparkles,
+  Building2,
+  GitBranch,
+  Box,
 } from 'lucide-react';
 
 // Sidebar Context
@@ -53,6 +57,16 @@ const mainNavItems = [
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Alerts', href: '/alerts', icon: Bell },
   { name: 'Reports', href: '/reports', icon: FileText },
+];
+
+const enterpriseNavItems = [
+  { name: 'Advanced Features', href: '/advanced-features', icon: Sparkles },
+  { name: 'Industry Solutions', href: '/advanced-features?tab=industry', icon: Building2 },
+  { name: 'AI Assistant', href: '/advanced-features?tab=ai', icon: Sparkles },
+  { name: 'Workflows', href: '/advanced-features?tab=workflows', icon: GitBranch },
+  { name: 'Compliance', href: '/advanced-features?tab=compliance', icon: Shield },
+  { name: 'Marketplace', href: '/advanced-features?tab=marketplace', icon: Plug },
+  { name: 'AR Viewer', href: '/ar-viewer', icon: Box },
 ];
 
 const workspaceNavItems = [
@@ -178,6 +192,7 @@ function Sidebar() {
       {/* Navigation */}
       <nav className="p-4 space-y-6 overflow-y-auto h-[calc(100vh-8rem)]">
         <NavSection title="Overview" items={mainNavItems} collapsed={collapsed} />
+        <NavSection title="Enterprise" items={enterpriseNavItems} collapsed={collapsed} />
         <NavSection title="Workspace" items={workspaceNavItems} collapsed={collapsed} />
         <NavSection title="Settings" items={settingsNavItems} collapsed={collapsed} />
       </nav>

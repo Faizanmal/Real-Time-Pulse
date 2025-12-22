@@ -296,7 +296,11 @@ export function PipelineBuilder({ pipeline, onSave }: PipelineBuilderProps) {
                         setNodes((prev) =>
                           prev.map((n) => (n.id === selectedNode ? { ...n, config } : n))
                         );
-                      } catch {}
+                      } catch (parseError) {
+                        // Invalid JSON - don't update state, user is still typing
+                        // The textarea will show the invalid JSON and user can fix it
+                        console.debug('Invalid JSON configuration:', parseError instanceof Error ? parseError.message : 'Parse error');
+                      }
                     }}
                     className="w-full h-32 p-2 text-sm font-mono bg-gray-50 dark:bg-gray-700 rounded border"
                   />

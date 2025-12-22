@@ -4,10 +4,12 @@ import {
   ConflictException,
   ForbiddenException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { S3Service } from '../common/services/s3.service';
 import { EncryptionService } from '../common/services/encryption.service';
+import { EmailService } from '../email/email.service';
 import {
   UpdateWorkspaceDto,
   WorkspaceResponseDto,
@@ -18,10 +20,13 @@ import {
 
 @Injectable()
 export class WorkspaceService {
+  private readonly logger = new Logger(WorkspaceService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly s3Service: S3Service,
     private readonly encryptionService: EncryptionService,
+    private readonly emailService: EmailService,
   ) {}
 
   /**
@@ -241,6 +246,16 @@ export class WorkspaceService {
     const hashedPassword =
       await this.encryptionService.hashPassword(tempPassword);
 
+    const inviter = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { firstName: true, lastName: true, email: true },
+    });
+
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { name: true },
+    });
+
     // Create user
     const newUser = await this.prisma.user.create({
       data: {
@@ -254,8 +269,21 @@ export class WorkspaceService {
       },
     });
 
-    // TODO: Send invitation email with temporary password
-    // await this.emailService.sendInvitationEmail(newUser.email, tempPassword);
+    const inviterName = inviter
+      ? `${inviter.firstName || ''} ${inviter.lastName || ''}`.trim() ||
+        inviter.email
+      : 'Workspace Admin';
+
+    const emailSent = await this.emailService.sendWorkspaceInvitationEmail({
+      to: newUser.email,
+      inviterName,
+      workspaceName: workspace?.name || 'Your Workspace',
+      tempPassword,
+    });
+
+    if (!emailSent) {
+      this.logger.warn(`Invitation email failed for ${newUser.email}`);
+    }
 
     return {
       id: newUser.id,

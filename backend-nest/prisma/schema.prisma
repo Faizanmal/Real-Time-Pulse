@@ -67,6 +67,7 @@ model User {
   sessions           UserSession[]
   auditLogs          AuditLog[]       @relation("UserAuditLogs")
   apiKeys            ApiKey[]
+  aiQueries          AIQuery[]
 
   @@index([workspaceId])
   @@index([email])
@@ -120,6 +121,18 @@ model Workspace {
   gdprConsents          GDPRConsent[]
   gdprDataRequests      GDPRDataRequest[]
   complianceReports     ComplianceReport[]
+  industryDeployments   IndustryDeployment[]
+  aiModels              AIModel[]
+  aiPredictions         AIPrediction[]
+  aiQueries             AIQuery[]
+  apiConnectors         APIConnector[]
+  apiConnectorInstallations APIConnectorInstallation[]
+  apiConnectorReviews   APIConnectorReview[]
+  arScenes              ARScene[]
+  workflows             Workflow[]
+  complianceAssessments ComplianceAssessment[]
+  dataMappings          DataMapping[]
+  securityIncidents     SecurityIncident[]
 
   @@map("workspaces")
 }
@@ -291,6 +304,10 @@ model Portal {
   shareLinks       ShareLink[]
   scheduledReports ScheduledReport[]
   aiInsights       AIInsight[]
+  industryDeployment IndustryDeployment?
+  aiPredictions    AIPrediction[]
+  aiQueries        AIQuery[]
+  arScenes         ARScene[]
 
   @@unique([workspaceId, slug])
   @@index([workspaceId])
@@ -342,6 +359,9 @@ model Widget {
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  // Relations
+  aiPredictions AIPrediction[]
 
   @@index([portalId])
   @@index([integrationId])
@@ -1993,4 +2013,698 @@ enum ComplianceReportType {
   QUARTERLY
   ANNUAL
   AD_HOC
+}
+
+// ========================================
+// INDUSTRY-SPECIFIC SOLUTIONS
+// ========================================
+
+model IndustryTemplate {
+  id String @id @default(uuid())
+  
+  name        String
+  description String?
+  industry    IndustryType
+  
+  // Template Configuration
+  config      Json // Includes widgets, layouts, metrics
+  thumbnail   String?
+  
+  // Metadata
+  isActive    Boolean @default(true)
+  usageCount  Int     @default(0)
+  rating      Float   @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  deployments IndustryDeployment[]
+  
+  @@index([industry])
+  @@map("industry_templates")
+}
+
+enum IndustryType {
+  HEALTHCARE
+  FINANCE
+  RETAIL
+  MANUFACTURING
+  EDUCATION
+  REAL_ESTATE
+  LOGISTICS
+  HOSPITALITY
+  TECHNOLOGY
+  GOVERNMENT
+}
+
+model IndustryDeployment {
+  id String @id @default(uuid())
+  
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  templateId String
+  template   IndustryTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  
+  portalId String @unique
+  portal   Portal @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  
+  // Compliance tracking for healthcare, finance, etc.
+  complianceStatus Json? // HIPAA, PCI-DSS, SOC2, etc.
+  lastComplianceCheck DateTime?
+  
+  customizations Json? // User-specific overrides
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([workspaceId])
+  @@index([templateId])
+  @@map("industry_deployments")
+}
+
+// ========================================
+// ADVANCED AI/ML CAPABILITIES
+// ========================================
+
+model AIModel {
+  id String @id @default(uuid())
+  
+  name        String
+  description String?
+  modelType   AIModelType
+  
+  // Model Configuration
+  provider    AIProvider
+  modelId     String // e.g., "gpt-4", "claude-3"
+  config      Json   // API keys, endpoints, parameters
+  
+  // Training Data
+  trainingDataUrl String?
+  version         String  @default("1.0.0")
+  
+  // Performance Metrics
+  accuracy        Float?
+  precision       Float?
+  recall          Float?
+  f1Score         Float?
+  
+  isActive        Boolean @default(true)
+  isPublic        Boolean @default(false)
+  
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  predictions AIPrediction[]
+  queries     AIQuery[]
+  
+  @@index([workspaceId])
+  @@index([modelType])
+  @@map("ai_models")
+}
+
+enum AIModelType {
+  FORECASTING
+  CLASSIFICATION
+  CLUSTERING
+  ANOMALY_DETECTION
+  NLP
+  COMPUTER_VISION
+  RECOMMENDATION
+}
+
+enum AIProvider {
+  OPENAI
+  ANTHROPIC
+  GOOGLE
+  CUSTOM
+  HUGGINGFACE
+}
+
+model AIPrediction {
+  id String @id @default(uuid())
+  
+  modelId String
+  model   AIModel @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  // Input/Output
+  inputData   Json
+  prediction  Json
+  confidence  Float
+  
+  // Context
+  widgetId    String?
+  widget      Widget? @relation(fields: [widgetId], references: [id], onDelete: SetNull)
+  
+  portalId    String?
+  portal      Portal? @relation(fields: [portalId], references: [id], onDelete: SetNull)
+  
+  // Metadata
+  executionTime Int // milliseconds
+  
+  createdAt DateTime @default(now())
+  
+  @@index([modelId])
+  @@index([workspaceId])
+  @@index([widgetId])
+  @@map("ai_predictions")
+}
+
+model AIQuery {
+  id String @id @default(uuid())
+  
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  modelId String?
+  model   AIModel? @relation(fields: [modelId], references: [id], onDelete: SetNull)
+  
+  // Query
+  query       String
+  queryType   AIQueryType
+  
+  // Response
+  response    Json
+  sqlGenerated String?
+  
+  // Context
+  portalId    String?
+  portal      Portal? @relation(fields: [portalId], references: [id], onDelete: SetNull)
+  
+  createdAt DateTime @default(now())
+  
+  @@index([workspaceId])
+  @@index([userId])
+  @@map("ai_queries")
+}
+
+enum AIQueryType {
+  NATURAL_LANGUAGE
+  SQL_GENERATION
+  DATA_ANALYSIS
+  INSIGHT_GENERATION
+}
+
+// ========================================
+// API MARKETPLACE & CUSTOM INTEGRATIONS
+// ========================================
+
+model APIConnector {
+  id String @id @default(uuid())
+  
+  name        String
+  description String?
+  
+  // Connector Details
+  connectorType APIConnectorType
+  category      String // e.g., "CRM", "Marketing", "Finance"
+  
+  // Technical Details
+  authType      APIAuthType
+  baseUrl       String?
+  apiVersion    String?
+  
+  // Configuration Schema (JSON Schema)
+  configSchema  Json
+  
+  // Icon & Branding
+  iconUrl       String?
+  logoUrl       String?
+  
+  // Publisher
+  publisherId   String?
+  publisherName String?
+  
+  workspaceId String? // If custom connector
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  // Marketplace Metrics
+  isPublic      Boolean @default(false)
+  price         Float   @default(0) // Monthly price
+  rating        Float   @default(0)
+  downloads     Int     @default(0)
+  usageCount    Int     @default(0)
+  
+  // Status
+  isActive      Boolean @default(true)
+  isVerified    Boolean @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  installations APIConnectorInstallation[]
+  reviews       APIConnectorReview[]
+  
+  @@index([connectorType])
+  @@index([category])
+  @@index([isPublic])
+  @@map("api_connectors")
+}
+
+enum APIConnectorType {
+  REST
+  GRAPHQL
+  SOAP
+  WEBHOOK
+  WEBSOCKET
+  DATABASE
+  FILE
+}
+
+enum APIAuthType {
+  API_KEY
+  OAUTH2
+  BASIC_AUTH
+  BEARER_TOKEN
+  JWT
+  CUSTOM
+}
+
+model APIConnectorInstallation {
+  id String @id @default(uuid())
+  
+  connectorId String
+  connector   APIConnector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+  
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  // Configuration
+  config      Json // User-specific settings
+  credentials Json // Encrypted credentials
+  
+  // Status
+  isActive    Boolean @default(true)
+  lastSyncAt  DateTime?
+  syncStatus  String?
+  
+  installedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  usageLogs   APIUsageLog[]
+  
+  @@unique([connectorId, workspaceId])
+  @@index([workspaceId])
+  @@map("api_connector_installations")
+}
+
+model APIConnectorReview {
+  id String @id @default(uuid())
+  
+  connectorId String
+  connector   APIConnector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+  
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  userId String
+  
+  rating  Int // 1-5
+  review  String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([connectorId, workspaceId])
+  @@index([connectorId])
+  @@map("api_connector_reviews")
+}
+
+model APIUsageLog {
+  id String @id @default(uuid())
+  
+  installationId String
+  installation   APIConnectorInstallation @relation(fields: [installationId], references: [id], onDelete: Cascade)
+  
+  // Request Details
+  method      String
+  endpoint    String
+  statusCode  Int
+  
+  // Performance
+  responseTime Int // milliseconds
+  dataSize     Int // bytes
+  
+  // Error tracking
+  errorMessage String?
+  
+  timestamp DateTime @default(now())
+  
+  @@index([installationId])
+  @@index([timestamp])
+  @@map("api_usage_logs")
+}
+
+// ========================================
+// AR VISUALIZATION
+// ========================================
+
+model ARScene {
+  id String @id @default(uuid())
+  
+  name        String
+  description String?
+  
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  portalId String?
+  portal   Portal? @relation(fields: [portalId], references: [id], onDelete: SetNull)
+  
+  // Scene Configuration
+  sceneData   Json // 3D models, positions, animations
+  arMarkers   Json? // Marker-based AR configuration
+  
+  // Assets
+  modelUrls   Json // Array of 3D model URLs
+  textureUrls Json? // Array of texture URLs
+  
+  // Interaction
+  interactions Json? // Touch, gesture, voice commands
+  
+  // Settings
+  scale       Float @default(1.0)
+  lighting    Json?
+  
+  isActive    Boolean @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  sessions    ARSession[]
+  
+  @@index([workspaceId])
+  @@index([portalId])
+  @@map("ar_scenes")
+}
+
+model ARSession {
+  id String @id @default(uuid())
+  
+  sceneId String
+  scene   ARScene @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+  
+  userId      String
+  deviceType  String // "mobile", "headset", "web"
+  
+  // Session Data
+  duration    Int // seconds
+  interactions Json? // User interactions during session
+  
+  // Performance
+  fps         Float?
+  latency     Int? // milliseconds
+  
+  startedAt DateTime @default(now())
+  endedAt   DateTime?
+  
+  @@index([sceneId])
+  @@index([userId])
+  @@map("ar_sessions")
+}
+
+// ========================================
+// WORKFLOW AUTOMATION
+// ========================================
+
+model Workflow {
+  id String @id @default(uuid())
+  
+  name        String
+  description String?
+  
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  // Workflow Configuration
+  trigger     Json // Event that starts workflow
+  actions     Json // Array of actions to perform
+  conditions  Json? // Conditional logic
+  
+  // Visual Editor Data
+  nodes       Json // Flow diagram nodes
+  edges       Json // Flow diagram connections
+  
+  // Status
+  isActive    Boolean @default(true)
+  version     Int     @default(1)
+  
+  // Execution Stats
+  executionCount    Int @default(0)
+  successCount      Int @default(0)
+  failureCount      Int @default(0)
+  lastExecutedAt    DateTime?
+  averageExecutionTime Int? // milliseconds
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  executions WorkflowExecution[]
+  
+  @@index([workspaceId])
+  @@index([isActive])
+  @@map("workflows")
+}
+
+model WorkflowExecution {
+  id String @id @default(uuid())
+  
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  
+  // Trigger Data
+  triggerData Json
+  
+  // Execution
+  status      WorkflowExecutionStatus
+  steps       Json // Array of step results
+  
+  // Performance
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  duration    Int? // milliseconds
+  
+  // Error Handling
+  error       String?
+  errorStep   String?
+  retryCount  Int @default(0)
+  
+  @@index([workflowId])
+  @@index([status])
+  @@index([startedAt])
+  @@map("workflow_executions")
+}
+
+enum WorkflowExecutionStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model WorkflowTemplate {
+  id String @id @default(uuid())
+  
+  name        String
+  description String?
+  category    String
+  
+  // Template Configuration
+  template    Json
+  thumbnail   String?
+  
+  // Marketplace
+  isPublic    Boolean @default(false)
+  rating      Float   @default(0)
+  usageCount  Int     @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([category])
+  @@index([isPublic])
+  @@map("workflow_templates")
+}
+
+// ========================================
+// ENHANCED COMPLIANCE & SECURITY
+// ========================================
+
+model ComplianceFramework {
+  id String @id @default(uuid())
+  
+  name        String // "HIPAA", "PCI-DSS", "SOC2", "GDPR"
+  description String?
+  
+  // Framework Requirements
+  requirements Json // Array of requirements with IDs
+  controls     Json // Array of control measures
+  
+  // Audit Configuration
+  auditSchedule String? // Cron expression
+  
+  isActive Boolean @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  assessments ComplianceAssessment[]
+  
+  @@map("compliance_frameworks")
+}
+
+model ComplianceAssessment {
+  id String @id @default(uuid())
+  
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  frameworkId String
+  framework   ComplianceFramework @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
+  
+  // Assessment Results
+  status      ComplianceStatus
+  score       Float // 0-100
+  
+  findings    Json // Array of findings
+  gaps        Json // Array of gaps
+  recommendations Json // Array of recommendations
+  
+  // Remediation
+  remediationPlan Json?
+  remediationStatus String?
+  
+  assessedAt DateTime @default(now())
+  assessedBy String?
+  
+  nextAssessmentDue DateTime?
+  
+  reportUrl   String?
+  
+  @@index([workspaceId])
+  @@index([frameworkId])
+  @@index([status])
+  @@map("compliance_assessments")
+}
+
+enum ComplianceStatus {
+  COMPLIANT
+  PARTIALLY_COMPLIANT
+  NON_COMPLIANT
+  NOT_ASSESSED
+}
+
+model DataMapping {
+  id String @id @default(uuid())
+  
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  // Data Inventory
+  dataType    String // "PII", "PHI", "Financial", etc.
+  location    String // Database, service, file location
+  fields      Json   // Array of field mappings
+  
+  // Classification
+  sensitivity DataSensitivity
+  category    String
+  
+  // Processing
+  processingPurpose String
+  legalBasis        String? // GDPR legal basis
+  retentionPeriod   String? // "90 days", "7 years"
+  
+  // Protection
+  encryptionMethod String?
+  accessControls   Json?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([workspaceId])
+  @@index([sensitivity])
+  @@map("data_mappings")
+}
+
+enum DataSensitivity {
+  PUBLIC
+  INTERNAL
+  CONFIDENTIAL
+  RESTRICTED
+}
+
+model SecurityIncident {
+  id String @id @default(uuid())
+  
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  // Incident Details
+  title       String
+  description String
+  severity    IncidentSeverity
+  category    IncidentCategory
+  
+  // Timeline
+  detectedAt  DateTime @default(now())
+  reportedAt  DateTime?
+  resolvedAt  DateTime?
+  
+  // Investigation
+  affectedSystems Json?
+  affectedUsers   Json?
+  rootCause       String?
+  
+  // Response
+  responseActions Json?
+  status          IncidentStatus
+  assignedTo      String?
+  
+  // Lessons Learned
+  lessonsLearned  String?
+  preventiveMeasures Json?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([workspaceId])
+  @@index([severity])
+  @@index([status])
+  @@map("security_incidents")
+}
+
+enum IncidentSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum IncidentCategory {
+  DATA_BREACH
+  UNAUTHORIZED_ACCESS
+  MALWARE
+  PHISHING
+  DOS_ATTACK
+  INSIDER_THREAT
+  MISCONFIGURATION
+  OTHER
+}
+
+enum IncidentStatus {
+  DETECTED
+  INVESTIGATING
+  CONTAINED
+  RESOLVED
+  CLOSED
 }

@@ -6,6 +6,7 @@ import {
   UseGuards,
   Request,
   Delete,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -23,6 +24,7 @@ import type {
   WidgetChange,
   ChatMessage,
 } from './collaboration.service';
+import type { RequestUser } from '../common/interfaces/auth.interface';
 
 @ApiTags('Collaboration')
 @ApiBearerAuth()
@@ -135,7 +137,22 @@ export class CollaborationController {
     @Param('portalId') portalId: string,
     @Request() req: any,
   ) {
-    // TODO: Add admin check
+    const user = req.user as RequestUser;
+
+    if (!user || (user.role !== 'OWNER' && user.role !== 'ADMIN')) {
+      throw new ForbiddenException('Admin role required to clear data');
+    }
+
+    const hasAccess = await this.collaborationService.verifyPortalAccess(
+      user.id,
+      user.workspaceId,
+      portalId,
+    );
+
+    if (!hasAccess) {
+      throw new ForbiddenException('Portal not found in your workspace');
+    }
+
     await this.collaborationService.clearCollaborationData(portalId);
     return {
       success: true,

@@ -317,8 +317,35 @@ export class ValidationEngineService {
       `Validation violation for rule "${rule.name}": ${violation.type}`,
     );
 
-    // TODO: Integrate with notification system to send emails
-    // Would send to rule.notifyEmails
+    const recipients = Array.isArray(rule.notifyEmails)
+      ? rule.notifyEmails.filter((email: string) => !!email)
+      : [];
+
+    if (!recipients.length) {
+      return;
+    }
+
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id: rule.workspaceId },
+      select: { name: true },
+    });
+
+    const emailSent = await this.emailService.sendValidationViolationEmail({
+      to: recipients,
+      ruleName: rule.name,
+      ruleSeverity: rule.severity as ValidationSeverity,
+      workspaceName: workspace?.name || 'Workspace',
+      fieldPath: rule.fieldPath,
+      expectedValue: violation.expectedValue,
+      actualValue: violation.metadata?.actualValue,
+      violationType: violation.type,
+    });
+
+    if (!emailSent) {
+      this.logger.warn(
+        `Failed to deliver validation notification for rule ${rule.id}`,
+      );
+    }
   }
 
   async validateDataOnDemand(

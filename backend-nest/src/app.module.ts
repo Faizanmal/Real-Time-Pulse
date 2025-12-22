@@ -45,6 +45,12 @@ import { BlockchainModule } from './blockchain/blockchain.module';
 import { ARVisualizationModule } from './ar-visualization/ar-visualization.module';
 import { ApiMarketplaceModule } from './api-marketplace/api-marketplace.module';
 
+// New Suggested Feature Modules
+import { IndustrySolutionsModule } from './industry-solutions/industry-solutions.module';
+import { AdvancedAiModule } from './advanced-ai/advanced-ai.module';
+import { WorkflowAutomationModule } from './workflow-automation/workflow-automation.module';
+import { EnhancedComplianceModule } from './enhanced-compliance/enhanced-compliance.module';
+
 // New Data Quality & BI Modules
 import { DataHealthModule } from './data-health/data-health.module';
 import { DataValidationModule } from './data-validation/data-validation.module';
@@ -151,23 +157,28 @@ import firebaseConfig from './config/firebase.config';
     BlockchainModule,
     ARVisualizationModule,
     ApiMarketplaceModule,
+    ShareLinksModule,
+    CommentsModule,
+    TemplatesModule,
+    BillingModule,
+    AnalyticsModule,
+    SecurityModule,
     // Data Quality & BI Modules
     DataHealthModule,
     DataValidationModule,
     ProfitabilityModule,
     ClientReportModule,
     GdprModule,
-    // New Enterprise Features
+    // Enterprise Features
     BackupModule,
     IntegrationBuilderModule,
     RateLimitModule,
     VoiceControlModule,
-    // Data Quality & BI Modules
-    DataHealthModule,
-    DataValidationModule,
-    ProfitabilityModule,
-    ClientReportModule,
-    GdprModule,
+    // New Suggested Feature Modules
+    IndustrySolutionsModule,
+    AdvancedAiModule,
+    WorkflowAutomationModule,
+    EnhancedComplianceModule,
   ],
   controllers: [AppController],
   providers: [

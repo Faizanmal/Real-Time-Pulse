@@ -8,6 +8,8 @@ import { useAuthStore } from '@/store/auth';
 import { portalApi, workspaceApi, integrationApi } from '@/lib/api-client';
 import { useNotifications } from '@/hooks/useNotifications';
 import { StatsCard, PortalCard } from '@/components/ui/feature-cards';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import type { Portal, Workspace, WorkspaceStats } from '@/types';
 import {
   LayoutDashboard,
@@ -22,6 +24,13 @@ import {
   TrendingUp,
   Search,
   Filter,
+  Sparkles,
+  Building2,
+  Shield,
+  Plug,
+  Box,
+  GitBranch,
+  ArrowRight,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -291,12 +300,159 @@ export default function DashboardPage() {
           </Link>
         </motion.div>
 
+        {/* Advanced Features Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              <Sparkles className="h-7 w-7 text-yellow-400" />
+              Enterprise Features
+            </h2>
+            <Link href="/advanced-features">
+              <Button variant="outline" className="gap-2">
+                View All
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Link href="/advanced-features?tab=industry">
+              <Card className="hover:shadow-xl transition-all cursor-pointer border-2 hover:border-purple-500/50">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-500/20 rounded-lg">
+                      <Building2 className="h-6 w-6 text-purple-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Industry Solutions</CardTitle>
+                      <CardDescription>Pre-built templates</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Healthcare, Finance, Retail dashboards with compliance built-in
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/advanced-features?tab=ai">
+              <Card className="hover:shadow-xl transition-all cursor-pointer border-2 hover:border-blue-500/50">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500/20 rounded-lg">
+                      <Sparkles className="h-6 w-6 text-blue-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">AI Assistant</CardTitle>
+                      <CardDescription>Natural language queries</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Ask questions, get predictions, detect anomalies with ML
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/advanced-features?tab=workflows">
+              <Card className="hover:shadow-xl transition-all cursor-pointer border-2 hover:border-green-500/50">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-500/20 rounded-lg">
+                      <GitBranch className="h-6 w-6 text-green-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Workflow Automation</CardTitle>
+                      <CardDescription>Zapier-like automation</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Build automated workflows with triggers and actions
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/advanced-features?tab=compliance">
+              <Card className="hover:shadow-xl transition-all cursor-pointer border-2 hover:border-red-500/50">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-500/20 rounded-lg">
+                      <Shield className="h-6 w-6 text-red-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Compliance Center</CardTitle>
+                      <CardDescription>HIPAA, SOC2, PCI-DSS</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Monitor compliance, track incidents, manage data inventory
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/advanced-features?tab=marketplace">
+              <Card className="hover:shadow-xl transition-all cursor-pointer border-2 hover:border-orange-500/50">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-orange-500/20 rounded-lg">
+                      <Plug className="h-6 w-6 text-orange-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">API Marketplace</CardTitle>
+                      <CardDescription>100+ integrations</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Connect to Salesforce, Stripe, Google Analytics and more
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Card className="hover:shadow-xl transition-all cursor-pointer border-2 hover:border-pink-500/50">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-pink-500/20 rounded-lg">
+                    <Box className="h-6 w-6 text-pink-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">AR Visualization</CardTitle>
+                    <CardDescription>3D data visualization</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Visualize your dashboards in augmented reality
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </motion.div>
+
         {/* Recent Notifications Preview */}
         {notifications.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
+            transition={{ delay: 0.2 }}
             className="mb-8 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl"
           >
             <div className="flex items-center justify-between mb-3">
@@ -323,7 +479,7 @@ export default function DashboardPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.25 }}
         >
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <h2 className="text-3xl font-bold text-white flex items-center gap-2">

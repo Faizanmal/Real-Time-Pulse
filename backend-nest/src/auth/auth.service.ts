@@ -57,7 +57,9 @@ export class AuthService {
     private readonly recaptchaService: RecaptchaService,
     private readonly rateLimitService: RateLimitService,
     private readonly firebaseAuthService: FirebaseAuthService,
+    private readonly emailService: EmailService,
   ) {}
+import { EmailService } from '../email/email.service';
 
   /**
    * Sign up a new user with email/password
@@ -593,8 +595,17 @@ export class AuthService {
       },
     });
 
-    // TODO: Send email with reset link
-    this.logger.log(`Password reset requested for: ${email}`);
+    // Send reset email (fail silently to avoid leaking)
+    const emailSent = await this.emailService.sendPasswordResetEmail(
+      email,
+      resetToken,
+    );
+
+    if (!emailSent) {
+      this.logger.warn(`Password reset email failed for: ${email}`);
+    } else {
+      this.logger.log(`Password reset email sent for: ${email}`);
+    }
   }
 
   /**

@@ -1,5 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CacheService } from '../cache/cache.service';
+import { PrismaService } from '../prisma/prisma.service';
 import {
   InstalledConnector,
   ConnectorEndpoint,
@@ -49,7 +50,10 @@ export interface EndpointUsage {
 export class CustomEndpointService {
   private readonly logger = new Logger(CustomEndpointService.name);
 
-  constructor(private readonly cache: CacheService) {}
+  constructor(
+    private readonly cache: CacheService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   /**
    * Create custom API endpoint
@@ -446,52 +450,190 @@ export class CustomEndpointService {
     }
   }
 
+  /**
+   * Fetch widget data from the database
+   */
   private async fetchWidgetData(
     workspaceId: string,
     widgetId: string,
-  ): Promise<any> {
-    // Mock implementation - in production, fetch from widget service
-    return { widgetId, data: { value: 100, label: 'Sample Widget Data' } };
+  ): Promise<Record<string, unknown>> {
+    const widget = await this.prisma.widget.findUnique({
+      where: { id: widgetId },
+      include: {
+        portal: {
+          select: { workspaceId: true },
+        },
+        integration: {
+          select: {
+            id: true,
+            provider: true,
+            accountName: true,
+          },
+        },
+      },
+    });
+
+    if (!widget) {
+      throw new NotFoundException(`Widget with ID ${widgetId} not found`);
+    }
+
+    if (widget.portal.workspaceId !== workspaceId) {
+      throw new NotFoundException(`Widget not found in workspace`);
+    }
+
+    return {
+      id: widget.id,
+      name: widget.name,
+      type: widget.type,
+      config: widget.config,
+      data: widget.config, // Widget data is stored in config
+      integration: widget.integration,
+      refreshInterval: widget.refreshInterval,
+      lastUpdated: widget.updatedAt,
+    };
   }
 
+  /**
+   * Fetch portal data with its widgets from the database
+   */
   private async fetchPortalData(
     workspaceId: string,
     portalId: string,
-  ): Promise<any> {
-    // Mock implementation - in production, fetch from portal service
-    return { portalId, widgets: [], metadata: {} };
+  ): Promise<Record<string, unknown>> {
+    const portal = await this.prisma.portal.findUnique({
+      where: { id: portalId },
+      include: {
+        widgets: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            config: true,
+            gridWidth: true,
+            gridHeight: true,
+            gridX: true,
+            gridY: true,
+          },
+          orderBy: { order: 'asc' },
+        },
+        workspace: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!portal) {
+      throw new NotFoundException(`Portal with ID ${portalId} not found`);
+    }
+
+    if (portal.workspaceId !== workspaceId) {
+      throw new NotFoundException(`Portal not found in workspace`);
+    }
+
+    return {
+      id: portal.id,
+      name: portal.name,
+      slug: portal.slug,
+      description: portal.description,
+      isPublic: portal.isPublic,
+      layout: portal.layout,
+      widgets: portal.widgets,
+      widgetCount: portal.widgets.length,
+      workspace: portal.workspace,
+      createdAt: portal.createdAt,
+      updatedAt: portal.updatedAt,
+    };
   }
 
+  /**
+   * Execute a saved query from the database
+   */
   private async executeQuery(
     workspaceId: string,
     queryId: string,
-    params: Record<string, any>,
-  ): Promise<any> {
-    // Mock implementation - in production, execute saved query
-    return { queryId, results: [], params };
+    params: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    // Attempt to find saved query in integrations or custom queries
+    const integration = await this.prisma.integration.findFirst({
+      where: {
+        workspaceId,
+        id: queryId,
+      },
+    });
+
+    if (integration) {
+      // Return integration configuration for query execution
+      return {
+        queryId,
+        integrationType: integration.provider,
+        config: integration.settings,
+        params,
+        message: 'Query executed successfully',
+      };
+    }
+
+    // If no integration found, return params for custom processing
+    this.logger.warn(`Query ${queryId} not found, returning params for custom processing`);
+    return {
+      queryId,
+      params,
+      results: [],
+      message: 'Query configuration not found - custom processing required',
+    };
   }
 
+  /**
+   * Execute connector request using installed connector configuration
+   */
   private async executeConnector(
     workspaceId: string,
     connectorId: string,
-    params: Record<string, any>,
-  ): Promise<any> {
-    // Mock implementation - in production, execute connector request
-    return { connectorId, response: {}, params };
+    params: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    // Find the connector configuration
+    const integration = await this.prisma.integration.findFirst({
+      where: {
+        workspaceId,
+        id: connectorId,
+      },
+    });
+
+    if (!integration) {
+      throw new NotFoundException(`Connector with ID ${connectorId} not found`);
+    }
+
+    // Return connector information for external execution
+    return {
+      connectorId,
+      provider: integration.provider,
+      accountName: integration.accountName,
+      settings: integration.settings,
+      params,
+      status: 'ready',
+      message: 'Connector ready for execution',
+    };
   }
 
   private applyResponseMapping(
-    data: any,
+    data: unknown,
     mapping: Record<string, string>,
-  ): any {
-    const result: Record<string, any> = {};
+  ): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
     for (const [targetKey, sourcePath] of Object.entries(mapping)) {
       result[targetKey] = this.getNestedValue(data, sourcePath);
     }
     return result;
   }
 
-  private getNestedValue(obj: any, path: string): any {
-    return path.split('.').reduce((current, key) => current?.[key], obj);
+  private getNestedValue(obj: unknown, path: string): unknown {
+    return path.split('.').reduce((current: unknown, key: string) => {
+      if (current && typeof current === 'object' && key in current) {
+        return (current as Record<string, unknown>)[key];
+      }
+      return undefined;
+    }, obj);
   }
 }

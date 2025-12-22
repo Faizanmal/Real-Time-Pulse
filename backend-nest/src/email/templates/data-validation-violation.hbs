@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Validation Alert</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a; background: #f8fafc; margin: 0; padding: 0; }
+    .container { max-width: 640px; margin: 32px auto; background: #ffffff; border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); overflow: hidden; }
+    .header { background: linear-gradient(135deg, #ea580c, #c2410c); color: #fff; padding: 28px; text-align: center; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .content { padding: 30px; }
+    .badge { display: inline-block; padding: 6px 10px; border-radius: 6px; font-weight: 700; letter-spacing: 0.2px; color: #fff; background: #3b82f6; }
+    .critical { background: #b91c1c; }
+    .error { background: #ef4444; }
+    .warning { background: #f59e0b; }
+    .info { background: #3b82f6; }
+    .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 14px 0; }
+    .footer { background: #f1f5f9; padding: 18px; text-align: center; color: #64748b; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Data Validation Alert</h1>
+    </div>
+    <div class="content">
+      <p>A validation rule failed in <strong>{{workspaceName}}</strong>.</p>
+      <p><strong>Rule:</strong> {{ruleName}}</p>
+      <div class="card">
+        <span class="badge">{{ruleSeverity}}</span>
+        <p style="margin: 10px 0 4px 0;"><strong>Field:</strong> {{fieldPath}}</p>
+        {{#if expectedValue}}<p><strong>Expected:</strong> {{expectedValue}}</p>{{/if}}
+        {{#if actualValue}}<p><strong>Actual:</strong> {{actualValue}}</p>{{/if}}
+        <p><strong>Type:</strong> {{violationType}}</p>
+      </div>
+      <p>Review the data source and address the issue. This message was sent because notifications are enabled for this rule.</p>
+    </div>
+    <div class="footer">
+      <p>Real-Time Pulse</p>
+      <p>Adjust notification preferences inside the workspace settings.</p>
+    </div>
+  </div>
+</body>
+</html>

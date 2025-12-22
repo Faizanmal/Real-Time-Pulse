@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Body,
-  Param,
   Query,
   UseGuards,
   Request,
@@ -24,6 +23,7 @@ import {
   CreatePortalSessionDto,
   ChangePlanDto,
 } from './dto/billing.dto';
+import { AuthenticatedRequest } from '../common/interfaces/auth.interface';
 
 @ApiTags('Billing')
 @Controller('billing')
@@ -39,7 +39,7 @@ export class BillingController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get current subscription' })
   @ApiResponse({ status: 200, description: 'Returns subscription details' })
-  async getSubscription(@Request() req: any) {
+  async getSubscription(@Request() req: AuthenticatedRequest) {
     return this.billingService.getSubscription(req.user.workspaceId);
   }
 
@@ -48,7 +48,7 @@ export class BillingController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create Stripe customer' })
   @ApiResponse({ status: 201, description: 'Customer created' })
-  async createCustomer(@Request() req: any) {
+  async createCustomer(@Request() req: AuthenticatedRequest) {
     return this.billingService.createCustomer(
       req.user.workspaceId,
       req.user.email,
@@ -62,7 +62,7 @@ export class BillingController {
   @ApiOperation({ summary: 'Create checkout session' })
   @ApiResponse({ status: 201, description: 'Checkout session created' })
   async createCheckoutSession(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body() dto: CreateCheckoutDto,
   ) {
     return this.billingService.createCheckoutSession(
@@ -79,7 +79,7 @@ export class BillingController {
   @ApiOperation({ summary: 'Create billing portal session' })
   @ApiResponse({ status: 201, description: 'Portal session created' })
   async createPortalSession(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body() dto: CreatePortalSessionDto,
   ) {
     return this.billingService.createPortalSession(
@@ -94,7 +94,7 @@ export class BillingController {
   @ApiOperation({ summary: 'Cancel subscription' })
   @ApiResponse({ status: 200, description: 'Subscription canceled' })
   async cancelSubscription(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Query('atPeriodEnd') atPeriodEnd?: boolean,
   ) {
     return this.billingService.cancelSubscription(
@@ -108,7 +108,7 @@ export class BillingController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Change subscription plan' })
   @ApiResponse({ status: 200, description: 'Plan changed' })
-  async changePlan(@Request() req: any, @Body() dto: ChangePlanDto) {
+  async changePlan(@Request() req: AuthenticatedRequest, @Body() dto: ChangePlanDto) {
     return this.billingService.changePlan(req.user.workspaceId, dto.plan);
   }
 
@@ -117,7 +117,7 @@ export class BillingController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get billing history' })
   @ApiResponse({ status: 200, description: 'Returns billing events' })
-  async getBillingHistory(@Request() req: any, @Query('limit') limit?: number) {
+  async getBillingHistory(@Request() req: AuthenticatedRequest, @Query('limit') limit?: number) {
     return this.billingService.getBillingHistory(
       req.user.workspaceId,
       limit || 20,
@@ -129,7 +129,7 @@ export class BillingController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get invoices' })
   @ApiResponse({ status: 200, description: 'Returns invoices' })
-  async getInvoices(@Request() req: any) {
+  async getInvoices(@Request() req: AuthenticatedRequest) {
     return this.billingService.getInvoices(req.user.workspaceId);
   }
 
@@ -138,7 +138,7 @@ export class BillingController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Check subscription limits' })
   @ApiResponse({ status: 200, description: 'Returns usage limits' })
-  async checkLimits(@Request() req: any) {
+  async checkLimits(@Request() req: AuthenticatedRequest) {
     return this.billingService.checkLimits(req.user.workspaceId);
   }
 
