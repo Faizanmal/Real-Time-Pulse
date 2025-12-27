@@ -20,10 +20,11 @@ import { RoomService } from './room.service';
   imports: [
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('jwt.secret'),
         signOptions: {
-          expiresIn: configService.get<string>('jwt.expiresIn'),
+          expiresIn:
+            configService.get<string>('jwt.expiresIn') || ('1h' as any),
         },
       }),
       inject: [ConfigService],

@@ -54,10 +54,7 @@ export class RateLimitController {
     @Param('integrationId') integrationId: string,
     @Body() body: { adjustment: 'increase' | 'decrease' },
   ) {
-    await this.rateLimitService.adjustRateLimit(
-      integrationId,
-      body.adjustment,
-    );
+    await this.rateLimitService.adjustRateLimit(integrationId, body.adjustment);
     return { success: true };
   }
 }

@@ -61,7 +61,7 @@ export class ProjectionService implements OnModuleInit {
     this.isRunning = true;
 
     for (const [name, projection] of this.projections) {
-      this.startProjection(name, projection).catch(error => {
+      this.startProjection(name, projection).catch((error) => {
         this.logger.error(`Projection ${name} failed: ${error.message}`);
       });
     }
@@ -79,7 +79,10 @@ export class ProjectionService implements OnModuleInit {
   }
 
   // Start a single projection
-  private async startProjection(name: string, projection: IProjection): Promise<void> {
+  private async startProjection(
+    name: string,
+    projection: IProjection,
+  ): Promise<void> {
     const status = this.projectionStatus.get(name)!;
     status.state = 'running';
 
@@ -91,8 +94,10 @@ export class ProjectionService implements OnModuleInit {
         });
 
         for (const event of events) {
-          if (!projection.eventTypes.includes(event.eventType) && 
-              !projection.eventTypes.includes('*')) {
+          if (
+            !projection.eventTypes.includes(event.eventType) &&
+            !projection.eventTypes.includes('*')
+          ) {
             continue;
           }
 
@@ -151,8 +156,10 @@ export class ProjectionService implements OnModuleInit {
       if (events.length === 0) break;
 
       for (const event of events) {
-        if (projection.eventTypes.includes(event.eventType) || 
-            projection.eventTypes.includes('*')) {
+        if (
+          projection.eventTypes.includes(event.eventType) ||
+          projection.eventTypes.includes('*')
+        ) {
           await projection.handle(event);
           status.eventsProcessed++;
         }
@@ -161,7 +168,9 @@ export class ProjectionService implements OnModuleInit {
       status.lastProcessedPosition = events[events.length - 1].version;
       offset += batchSize;
 
-      this.logger.debug(`Rebuilt ${status.eventsProcessed} events for ${projectionName}`);
+      this.logger.debug(
+        `Rebuilt ${status.eventsProcessed} events for ${projectionName}`,
+      );
     }
 
     status.state = 'running';
@@ -177,7 +186,7 @@ export class ProjectionService implements OnModuleInit {
   }
 
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
@@ -186,7 +195,13 @@ export class ProjectionService implements OnModuleInit {
 // Portal Summary Projection
 export class PortalSummaryProjection implements IProjection {
   name = 'PortalSummary';
-  eventTypes = ['PortalCreated', 'PortalUpdated', 'PortalDeleted', 'WidgetAdded', 'WidgetRemoved'];
+  eventTypes = [
+    'PortalCreated',
+    'PortalUpdated',
+    'PortalDeleted',
+    'WidgetAdded',
+    'WidgetRemoved',
+  ];
 
   private readonly logger = new Logger(PortalSummaryProjection.name);
   private summaries = new Map<string, any>();
@@ -252,15 +267,18 @@ export class WorkspaceAnalyticsProjection implements IProjection {
   name = 'WorkspaceAnalytics';
   eventTypes = ['*']; // Listen to all events
 
-  private analytics = new Map<string, {
-    workspaceId: string;
-    totalPortals: number;
-    totalWidgets: number;
-    totalUsers: number;
-    totalEvents: number;
-    lastActivity: Date;
-    eventsByType: Record<string, number>;
-  }>();
+  private analytics = new Map<
+    string,
+    {
+      workspaceId: string;
+      totalPortals: number;
+      totalWidgets: number;
+      totalUsers: number;
+      totalEvents: number;
+      lastActivity: Date;
+      eventsByType: Record<string, number>;
+    }
+  >();
 
   async handle(event: DomainEvent): Promise<void> {
     const workspaceId = event.metadata.workspaceId;
@@ -282,7 +300,8 @@ export class WorkspaceAnalyticsProjection implements IProjection {
 
     stats.totalEvents++;
     stats.lastActivity = event.timestamp;
-    stats.eventsByType[event.eventType] = (stats.eventsByType[event.eventType] || 0) + 1;
+    stats.eventsByType[event.eventType] =
+      (stats.eventsByType[event.eventType] || 0) + 1;
 
     // Update counters based on event type
     if (event.eventType === 'PortalCreated') stats.totalPortals++;
@@ -307,12 +326,15 @@ export class UserActivityProjection implements IProjection {
   name = 'UserActivity';
   eventTypes = ['*'];
 
-  private activities = new Map<string, {
-    userId: string;
-    lastSeen: Date;
-    activityCount: number;
-    recentActions: Array<{ action: string; timestamp: Date }>;
-  }>();
+  private activities = new Map<
+    string,
+    {
+      userId: string;
+      lastSeen: Date;
+      activityCount: number;
+      recentActions: Array<{ action: string; timestamp: Date }>;
+    }
+  >();
 
   async handle(event: DomainEvent): Promise<void> {
     const userId = event.metadata.userId;
@@ -351,7 +373,8 @@ export class UserActivityProjection implements IProjection {
   }
 
   getActiveUsers(since: Date): any[] {
-    return Array.from(this.activities.values())
-      .filter(a => a.lastSeen >= since);
+    return Array.from(this.activities.values()).filter(
+      (a) => a.lastSeen >= since,
+    );
   }
 }

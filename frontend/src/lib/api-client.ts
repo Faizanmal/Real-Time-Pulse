@@ -476,6 +476,87 @@ export const profitabilityApi = {
 };
 
 // ========================================
+// ANALYTICS API
+// ========================================
+
+export const analyticsApi = {
+  getDashboard: async (workspaceId: string, dateRange?: { from: string; to: string }) => {
+    const response = await apiClient.get(`/analytics/dashboard/${workspaceId}`, {
+      params: dateRange,
+    });
+    return response.data;
+  },
+
+  getPortalAnalytics: async (portalId: string, dateRange?: { from: string; to: string }) => {
+    const response = await apiClient.get(`/analytics/portal/${portalId}`, {
+      params: dateRange,
+    });
+    return response.data;
+  },
+
+  getWidgetAnalytics: async (widgetId: string, dateRange?: { from: string; to: string }) => {
+    const response = await apiClient.get(`/analytics/widget/${widgetId}`, {
+      params: dateRange,
+    });
+    return response.data;
+  },
+
+  getMetrics: async (workspaceId: string, metricType: string, period: string = '7d') => {
+    const response = await apiClient.get(`/analytics/metrics/${workspaceId}`, {
+      params: { metricType, period },
+    });
+    return response.data;
+  },
+
+  getTrends: async (workspaceId: string, period: string = '30d') => {
+    const response = await apiClient.get(`/analytics/trends/${workspaceId}`, {
+      params: { period },
+    });
+    return response.data;
+  },
+};
+
+// ========================================
+// AI INSIGHTS API
+// ========================================
+
+export const aiInsightsApi = {
+  getInsights: async (portalId: string) => {
+    const response = await apiClient.get(`/ai-insights/portal/${portalId}`);
+    return response.data;
+  },
+
+  getWorkspaceInsights: async (workspaceId: string) => {
+    const response = await apiClient.get(`/ai-insights/workspace/${workspaceId}`);
+    return response.data;
+  },
+
+  getRecommendations: async (portalId: string) => {
+    const response = await apiClient.get(`/ai-insights/recommendations/${portalId}`);
+    return response.data;
+  },
+
+  getAnomalies: async (workspaceId: string, days: number = 7) => {
+    const response = await apiClient.get(`/ai-insights/anomalies/${workspaceId}`, {
+      params: { days },
+    });
+    return response.data;
+  },
+
+  getPredictions: async (portalId: string, metricType: string) => {
+    const response = await apiClient.get(`/ai-insights/predictions/${portalId}`, {
+      params: { metricType },
+    });
+    return response.data;
+  },
+
+  generateSummary: async (portalId: string) => {
+    const response = await apiClient.post(`/ai-insights/summary/${portalId}`);
+    return response.data;
+  },
+};
+
+// ========================================
 // CLIENT REPORTING API
 // ========================================
 
@@ -610,4 +691,35 @@ export const gdprApi = {
     const response = await apiClient.get(`/gdpr/compliance/dashboard/${workspaceId}`);
     return response.data;
   },
+};
+
+// Export all APIs as a single object
+export const apiResources = {
+  auth: authApi,
+  workspaces: workspaceApi,
+  portals: portalApi,
+  widgets: widgetApi,
+  integrations: integrationApi,
+  health: healthApi,
+  audit: auditApi,
+  analytics: analyticsApi,
+  aiInsights: aiInsightsApi,
+  dataHealth: dataHealthApi,
+  dataValidation: dataValidationApi,
+  profitability: profitabilityApi,
+  clientReport: clientReportApi,
+  gdpr: gdprApi,
+};
+
+// Cache clearing function
+export const clearCache = () => {
+  // Implementation for clearing cache
+  if (typeof window !== 'undefined') {
+    // Clear local storage cache keys
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('cache-')) {
+        localStorage.removeItem(key);
+      }
+    });
+  }
 };

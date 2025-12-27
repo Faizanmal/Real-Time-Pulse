@@ -104,10 +104,7 @@ export class AdvancedAiController {
   }
 
   @Post('sql-generation')
-  async generateSQL(
-    @Req() req: any,
-    @Body() data: { query: string },
-  ) {
+  async generateSQL(@Req() req: any, @Body() data: { query: string }) {
     return this.advancedAiService.generateSQLFromNaturalLanguage(
       req.user.workspaceId,
       req.user.id,
@@ -117,10 +114,7 @@ export class AdvancedAiController {
 
   @Get('queries')
   async getQueries(@Req() req: any) {
-    return this.advancedAiService.getQueries(
-      req.user.workspaceId,
-      req.user.id,
-    );
+    return this.advancedAiService.getQueries(req.user.workspaceId, req.user.id);
   }
 
   // Forecasting

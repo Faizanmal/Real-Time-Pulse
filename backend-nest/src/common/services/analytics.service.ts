@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return */
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CacheService } from '../../cache/cache.service';
@@ -107,7 +106,6 @@ export class AnalyticsService {
       orderBy: { timestamp: 'asc' },
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const result = this.aggregateByTime(events as any, query.groupBy || 'day');
     await this.cache.set(cacheKey, JSON.stringify(result), this.CACHE_TTL);
 
@@ -329,7 +327,6 @@ export class AnalyticsService {
     endDate?: Date,
   ): Promise<number> {
     // This is a simplified calculation - in production you'd want more sophisticated session tracking
-    /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 
     const where: any = { workspaceId };
     if (startDate || endDate) {
@@ -364,7 +361,6 @@ export class AnalyticsService {
     const grouped = new Map<string, number>();
 
     events.forEach((event: any) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const date = new Date(event.timestamp);
       let key: string;
 

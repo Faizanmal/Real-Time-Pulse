@@ -576,7 +576,9 @@ export class CustomEndpointService {
     }
 
     // If no integration found, return params for custom processing
-    this.logger.warn(`Query ${queryId} not found, returning params for custom processing`);
+    this.logger.warn(
+      `Query ${queryId} not found, returning params for custom processing`,
+    );
     return {
       queryId,
       params,

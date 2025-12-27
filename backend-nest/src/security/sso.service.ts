@@ -225,7 +225,7 @@ export class SsoService {
     workspaceId: string,
     providerId: string,
     code: string,
-    _state: string, // eslint-disable-line @typescript-eslint/no-unused-vars
+    _state: string,
   ): Promise<SsoUser> {
     const providers = await this.getSsoProviders(workspaceId);
     const provider = providers.find((p) => p.id === providerId);
@@ -325,7 +325,7 @@ export class SsoService {
     workspaceId: string,
     providerId: string,
     code: string,
-    _state: string, // eslint-disable-line @typescript-eslint/no-unused-vars
+    _state: string,
   ): Promise<SsoUser> {
     const providers = await this.getSsoProviders(workspaceId);
     const provider = providers.find((p) => p.id === providerId);

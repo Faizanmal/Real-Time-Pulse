@@ -78,7 +78,9 @@ export class CacheableInterceptor implements NestInterceptor {
             JSON.stringify(result),
             cacheConfig.ttlSeconds,
           );
-          this.logger.debug(`Cached: ${cacheKey} for ${cacheConfig.ttlSeconds}s`);
+          this.logger.debug(
+            `Cached: ${cacheKey} for ${cacheConfig.ttlSeconds}s`,
+          );
         } catch (error) {
           this.logger.warn(`Cache write error: ${error}`);
         }
@@ -96,7 +98,9 @@ export class CacheableInterceptor implements NestInterceptor {
     const prefix = config.keyPrefix || `${controller}:${handler}`;
 
     let scopeKey = '';
-    const user = request.user as { id?: string; workspaceId?: string } | undefined;
+    const user = request.user as
+      | { id?: string; workspaceId?: string }
+      | undefined;
 
     switch (config.scope) {
       case 'user':
@@ -131,7 +135,9 @@ export class CacheableInterceptor implements NestInterceptor {
     context: ExecutionContext,
   ): Promise<void> {
     const request = context.switchToHttp().getRequest();
-    const user = request.user as { id?: string; workspaceId?: string } | undefined;
+    const user = request.user as
+      | { id?: string; workspaceId?: string }
+      | undefined;
 
     for (const pattern of patterns) {
       // Replace placeholders in pattern
@@ -140,7 +146,7 @@ export class CacheableInterceptor implements NestInterceptor {
         .replace(':workspaceId', user?.workspaceId || '*');
 
       try {
-        await this.cacheService.deletePattern(`cache:${resolvedPattern}`);
+        await this.cacheService.del(`cache:${resolvedPattern}`);
         this.logger.debug(`Invalidated cache pattern: ${resolvedPattern}`);
       } catch (error) {
         this.logger.warn(`Cache invalidation error: ${error}`);

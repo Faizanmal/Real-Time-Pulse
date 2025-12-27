@@ -32,7 +32,8 @@ interface QueuedRequest {
 export class RateLimitService {
   private readonly logger = new Logger(RateLimitService.name);
   private rateLimitCache: Map<string, RateLimitConfig> = new Map();
-  private requestCounters: Map<string, { count: number; resetAt: number }> = new Map();
+  private requestCounters: Map<string, { count: number; resetAt: number }> =
+    new Map();
   private predictiveMetrics: Map<string, number[]> = new Map(); // Store request patterns
 
   constructor(
@@ -186,7 +187,7 @@ export class RateLimitService {
       // Calculate wait time
       const waitMs = rateLimit.resetAt.getTime() - Date.now();
       this.logger.log(`Rate limit exceeded, waiting ${waitMs}ms`);
-      
+
       // Re-queue with delay
       await this.requestQueue.add('execute-request', request, {
         delay: waitMs,
@@ -199,7 +200,7 @@ export class RateLimitService {
     try {
       // Record metrics
       await this.recordRequestMetrics(request.integrationId, rateLimit);
-      
+
       return {
         success: true,
         requestId: request.id,
@@ -216,10 +217,10 @@ export class RateLimitService {
    */
   async batchRequests(integrationId: string): Promise<QueuedRequest[]> {
     const jobs = await this.requestQueue.getJobs(['waiting', 'delayed']);
-    
+
     // Group requests by integration and endpoint
     const batches = new Map<string, QueuedRequest[]>();
-    
+
     for (const job of jobs) {
       const request = job.data as QueuedRequest;
       if (request.integrationId === integrationId) {
@@ -257,7 +258,7 @@ export class RateLimitService {
     if (!this.predictiveMetrics.has(integrationId)) {
       this.predictiveMetrics.set(integrationId, []);
     }
-    
+
     const metrics = this.predictiveMetrics.get(integrationId)!;
     metrics.push(now);
 
@@ -270,7 +271,10 @@ export class RateLimitService {
   }
 
   private analyzePredictivePatterns() {
-    for (const [integrationId, timestamps] of this.predictiveMetrics.entries()) {
+    for (const [
+      integrationId,
+      timestamps,
+    ] of this.predictiveMetrics.entries()) {
       if (timestamps.length < 10) continue; // Need enough data
 
       // Calculate request rate
@@ -302,9 +306,11 @@ export class RateLimitService {
     attempt: number,
   ): Promise<void> {
     const delayMs = Math.min(1000 * Math.pow(2, attempt), 30000); // Max 30 seconds
-    
-    this.logger.log(`Retry attempt ${attempt} for ${request.id} in ${delayMs}ms`);
-    
+
+    this.logger.log(
+      `Retry attempt ${attempt} for ${request.id} in ${delayMs}ms`,
+    );
+
     await this.requestQueue.add('execute-request', request, {
       delay: delayMs,
       priority: request.priority,

@@ -12,10 +12,10 @@ export interface CacheConfig {
 
 /**
  * Decorator to cache method results
- * 
+ *
  * @param ttlSeconds - Time to live in seconds
  * @param options - Additional cache configuration
- * 
+ *
  * @example
  * ```typescript
  * @Cacheable(300, { scope: 'workspace', keyPrefix: 'dashboard' })
@@ -40,9 +40,9 @@ export function Cacheable(
 /**
  * Decorator to mark a method as cache-invalidating
  * When this method is called, specified cache keys will be invalidated
- * 
+ *
  * @param keys - Cache key patterns to invalidate
- * 
+ *
  * @example
  * ```typescript
  * @InvalidateCache(['workspace:*:dashboard', 'user:*:preferences'])

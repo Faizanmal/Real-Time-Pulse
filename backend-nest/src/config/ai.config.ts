@@ -11,7 +11,7 @@ import { registerAs } from '@nestjs/config';
 export default registerAs('ai', () => ({
   // Primary AI Provider
   provider: process.env.AI_PROVIDER || 'openai', // openai | anthropic | google | azure | local
-  
+
   // OpenAI Configuration
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
@@ -25,7 +25,10 @@ export default registerAs('ai', () => ({
     },
     maxTokens: {
       chat: parseInt(process.env.OPENAI_MAX_TOKENS_CHAT || '4096', 10),
-      embedding: parseInt(process.env.OPENAI_MAX_TOKENS_EMBEDDING || '8192', 10),
+      embedding: parseInt(
+        process.env.OPENAI_MAX_TOKENS_EMBEDDING || '8192',
+        10,
+      ),
     },
     temperature: {
       default: parseFloat(process.env.OPENAI_TEMPERATURE || '0.7'),
@@ -77,28 +80,28 @@ export default registerAs('ai', () => ({
   // Vector Database Configuration
   vectorDb: {
     provider: process.env.VECTOR_DB_PROVIDER || 'pinecone', // pinecone | weaviate | milvus | qdrant | pgvector
-    
+
     pinecone: {
       apiKey: process.env.PINECONE_API_KEY,
       environment: process.env.PINECONE_ENVIRONMENT,
       indexName: process.env.PINECONE_INDEX_NAME || 'pulse-vectors',
       namespace: process.env.PINECONE_NAMESPACE || 'default',
     },
-    
+
     weaviate: {
       host: process.env.WEAVIATE_HOST || 'localhost:8080',
       scheme: process.env.WEAVIATE_SCHEME || 'http',
       apiKey: process.env.WEAVIATE_API_KEY,
       className: process.env.WEAVIATE_CLASS_NAME || 'PulseDocument',
     },
-    
+
     qdrant: {
       host: process.env.QDRANT_HOST || 'localhost',
       port: parseInt(process.env.QDRANT_PORT || '6333', 10),
       apiKey: process.env.QDRANT_API_KEY,
       collectionName: process.env.QDRANT_COLLECTION || 'pulse-vectors',
     },
-    
+
     pgvector: {
       enabled: process.env.PGVECTOR_ENABLED === 'true',
       tableName: 'document_embeddings',
@@ -112,7 +115,9 @@ export default registerAs('ai', () => ({
     chunkSize: parseInt(process.env.RAG_CHUNK_SIZE || '1000', 10),
     chunkOverlap: parseInt(process.env.RAG_CHUNK_OVERLAP || '200', 10),
     topK: parseInt(process.env.RAG_TOP_K || '5', 10),
-    similarityThreshold: parseFloat(process.env.RAG_SIMILARITY_THRESHOLD || '0.7'),
+    similarityThreshold: parseFloat(
+      process.env.RAG_SIMILARITY_THRESHOLD || '0.7',
+    ),
     reranking: {
       enabled: process.env.RAG_RERANKING_ENABLED === 'true',
       model: process.env.RAG_RERANKING_MODEL || 'cohere-rerank-v3',
@@ -128,7 +133,7 @@ export default registerAs('ai', () => ({
       contextWindow: 4000,
       examples: true,
     },
-    
+
     // Predictive Analytics
     predictive: {
       enabled: true,
@@ -136,7 +141,7 @@ export default registerAs('ai', () => ({
       trainingDataMinDays: 30,
       forecastHorizon: 90, // days
     },
-    
+
     // Anomaly Detection
     anomalyDetection: {
       enabled: true,
@@ -144,7 +149,7 @@ export default registerAs('ai', () => ({
       algorithms: ['isolation_forest', 'lstm', 'statistical'],
       minDataPoints: 100,
     },
-    
+
     // Smart Recommendations
     recommendations: {
       enabled: true,
@@ -152,7 +157,7 @@ export default registerAs('ai', () => ({
       refreshInterval: 3600, // seconds
       personalization: true,
     },
-    
+
     // Auto-Insights
     autoInsights: {
       enabled: true,
@@ -160,20 +165,20 @@ export default registerAs('ai', () => ({
       batchSize: 50,
       severity: ['low', 'medium', 'high', 'critical'],
     },
-    
+
     // Sentiment Analysis
     sentiment: {
       enabled: true,
       languages: ['en', 'es', 'fr', 'de', 'pt', 'ja', 'zh'],
     },
-    
+
     // Auto-Summarization
     summarization: {
       enabled: true,
       maxLength: 500,
       format: 'bullet_points', // paragraph | bullet_points | executive
     },
-    
+
     // Smart Alerting
     smartAlerting: {
       enabled: true,
@@ -191,14 +196,14 @@ export default registerAs('ai', () => ({
       provider: process.env.FEATURE_STORE_PROVIDER || 'redis', // redis | feast | tecton
       ttl: 86400, // 24 hours
     },
-    
+
     // Model Registry
     modelRegistry: {
       enabled: process.env.MODEL_REGISTRY_ENABLED === 'true',
       provider: process.env.MODEL_REGISTRY_PROVIDER || 'mlflow', // mlflow | wandb | neptune
       endpoint: process.env.MODEL_REGISTRY_ENDPOINT,
     },
-    
+
     // Training Configuration
     training: {
       batchSize: parseInt(process.env.ML_BATCH_SIZE || '32', 10),
@@ -207,7 +212,7 @@ export default registerAs('ai', () => ({
       validationSplit: 0.2,
       earlyStoppingPatience: 10,
     },
-    
+
     // Inference Configuration
     inference: {
       batchSize: parseInt(process.env.ML_INFERENCE_BATCH_SIZE || '64', 10),
@@ -222,7 +227,10 @@ export default registerAs('ai', () => ({
     enabled: true,
     requestsPerMinute: parseInt(process.env.AI_RATE_LIMIT_RPM || '60', 10),
     tokensPerMinute: parseInt(process.env.AI_RATE_LIMIT_TPM || '90000', 10),
-    concurrentRequests: parseInt(process.env.AI_CONCURRENT_REQUESTS || '10', 10),
+    concurrentRequests: parseInt(
+      process.env.AI_CONCURRENT_REQUESTS || '10',
+      10,
+    ),
     retryAttempts: 3,
     retryDelay: 1000, // ms
     exponentialBackoff: true,
@@ -246,12 +254,14 @@ export default registerAs('ai', () => ({
     systemPrompt: `You are an intelligent analytics assistant for Real-Time Pulse, a business intelligence platform. 
 Your role is to help users understand their data, identify trends, and provide actionable insights.
 Always be concise, accurate, and data-driven in your responses.`,
-    
+
     templates: {
-      dataAnalysis: 'Analyze the following data and provide key insights: {{data}}',
+      dataAnalysis:
+        'Analyze the following data and provide key insights: {{data}}',
       trendDetection: 'Identify trends and patterns in: {{metrics}}',
       anomalyExplanation: 'Explain this anomaly in simple terms: {{anomaly}}',
-      recommendation: 'Based on the data, what actions would you recommend? {{context}}',
+      recommendation:
+        'Based on the data, what actions would you recommend? {{context}}',
       summary: 'Summarize the key points from this report: {{report}}',
       nlq: 'Convert this natural language query to a data query: "{{query}}"',
     },

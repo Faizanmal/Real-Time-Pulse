@@ -59,7 +59,7 @@ export class EventReplayService {
   // Start a replay session
   async startReplay(options: ReplayOptions): Promise<string> {
     const sessionId = this.generateSessionId();
-    
+
     // Count total events
     const events = await this.eventStore.getAllEvents({
       fromTimestamp: options.fromTimestamp,
@@ -85,10 +85,12 @@ export class EventReplayService {
     };
 
     this.activeSessions.set(sessionId, session);
-    this.logger.log(`Starting replay session ${sessionId} with ${filteredEvents.length} events`);
+    this.logger.log(
+      `Starting replay session ${sessionId} with ${filteredEvents.length} events`,
+    );
 
     // Start replay in background
-    this.executeReplay(sessionId, filteredEvents).catch(error => {
+    this.executeReplay(sessionId, filteredEvents).catch((error) => {
       session.progress.status = 'error';
       session.progress.errors.push(error.message);
       this.logger.error(`Replay session ${sessionId} failed: ${error.message}`);
@@ -98,7 +100,10 @@ export class EventReplayService {
   }
 
   // Execute the replay
-  private async executeReplay(sessionId: string, events: DomainEvent[]): Promise<void> {
+  private async executeReplay(
+    sessionId: string,
+    events: DomainEvent[],
+  ): Promise<void> {
     const session = this.activeSessions.get(sessionId);
     if (!session) return;
 
@@ -124,7 +129,8 @@ export class EventReplayService {
         try {
           // Simulate time delay if speed option is set
           if (options.speed && options.speed > 0 && lastEventTime) {
-            const timeDiff = event.timestamp.getTime() - lastEventTime.getTime();
+            const timeDiff =
+              event.timestamp.getTime() - lastEventTime.getTime();
             const adjustedDelay = timeDiff / options.speed;
             if (adjustedDelay > 0 && adjustedDelay < 10000) {
               await this.delay(adjustedDelay);
@@ -148,15 +154,20 @@ export class EventReplayService {
           });
         } catch (error) {
           progress.errors.push(`Event ${event.eventId}: ${error.message}`);
-          this.logger.warn(`Error replaying event ${event.eventId}: ${error.message}`);
+          this.logger.warn(
+            `Error replaying event ${event.eventId}: ${error.message}`,
+          );
         }
       }
 
       // Update progress metrics
       progress.elapsedMs = Date.now() - progress.startTime.getTime();
-      progress.eventsPerSecond = progress.processedEvents / (progress.elapsedMs / 1000);
-      progress.estimatedRemainingMs = 
-        ((progress.totalEvents - progress.processedEvents) / progress.eventsPerSecond) * 1000;
+      progress.eventsPerSecond =
+        progress.processedEvents / (progress.elapsedMs / 1000);
+      progress.estimatedRemainingMs =
+        ((progress.totalEvents - progress.processedEvents) /
+          progress.eventsPerSecond) *
+        1000;
 
       // Pause between batches
       if (pauseBetweenBatches > 0) {
@@ -165,7 +176,9 @@ export class EventReplayService {
     }
 
     progress.status = 'completed';
-    this.logger.log(`Replay session ${sessionId} completed: ${progress.processedEvents} events processed`);
+    this.logger.log(
+      `Replay session ${sessionId} completed: ${progress.processedEvents} events processed`,
+    );
 
     this.eventEmitter.emit('replay.completed', {
       sessionId,
@@ -224,8 +237,8 @@ export class EventReplayService {
     options?: { toVersion?: number; dryRun?: boolean },
   ): Promise<DomainEvent[]> {
     const events = await this.eventStore.getEvents(aggregateId);
-    const filteredEvents = options?.toVersion 
-      ? events.filter(e => e.version <= options.toVersion!)
+    const filteredEvents = options?.toVersion
+      ? events.filter((e) => e.version <= options.toVersion!)
       : events;
 
     if (!options?.dryRun) {
@@ -285,7 +298,9 @@ export class EventReplayService {
     toTimestamp: Date,
   ): Promise<{ events: DomainEvent[]; finalState: any }> {
     const events = await this.eventStore.getEvents(aggregateId);
-    const eventsUntilTimestamp = events.filter(e => e.timestamp <= toTimestamp);
+    const eventsUntilTimestamp = events.filter(
+      (e) => e.timestamp <= toTimestamp,
+    );
 
     // This would reconstruct the aggregate state at that point
     // Implementation depends on the aggregate type
@@ -296,15 +311,24 @@ export class EventReplayService {
   }
 
   // Private helpers
-  private filterEvents(events: DomainEvent[], options: ReplayOptions): DomainEvent[] {
-    return events.filter(event => {
+  private filterEvents(
+    events: DomainEvent[],
+    options: ReplayOptions,
+  ): DomainEvent[] {
+    return events.filter((event) => {
       if (options.eventTypes && !options.eventTypes.includes(event.eventType)) {
         return false;
       }
-      if (options.aggregateTypes && !options.aggregateTypes.includes(event.aggregateType)) {
+      if (
+        options.aggregateTypes &&
+        !options.aggregateTypes.includes(event.aggregateType)
+      ) {
         return false;
       }
-      if (options.aggregateIds && !options.aggregateIds.includes(event.aggregateId)) {
+      if (
+        options.aggregateIds &&
+        !options.aggregateIds.includes(event.aggregateId)
+      ) {
         return false;
       }
       return true;
@@ -312,13 +336,16 @@ export class EventReplayService {
   }
 
   private async waitUntilResumed(sessionId: string): Promise<void> {
-    while (this.pausedSessions.has(sessionId) && this.activeSessions.has(sessionId)) {
+    while (
+      this.pausedSessions.has(sessionId) &&
+      this.activeSessions.has(sessionId)
+    ) {
       await this.delay(100);
     }
   }
 
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private generateSessionId(): string {

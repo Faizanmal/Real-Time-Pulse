@@ -18,6 +18,7 @@ interface HarvestIntegration {
 interface HarvestHeaders {
   Authorization: string;
   'Harvest-Account-ID': string;
+  [key: string]: string;
 }
 
 interface TimeEntryParams {
@@ -81,7 +82,9 @@ export class HarvestService {
     integration: HarvestIntegration,
     dataType: string,
     params?: TimeEntryParams,
-  ): Promise<HarvestTimeEntry[] | HarvestProject[] | HarvestClient[] | unknown> {
+  ): Promise<
+    HarvestTimeEntry[] | HarvestProject[] | HarvestClient[] | unknown
+  > {
     const headers = this.buildHeaders(integration);
 
     switch (dataType) {
@@ -113,14 +116,17 @@ export class HarvestService {
       const defaultTo = new Date().toISOString().split('T')[0];
 
       const response = await firstValueFrom(
-        this.httpService.get<{ time_entries: HarvestTimeEntry[] }>(`${this.baseUrl}/time_entries`, {
-          headers,
-          params: {
-            from: params?.from || defaultFrom,
-            to: params?.to || defaultTo,
-            project_id: params?.projectId,
+        this.httpService.get<{ time_entries: HarvestTimeEntry[] }>(
+          `${this.baseUrl}/time_entries`,
+          {
+            headers,
+            params: {
+              from: params?.from || defaultFrom,
+              to: params?.to || defaultTo,
+              project_id: params?.projectId,
+            },
           },
-        }),
+        ),
       );
 
       return response.data.time_entries;
@@ -130,7 +136,9 @@ export class HarvestService {
     }
   }
 
-  private async fetchProjects(headers: HarvestHeaders): Promise<HarvestProject[]> {
+  private async fetchProjects(
+    headers: HarvestHeaders,
+  ): Promise<HarvestProject[]> {
     try {
       const response = await firstValueFrom(
         this.httpService.get(`${this.baseUrl}/projects`, {
@@ -146,13 +154,18 @@ export class HarvestService {
     }
   }
 
-  private async fetchClients(headers: HarvestHeaders): Promise<HarvestClient[]> {
+  private async fetchClients(
+    headers: HarvestHeaders,
+  ): Promise<HarvestClient[]> {
     try {
       const response = await firstValueFrom(
-        this.httpService.get<{ clients: HarvestClient[] }>(`${this.baseUrl}/clients`, {
-          headers,
-          params: { is_active: true },
-        }),
+        this.httpService.get<{ clients: HarvestClient[] }>(
+          `${this.baseUrl}/clients`,
+          {
+            headers,
+            params: { is_active: true },
+          },
+        ),
       );
 
       return response.data.clients;
@@ -162,7 +175,10 @@ export class HarvestService {
     }
   }
 
-  private async fetchReports(headers: HarvestHeaders, params?: TimeEntryParams): Promise<unknown> {
+  private async fetchReports(
+    headers: HarvestHeaders,
+    params?: TimeEntryParams,
+  ): Promise<unknown> {
     try {
       const defaultFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
         .toISOString()

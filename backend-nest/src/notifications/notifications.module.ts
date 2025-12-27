@@ -12,7 +12,6 @@ import { ConfigService } from '@nestjs/config';
         return {
           secret: configService.get<string>('jwt.secret') || '',
           signOptions: {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             expiresIn: expiresIn as any,
           },
         };

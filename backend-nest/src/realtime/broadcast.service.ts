@@ -50,18 +50,30 @@ export class BroadcastService {
   // PORTAL BROADCASTS
   // ============================================
 
-  portalCreated(workspaceId: string, portal: any, options?: BroadcastOptions): void {
+  portalCreated(
+    workspaceId: string,
+    portal: any,
+    options?: BroadcastOptions,
+  ): void {
     this.broadcast(workspaceId, 'portal:created', portal, options);
   }
 
-  portalUpdated(workspaceId: string, portal: any, options?: BroadcastOptions): void {
+  portalUpdated(
+    workspaceId: string,
+    portal: any,
+    options?: BroadcastOptions,
+  ): void {
     this.broadcast(workspaceId, 'portal:updated', portal, options);
-    
+
     // Also notify portal-specific subscribers
     this.gateway.broadcastToPortal(portal.id, 'portal:updated', portal);
   }
 
-  portalDeleted(workspaceId: string, portalId: string, options?: BroadcastOptions): void {
+  portalDeleted(
+    workspaceId: string,
+    portalId: string,
+    options?: BroadcastOptions,
+  ): void {
     this.broadcast(workspaceId, 'portal:deleted', { portalId }, options);
   }
 
@@ -69,27 +81,48 @@ export class BroadcastService {
   // WIDGET BROADCASTS
   // ============================================
 
-  widgetCreated(portalId: string, widget: any, options?: BroadcastOptions): void {
+  widgetCreated(
+    portalId: string,
+    widget: any,
+    options?: BroadcastOptions,
+  ): void {
     this.gateway.broadcastToPortal(portalId, 'widget:created', widget);
   }
 
-  widgetUpdated(portalId: string, widget: any, options?: BroadcastOptions): void {
+  widgetUpdated(
+    portalId: string,
+    widget: any,
+    options?: BroadcastOptions,
+  ): void {
     this.gateway.broadcastToPortal(portalId, 'widget:updated', widget);
     this.gateway.broadcastToWidget(widget.id, 'widget:updated', widget);
   }
 
-  widgetDeleted(portalId: string, widgetId: string, options?: BroadcastOptions): void {
+  widgetDeleted(
+    portalId: string,
+    widgetId: string,
+    options?: BroadcastOptions,
+  ): void {
     this.gateway.broadcastToPortal(portalId, 'widget:deleted', { widgetId });
   }
 
-  widgetDataRefreshed(widgetId: string, data: any, options?: BroadcastOptions): void {
+  widgetDataRefreshed(
+    widgetId: string,
+    data: any,
+    options?: BroadcastOptions,
+  ): void {
     this.gateway.emitWidgetUpdate(widgetId, data);
   }
 
   // Batch widget update for efficiency
-  widgetsBatchUpdate(portalId: string, widgets: { id: string; data: any }[]): void {
-    this.gateway.broadcastToPortal(portalId, 'widgets:batch:updated', { widgets });
-    
+  widgetsBatchUpdate(
+    portalId: string,
+    widgets: { id: string; data: any }[],
+  ): void {
+    this.gateway.broadcastToPortal(portalId, 'widgets:batch:updated', {
+      widgets,
+    });
+
     // Also update individual widget subscribers
     for (const widget of widgets) {
       this.gateway.emitWidgetUpdate(widget.id, widget.data);
@@ -100,14 +133,22 @@ export class BroadcastService {
   // ALERT BROADCASTS
   // ============================================
 
-  alertTriggered(workspaceId: string, alert: any, options?: BroadcastOptions): void {
+  alertTriggered(
+    workspaceId: string,
+    alert: any,
+    options?: BroadcastOptions,
+  ): void {
     this.gateway.emitAlert(workspaceId, {
       type: 'triggered',
       alert,
     });
   }
 
-  alertResolved(workspaceId: string, alertId: string, options?: BroadcastOptions): void {
+  alertResolved(
+    workspaceId: string,
+    alertId: string,
+    options?: BroadcastOptions,
+  ): void {
     this.broadcast(workspaceId, 'alert:resolved', { alertId }, options);
   }
 
@@ -115,11 +156,19 @@ export class BroadcastService {
   // AI INSIGHT BROADCASTS
   // ============================================
 
-  insightGenerated(workspaceId: string, insight: any, options?: BroadcastOptions): void {
+  insightGenerated(
+    workspaceId: string,
+    insight: any,
+    options?: BroadcastOptions,
+  ): void {
     this.gateway.emitInsight(workspaceId, insight);
   }
 
-  insightsUpdated(portalId: string, insights: any[], options?: BroadcastOptions): void {
+  insightsUpdated(
+    portalId: string,
+    insights: any[],
+    options?: BroadcastOptions,
+  ): void {
     this.gateway.broadcastToPortal(portalId, 'insights:updated', { insights });
   }
 
@@ -135,7 +184,12 @@ export class BroadcastService {
     }
   }
 
-  reportGenerating(workspaceId: string, reportId: string, progress: number, userId?: string): void {
+  reportGenerating(
+    workspaceId: string,
+    reportId: string,
+    progress: number,
+    userId?: string,
+  ): void {
     const data = { reportId, progress };
     if (userId) {
       this.gateway.broadcastToUser(userId, 'report:generating', data);
@@ -148,12 +202,26 @@ export class BroadcastService {
   // INTEGRATION BROADCASTS
   // ============================================
 
-  integrationSynced(workspaceId: string, integration: any, options?: BroadcastOptions): void {
+  integrationSynced(
+    workspaceId: string,
+    integration: any,
+    options?: BroadcastOptions,
+  ): void {
     this.broadcast(workspaceId, 'integration:synced', integration, options);
   }
 
-  integrationError(workspaceId: string, integration: any, error: string, options?: BroadcastOptions): void {
-    this.broadcast(workspaceId, 'integration:error', { integration, error }, options);
+  integrationError(
+    workspaceId: string,
+    integration: any,
+    error: string,
+    options?: BroadcastOptions,
+  ): void {
+    this.broadcast(
+      workspaceId,
+      'integration:error',
+      { integration, error },
+      options,
+    );
   }
 
   // ============================================
@@ -172,15 +240,27 @@ export class BroadcastService {
   // COMMENT BROADCASTS
   // ============================================
 
-  commentAdded(portalId: string, comment: any, options?: BroadcastOptions): void {
+  commentAdded(
+    portalId: string,
+    comment: any,
+    options?: BroadcastOptions,
+  ): void {
     this.gateway.broadcastToPortal(portalId, 'comment:added', comment);
   }
 
-  commentUpdated(portalId: string, comment: any, options?: BroadcastOptions): void {
+  commentUpdated(
+    portalId: string,
+    comment: any,
+    options?: BroadcastOptions,
+  ): void {
     this.gateway.broadcastToPortal(portalId, 'comment:updated', comment);
   }
 
-  commentDeleted(portalId: string, commentId: string, options?: BroadcastOptions): void {
+  commentDeleted(
+    portalId: string,
+    commentId: string,
+    options?: BroadcastOptions,
+  ): void {
     this.gateway.broadcastToPortal(portalId, 'comment:deleted', { commentId });
   }
 
@@ -262,7 +342,11 @@ export class BroadcastService {
   // ============================================
 
   presenceUpdate(workspaceId: string, presence: any): void {
-    this.gateway.broadcastToWorkspace(workspaceId, 'presence:updated', presence);
+    this.gateway.broadcastToWorkspace(
+      workspaceId,
+      'presence:updated',
+      presence,
+    );
   }
 
   cursorPosition(portalId: string, cursor: any): void {

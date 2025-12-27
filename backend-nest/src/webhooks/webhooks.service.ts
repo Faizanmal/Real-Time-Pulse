@@ -5,8 +5,6 @@ import { CreateWebhookDto, UpdateWebhookDto } from './dto/webhook.dto';
 import { firstValueFrom } from 'rxjs';
 import * as crypto from 'crypto';
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
-
 @Injectable()
 export class WebhooksService {
   constructor(

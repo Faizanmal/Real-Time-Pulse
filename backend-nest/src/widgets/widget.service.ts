@@ -3,9 +3,13 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  Inject,
+  forwardRef,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
+import { IntegrationService } from '../integrations/integration.service';
 import {
   CreateWidgetDto,
   UpdateWidgetDto,
@@ -14,9 +18,13 @@ import {
 
 @Injectable()
 export class WidgetService {
+  private readonly logger = new Logger(WidgetService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
+    @Inject(forwardRef(() => IntegrationService))
+    private readonly integrationService: IntegrationService,
   ) {}
 
   /**
@@ -27,7 +35,7 @@ export class WidgetService {
     dto: CreateWidgetDto,
   ): Promise<WidgetResponseDto> {
     // Verify portal exists and belongs to workspace
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+
     const portal = await (this.prisma as any).portal.findUnique({
       where: { id: dto.portalId },
     });
@@ -36,31 +44,27 @@ export class WidgetService {
       throw new NotFoundException('Portal not found');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (portal.workspaceId !== workspaceId) {
       throw new ForbiddenException('Access denied to this portal');
     }
 
     // Verify integration if provided
     if (dto.integrationId) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       const integration = await (this.prisma as any).integration.findUnique({
         where: { id: dto.integrationId },
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       if (!integration || integration.workspaceId !== workspaceId) {
         throw new BadRequestException('Invalid integration');
       }
     }
 
     // Create widget
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+
     const widget = await (this.prisma as any).widget.create({
       data: {
         name: dto.name,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        type: dto.type as any, // TODO: Update enum to match DTO
+        type: dto.type,
         config: dto.config || {},
         gridWidth: dto.gridWidth || 4,
         gridHeight: dto.gridHeight || 3,
@@ -95,7 +99,7 @@ export class WidgetService {
     workspaceId: string,
   ): Promise<WidgetResponseDto[]> {
     // Verify portal exists and belongs to workspace
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+
     const portal = await (this.prisma as any).portal.findUnique({
       where: { id: portalId },
     });
@@ -104,12 +108,10 @@ export class WidgetService {
       throw new NotFoundException('Portal not found');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (portal.workspaceId !== workspaceId) {
       throw new ForbiddenException('Access denied to this portal');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     const widgets = await (this.prisma as any).widget.findMany({
       where: { portalId },
       include: {
@@ -124,7 +126,6 @@ export class WidgetService {
       orderBy: { order: 'asc' },
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     return widgets.map((widget) => this.formatWidgetResponse(widget));
   }
 
@@ -135,7 +136,6 @@ export class WidgetService {
     widgetId: string,
     workspaceId: string,
   ): Promise<WidgetResponseDto> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     const widget = await (this.prisma as any).widget.findUnique({
       where: { id: widgetId },
       include: {
@@ -154,7 +154,6 @@ export class WidgetService {
       throw new NotFoundException('Widget not found');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (widget.portal.workspaceId !== workspaceId) {
       throw new ForbiddenException('Access denied to this widget');
     }
@@ -171,7 +170,7 @@ export class WidgetService {
     dto: UpdateWidgetDto,
   ): Promise<WidgetResponseDto> {
     // Verify widget exists and belongs to workspace
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+
     const existingWidget = await (this.prisma as any).widget.findUnique({
       where: { id: widgetId },
       include: { portal: true },
@@ -181,12 +180,10 @@ export class WidgetService {
       throw new NotFoundException('Widget not found');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (existingWidget.portal.workspaceId !== workspaceId) {
       throw new ForbiddenException('Access denied to this widget');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     const widget = await (this.prisma as any).widget.update({
       where: { id: widgetId },
       data: {
@@ -212,7 +209,7 @@ export class WidgetService {
     // Invalidate caches
     await Promise.all([
       this.cache.invalidateWidget(widgetId),
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+
       this.cache.invalidatePortal(widget.portalId),
     ]);
 
@@ -224,7 +221,7 @@ export class WidgetService {
    */
   async remove(widgetId: string, workspaceId: string): Promise<void> {
     // Verify widget exists and belongs to workspace
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+
     const widget = await (this.prisma as any).widget.findUnique({
       where: { id: widgetId },
       include: { portal: true },
@@ -234,12 +231,10 @@ export class WidgetService {
       throw new NotFoundException('Widget not found');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (widget.portal.workspaceId !== workspaceId) {
       throw new ForbiddenException('Access denied to this widget');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     await (this.prisma as any).widget.delete({
       where: { id: widgetId },
     });
@@ -247,7 +242,7 @@ export class WidgetService {
     // Invalidate caches
     await Promise.all([
       this.cache.invalidateWidget(widgetId),
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+
       this.cache.invalidatePortal(widget.portalId),
     ]);
   }
@@ -255,7 +250,7 @@ export class WidgetService {
   /**
    * Refresh widget data from integration
    */
-  /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
+
   async refreshData(widgetId: string, workspaceId: string): Promise<any> {
     const widget = await (this.prisma as any).widget.findUnique({
       where: { id: widgetId },
@@ -277,20 +272,41 @@ export class WidgetService {
       throw new BadRequestException('Widget has no integration configured');
     }
 
-    // TODO: Implement actual integration data fetching
-    // For now, return mock data
-    const mockData = {
-      value: Math.floor(Math.random() * 1000),
-      timestamp: new Date().toISOString(),
-      source: widget.integration.provider,
-    };
+    // Fetch real data from the integration
+    let data: any;
+    try {
+      const dataType = this.getDataTypeForWidget(widget.type, widget.config);
+      const params = this.getParamsForWidget(widget.config);
+
+      data = await this.integrationService.fetchData(
+        widget.integration.id,
+        dataType,
+        params,
+      );
+
+      // Transform data based on widget type
+      data = this.transformDataForWidget(widget.type, data, widget.config);
+    } catch (error) {
+      this.logger.error(
+        `Failed to fetch integration data for widget ${widgetId}: ${error.message}`,
+      );
+      // Return cached data if available, or fallback data
+      const cachedData = await this.cache.getWidgetData(widgetId);
+      if (cachedData) {
+        return {
+          ...this.formatWidgetResponse(widget),
+          data: cachedData,
+          lastRefreshedAt: widget.lastRefreshedAt,
+          error: 'Using cached data - integration temporarily unavailable',
+        };
+      }
+
+      // Return fallback data structure
+      data = this.getFallbackData(widget.type);
+    }
 
     // Cache the data
-    await this.cache.cacheWidgetData(
-      widgetId,
-      mockData,
-      widget.refreshInterval,
-    );
+    await this.cache.cacheWidgetData(widgetId, data, widget.refreshInterval);
 
     // Update last refreshed time
     await (this.prisma as any).widget.update({
@@ -302,16 +318,143 @@ export class WidgetService {
 
     return {
       ...base,
-      data: mockData,
+      data,
       lastRefreshedAt: new Date(),
     };
   }
-  /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
+
+  /**
+   * Get data type for widget based on widget type
+   */
+  private getDataTypeForWidget(widgetType: string, config: any): string {
+    const dataTypeMap: Record<string, string> = {
+      ASANA_TASKS: 'tasks',
+      ASANA_PROJECTS: 'projects',
+      GITHUB_ISSUES: 'issues',
+      GITHUB_COMMITS: 'commits',
+      GITHUB_PRS: 'pull_requests',
+      JIRA_ISSUES: 'issues',
+      JIRA_SPRINTS: 'sprints',
+      TRELLO_CARDS: 'cards',
+      TRELLO_LISTS: 'lists',
+      GA_PAGEVIEWS: 'pageviews',
+      GA_SESSIONS: 'sessions',
+      GA_USERS: 'users',
+      HARVEST_HOURS: 'time_entries',
+      HARVEST_PROJECTS: 'projects',
+      HUBSPOT_CONTACTS: 'contacts',
+      HUBSPOT_DEALS: 'deals',
+      SLACK_MESSAGES: 'messages',
+    };
+
+    return dataTypeMap[widgetType] || config?.dataType || 'default';
+  }
+
+  /**
+   * Get params for widget from config
+   */
+  private getParamsForWidget(config: any): Record<string, any> {
+    return {
+      limit: config?.limit || 50,
+      startDate: config?.startDate,
+      endDate: config?.endDate,
+      projectId: config?.projectId,
+      ...(config?.params || {}),
+    };
+  }
+
+  /**
+   * Transform raw integration data for widget display
+   */
+  private transformDataForWidget(
+    widgetType: string,
+    rawData: any,
+    config: any,
+  ): any {
+    if (!rawData) return this.getFallbackData(widgetType);
+
+    // If raw data is an array, process it
+    if (Array.isArray(rawData)) {
+      const limit = config?.limit || 50;
+      const items = rawData.slice(0, limit);
+
+      return {
+        items,
+        count: items.length,
+        total: rawData.length,
+        summary: this.generateSummary(widgetType, items),
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    // If raw data is an object with data property
+    if (rawData.data && Array.isArray(rawData.data)) {
+      return {
+        items: rawData.data,
+        count: rawData.data.length,
+        total: rawData.total || rawData.data.length,
+        metadata: rawData.metadata,
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    // Return as-is with timestamp
+    return {
+      ...rawData,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Generate summary statistics for widget data
+   */
+  private generateSummary(
+    widgetType: string,
+    items: any[],
+  ): Record<string, any> {
+    const summary: Record<string, any> = {
+      total: items.length,
+    };
+
+    if (widgetType.includes('TASKS') || widgetType.includes('ISSUES')) {
+      summary.completed = items.filter(
+        (i) => i.completed || i.status === 'done' || i.status === 'closed',
+      ).length;
+      summary.pending = summary.total - summary.completed;
+      summary.completionRate =
+        summary.total > 0
+          ? Math.round((summary.completed / summary.total) * 100)
+          : 0;
+    }
+
+    if (widgetType.includes('HOURS') || widgetType.includes('TIME')) {
+      summary.totalHours = items.reduce((acc, i) => acc + (i.hours || 0), 0);
+      summary.billableHours = items
+        .filter((i) => i.billable)
+        .reduce((acc, i) => acc + (i.hours || 0), 0);
+    }
+
+    return summary;
+  }
+
+  /**
+   * Get fallback data when integration fails
+   */
+  private getFallbackData(widgetType: string): any {
+    return {
+      items: [],
+      count: 0,
+      total: 0,
+      summary: { total: 0 },
+      timestamp: new Date().toISOString(),
+      error: 'Data temporarily unavailable',
+    };
+  }
 
   /**
    * Format widget response
    */
-  /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
+
   private formatWidgetResponse(widget: any): WidgetResponseDto {
     return {
       id: widget.id,
@@ -331,5 +474,4 @@ export class WidgetService {
       integration: widget.integration,
     };
   }
-  /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 }

@@ -22,6 +22,7 @@ interface WorkflowNode {
 
 export default function WorkflowBuilder({ workflow }: { workflow?: Workflow }) {
   const [nodes, setNodes] = useState<WorkflowNode[]>([]);
+  const [edges, setEdges] = useState<any[]>([]);
   const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(null);
   const [workflowName, setWorkflowName] = useState(workflow?.name || '');
   const [workflowDescription, setWorkflowDescription] = useState(workflow?.description || '');
@@ -81,13 +82,14 @@ export default function WorkflowBuilder({ workflow }: { workflow?: Workflow }) {
         return;
       }
 
-      const workflowData: Partial<Workflow> = {
-        name: workflowName,
+      const workflowData = {
+        name: workflowName || 'Untitled Workflow',
         description: workflowDescription,
         trigger,
         actions,
         conditions: conditions.length > 0 ? conditions : undefined,
-        isActive: true,
+        nodes,
+        edges,
       };
 
       if (workflow) {

@@ -39,9 +39,7 @@ export class ClientReportController {
   ) {
     return this.clientReportService.createReport({
       ...body,
-      scheduledFor: body.scheduledFor
-        ? new Date(body.scheduledFor)
-        : undefined,
+      scheduledFor: body.scheduledFor ? new Date(body.scheduledFor) : undefined,
     });
   }
 

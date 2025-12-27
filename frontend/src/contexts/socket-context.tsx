@@ -30,6 +30,10 @@ export interface SocketEvents {
   // Alert events
   'alert:triggered': (data: any) => void;
   'alert:resolved': (data: { alertId: string }) => void;
+  'alert:new': (data: { type: string; message: string }) => void;
+  
+  // Metrics events
+  'metrics:update': (data: Partial<any>) => void;
   
   // Insight events
   'insight:generated': (data: any) => void;
@@ -101,11 +105,11 @@ export function SocketProvider({ children }: SocketProviderProps) {
   const [isConnected, setIsConnected] = useState(false);
   const [connectionState, setConnectionState] = useState<SocketContextValue['connectionState']>('disconnected');
   
-  const { token, isAuthenticated } = useAuthStore();
+  const { accessToken, isAuthenticated } = useAuthStore();
 
   // Initialize socket connection
   useEffect(() => {
-    if (!isAuthenticated || !token) {
+    if (!isAuthenticated || !accessToken) {
       if (socket) {
         socket.disconnect();
         setSocket(null);
@@ -116,7 +120,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     
     const newSocket = io(`${apiUrl}/realtime`, {
-      auth: { token },
+      auth: { token: accessToken },
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 10,
@@ -169,7 +173,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
       setIsConnected(false);
       setConnectionState('disconnected');
     };
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, accessToken]);
 
   // Event subscription
   const on = useCallback(<K extends keyof SocketEvents>(

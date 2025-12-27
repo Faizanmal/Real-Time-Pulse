@@ -66,7 +66,8 @@ export class ProfitabilityService {
 
     const totalCosts = laborCosts + expenseCosts;
     const grossProfit = totalRevenue - totalCosts;
-    const profitMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+    const profitMargin =
+      totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
     // Calculate utilization rate
     const totalHours = project.timeEntries.reduce(
@@ -77,8 +78,10 @@ export class ProfitabilityService {
       (sum, entry) => sum + entry.hours,
       0,
     );
-    const utilizationRate = totalHours > 0 ? (billableHours / totalHours) * 100 : 0;
-    const billableRatio = totalHours > 0 ? (billableHours / totalHours) * 100 : 0;
+    const utilizationRate =
+      totalHours > 0 ? (billableHours / totalHours) * 100 : 0;
+    const billableRatio =
+      totalHours > 0 ? (billableHours / totalHours) * 100 : 0;
 
     // Calculate profitability score (0-100)
     const profitabilityScore = this.calculateProfitabilityScore({

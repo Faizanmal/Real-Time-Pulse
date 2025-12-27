@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { DataHealthService } from './data-health.service';
+import { NotificationService } from '../notifications/notification.service';
 import { HealthStatus, IntegrationProvider } from '@prisma/client';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
@@ -13,6 +14,8 @@ export class HealthMonitorService {
   constructor(
     private prisma: PrismaService,
     private dataHealthService: DataHealthService,
+    @Inject(forwardRef(() => NotificationService))
+    private notificationService: NotificationService,
     private httpService: HttpService,
   ) {}
 
@@ -56,7 +59,7 @@ export class HealthMonitorService {
     }
 
     const startTime = Date.now();
-    let status = HealthStatus.HEALTHY;
+    let status: HealthStatus = HealthStatus.HEALTHY;
     let errorMessage: string | null = null;
     let dataFreshness: number | null = null;
 
@@ -111,8 +114,8 @@ export class HealthMonitorService {
     await this.dataHealthService.recordHealthCheck(healthId, {
       status,
       responseTime,
-      errorMessage,
-      dataFreshness,
+      errorMessage: errorMessage ?? undefined,
+      dataFreshness: dataFreshness ?? undefined,
       metadata: {
         timestamp: new Date().toISOString(),
       },
@@ -243,7 +246,7 @@ export class HealthMonitorService {
     // Generic health check - just verify token is valid
     return {
       success: true,
-      dataFreshness: null,
+      dataFreshness: undefined,
     };
   }
 
@@ -302,7 +305,42 @@ export class HealthMonitorService {
       `Health alert for ${monitor.integration.provider}: ${monitor.lastError}`,
     );
 
-    // TODO: Integrate with notification system
-    // This would send email/slack/etc notifications
+    // Get workspace owner/admins for notification
+    const workspaceUsers = await this.prisma.user.findMany({
+      where: {
+        workspaceId: monitor.integration.workspaceId,
+        role: { in: ['OWNER', 'ADMIN'] },
+      },
+      select: { id: true, email: true },
+    });
+
+    // Send notifications to workspace admins
+    for (const user of workspaceUsers) {
+      try {
+        await this.notificationService.send({
+          userId: user.id,
+          type: 'health.alert',
+          title: `Integration Health Alert: ${monitor.integration.provider}`,
+          body: `Your ${monitor.integration.provider} integration is experiencing issues. Status: ${monitor.status}. ${monitor.lastError || ''}`,
+          priority: 'high',
+          channels: ['email', 'in-app'],
+          data: {
+            integrationId: monitor.integration.id,
+            provider: monitor.integration.provider,
+            status: monitor.status,
+            error: monitor.lastError,
+            consecutiveErrors: monitor.consecutiveErrors,
+          },
+        });
+      } catch (error) {
+        this.logger.error(
+          `Failed to send health alert to user ${user.id}: ${error.message}`,
+        );
+      }
+    }
+
+    this.logger.log(
+      `Health alerts sent to ${workspaceUsers.length} users for integration ${monitor.integration.id}`,
+    );
   }
 }

@@ -45,12 +45,12 @@ export class VoiceControlService {
 
     // Parse the command
     const command = this.parseCommand(text);
-    
+
     if (!command) {
       return {
         success: false,
         action: 'unknown',
-        message: 'I didn\'t understand that command. Please try again.',
+        message: "I didn't understand that command. Please try again.",
       };
     }
 
@@ -166,7 +166,8 @@ export class VoiceControlService {
     if (lowerTarget.includes('project')) return 'project';
     if (lowerTarget.includes('report')) return 'report';
     if (lowerTarget.includes('alert')) return 'alert';
-    if (lowerTarget.includes('chart') || lowerTarget.includes('graph')) return 'widget';
+    if (lowerTarget.includes('chart') || lowerTarget.includes('graph'))
+      return 'widget';
     if (lowerTarget.includes('status')) return 'status';
     if (lowerTarget.includes('budget')) return 'budget';
 
@@ -214,7 +215,7 @@ export class VoiceControlService {
           success: true,
           action: 'show_status',
           data: await this.getOverallStatus(workspaceId),
-          message: 'Here\'s the current status',
+          message: "Here's the current status",
         };
     }
 
@@ -279,7 +280,7 @@ export class VoiceControlService {
     const { reportType, params } = command.entities;
 
     const period = this.extractTimePeriod(params);
-    
+
     return {
       success: true,
       action: 'generate_report',
@@ -419,41 +420,47 @@ export class VoiceControlService {
 
   private extractTimePeriod(params: string): string {
     if (!params) return 'weekly';
-    
+
     if (params.includes('daily')) return 'daily';
     if (params.includes('weekly') || params.includes('week')) return 'weekly';
-    if (params.includes('monthly') || params.includes('month')) return 'monthly';
-    if (params.includes('quarterly') || params.includes('quarter')) return 'quarterly';
+    if (params.includes('monthly') || params.includes('month'))
+      return 'monthly';
+    if (params.includes('quarterly') || params.includes('quarter'))
+      return 'quarterly';
     if (params.includes('yearly') || params.includes('year')) return 'yearly';
-    
+
     return 'weekly';
   }
 
   private parseAlertCondition(condition: string): string {
-    if (condition.includes('budget') || condition.includes('cost')) return 'budget';
-    if (condition.includes('delay') || condition.includes('overdue')) return 'timeline';
-    if (condition.includes('error') || condition.includes('fail')) return 'error';
-    if (condition.includes('threshold') || condition.includes('limit')) return 'threshold';
-    
+    if (condition.includes('budget') || condition.includes('cost'))
+      return 'budget';
+    if (condition.includes('delay') || condition.includes('overdue'))
+      return 'timeline';
+    if (condition.includes('error') || condition.includes('fail'))
+      return 'error';
+    if (condition.includes('threshold') || condition.includes('limit'))
+      return 'threshold';
+
     return 'custom';
   }
 
   private mapDestinationToRoute(destination: string): string {
     const routes: Record<string, string> = {
-      'home': '/',
-      'dashboard': '/dashboard',
-      'dashboards': '/dashboard',
-      'projects': '/projects',
-      'project': '/projects',
-      'alerts': '/alerts',
-      'reports': '/reports',
-      'settings': '/settings',
-      'analytics': '/analytics',
-      'integrations': '/integrations',
+      home: '/',
+      dashboard: '/dashboard',
+      dashboards: '/dashboard',
+      projects: '/projects',
+      project: '/projects',
+      alerts: '/alerts',
+      reports: '/reports',
+      settings: '/settings',
+      analytics: '/analytics',
+      integrations: '/integrations',
     };
 
     const normalized = destination.toLowerCase().trim();
-    
+
     for (const [key, route] of Object.entries(routes)) {
       if (normalized.includes(key)) {
         return route;

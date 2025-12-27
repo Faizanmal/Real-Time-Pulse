@@ -1,10 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  ValidationRuleType,
-  ValidationSeverity,
-  Prisma,
-} from '@prisma/client';
+import { ValidationRuleType, ValidationSeverity, Prisma } from '@prisma/client';
 
 @Injectable()
 export class DataValidationService {

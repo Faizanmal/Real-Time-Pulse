@@ -2,7 +2,7 @@
  * =============================================================================
  * REAL-TIME PULSE - ANALYTICS ENGINE
  * =============================================================================
- * 
+ *
  * Advanced analytics processing with real-time aggregations,
  * trend detection, and predictive insights.
  */
@@ -25,7 +25,15 @@ interface TimeSeriesData {
   interval: TimeInterval;
 }
 
-type AggregationType = 'sum' | 'avg' | 'min' | 'max' | 'count' | 'p50' | 'p95' | 'p99';
+type AggregationType =
+  | 'sum'
+  | 'avg'
+  | 'min'
+  | 'max'
+  | 'count'
+  | 'p50'
+  | 'p95'
+  | 'p99';
 type TimeInterval = '1m' | '5m' | '15m' | '1h' | '6h' | '1d' | '7d' | '30d';
 
 interface TrendAnalysis {
@@ -80,7 +88,8 @@ interface DashboardMetrics {
 export class AnalyticsEngine implements OnModuleInit {
   private readonly logger = new Logger(AnalyticsEngine.name);
   private dataBuffer: Map<string, MetricDataPoint[]> = new Map();
-  private aggregationCache: Map<string, { data: unknown; expiresAt: Date }> = new Map();
+  private aggregationCache: Map<string, { data: unknown; expiresAt: Date }> =
+    new Map();
   private readonly CACHE_TTL = 60000; // 1 minute
   private readonly BUFFER_SIZE = 10000;
 
@@ -101,7 +110,11 @@ export class AnalyticsEngine implements OnModuleInit {
   /**
    * Ingest single metric data point
    */
-  async ingest(metricId: string, value: number, dimensions?: Record<string, string>): Promise<void> {
+  async ingest(
+    metricId: string,
+    value: number,
+    dimensions?: Record<string, string>,
+  ): Promise<void> {
     const dataPoint: MetricDataPoint = {
       timestamp: new Date(),
       value,
@@ -130,7 +143,10 @@ export class AnalyticsEngine implements OnModuleInit {
   /**
    * Batch ingest multiple data points
    */
-  async ingestBatch(metricId: string, dataPoints: MetricDataPoint[]): Promise<void> {
+  async ingestBatch(
+    metricId: string,
+    dataPoints: MetricDataPoint[],
+  ): Promise<void> {
     if (!this.dataBuffer.has(metricId)) {
       this.dataBuffer.set(metricId, []);
     }
@@ -170,14 +186,19 @@ export class AnalyticsEngine implements OnModuleInit {
 
     for (const metricId of query.metrics) {
       const buffer = this.dataBuffer.get(metricId) || [];
-      
+
       // Filter by time range
       const filtered = buffer.filter(
-        (dp) => dp.timestamp >= query.timeRange.start && dp.timestamp <= query.timeRange.end,
+        (dp) =>
+          dp.timestamp >= query.timeRange.start &&
+          dp.timestamp <= query.timeRange.end,
       );
 
       // Apply dimension filters
-      const dimensionFiltered = this.applyDimensionFilters(filtered, query.filters);
+      const dimensionFiltered = this.applyDimensionFilters(
+        filtered,
+        query.filters,
+      );
 
       // Aggregate data
       for (const aggregation of query.aggregations) {
@@ -217,23 +238,44 @@ export class AnalyticsEngine implements OnModuleInit {
   /**
    * Get dashboard metrics
    */
-  async getDashboardMetrics(workspaceId: string, timeRange?: { start: Date; end: Date }): Promise<DashboardMetrics> {
+  async getDashboardMetrics(
+    workspaceId: string,
+    timeRange?: { start: Date; end: Date },
+  ): Promise<DashboardMetrics> {
     const range = timeRange || {
       start: new Date(Date.now() - 24 * 60 * 60 * 1000),
       end: new Date(),
     };
 
     const previousRange = {
-      start: new Date(range.start.getTime() - (range.end.getTime() - range.start.getTime())),
+      start: new Date(
+        range.start.getTime() - (range.end.getTime() - range.start.getTime()),
+      ),
       end: range.start,
     };
 
     // Calculate core metrics
     const [revenue, users, conversion, aov] = await Promise.all([
-      this.getMetricWithComparison(`${workspaceId}:revenue`, range, previousRange),
-      this.getMetricWithComparison(`${workspaceId}:active_users`, range, previousRange),
-      this.getMetricWithComparison(`${workspaceId}:conversion_rate`, range, previousRange),
-      this.getMetricWithComparison(`${workspaceId}:avg_order_value`, range, previousRange),
+      this.getMetricWithComparison(
+        `${workspaceId}:revenue`,
+        range,
+        previousRange,
+      ),
+      this.getMetricWithComparison(
+        `${workspaceId}:active_users`,
+        range,
+        previousRange,
+      ),
+      this.getMetricWithComparison(
+        `${workspaceId}:conversion_rate`,
+        range,
+        previousRange,
+      ),
+      this.getMetricWithComparison(
+        `${workspaceId}:avg_order_value`,
+        range,
+        previousRange,
+      ),
     ]);
 
     return {
@@ -315,8 +357,9 @@ export class AnalyticsEngine implements OnModuleInit {
     const intervalMs = this.intervalToMs(interval);
 
     for (const dp of dataPoints) {
-      const bucketTime = Math.floor(dp.timestamp.getTime() / intervalMs) * intervalMs;
-      
+      const bucketTime =
+        Math.floor(dp.timestamp.getTime() / intervalMs) * intervalMs;
+
       if (!buckets.has(bucketTime)) {
         buckets.set(bucketTime, []);
       }
@@ -344,7 +387,10 @@ export class AnalyticsEngine implements OnModuleInit {
   // TREND ANALYSIS
   // ============================================================================
 
-  private calculateSummary(metricId: string, dataPoints: MetricDataPoint[]): AggregatedMetric {
+  private calculateSummary(
+    metricId: string,
+    dataPoints: MetricDataPoint[],
+  ): AggregatedMetric {
     const values = dataPoints.map((dp) => dp.value);
     const currentValue = values.length > 0 ? this.aggregate(values, 'sum') : 0;
 
@@ -386,13 +432,14 @@ export class AnalyticsEngine implements OnModuleInit {
     }
 
     const slope = denominator !== 0 ? numerator / denominator : 0;
-    
+
     // Calculate percent change
     const firstHalf = values.slice(0, Math.floor(n / 2));
     const secondHalf = values.slice(Math.floor(n / 2));
     const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
     const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
-    const percentChange = firstAvg !== 0 ? ((secondAvg - firstAvg) / firstAvg) * 100 : 0;
+    const percentChange =
+      firstAvg !== 0 ? ((secondAvg - firstAvg) / firstAvg) * 100 : 0;
 
     // Determine direction
     let direction: 'up' | 'down' | 'stable';
@@ -453,7 +500,10 @@ export class AnalyticsEngine implements OnModuleInit {
         insights.push(
           `${metric.metricId} is trending up by ${metric.trend.percentChange}% with ${Math.round(metric.trend.confidence * 100)}% confidence`,
         );
-      } else if (metric.trend.direction === 'down' && metric.trend.percentChange < -10) {
+      } else if (
+        metric.trend.direction === 'down' &&
+        metric.trend.percentChange < -10
+      ) {
         insights.push(
           `⚠️ ${metric.metricId} is declining by ${Math.abs(metric.trend.percentChange)}%`,
         );
@@ -461,7 +511,9 @@ export class AnalyticsEngine implements OnModuleInit {
 
       // Anomaly detection
       if (metric.trend.anomaly) {
-        insights.push(`🔴 Anomaly detected in ${metric.metricId} - current value deviates significantly from normal`);
+        insights.push(
+          `🔴 Anomaly detected in ${metric.metricId} - current value deviates significantly from normal`,
+        );
       }
 
       // Prediction insights
@@ -511,21 +563,27 @@ export class AnalyticsEngine implements OnModuleInit {
     const buffer = this.dataBuffer.get(metricId) || [];
 
     const currentData = buffer.filter(
-      (dp) => dp.timestamp >= currentRange.start && dp.timestamp <= currentRange.end,
+      (dp) =>
+        dp.timestamp >= currentRange.start && dp.timestamp <= currentRange.end,
     );
     const previousData = buffer.filter(
-      (dp) => dp.timestamp >= previousRange.start && dp.timestamp <= previousRange.end,
+      (dp) =>
+        dp.timestamp >= previousRange.start &&
+        dp.timestamp <= previousRange.end,
     );
 
-    const currentValue = currentData.length > 0
-      ? currentData.reduce((sum, dp) => sum + dp.value, 0)
-      : 0;
-    const previousValue = previousData.length > 0
-      ? previousData.reduce((sum, dp) => sum + dp.value, 0)
-      : 0;
+    const currentValue =
+      currentData.length > 0
+        ? currentData.reduce((sum, dp) => sum + dp.value, 0)
+        : 0;
+    const previousValue =
+      previousData.length > 0
+        ? previousData.reduce((sum, dp) => sum + dp.value, 0)
+        : 0;
 
     const change = currentValue - previousValue;
-    const changePercent = previousValue !== 0 ? (change / previousValue) * 100 : 0;
+    const changePercent =
+      previousValue !== 0 ? (change / previousValue) * 100 : 0;
 
     const trend = this.analyzeTrend(currentData.map((dp) => dp.value));
     const sparkline = currentData.slice(-24).map((dp) => dp.value);
@@ -568,7 +626,7 @@ export class AnalyticsEngine implements OnModuleInit {
 
   async exportToCSV(query: AnalyticsQuery): Promise<string> {
     const result = await this.query(query);
-    
+
     const headers = ['timestamp', ...query.metrics];
     const rows: string[][] = [];
 

@@ -60,7 +60,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   async getJSON<T>(key: string): Promise<T | null> {
     const data = await this.get(key);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
     return data ? JSON.parse(data) : null;
   }
 

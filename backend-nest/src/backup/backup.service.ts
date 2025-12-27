@@ -26,7 +26,8 @@ export interface RestorePoint {
 @Injectable()
 export class BackupService {
   private readonly logger = new Logger(BackupService.name);
-  private readonly encryptionKey = process.env.BACKUP_ENCRYPTION_KEY || crypto.randomBytes(32);
+  private readonly encryptionKey =
+    process.env.BACKUP_ENCRYPTION_KEY || crypto.randomBytes(32);
   private readonly algorithm = 'aes-256-gcm';
 
   constructor(private prisma: PrismaService) {}
@@ -228,7 +229,7 @@ export class BackupService {
     await this.prisma.$transaction(async (tx) => {
       // Clear existing data (use with caution!)
       // In production, you might want to create a new workspace instead
-      
+
       // Restore dashboards
       for (const dashboard of data.dashboards) {
         await tx.$executeRaw`
@@ -250,7 +251,11 @@ export class BackupService {
   /**
    * Encrypt data
    */
-  private encrypt(data: Buffer): { encrypted: Buffer; iv: Buffer; authTag: Buffer } {
+  private encrypt(data: Buffer): {
+    encrypted: Buffer;
+    iv: Buffer;
+    authTag: Buffer;
+  } {
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv(
       this.algorithm,
@@ -267,7 +272,11 @@ export class BackupService {
   /**
    * Decrypt data
    */
-  private decrypt(data: { encrypted: Buffer; iv: Buffer; authTag: Buffer }): Buffer {
+  private decrypt(data: {
+    encrypted: Buffer;
+    iv: Buffer;
+    authTag: Buffer;
+  }): Buffer {
     const decipher = crypto.createDecipheriv(
       this.algorithm,
       Buffer.from(this.encryptionKey),
@@ -288,7 +297,7 @@ export class BackupService {
     // In production, this would upload to S3, Google Cloud Storage, etc.
     // with cross-region replication enabled
     this.logger.log(`Replicating backup ${backupId} to secondary region`);
-    
+
     // Simulate async replication
     setTimeout(() => {
       this.logger.log(`Backup ${backupId} replicated successfully`);

@@ -161,7 +161,15 @@ export class IntegrationService {
         );
 
       case 'HARVEST':
-        return this.harvestService.fetchData(integration, dataType, params);
+        return this.harvestService.fetchData(
+          {
+            ...integration,
+            refreshToken: integration.refreshToken ?? undefined,
+            settings: integration.settings as any,
+          },
+          dataType,
+          params as any,
+        );
 
       case 'JIRA':
         return this.jiraService.fetchData(integration, dataType, params);
@@ -223,7 +231,11 @@ export class IntegrationService {
           break;
 
         case 'HARVEST':
-          result = await this.harvestService.testConnection(integration);
+          result = await this.harvestService.testConnection({
+            ...integration,
+            refreshToken: integration.refreshToken ?? undefined,
+            settings: integration.settings as any,
+          });
           break;
 
         case 'JIRA':

@@ -646,7 +646,7 @@ export class WidgetCustomizationService {
     };
 
     switch (customType) {
-      case 'percentOfTotal':
+      case 'percentOfTotal': {
         const field = customConfig?.field as string;
         const total = data.reduce(
           (sum, item) => sum + (Number(item[field]) || 0),
@@ -657,13 +657,15 @@ export class WidgetCustomizationService {
           [`${field}_percent`]:
             total > 0 ? ((Number(item[field]) || 0) / total) * 100 : 0,
         }));
-      case 'runningTotal':
+      }
+      case 'runningTotal': {
         let runningTotal = 0;
         const rtField = customConfig?.field as string;
         return data.map((item) => {
           runningTotal += Number(item[rtField]) || 0;
           return { ...item, runningTotal };
         });
+      }
       default:
         return data;
     }

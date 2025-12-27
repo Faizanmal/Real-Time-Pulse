@@ -2,7 +2,7 @@
  * =============================================================================
  * REAL-TIME PULSE - ADVANCED AI SERVICE
  * =============================================================================
- * 
+ *
  * Multi-model AI service supporting OpenAI, Anthropic, and local models
  * with intelligent routing, caching, and fallback strategies.
  */
@@ -88,7 +88,8 @@ export class AIService implements OnModuleInit {
   private readonly logger = new Logger(AIService.name);
   private openai: OpenAI | null = null;
   private anthropic: Anthropic | null = null;
-  private cache: Map<string, { result: AICompletion; expiry: number }> = new Map();
+  private cache: Map<string, { result: AICompletion; expiry: number }> =
+    new Map();
   private readonly cacheTTL = 3600000; // 1 hour
 
   constructor(private config: ConfigService) {}
@@ -197,7 +198,13 @@ export class AIService implements OnModuleInit {
 
   private async completeWithOpenAI(
     messages: AIMessage[],
-    options: { model: string; maxTokens: number; temperature: number; topP: number; timeout: number },
+    options: {
+      model: string;
+      maxTokens: number;
+      temperature: number;
+      topP: number;
+      timeout: number;
+    },
   ): Promise<AICompletion> {
     if (!this.openai) throw new Error('OpenAI not initialized');
 
@@ -228,7 +235,12 @@ export class AIService implements OnModuleInit {
 
   private async completeWithAnthropic(
     messages: AIMessage[],
-    options: { model: string; maxTokens: number; temperature: number; timeout: number },
+    options: {
+      model: string;
+      maxTokens: number;
+      temperature: number;
+      timeout: number;
+    },
   ): Promise<AICompletion> {
     if (!this.anthropic) throw new Error('Anthropic not initialized');
 
@@ -318,7 +330,11 @@ Provide 3-5 insights in the following JSON format:
 Return ONLY the JSON array, no additional text.`;
 
     const response = await this.complete([
-      { role: 'system', content: 'You are an expert business analyst. Always respond with valid JSON.' },
+      {
+        role: 'system',
+        content:
+          'You are an expert business analyst. Always respond with valid JSON.',
+      },
       { role: 'user', content: prompt },
     ]);
 
@@ -357,7 +373,11 @@ Provide a forecast in the following JSON format:
 Return ONLY the JSON object, no additional text.`;
 
     const response = await this.complete([
-      { role: 'system', content: 'You are an expert data scientist specializing in time series forecasting. Always respond with valid JSON.' },
+      {
+        role: 'system',
+        content:
+          'You are an expert data scientist specializing in time series forecasting. Always respond with valid JSON.',
+      },
       { role: 'user', content: prompt },
     ]);
 
@@ -402,7 +422,11 @@ Identify anomalies and return them in the following JSON format:
 Return ONLY the JSON array, no additional text. Return empty array if no anomalies.`;
 
     const response = await this.complete([
-      { role: 'system', content: 'You are an expert in anomaly detection and statistical analysis. Always respond with valid JSON.' },
+      {
+        role: 'system',
+        content:
+          'You are an expert in anomaly detection and statistical analysis. Always respond with valid JSON.',
+      },
       { role: 'user', content: prompt },
     ]);
 
@@ -443,7 +467,11 @@ Respond in JSON format:
 Return ONLY the JSON object.`;
 
     const response = await this.complete([
-      { role: 'system', content: 'You are an expert SQL developer. Generate safe, efficient queries. Always respond with valid JSON.' },
+      {
+        role: 'system',
+        content:
+          'You are an expert SQL developer. Generate safe, efficient queries. Always respond with valid JSON.',
+      },
       { role: 'user', content: prompt },
     ]);
 
@@ -464,7 +492,8 @@ Return ONLY the JSON object.`;
     const response = await this.complete([
       {
         role: 'system',
-        content: 'You are an expert business analyst. Write clear, concise executive summaries.',
+        content:
+          'You are an expert business analyst. Write clear, concise executive summaries.',
       },
       {
         role: 'user',
@@ -521,7 +550,10 @@ ${dataContext ? `Current data context:\n${JSON.stringify(dataContext, null, 2)}`
     return 'openai';
   }
 
-  private getCacheKey(messages: AIMessage[], options: AICompletionOptions): string {
+  private getCacheKey(
+    messages: AIMessage[],
+    options: AICompletionOptions,
+  ): string {
     return JSON.stringify({ messages, options });
   }
 

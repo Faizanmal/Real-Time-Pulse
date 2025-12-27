@@ -90,7 +90,8 @@ export class QueryBus {
   // Execute a query
   async execute<T extends IQuery, R = any>(query: T): Promise<QueryResult<R>> {
     const startTime = Date.now();
-    const correlationId = query.metadata?.correlationId || this.generateCorrelationId();
+    const correlationId =
+      query.metadata?.correlationId || this.generateCorrelationId();
 
     this.logger.debug({
       message: `Executing query: ${query.queryType}`,
@@ -115,12 +116,13 @@ export class QueryBus {
       // Build the middleware chain
       const executeHandler = async (): Promise<R> => {
         const handlerType = this.handlers.get(query.queryType);
-        
+
         if (!handlerType) {
           throw new Error(`No handler found for query: ${query.queryType}`);
         }
 
-        const handler = await this.moduleRef.resolve<IQueryHandler<T, R>>(handlerType);
+        const handler =
+          await this.moduleRef.resolve<IQueryHandler<T, R>>(handlerType);
         return handler.execute(query);
       };
 
@@ -227,7 +229,9 @@ export class PerformanceMiddleware implements IQueryMiddleware {
     const duration = Date.now() - start;
 
     if (duration > this.slowQueryThreshold) {
-      this.logger.warn(`Slow query detected: ${query.queryType} took ${duration}ms`);
+      this.logger.warn(
+        `Slow query detected: ${query.queryType} took ${duration}ms`,
+      );
     }
 
     return result;
@@ -238,7 +242,7 @@ export class PerformanceMiddleware implements IQueryMiddleware {
 export class PaginationMiddleware implements IQueryMiddleware {
   async handle(query: IQuery, next: () => Promise<any>): Promise<any> {
     const paginatedQuery = query as IPaginatedQuery;
-    
+
     // Set defaults if not provided
     if (paginatedQuery.page === undefined) {
       paginatedQuery.page = 1;
@@ -261,7 +265,7 @@ export class AuthorizationMiddleware implements IQueryMiddleware {
   async handle(query: IQuery, next: () => Promise<any>): Promise<any> {
     // Check if user has permission to execute this query
     const { userId, workspaceId } = query.metadata;
-    
+
     if (!userId) {
       this.logger.warn(`Unauthorized query attempt: ${query.queryType}`);
       throw new Error('Unauthorized: User ID required');
@@ -280,18 +284,21 @@ export class TransformMiddleware implements IQueryMiddleware {
     this.transformers = transformers || new Map();
   }
 
-  registerTransformer(queryType: string, transformer: (data: any) => any): void {
+  registerTransformer(
+    queryType: string,
+    transformer: (data: any) => any,
+  ): void {
     this.transformers.set(queryType, transformer);
   }
 
   async handle(query: IQuery, next: () => Promise<any>): Promise<any> {
     const result = await next();
-    
+
     const transformer = this.transformers.get(query.queryType);
     if (transformer) {
       return transformer(result);
     }
-    
+
     return result;
   }
 }
@@ -300,7 +307,7 @@ export class TransformMiddleware implements IQueryMiddleware {
 export class FieldSelectionMiddleware implements IQueryMiddleware {
   async handle(query: IQuery, next: () => Promise<any>): Promise<any> {
     const result = await next();
-    
+
     const fields = (query as any).fields;
     if (!fields || fields.length === 0) {
       return result;
@@ -308,9 +315,9 @@ export class FieldSelectionMiddleware implements IQueryMiddleware {
 
     // Apply field selection
     if (Array.isArray(result)) {
-      return result.map(item => this.selectFields(item, fields));
+      return result.map((item) => this.selectFields(item, fields));
     }
-    
+
     return this.selectFields(result, fields);
   }
 

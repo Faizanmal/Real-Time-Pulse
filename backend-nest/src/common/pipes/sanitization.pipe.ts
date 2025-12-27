@@ -5,7 +5,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import * as sanitizeHtml from 'sanitize-html';
+import sanitizeHtml from 'sanitize-html';
 
 interface SanitizationOptions {
   allowedTags?: string[];
@@ -92,7 +92,9 @@ export class SanitizationPipe implements PipeTransform {
 
     // Detect potential injection attempts
     if (this.containsSuspiciousPatterns(sanitized)) {
-      this.logger.warn(`Potential injection attempt detected: ${sanitized.substring(0, 100)}`);
+      this.logger.warn(
+        `Potential injection attempt detected: ${sanitized.substring(0, 100)}`,
+      );
       sanitized = this.escapeInjectionPatterns(sanitized);
     }
 

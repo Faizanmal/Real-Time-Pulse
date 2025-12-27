@@ -23,7 +23,11 @@ export default registerAs('microservices', () => ({
     host: process.env.GRPC_HOST || '0.0.0.0',
     port: parseInt(process.env.GRPC_PORT || '5000', 10),
     package: 'realtimepulse',
-    protoPath: ['./proto/pulse.proto', './proto/analytics.proto', './proto/notifications.proto'],
+    protoPath: [
+      './proto/pulse.proto',
+      './proto/analytics.proto',
+      './proto/notifications.proto',
+    ],
     loader: {
       keepCase: true,
       longs: String,
@@ -95,11 +99,14 @@ export default registerAs('microservices', () => ({
     clientId: process.env.KAFKA_CLIENT_ID || 'pulse-client',
     groupId: process.env.KAFKA_GROUP_ID || 'pulse-group',
     ssl: process.env.KAFKA_SSL === 'true',
-    sasl: process.env.KAFKA_SASL_ENABLED === 'true' ? {
-      mechanism: process.env.KAFKA_SASL_MECHANISM || 'plain',
-      username: process.env.KAFKA_SASL_USERNAME,
-      password: process.env.KAFKA_SASL_PASSWORD,
-    } : undefined,
+    sasl:
+      process.env.KAFKA_SASL_ENABLED === 'true'
+        ? {
+            mechanism: process.env.KAFKA_SASL_MECHANISM || 'plain',
+            username: process.env.KAFKA_SASL_USERNAME,
+            password: process.env.KAFKA_SASL_PASSWORD,
+          }
+        : undefined,
     topics: {
       events: 'pulse.events',
       analytics: 'pulse.analytics',
@@ -129,7 +136,8 @@ export default registerAs('microservices', () => ({
     },
     consumer: {
       group: process.env.REDIS_CONSUMER_GROUP || 'pulse-consumers',
-      consumer: process.env.REDIS_CONSUMER_NAME || `pulse-consumer-${process.pid}`,
+      consumer:
+        process.env.REDIS_CONSUMER_NAME || `pulse-consumer-${process.pid}`,
       block: 5000,
       count: 10,
     },
@@ -150,9 +158,18 @@ export default registerAs('microservices', () => ({
   circuitBreaker: {
     enabled: true,
     timeout: parseInt(process.env.CIRCUIT_BREAKER_TIMEOUT || '10000', 10),
-    errorThresholdPercentage: parseInt(process.env.CIRCUIT_BREAKER_ERROR_THRESHOLD || '50', 10),
-    resetTimeout: parseInt(process.env.CIRCUIT_BREAKER_RESET_TIMEOUT || '30000', 10),
-    volumeThreshold: parseInt(process.env.CIRCUIT_BREAKER_VOLUME_THRESHOLD || '10', 10),
+    errorThresholdPercentage: parseInt(
+      process.env.CIRCUIT_BREAKER_ERROR_THRESHOLD || '50',
+      10,
+    ),
+    resetTimeout: parseInt(
+      process.env.CIRCUIT_BREAKER_RESET_TIMEOUT || '30000',
+      10,
+    ),
+    volumeThreshold: parseInt(
+      process.env.CIRCUIT_BREAKER_VOLUME_THRESHOLD || '10',
+      10,
+    ),
   },
 
   // Retry Configuration

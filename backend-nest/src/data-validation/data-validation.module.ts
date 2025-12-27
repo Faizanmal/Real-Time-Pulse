@@ -5,9 +5,10 @@ import { ValidationEngineService } from './validation-engine.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EmailModule } from '../email/email.module';
+import { CacheModule } from '../cache/cache.module';
 
 @Module({
-  imports: [PrismaModule, ScheduleModule.forRoot(), EmailModule],
+  imports: [PrismaModule, ScheduleModule.forRoot(), EmailModule, CacheModule],
   controllers: [DataValidationController],
   providers: [DataValidationService, ValidationEngineService],
   exports: [DataValidationService, ValidationEngineService],

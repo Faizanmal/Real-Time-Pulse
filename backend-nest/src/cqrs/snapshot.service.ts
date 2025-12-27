@@ -51,9 +51,12 @@ export class SnapshotService {
   }
 
   // Save a snapshot
-  async saveSnapshot(aggregate: AggregateRoot, aggregateType: string): Promise<void> {
+  async saveSnapshot(
+    aggregate: AggregateRoot,
+    aggregateType: string,
+  ): Promise<void> {
     const state = this.serializeAggregate(aggregate);
-    
+
     await this.eventStore.createSnapshot(
       aggregate.id,
       aggregateType,
@@ -61,7 +64,9 @@ export class SnapshotService {
       state,
     );
 
-    this.logger.debug(`Saved snapshot for ${aggregateType}:${aggregate.id} at version ${aggregate.currentVersion}`);
+    this.logger.debug(
+      `Saved snapshot for ${aggregateType}:${aggregate.id} at version ${aggregate.currentVersion}`,
+    );
   }
 
   // Load aggregate with snapshot optimization
@@ -71,23 +76,27 @@ export class SnapshotService {
   ): Promise<T | null> {
     const factory = this.aggregateFactories.get(aggregateType);
     if (!factory) {
-      throw new Error(`No factory registered for aggregate type: ${aggregateType}`);
+      throw new Error(
+        `No factory registered for aggregate type: ${aggregateType}`,
+      );
     }
 
     // Try to load from snapshot first
     const snapshot = await this.eventStore.getSnapshot(aggregateId);
-    let aggregate = factory() as T;
+    const aggregate = factory() as T;
     let fromVersion = 0;
 
     if (snapshot) {
       this.deserializeAggregate(aggregate, snapshot.state);
       fromVersion = snapshot.version;
-      this.logger.debug(`Loaded ${aggregateType}:${aggregateId} from snapshot at version ${fromVersion}`);
+      this.logger.debug(
+        `Loaded ${aggregateType}:${aggregateId} from snapshot at version ${fromVersion}`,
+      );
     }
 
     // Replay events since snapshot
     const events = await this.eventStore.getEvents(aggregateId, fromVersion);
-    
+
     if (events.length === 0 && !snapshot) {
       return null; // Aggregate doesn't exist
     }
@@ -103,15 +112,19 @@ export class SnapshotService {
   }
 
   // Check if snapshot is needed
-  async shouldSnapshot(aggregateId: string, aggregateType: string): Promise<boolean> {
+  async shouldSnapshot(
+    aggregateId: string,
+    aggregateType: string,
+  ): Promise<boolean> {
     const snapshot = await this.eventStore.getSnapshot(aggregateId);
-    
+
     if (!snapshot) {
       const eventCount = await this.eventStore.getEventCount(aggregateId);
       return eventCount >= this.config.frequency;
     }
 
-    const eventsSinceSnapshot = await this.eventStore.getEventCount(aggregateId) - snapshot.version;
+    const eventsSinceSnapshot =
+      (await this.eventStore.getEventCount(aggregateId)) - snapshot.version;
     return eventsSinceSnapshot >= this.config.frequency;
   }
 
@@ -131,18 +144,28 @@ export class SnapshotService {
     let refreshed = 0;
     for (const snapshot of staleSnapshots) {
       try {
-        await this.refreshSnapshot(snapshot.aggregateId, snapshot.aggregateType);
+        await this.refreshSnapshot(
+          snapshot.aggregateId,
+          snapshot.aggregateType,
+        );
         refreshed++;
       } catch (error) {
-        this.logger.error(`Failed to refresh snapshot for ${snapshot.aggregateId}: ${error.message}`);
+        this.logger.error(
+          `Failed to refresh snapshot for ${snapshot.aggregateId}: ${error.message}`,
+        );
       }
     }
 
-    this.logger.log(`Snapshot maintenance completed: ${refreshed} snapshots refreshed`);
+    this.logger.log(
+      `Snapshot maintenance completed: ${refreshed} snapshots refreshed`,
+    );
   }
 
   // Refresh a single snapshot
-  async refreshSnapshot(aggregateId: string, aggregateType: string): Promise<void> {
+  async refreshSnapshot(
+    aggregateId: string,
+    aggregateType: string,
+  ): Promise<void> {
     const aggregate = await this.loadAggregate(aggregateId, aggregateType);
     if (aggregate) {
       await this.saveSnapshot(aggregate, aggregateType);
@@ -152,7 +175,7 @@ export class SnapshotService {
   // Delete old snapshots
   async cleanupSnapshots(olderThanDays: number): Promise<number> {
     const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000);
-    
+
     const result = await this.prisma.eventStoreSnapshot.deleteMany({
       where: {
         timestamp: { lt: cutoff },
@@ -172,7 +195,7 @@ export class SnapshotService {
     byAggregateType: Record<string, number>;
   }> {
     const snapshots = await this.prisma.eventStoreSnapshot.findMany();
-    
+
     const stats = {
       totalSnapshots: snapshots.length,
       averageVersion: 0,
@@ -189,7 +212,7 @@ export class SnapshotService {
 
     for (const snapshot of snapshots) {
       totalVersion += snapshot.version;
-      
+
       if (!oldest || snapshot.timestamp < oldest) {
         oldest = snapshot.timestamp;
       }
@@ -197,7 +220,7 @@ export class SnapshotService {
         newest = snapshot.timestamp;
       }
 
-      stats.byAggregateType[snapshot.aggregateType] = 
+      stats.byAggregateType[snapshot.aggregateType] =
         (stats.byAggregateType[snapshot.aggregateType] || 0) + 1;
     }
 
@@ -212,14 +235,13 @@ export class SnapshotService {
   private serializeAggregate(aggregate: AggregateRoot): any {
     // Use reflection or explicit getters to extract state
     const state: any = { id: aggregate.id, version: aggregate.currentVersion };
-    
+
     // Get all getter methods and call them
     const prototype = Object.getPrototypeOf(aggregate);
-    const getters = Object.getOwnPropertyNames(prototype)
-      .filter(name => {
-        const descriptor = Object.getOwnPropertyDescriptor(prototype, name);
-        return descriptor && typeof descriptor.get === 'function';
-      });
+    const getters = Object.getOwnPropertyNames(prototype).filter((name) => {
+      const descriptor = Object.getOwnPropertyDescriptor(prototype, name);
+      return descriptor && typeof descriptor.get === 'function';
+    });
 
     for (const getter of getters) {
       try {
@@ -230,8 +252,11 @@ export class SnapshotService {
     }
 
     // Also check for methods starting with 'get'
-    const methods = Object.getOwnPropertyNames(prototype)
-      .filter(name => name.startsWith('get') && typeof (aggregate as any)[name] === 'function');
+    const methods = Object.getOwnPropertyNames(prototype).filter(
+      (name) =>
+        name.startsWith('get') &&
+        typeof (aggregate as any)[name] === 'function',
+    );
 
     for (const method of methods) {
       const propName = method.charAt(3).toLowerCase() + method.slice(4);

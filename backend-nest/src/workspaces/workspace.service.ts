@@ -355,13 +355,12 @@ export class WorkspaceService {
 
     // Run counts/lookup in parallel and handle as untyped result first
     const _results = await Promise.all([
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       (this.prisma.portal as any).count({ where: { workspaceId } }),
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+
       (this.prisma.user as any).count({ where: { workspaceId } }),
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+
       (this.prisma.integration as any).count({ where: { workspaceId } }),
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+
       (this.prisma.subscription as any).findUnique({
         where: { workspaceId },
       }),
@@ -446,7 +445,7 @@ export class WorkspaceService {
   /**
    * Map Prisma workspace to response DTO
    */
-  /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
+
   private mapToResponseDto(workspace: any): WorkspaceResponseDto {
     return {
       id: workspace.id,
@@ -460,5 +459,4 @@ export class WorkspaceService {
       updatedAt: workspace.updatedAt,
     };
   }
-  /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 }

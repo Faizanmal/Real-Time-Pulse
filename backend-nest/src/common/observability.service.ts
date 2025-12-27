@@ -2,7 +2,7 @@
  * =============================================================================
  * REAL-TIME PULSE - OBSERVABILITY SERVICE
  * =============================================================================
- * 
+ *
  * Comprehensive observability including logging, metrics, tracing, and monitoring.
  */
 
@@ -18,14 +18,13 @@ import * as opentelemetry from '@opentelemetry/api';
 
 // Logger with structured output
 @Injectable()
-export class StructuredLogger extends Logger {
+export class StructuredLogger {
   private static instance: StructuredLogger;
   private serviceName: string;
   private version: string;
   private environment: string;
 
   constructor(context?: string) {
-    super(context);
     this.serviceName = process.env.SERVICE_NAME || 'real-time-pulse';
     this.version = process.env.APP_VERSION || '2.0.0';
     this.environment = process.env.NODE_ENV || 'development';
@@ -87,7 +86,13 @@ export class StructuredLogger extends Logger {
     }
   }
 
-  audit(action: string, userId: string, resourceType: string, resourceId: string, details?: Record<string, unknown>) {
+  audit(
+    action: string,
+    userId: string,
+    resourceType: string,
+    resourceId: string,
+    details?: Record<string, unknown>,
+  ) {
     this.info(`AUDIT: ${action}`, {
       audit: true,
       action,
@@ -98,7 +103,11 @@ export class StructuredLogger extends Logger {
     });
   }
 
-  performance(operation: string, durationMs: number, meta?: Record<string, unknown>) {
+  performance(
+    operation: string,
+    durationMs: number,
+    meta?: Record<string, unknown>,
+  ) {
     this.info(`PERF: ${operation} completed in ${durationMs}ms`, {
       performance: true,
       operation,
@@ -124,13 +133,21 @@ export class MetricsService {
   private labels: Map<string, Map<string, number>> = new Map();
 
   // Counter operations
-  increment(name: string, value: number = 1, labelValues?: Record<string, string>) {
+  increment(
+    name: string,
+    value: number = 1,
+    labelValues?: Record<string, string>,
+  ) {
     const key = this.getKey(name, labelValues);
     const current = this.metrics.get(key) || 0;
     this.metrics.set(key, current + value);
   }
 
-  decrement(name: string, value: number = 1, labelValues?: Record<string, string>) {
+  decrement(
+    name: string,
+    value: number = 1,
+    labelValues?: Record<string, string>,
+  ) {
     this.increment(name, -value, labelValues);
   }
 
@@ -256,8 +273,15 @@ export class TracingInterceptor implements NestInterceptor {
         span.setStatus({ code: opentelemetry.SpanStatusCode.OK });
         span.end();
 
-        this.metrics.observe('http_request_duration_ms', duration, { method, path: url, status: String(statusCode) });
-        this.metrics.increment('http_requests_success', 1, { method, path: url });
+        this.metrics.observe('http_request_duration_ms', duration, {
+          method,
+          path: url,
+          status: String(statusCode),
+        });
+        this.metrics.increment('http_requests_success', 1, {
+          method,
+          path: url,
+        });
 
         this.logger.performance(`${method} ${url}`, duration, {
           requestId,
@@ -281,8 +305,16 @@ export class TracingInterceptor implements NestInterceptor {
         span.recordException(error);
         span.end();
 
-        this.metrics.observe('http_request_duration_ms', duration, { method, path: url, status: String(statusCode) });
-        this.metrics.increment('http_requests_error', 1, { method, path: url, status: String(statusCode) });
+        this.metrics.observe('http_request_duration_ms', duration, {
+          method,
+          path: url,
+          status: String(statusCode),
+        });
+        this.metrics.increment('http_requests_error', 1, {
+          method,
+          path: url,
+          status: String(statusCode),
+        });
 
         this.logger.error(`${method} ${url} failed`, error, {
           requestId,
@@ -305,18 +337,30 @@ export class TracingInterceptor implements NestInterceptor {
 // Health check service
 @Injectable()
 export class HealthService {
-  private checks: Map<string, () => Promise<{ healthy: boolean; details?: unknown }>> = new Map();
+  private checks: Map<
+    string,
+    () => Promise<{ healthy: boolean; details?: unknown }>
+  > = new Map();
 
-  registerCheck(name: string, check: () => Promise<{ healthy: boolean; details?: unknown }>) {
+  registerCheck(
+    name: string,
+    check: () => Promise<{ healthy: boolean; details?: unknown }>,
+  ) {
     this.checks.set(name, check);
   }
 
   async getHealth(): Promise<{
     status: 'healthy' | 'degraded' | 'unhealthy';
-    checks: Record<string, { healthy: boolean; details?: unknown; duration: number }>;
+    checks: Record<
+      string,
+      { healthy: boolean; details?: unknown; duration: number }
+    >;
     timestamp: string;
   }> {
-    const results: Record<string, { healthy: boolean; details?: unknown; duration: number }> = {};
+    const results: Record<
+      string,
+      { healthy: boolean; details?: unknown; duration: number }
+    > = {};
     let overallHealthy = true;
     let hasDegraded = false;
 
@@ -326,7 +370,7 @@ export class HealthService {
         const result = await Promise.race([
           check(),
           new Promise<{ healthy: boolean; details?: unknown }>((_, reject) =>
-            setTimeout(() => reject(new Error('Health check timeout')), 5000)
+            setTimeout(() => reject(new Error('Health check timeout')), 5000),
           ),
         ]);
         results[name] = { ...result, duration: Date.now() - start };
@@ -344,14 +388,20 @@ export class HealthService {
     }
 
     return {
-      status: !overallHealthy ? 'unhealthy' : hasDegraded ? 'degraded' : 'healthy',
+      status: !overallHealthy
+        ? 'unhealthy'
+        : hasDegraded
+          ? 'degraded'
+          : 'healthy',
       checks: results,
       timestamp: new Date().toISOString(),
     };
   }
 
   // Built-in health checks
-  async checkDatabase(prisma: { $queryRaw: (query: TemplateStringsArray) => Promise<unknown> }): Promise<{ healthy: boolean; details?: unknown }> {
+  async checkDatabase(prisma: {
+    $queryRaw: (query: TemplateStringsArray) => Promise<unknown>;
+  }): Promise<{ healthy: boolean; details?: unknown }> {
     try {
       await prisma.$queryRaw`SELECT 1`;
       return { healthy: true };
@@ -360,7 +410,9 @@ export class HealthService {
     }
   }
 
-  async checkRedis(redis: { ping: () => Promise<string> }): Promise<{ healthy: boolean; details?: unknown }> {
+  async checkRedis(redis: {
+    ping: () => Promise<string>;
+  }): Promise<{ healthy: boolean; details?: unknown }> {
     try {
       const result = await redis.ping();
       return { healthy: result === 'PONG', details: { response: result } };
@@ -393,7 +445,15 @@ export class HealthService {
 @Injectable()
 export class AlertService {
   private readonly logger = new StructuredLogger('AlertService');
-  private thresholds: Map<string, { metric: string; operator: '>' | '<' | '==' | '>='; value: number; callback: () => void }> = new Map();
+  private thresholds: Map<
+    string,
+    {
+      metric: string;
+      operator: '>' | '<' | '==' | '>=';
+      value: number;
+      callback: () => void;
+    }
+  > = new Map();
   private alertCooldowns: Map<string, number> = new Map();
   private cooldownMs = 300000; // 5 minutes
 

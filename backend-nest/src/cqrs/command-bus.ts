@@ -64,9 +64,12 @@ export class CommandBus {
   }
 
   // Execute a command
-  async execute<T extends ICommand, R = void>(command: T): Promise<CommandResult<R>> {
+  async execute<T extends ICommand, R = void>(
+    command: T,
+  ): Promise<CommandResult<R>> {
     const startTime = Date.now();
-    const correlationId = command.metadata?.correlationId || this.generateCorrelationId();
+    const correlationId =
+      command.metadata?.correlationId || this.generateCorrelationId();
 
     this.logger.log({
       message: `Executing command: ${command.commandType}`,
@@ -78,12 +81,15 @@ export class CommandBus {
       // Build the middleware chain
       const executeHandler = async (): Promise<R> => {
         const handlerType = this.handlers.get(command.commandType);
-        
+
         if (!handlerType) {
-          throw new Error(`No handler found for command: ${command.commandType}`);
+          throw new Error(
+            `No handler found for command: ${command.commandType}`,
+          );
         }
 
-        const handler = await this.moduleRef.resolve<ICommandHandler<T, R>>(handlerType);
+        const handler =
+          await this.moduleRef.resolve<ICommandHandler<T, R>>(handlerType);
         return handler.execute(command);
       };
 
@@ -156,13 +162,17 @@ export class LoggingMiddleware implements ICommandMiddleware {
   async handle(command: ICommand, next: () => Promise<any>): Promise<any> {
     const start = Date.now();
     this.logger.debug(`[START] ${command.commandType}`);
-    
+
     try {
       const result = await next();
-      this.logger.debug(`[SUCCESS] ${command.commandType} (${Date.now() - start}ms)`);
+      this.logger.debug(
+        `[SUCCESS] ${command.commandType} (${Date.now() - start}ms)`,
+      );
       return result;
     } catch (error) {
-      this.logger.error(`[FAILED] ${command.commandType} (${Date.now() - start}ms): ${error.message}`);
+      this.logger.error(
+        `[FAILED] ${command.commandType} (${Date.now() - start}ms): ${error.message}`,
+      );
       throw error;
     }
   }
@@ -175,7 +185,7 @@ export class ValidationMiddleware implements ICommandMiddleware {
     if (!command.commandType) {
       throw new Error('Command must have a commandType');
     }
-    
+
     // Could add class-validator validation here
     return next();
   }
@@ -205,14 +215,14 @@ export class RetryMiddleware implements ICommandMiddleware {
   ) {}
 
   async handle(command: ICommand, next: () => Promise<any>): Promise<any> {
-    let lastError: Error;
-    
+    let lastError: Error | undefined;
+
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
         return await next();
       } catch (error) {
         lastError = error;
-        
+
         if (attempt < this.maxRetries) {
           this.logger.warn(
             `Command ${command.commandType} failed (attempt ${attempt}/${this.maxRetries}), retrying...`,
@@ -221,18 +231,21 @@ export class RetryMiddleware implements ICommandMiddleware {
         }
       }
     }
-    
-    throw lastError;
+
+    throw lastError!;
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
 // Rate Limiting Middleware
 export class RateLimitMiddleware implements ICommandMiddleware {
-  private readonly counters = new Map<string, { count: number; resetAt: number }>();
+  private readonly counters = new Map<
+    string,
+    { count: number; resetAt: number }
+  >();
 
   constructor(
     private readonly limit: number = 100,
@@ -242,20 +255,20 @@ export class RateLimitMiddleware implements ICommandMiddleware {
   async handle(command: ICommand, next: () => Promise<any>): Promise<any> {
     const key = command.metadata?.userId || 'anonymous';
     const now = Date.now();
-    
+
     let counter = this.counters.get(key);
-    
+
     if (!counter || counter.resetAt < now) {
       counter = { count: 0, resetAt: now + this.windowMs };
       this.counters.set(key, counter);
     }
-    
+
     counter.count++;
-    
+
     if (counter.count > this.limit) {
       throw new Error('Rate limit exceeded for commands');
     }
-    
+
     return next();
   }
 }

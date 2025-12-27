@@ -138,7 +138,7 @@ export class RealtimeGateway
 
       // Remove from user's socket set
       this.userSockets.get(userId)?.delete(client.id);
-      
+
       // If user has no more connections, mark as offline
       if (this.userSockets.get(userId)?.size === 0) {
         this.userSockets.delete(userId);
@@ -182,9 +182,14 @@ export class RealtimeGateway
     }
 
     await client.join(`portal:${data.portalId}`);
-    
+
     // Update presence with current portal
-    await this.updatePresence(metadata.workspaceId, metadata.userId, 'online', data.portalId);
+    await this.updatePresence(
+      metadata.workspaceId,
+      metadata.userId,
+      'online',
+      data.portalId,
+    );
 
     // Notify portal viewers
     client.to(`portal:${data.portalId}`).emit('portal:viewer:joined', {
@@ -207,7 +212,7 @@ export class RealtimeGateway
     if (!metadata) return;
 
     await client.leave(`portal:${data.portalId}`);
-    
+
     // Update presence to remove current portal
     await this.updatePresence(metadata.workspaceId, metadata.userId, 'online');
 
@@ -267,7 +272,8 @@ export class RealtimeGateway
   @SubscribeMessage('selection:change')
   async handleSelectionChange(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { portalId: string; widgetId?: string; selection: any },
+    @MessageBody()
+    data: { portalId: string; widgetId?: string; selection: any },
   ): Promise<void> {
     const metadata = this.connections.get(client.id);
     if (!metadata) return;
@@ -473,7 +479,9 @@ export class RealtimeGateway
     return null;
   }
 
-  private async verifyToken(token: string): Promise<{ userId: string; workspaceId: string }> {
+  private async verifyToken(
+    token: string,
+  ): Promise<{ userId: string; workspaceId: string }> {
     try {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: this.configService.get('jwt.secret'),
@@ -506,9 +514,9 @@ export class RealtimeGateway
     connectionsByWorkspace: Record<string, number>;
   } {
     const connectionsByWorkspace: Record<string, number> = {};
-    
+
     for (const metadata of this.connections.values()) {
-      connectionsByWorkspace[metadata.workspaceId] = 
+      connectionsByWorkspace[metadata.workspaceId] =
         (connectionsByWorkspace[metadata.workspaceId] || 0) + 1;
     }
 

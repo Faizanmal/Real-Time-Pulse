@@ -13,6 +13,7 @@ import { CacheService } from '../cache/cache.service';
 import { AuditService } from '../audit/audit.service';
 import { RecaptchaService } from '../common/services/recaptcha.service';
 import { RateLimitService } from '../common/services/rate-limit.service';
+import { EmailService } from '../email/email.service';
 import { JwtPayload } from 'jsonwebtoken';
 
 // Extend JwtPayload to include exp
@@ -59,7 +60,6 @@ export class AuthService {
     private readonly firebaseAuthService: FirebaseAuthService,
     private readonly emailService: EmailService,
   ) {}
-import { EmailService } from '../email/email.service';
 
   /**
    * Sign up a new user with email/password

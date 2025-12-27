@@ -15,31 +15,40 @@ export default registerAs('observability', () => ({
     serviceName: process.env.OTEL_SERVICE_NAME || 'real-time-pulse',
     serviceVersion: process.env.npm_package_version || '2.0.0',
     environment: process.env.NODE_ENV || 'development',
-    
+
     // Tracing
     tracing: {
       enabled: true,
       exporter: process.env.OTEL_TRACES_EXPORTER || 'jaeger', // jaeger | zipkin | otlp
-      endpoint: process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT || 'http://localhost:14268/api/traces',
+      endpoint:
+        process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT ||
+        'http://localhost:14268/api/traces',
       samplingRatio: parseFloat(process.env.OTEL_SAMPLING_RATIO || '1.0'),
       propagators: ['tracecontext', 'baggage', 'b3'],
     },
-    
+
     // Metrics
     metrics: {
       enabled: true,
       exporter: process.env.OTEL_METRICS_EXPORTER || 'prometheus', // prometheus | otlp
-      endpoint: process.env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT || 'http://localhost:4318/v1/metrics',
-      exportIntervalMillis: parseInt(process.env.OTEL_METRICS_EXPORT_INTERVAL || '60000', 10),
+      endpoint:
+        process.env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT ||
+        'http://localhost:4318/v1/metrics',
+      exportIntervalMillis: parseInt(
+        process.env.OTEL_METRICS_EXPORT_INTERVAL || '60000',
+        10,
+      ),
     },
-    
+
     // Logs
     logs: {
       enabled: true,
       exporter: process.env.OTEL_LOGS_EXPORTER || 'otlp',
-      endpoint: process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT || 'http://localhost:4318/v1/logs',
+      endpoint:
+        process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT ||
+        'http://localhost:4318/v1/logs',
     },
-    
+
     // Resource Attributes
     resourceAttributes: {
       'deployment.environment': process.env.NODE_ENV,
@@ -72,7 +81,7 @@ export default registerAs('observability', () => ({
         help: 'Total number of HTTP requests',
         labelNames: ['method', 'route', 'status_code'],
       },
-      
+
       // Business Metrics
       activePortals: {
         name: 'pulse_active_portals_total',
@@ -104,7 +113,7 @@ export default registerAs('observability', () => ({
         help: 'Total number of webhook deliveries',
         labelNames: ['status', 'event'],
       },
-      
+
       // WebSocket Metrics
       wsConnections: {
         name: 'pulse_websocket_connections',
@@ -116,7 +125,7 @@ export default registerAs('observability', () => ({
         help: 'Total number of WebSocket messages',
         labelNames: ['namespace', 'event', 'direction'],
       },
-      
+
       // Queue Metrics
       queueJobsProcessed: {
         name: 'pulse_queue_jobs_processed_total',
@@ -137,7 +146,9 @@ export default registerAs('observability', () => ({
     enabled: process.env.JAEGER_ENABLED === 'true',
     agentHost: process.env.JAEGER_AGENT_HOST || 'localhost',
     agentPort: parseInt(process.env.JAEGER_AGENT_PORT || '6832', 10),
-    collectorEndpoint: process.env.JAEGER_COLLECTOR_ENDPOINT || 'http://localhost:14268/api/traces',
+    collectorEndpoint:
+      process.env.JAEGER_COLLECTOR_ENDPOINT ||
+      'http://localhost:14268/api/traces',
     samplerType: process.env.JAEGER_SAMPLER_TYPE || 'probabilistic',
     samplerParam: parseFloat(process.env.JAEGER_SAMPLER_PARAM || '1.0'),
     logSpans: process.env.NODE_ENV !== 'production',
@@ -146,7 +157,7 @@ export default registerAs('observability', () => ({
   // APM Integration (New Relic / DataDog / Dynatrace)
   apm: {
     provider: process.env.APM_PROVIDER, // newrelic | datadog | dynatrace | elastic
-    
+
     newrelic: {
       enabled: process.env.NEW_RELIC_ENABLED === 'true',
       licenseKey: process.env.NEW_RELIC_LICENSE_KEY,
@@ -157,7 +168,7 @@ export default registerAs('observability', () => ({
         level: 'info',
       },
     },
-    
+
     datadog: {
       enabled: process.env.DD_ENABLED === 'true',
       apiKey: process.env.DD_API_KEY,
@@ -169,14 +180,14 @@ export default registerAs('observability', () => ({
       profiling: process.env.DD_PROFILING_ENABLED === 'true',
       runtimeMetrics: true,
     },
-    
+
     dynatrace: {
       enabled: process.env.DT_ENABLED === 'true',
       apiToken: process.env.DT_API_TOKEN,
       environmentUrl: process.env.DT_ENVIRONMENT_URL,
       applicationId: process.env.DT_APPLICATION_ID,
     },
-    
+
     elastic: {
       enabled: process.env.ELASTIC_APM_ENABLED === 'true',
       serverUrl: process.env.ELASTIC_APM_SERVER_URL || 'http://localhost:8200',
@@ -194,8 +205,12 @@ export default registerAs('observability', () => ({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV,
     release: process.env.npm_package_version,
-    tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || '1.0'),
-    profilesSampleRate: parseFloat(process.env.SENTRY_PROFILES_SAMPLE_RATE || '1.0'),
+    tracesSampleRate: parseFloat(
+      process.env.SENTRY_TRACES_SAMPLE_RATE || '1.0',
+    ),
+    profilesSampleRate: parseFloat(
+      process.env.SENTRY_PROFILES_SAMPLE_RATE || '1.0',
+    ),
     attachStacktrace: true,
     integrations: ['http', 'express', 'prisma', 'redis'],
     beforeSend: (event: any) => {
@@ -211,10 +226,12 @@ export default registerAs('observability', () => ({
   // Log Aggregation (ELK / Loki)
   logAggregation: {
     provider: process.env.LOG_AGGREGATION_PROVIDER || 'loki', // elasticsearch | loki
-    
+
     elasticsearch: {
       enabled: process.env.ELASTICSEARCH_ENABLED === 'true',
-      nodes: (process.env.ELASTICSEARCH_NODES || 'http://localhost:9200').split(','),
+      nodes: (process.env.ELASTICSEARCH_NODES || 'http://localhost:9200').split(
+        ',',
+      ),
       index: process.env.ELASTICSEARCH_INDEX || 'pulse-logs',
       auth: {
         username: process.env.ELASTICSEARCH_USERNAME,
@@ -222,7 +239,7 @@ export default registerAs('observability', () => ({
         apiKey: process.env.ELASTICSEARCH_API_KEY,
       },
     },
-    
+
     loki: {
       enabled: process.env.LOKI_ENABLED === 'true',
       host: process.env.LOKI_HOST || 'http://localhost:3100',
@@ -258,22 +275,22 @@ export default registerAs('observability', () => ({
   alerting: {
     enabled: process.env.ALERTING_ENABLED === 'true',
     provider: process.env.ALERTING_PROVIDER || 'pagerduty', // pagerduty | opsgenie | victorops
-    
+
     pagerduty: {
       serviceKey: process.env.PAGERDUTY_SERVICE_KEY,
       integrationKey: process.env.PAGERDUTY_INTEGRATION_KEY,
     },
-    
+
     opsgenie: {
       apiKey: process.env.OPSGENIE_API_KEY,
       region: process.env.OPSGENIE_REGION || 'us',
     },
-    
+
     slack: {
       webhookUrl: process.env.SLACK_ALERTS_WEBHOOK_URL,
       channel: process.env.SLACK_ALERTS_CHANNEL || '#alerts',
     },
-    
+
     rules: {
       errorRate: {
         threshold: 5, // errors per minute

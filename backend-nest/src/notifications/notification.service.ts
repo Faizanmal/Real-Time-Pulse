@@ -2,7 +2,7 @@
  * =============================================================================
  * REAL-TIME PULSE - NOTIFICATION SERVICE
  * =============================================================================
- * 
+ *
  * Multi-channel notification system supporting email, push, SMS, and in-app.
  */
 
@@ -23,7 +23,13 @@ interface NotificationPayload {
   scheduledFor?: Date;
 }
 
-type NotificationChannel = 'email' | 'push' | 'sms' | 'in-app' | 'slack' | 'webhook';
+type NotificationChannel =
+  | 'email'
+  | 'push'
+  | 'sms'
+  | 'in-app'
+  | 'slack'
+  | 'webhook';
 
 interface EmailOptions {
   to: string;
@@ -127,7 +133,10 @@ export class NotificationService implements OnModuleInit {
     // Send through each channel
     const promises = channels.map(async (channel) => {
       // Check if user has enabled this channel
-      if (preferences && !this.isChannelEnabled(preferences, channel, payload.type)) {
+      if (
+        preferences &&
+        !this.isChannelEnabled(preferences, channel, payload.type)
+      ) {
         return;
       }
 
@@ -221,7 +230,7 @@ export class NotificationService implements OnModuleInit {
 
     // Use configured email provider
     const provider = this.config.get('EMAIL_PROVIDER');
-    
+
     switch (provider) {
       case 'sendgrid':
         await this.sendWithSendGrid(options);
@@ -397,7 +406,9 @@ export class NotificationService implements OnModuleInit {
       },
       body: JSON.stringify({
         personalizations: [{ to: [{ email: options.to }] }],
-        from: { email: this.config.get('EMAIL_FROM') || 'noreply@realtimepulse.io' },
+        from: {
+          email: this.config.get('EMAIL_FROM') || 'noreply@realtimepulse.io',
+        },
         subject: options.subject,
         content: [
           { type: 'text/plain', value: options.text },
@@ -483,7 +494,9 @@ export class NotificationService implements OnModuleInit {
     this.preferences.set(preferences.userId, preferences);
   }
 
-  async getPreferences(userId: string): Promise<NotificationPreferences | undefined> {
+  async getPreferences(
+    userId: string,
+  ): Promise<NotificationPreferences | undefined> {
     return this.preferences.get(userId);
   }
 
@@ -536,7 +549,9 @@ export class NotificationService implements OnModuleInit {
   private getNextActiveTime(preferences?: NotificationPreferences): Date {
     if (!preferences?.quietHours) return new Date();
 
-    const [endHour, endMinute] = preferences.quietHours.end.split(':').map(Number);
+    const [endHour, endMinute] = preferences.quietHours.end
+      .split(':')
+      .map(Number);
     const next = new Date();
     next.setHours(endHour, endMinute, 0, 0);
 
@@ -616,7 +631,9 @@ export class NotificationService implements OnModuleInit {
   }
 
   private interpolate(template: string, data: Record<string, unknown>): string {
-    return template.replace(/\{\{(\w+)\}\}/g, (_, key) => String(data[key] || ''));
+    return template.replace(/\{\{(\w+)\}\}/g, (_, key) =>
+      String(data[key] || ''),
+    );
   }
 
   private wrapHtmlEmail(title: string, body: string): string {
@@ -670,20 +687,16 @@ export class NotificationService implements OnModuleInit {
 
   private async getUserPushTokens(userId: string): Promise<string[]> {
     try {
-      // Check if user has notification settings with push tokens stored
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { 
-          id: true,
-          // Attempt to get push tokens from user settings if available
+      // Get push tokens from the PushToken table
+      const pushTokens = await this.prisma.pushToken.findMany({
+        where: {
+          userId,
+          isActive: true,
         },
+        select: { token: true },
       });
-      
-      if (!user) return [];
-      
-      // Push tokens would typically be stored in a separate table or user settings
-      // Return empty array if not implemented - can be extended when push notifications are set up
-      return [];
+
+      return pushTokens.map((t) => t.token);
     } catch (error) {
       this.logger.error(`Failed to get push tokens for user ${userId}`, error);
       return [];
@@ -710,25 +723,31 @@ export class NotificationService implements OnModuleInit {
         where: { id: userId },
         select: { workspaceId: true },
       });
-      
+
       if (!user?.workspaceId) return null;
-      
+
       const slackIntegration = await this.prisma.integration.findFirst({
         where: {
           workspaceId: user.workspaceId,
           provider: 'SLACK',
-          status: 'CONNECTED',
+          status: 'ACTIVE',
         },
         select: { settings: true },
       });
-      
-      if (slackIntegration?.settings && typeof slackIntegration.settings === 'object') {
+
+      if (
+        slackIntegration?.settings &&
+        typeof slackIntegration.settings === 'object'
+      ) {
         const settings = slackIntegration.settings as Record<string, unknown>;
         return (settings.webhookUrl as string) ?? null;
       }
       return null;
     } catch (error) {
-      this.logger.error(`Failed to get Slack webhook for user ${userId}`, error);
+      this.logger.error(
+        `Failed to get Slack webhook for user ${userId}`,
+        error,
+      );
       return null;
     }
   }
@@ -740,9 +759,9 @@ export class NotificationService implements OnModuleInit {
         where: { id: userId },
         select: { workspaceId: true },
       });
-      
+
       if (!user?.workspaceId) return null;
-      
+
       const webhook = await this.prisma.webhook.findFirst({
         where: {
           workspaceId: user.workspaceId,
@@ -751,7 +770,7 @@ export class NotificationService implements OnModuleInit {
         },
         select: { url: true },
       });
-      
+
       return webhook?.url ?? null;
     } catch (error) {
       this.logger.error(`Failed to get webhook for user ${userId}`, error);

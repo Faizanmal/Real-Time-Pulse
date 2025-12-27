@@ -9,7 +9,10 @@ import { Reflector } from '@nestjs/core';
 import { Observable, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { v4 as uuidv4 } from 'uuid';
-import { TRACE_METADATA_KEY, TraceMetadata } from '../decorators/trace.decorator';
+import {
+  TRACE_METADATA_KEY,
+  TraceMetadata,
+} from '../decorators/trace.decorator';
 
 interface TraceContext {
   correlationId: string;

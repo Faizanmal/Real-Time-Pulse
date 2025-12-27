@@ -81,10 +81,7 @@ export class IndustrySolutionsController {
   }
 
   @Get('deployments/:id/compliance')
-  async getComplianceCheck(
-    @Param('id') deploymentId: string,
-    @Req() req: any,
-  ) {
+  async getComplianceCheck(@Param('id') deploymentId: string, @Req() req: any) {
     return this.industrySolutionsService.getComplianceCheck(
       deploymentId,
       req.user.workspaceId,
@@ -109,9 +106,6 @@ export class IndustrySolutionsController {
     @Param('id') templateId: string,
     @Body() data: { rating: number },
   ) {
-    return this.industrySolutionsService.rateTemplate(
-      templateId,
-      data.rating,
-    );
+    return this.industrySolutionsService.rateTemplate(templateId, data.rating);
   }
 }

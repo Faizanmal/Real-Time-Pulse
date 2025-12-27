@@ -1,12 +1,15 @@
 import { Module, Global } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { RedisService } from './redis.service';
 import { CacheService } from './cache.service';
+import { AdvancedCacheService } from './advanced-cache.service';
 
 @Global()
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
     BullModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
         redis: {
@@ -19,7 +22,7 @@ import { CacheService } from './cache.service';
       inject: [ConfigService],
     }),
   ],
-  providers: [RedisService, CacheService],
-  exports: [RedisService, CacheService, BullModule],
+  providers: [RedisService, CacheService, AdvancedCacheService],
+  exports: [RedisService, CacheService, AdvancedCacheService, BullModule],
 })
 export class CacheModule {}

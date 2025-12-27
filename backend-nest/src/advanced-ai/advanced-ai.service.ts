@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AIModelType, AIProvider, AIQueryType } from '@prisma/client';
 
@@ -81,11 +85,14 @@ export class AdvancedAiService {
     });
   }
 
-  async getPredictions(workspaceId: string, filters?: {
-    modelId?: string;
-    portalId?: string;
-    widgetId?: string;
-  }) {
+  async getPredictions(
+    workspaceId: string,
+    filters?: {
+      modelId?: string;
+      portalId?: string;
+      widgetId?: string;
+    },
+  ) {
     return this.prisma.aIPrediction.findMany({
       where: {
         workspaceId,
@@ -117,7 +124,12 @@ export class AdvancedAiService {
     }
 
     // Process query (integrate with OpenAI/Anthropic)
-    const response = await this.processQuery(model, query, workspaceId, portalId);
+    const response = await this.processQuery(
+      model,
+      query,
+      workspaceId,
+      portalId,
+    );
 
     // Save query
     return this.prisma.aIQuery.create({
@@ -197,7 +209,11 @@ export class AdvancedAiService {
     }
 
     // Run forecasting algorithm
-    const forecast = await this.runForecasting(model, data.historicalData, data.forecastPeriods);
+    const forecast = await this.runForecasting(
+      model,
+      data.historicalData,
+      data.forecastPeriods,
+    );
 
     return this.prisma.aIPrediction.create({
       data: {
@@ -221,7 +237,10 @@ export class AdvancedAiService {
       timeSeries: Array<{ timestamp: Date; value: number }>;
     },
   ) {
-    const models = await this.getModels(workspaceId, AIModelType.ANOMALY_DETECTION);
+    const models = await this.getModels(
+      workspaceId,
+      AIModelType.ANOMALY_DETECTION,
+    );
     const model = models[0];
 
     if (!model) {
@@ -238,11 +257,11 @@ export class AdvancedAiService {
   }
 
   // Recommendations
-  async generateRecommendations(
-    workspaceId: string,
-    portalId: string,
-  ) {
-    const models = await this.getModels(workspaceId, AIModelType.RECOMMENDATION);
+  async generateRecommendations(workspaceId: string, portalId: string) {
+    const models = await this.getModels(
+      workspaceId,
+      AIModelType.RECOMMENDATION,
+    );
     const model = models[0];
 
     if (!model) {
@@ -250,7 +269,11 @@ export class AdvancedAiService {
       return this.getDefaultRecommendations(workspaceId, portalId);
     }
 
-    const recommendations = await this.runRecommendationEngine(model, workspaceId, portalId);
+    const recommendations = await this.runRecommendationEngine(
+      model,
+      workspaceId,
+      portalId,
+    );
 
     return recommendations;
   }
@@ -273,10 +296,15 @@ export class AdvancedAiService {
     };
   }
 
-  private async processQuery(model: any, query: string, workspaceId: string, portalId?: string) {
+  private async processQuery(
+    model: any,
+    query: string,
+    workspaceId: string,
+    portalId?: string,
+  ) {
     // Simulate NLP processing
     // In production, use OpenAI GPT-4, Claude, etc.
-    
+
     const answer = {
       text: `Analysis for: ${query}`,
       insights: [
@@ -308,20 +336,25 @@ export class AdvancedAiService {
     const startTime = Date.now();
 
     // Simple linear regression for demo
-    const predictions = [];
-    const values = historicalData.map(d => d.value);
-    const avgGrowth = values.length > 1 
-      ? (values[values.length - 1] - values[0]) / values.length 
-      : 0;
+    const predictions: Array<{
+      period: number;
+      value: number;
+      confidence: number;
+    }> = [];
+    const values = historicalData.map((d) => d.value);
+    const avgGrowth =
+      values.length > 1
+        ? (values[values.length - 1] - values[0]) / values.length
+        : 0;
 
     let lastValue = values[values.length - 1];
-    
+
     for (let i = 0; i < periods; i++) {
       lastValue += avgGrowth;
       predictions.push({
         period: i + 1,
         value: Math.max(0, lastValue),
-        confidence: Math.max(0.5, 1 - (i * 0.05)),
+        confidence: Math.max(0.5, 1 - i * 0.05),
       });
     }
 
@@ -337,13 +370,18 @@ export class AdvancedAiService {
     timeSeries: Array<{ timestamp: Date; value: number }>,
   ) {
     // Simple z-score based anomaly detection for demo
-    const values = timeSeries.map(d => d.value);
+    const values = timeSeries.map((d) => d.value);
     const mean = values.reduce((a, b) => a + b, 0) / values.length;
     const stdDev = Math.sqrt(
       values.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / values.length,
     );
 
-    const anomalies = [];
+    const anomalies: Array<{
+      timestamp: Date;
+      value: number;
+      zScore: number;
+      severity: string;
+    }> = [];
     const threshold = 2; // 2 standard deviations
 
     timeSeries.forEach((point, index) => {
@@ -361,12 +399,19 @@ export class AdvancedAiService {
     return anomalies;
   }
 
-  private async runRecommendationEngine(model: any, workspaceId: string, portalId: string) {
+  private async runRecommendationEngine(
+    model: any,
+    workspaceId: string,
+    portalId: string,
+  ) {
     // Simulate recommendation engine
     return this.getDefaultRecommendations(workspaceId, portalId);
   }
 
-  private async getDefaultRecommendations(workspaceId: string, portalId: string) {
+  private async getDefaultRecommendations(
+    workspaceId: string,
+    portalId: string,
+  ) {
     // Get portal data
     const portal = await this.prisma.portal.findUnique({
       where: { id: portalId },
@@ -379,22 +424,29 @@ export class AdvancedAiService {
       return [];
     }
 
-    const recommendations = [];
+    const recommendations: Array<{
+      type: string;
+      title: string;
+      description: string;
+      priority: string;
+    }> = [];
 
     // Check widget count
     if (portal.widgets.length < 3) {
       recommendations.push({
         type: 'ADD_WIDGETS',
         title: 'Add more widgets',
-        description: 'Your dashboard has few widgets. Consider adding more visualizations.',
+        description:
+          'Your dashboard has few widgets. Consider adding more visualizations.',
         priority: 'MEDIUM',
       });
     }
 
     // Check for data freshness
-    const staleWidgets = portal.widgets.filter(w => {
+    const staleWidgets = portal.widgets.filter((w) => {
       if (!w.lastRefreshedAt) return true;
-      const hoursSinceRefresh = (Date.now() - w.lastRefreshedAt.getTime()) / (1000 * 60 * 60);
+      const hoursSinceRefresh =
+        (Date.now() - w.lastRefreshedAt.getTime()) / (1000 * 60 * 60);
       return hoursSinceRefresh > 24;
     });
 
@@ -413,15 +465,15 @@ export class AdvancedAiService {
   private generateSQLFromQuery(query: string): string {
     // Simple keyword-based SQL generation for demo
     const lowerQuery = query.toLowerCase();
-    
+
     if (lowerQuery.includes('total') || lowerQuery.includes('count')) {
       return 'SELECT COUNT(*) as total FROM portals';
     }
-    
+
     if (lowerQuery.includes('recent') || lowerQuery.includes('latest')) {
       return 'SELECT * FROM portals ORDER BY created_at DESC LIMIT 10';
     }
-    
+
     return 'SELECT * FROM portals';
   }
 }

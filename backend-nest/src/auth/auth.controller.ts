@@ -94,7 +94,6 @@ export class AuthController {
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Handle Google OAuth callback' })
   async googleAuthCallback(@Req() req: any, @Res() res: Response) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
     const result = await this.authService.googleAuth(req.user);
 
     // Redirect to frontend with token
@@ -117,7 +116,6 @@ export class AuthController {
   @UseGuards(GitHubAuthGuard)
   @ApiOperation({ summary: 'Handle GitHub OAuth callback' })
   async githubAuthCallback(@Req() req: any, @Res() res: Response) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
     const result = await this.authService.githubAuth(req.user);
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';

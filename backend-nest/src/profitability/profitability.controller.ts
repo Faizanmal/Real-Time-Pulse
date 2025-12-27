@@ -201,17 +201,13 @@ export class ProfitabilityController {
   @Get('workspace/:workspaceId/client-scoring')
   @ApiOperation({ summary: 'Get client profitability scoring' })
   async getClientScoring(@Param('workspaceId') workspaceId: string) {
-    return this.profitabilityService.getClientProfitabilityScoring(
-      workspaceId,
-    );
+    return this.profitabilityService.getClientProfitabilityScoring(workspaceId);
   }
 
   @Get('workspace/:workspaceId/resource-utilization')
   @ApiOperation({ summary: 'Get resource utilization metrics' })
   async getResourceUtilization(@Param('workspaceId') workspaceId: string) {
-    return this.profitabilityService.getResourceUtilizationMetrics(
-      workspaceId,
-    );
+    return this.profitabilityService.getResourceUtilizationMetrics(workspaceId);
   }
 
   @Get('workspace/:workspaceId/summary')

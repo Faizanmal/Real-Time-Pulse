@@ -299,13 +299,19 @@ export const arVisualizationApi = {
   getSessions: (sceneId: string) => {
     return apiClient.get<ARSession[]>(`/ar-visualization/scenes/${sceneId}/sessions`);
   },
+  getAllSessions: () => {
+    return apiClient.get<ARSession[]>(`/ar-visualization/sessions`);
+  },
 
   createSession: (sceneId: string, data: { deviceType: string }) => {
     return apiClient.post<ARSession>(`/ar-visualization/scenes/${sceneId}/sessions`, data);
   },
+  startSession: (sceneId: string, deviceType: string) => {
+    return apiClient.post<ARSession>(`/ar-visualization/scenes/${sceneId}/sessions`, { deviceType });
+  },
 
-  endSession: (sessionId: string, data: { duration: number; interactions?: any }) => {
-    return apiClient.patch(`/ar-visualization/sessions/${sessionId}/end`, data);
+  endSession: (sessionId: string, data?: { duration: number; interactions?: any }) => {
+    return apiClient.patch(`/ar-visualization/sessions/${sessionId}/end`, data || {});
   },
 };
 

@@ -43,9 +43,8 @@ export class ComplianceService {
 
     // Collect metrics
     const consentStats = await this.gdprService.getConsentStats(workspaceId);
-    const requestStats = await this.gdprService.getDataRequestStats(
-      workspaceId,
-    );
+    const requestStats =
+      await this.gdprService.getDataRequestStats(workspaceId);
 
     // Calculate compliance score (0-100)
     const complianceScore = this.calculateComplianceScore({
@@ -81,7 +80,7 @@ export class ComplianceService {
         workspaceId,
         reportType,
         period,
-        totalDataSubjects: this.countUniqueDataSubjects(workspaceId),
+        totalDataSubjects: await this.countUniqueDataSubjects(workspaceId),
         activeConsents: consentStats.active,
         revokedConsents: consentStats.revoked,
         dataRequests: requestStats.total,
@@ -177,7 +176,7 @@ export class ComplianceService {
     requestStats: any;
     complianceScore: number;
   }): any[] {
-    const findings = [];
+    const findings: any[] = [];
 
     // Consent findings
     if (data.consentStats.expired > 0) {
@@ -241,7 +240,7 @@ export class ComplianceService {
     requestStats: any;
     complianceScore: number;
   }): any[] {
-    const recommendations = [];
+    const recommendations: any[] = [];
 
     if (data.consentStats.expired > 0) {
       recommendations.push({
@@ -322,15 +321,15 @@ export class ComplianceService {
     summary += `- Average Response Time: ${data.requestStats.avgResponseTimeHours.toFixed(1)} hours\n\n`;
 
     if (data.complianceScore >= 90) {
-      summary += 'Overall, GDPR compliance is excellent with strong processes in place.';
+      summary +=
+        'Overall, GDPR compliance is excellent with strong processes in place.';
     } else if (data.complianceScore >= 75) {
       summary += 'GDPR compliance is good with minor areas for improvement.';
     } else if (data.complianceScore >= 60) {
       summary +=
         'GDPR compliance requires attention in several areas to meet best practices.';
     } else {
-      summary +=
-        'Immediate action required to address GDPR compliance gaps.';
+      summary += 'Immediate action required to address GDPR compliance gaps.';
     }
 
     return summary;
@@ -359,9 +358,8 @@ export class ComplianceService {
 
   async getComplianceDashboard(workspaceId: string) {
     const consentStats = await this.gdprService.getConsentStats(workspaceId);
-    const requestStats = await this.gdprService.getDataRequestStats(
-      workspaceId,
-    );
+    const requestStats =
+      await this.gdprService.getDataRequestStats(workspaceId);
     const complianceScore = this.calculateComplianceScore({
       consentStats,
       requestStats,

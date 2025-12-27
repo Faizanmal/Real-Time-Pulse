@@ -5,12 +5,12 @@
  * GraphQL resolver for Portal operations with subscriptions and data loading.
  */
 
-import { 
-  Resolver, 
-  Query, 
-  Mutation, 
-  Subscription, 
-  Args, 
+import {
+  Resolver,
+  Query,
+  Mutation,
+  Subscription,
+  Args,
   ID,
   ResolveField,
   Parent,
@@ -25,10 +25,10 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { DataLoaderService } from '../dataloader.service';
 
 // GraphQL Object Types (would be defined in separate files)
-import { 
-  PortalType, 
-  WidgetType, 
-  CreatePortalInput, 
+import {
+  PortalType,
+  WidgetType,
+  CreatePortalInput,
   UpdatePortalInput,
   PortalConnection,
   PortalFilterInput,
@@ -48,7 +48,10 @@ export class PortalResolver {
   // QUERIES
   // ============================================
 
-  @Query(() => PortalType, { nullable: true, description: 'Get a portal by ID' })
+  @Query(() => PortalType, {
+    nullable: true,
+    description: 'Get a portal by ID',
+  })
   @UseGuards(GqlAuthGuard)
   async portal(
     @Args('id', { type: () => ID }) id: string,
@@ -65,14 +68,15 @@ export class PortalResolver {
   @Query(() => PortalConnection, { description: 'Get paginated portals' })
   @UseGuards(GqlAuthGuard)
   async portals(
-    @Args('first', { type: () => Int, nullable: true, defaultValue: 10 }) first: number,
+    @Args('first', { type: () => Int, nullable: true, defaultValue: 10 })
+    first: number,
     @Args('after', { nullable: true }) after: string,
     @Args('filter', { nullable: true }) filter: PortalFilterInput,
     @Args('sort', { nullable: true }) sort: PortalSortInput,
     @CurrentUser() user: any,
   ): Promise<any> {
     const where: any = { workspaceId: user.workspaceId };
-    
+
     // Apply filters
     if (filter) {
       if (filter.search) {
@@ -88,7 +92,10 @@ export class PortalResolver {
         where.createdAt = { gte: new Date(filter.createdAfter) };
       }
       if (filter.createdBefore) {
-        where.createdAt = { ...where.createdAt, lte: new Date(filter.createdBefore) };
+        where.createdAt = {
+          ...where.createdAt,
+          lte: new Date(filter.createdBefore),
+        };
       }
     }
 
@@ -100,7 +107,7 @@ export class PortalResolver {
 
     // Apply sorting
     const orderBy: any = {};
-    if (sort) {
+    if (sort && sort.field) {
       orderBy[sort.field] = sort.direction;
     } else {
       orderBy.createdAt = 'desc';
@@ -114,7 +121,7 @@ export class PortalResolver {
     });
 
     const hasNextPage = portals.length > first;
-    const edges = portals.slice(0, first).map(portal => ({
+    const edges = portals.slice(0, first).map((portal) => ({
       cursor: portal.id,
       node: portal,
     }));
@@ -127,7 +134,9 @@ export class PortalResolver {
         startCursor: edges[0]?.cursor,
         endCursor: edges[edges.length - 1]?.cursor,
       },
-      totalCount: await this.prisma.portal.count({ where: { workspaceId: user.workspaceId } }),
+      totalCount: await this.prisma.portal.count({
+        where: { workspaceId: user.workspaceId },
+      }),
     };
   }
 
@@ -144,10 +153,11 @@ export class PortalResolver {
     });
   }
 
-  @Query(() => PortalType, { nullable: true, description: 'Get portal by share token (public)' })
-  async publicPortal(
-    @Args('shareToken') shareToken: string,
-  ): Promise<any> {
+  @Query(() => PortalType, {
+    nullable: true,
+    description: 'Get portal by share token (public)',
+  })
+  async publicPortal(@Args('shareToken') shareToken: string): Promise<any> {
     return this.prisma.portal.findFirst({
       where: {
         shareToken,
@@ -179,7 +189,7 @@ export class PortalResolver {
     });
 
     // Publish event for subscriptions
-    pubSub.publish('portalCreated', { 
+    pubSub.publish('portalCreated', {
       portalCreated: portal,
       workspaceId: user.workspaceId,
     });
@@ -215,7 +225,7 @@ export class PortalResolver {
     });
 
     // Publish event for subscriptions
-    pubSub.publish('portalUpdated', { 
+    pubSub.publish('portalUpdated', {
       portalUpdated: portal,
       workspaceId: user.workspaceId,
     });
@@ -241,7 +251,7 @@ export class PortalResolver {
     await this.prisma.portal.delete({ where: { id } });
 
     // Publish event for subscriptions
-    pubSub.publish('portalDeleted', { 
+    pubSub.publish('portalDeleted', {
       portalDeleted: id,
       workspaceId: user.workspaceId,
     });
@@ -276,7 +286,7 @@ export class PortalResolver {
         workspaceId: user.workspaceId,
         createdById: user.id,
         widgets: {
-          create: original.widgets.map(widget => ({
+          create: original.widgets.map((widget) => ({
             name: widget.name,
             type: widget.type,
             config: widget.config as any,
@@ -299,35 +309,35 @@ export class PortalResolver {
   // SUBSCRIPTIONS
   // ============================================
 
-  @Subscription(() => PortalType, {
-    description: 'Subscribe to portal creation events',
-    filter: (payload, variables, context) => {
-      return payload.workspaceId === context.workspaceId;
-    },
-  })
-  portalCreated() {
-    return pubSub.asyncIterator('portalCreated');
-  }
+  // @Subscription(() => PortalType, {
+  //   description: 'Subscribe to portal creation events',
+  //   filter: (payload, variables, context) => {
+  //     return payload.workspaceId === context.workspaceId;
+  //   },
+  // })
+  // portalCreated() {
+  //   return pubSub.asyncIterator('portalCreated');
+  // }
 
-  @Subscription(() => PortalType, {
-    description: 'Subscribe to portal update events',
-    filter: (payload, variables, context) => {
-      return payload.workspaceId === context.workspaceId;
-    },
-  })
-  portalUpdated() {
-    return pubSub.asyncIterator('portalUpdated');
-  }
+  // @Subscription(() => PortalType, {
+  //   description: 'Subscribe to portal update events',
+  //   filter: (payload, variables, context) => {
+  //     return payload.workspaceId === context.workspaceId;
+  //   },
+  // })
+  // portalUpdated() {
+  //   return pubSub.asyncIterator('portalUpdated');
+  // }
 
-  @Subscription(() => ID, {
-    description: 'Subscribe to portal deletion events',
-    filter: (payload, variables, context) => {
-      return payload.workspaceId === context.workspaceId;
-    },
-  })
-  portalDeleted() {
-    return pubSub.asyncIterator('portalDeleted');
-  }
+  // @Subscription(() => ID, {
+  //   description: 'Subscribe to portal deletion events',
+  //   filter: (payload, variables, context) => {
+  //     return payload.workspaceId === context.workspaceId;
+  //   },
+  // })
+  // portalDeleted() {
+  //   return pubSub.asyncIterator('portalDeleted');
+  // }
 
   // ============================================
   // FIELD RESOLVERS (with DataLoader)
@@ -375,10 +385,13 @@ export class PortalResolver {
   // ============================================
 
   private generateSlug(name: string): string {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '')
-      + '-' + Date.now().toString(36);
+    return (
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '') +
+      '-' +
+      Date.now().toString(36)
+    );
   }
 }

@@ -27,17 +27,15 @@ export class EmailService {
   }
 
   private initializeTransporter() {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const config = this.configService.get('email');
 
     this.transporter = nodemailer.createTransport({
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       host: config.host as string,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
       port: config.port as number,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
       secure: config.secure as boolean,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
       auth: config.auth as Record<string, string>,
     });
 
@@ -77,7 +75,6 @@ export class EmailService {
 
   async sendEmail(options: EmailOptions): Promise<boolean> {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const config = this.configService.get('email');
       let html = options.html;
 
@@ -89,7 +86,6 @@ export class EmailService {
       }
 
       const mailOptions = {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         from: `${config.from.name} <${config.from.address}>`,
         to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
         subject: options.subject,
@@ -97,9 +93,8 @@ export class EmailService {
         text: options.text,
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const info = await this.transporter.sendMail(mailOptions);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
       this.logger.log(`Email sent successfully: ${info.messageId as string}`);
       return true;
     } catch (error) {

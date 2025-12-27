@@ -15,7 +15,10 @@ export interface IEventStore {
   append(events: DomainEvent[]): Promise<void>;
   getEvents(aggregateId: string, fromVersion?: number): Promise<DomainEvent[]>;
   getAllEvents(options?: EventQueryOptions): Promise<DomainEvent[]>;
-  getEventsByType(eventType: string, options?: EventQueryOptions): Promise<DomainEvent[]>;
+  getEventsByType(
+    eventType: string,
+    options?: EventQueryOptions,
+  ): Promise<DomainEvent[]>;
   getEventCount(aggregateId: string): Promise<number>;
 }
 
@@ -99,7 +102,10 @@ export class EventStore implements IEventStore, OnModuleInit {
   }
 
   // Get events for an aggregate
-  async getEvents(aggregateId: string, fromVersion: number = 0): Promise<DomainEvent[]> {
+  async getEvents(
+    aggregateId: string,
+    fromVersion: number = 0,
+  ): Promise<DomainEvent[]> {
     const events = await this.prisma.eventStoreEvent.findMany({
       where: {
         aggregateId,
@@ -136,11 +142,16 @@ export class EventStore implements IEventStore, OnModuleInit {
   }
 
   // Get events by type
-  async getEventsByType(eventType: string, options: EventQueryOptions = {}): Promise<DomainEvent[]> {
+  async getEventsByType(
+    eventType: string,
+    options: EventQueryOptions = {},
+  ): Promise<DomainEvent[]> {
     const events = await this.prisma.eventStoreEvent.findMany({
       where: {
         eventType,
-        ...(options.fromTimestamp && { timestamp: { gte: options.fromTimestamp } }),
+        ...(options.fromTimestamp && {
+          timestamp: { gte: options.fromTimestamp },
+        }),
         ...(options.toTimestamp && { timestamp: { lte: options.toTimestamp } }),
       },
       orderBy: { timestamp: 'asc' },
@@ -192,7 +203,7 @@ export class EventStore implements IEventStore, OnModuleInit {
       }
 
       // Poll interval
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
   }
 
@@ -221,7 +232,9 @@ export class EventStore implements IEventStore, OnModuleInit {
   }
 
   // Get snapshot for an aggregate
-  async getSnapshot(aggregateId: string): Promise<{ version: number; state: any } | null> {
+  async getSnapshot(
+    aggregateId: string,
+  ): Promise<{ version: number; state: any } | null> {
     const snapshot = await this.prisma.eventStoreSnapshot.findUnique({
       where: { aggregateId },
     });
@@ -230,7 +243,7 @@ export class EventStore implements IEventStore, OnModuleInit {
 
     return {
       version: snapshot.version,
-      state: JSON.parse(snapshot.state as string),
+      state: JSON.parse(snapshot.state),
     };
   }
 
@@ -244,7 +257,9 @@ export class EventStore implements IEventStore, OnModuleInit {
       data: { archived: true },
     });
 
-    this.logger.log(`Archived ${result.count} events before ${beforeDate.toISOString()}`);
+    this.logger.log(
+      `Archived ${result.count} events before ${beforeDate.toISOString()}`,
+    );
     return result.count;
   }
 
@@ -257,8 +272,14 @@ export class EventStore implements IEventStore, OnModuleInit {
       eventType: record.eventType,
       version: record.version,
       timestamp: record.timestamp,
-      payload: typeof record.payload === 'string' ? JSON.parse(record.payload) : record.payload,
-      metadata: typeof record.metadata === 'string' ? JSON.parse(record.metadata) : record.metadata,
+      payload:
+        typeof record.payload === 'string'
+          ? JSON.parse(record.payload)
+          : record.payload,
+      metadata:
+        typeof record.metadata === 'string'
+          ? JSON.parse(record.metadata)
+          : record.metadata,
     };
   }
 

@@ -22,8 +22,7 @@ export function useCurrentUser() {
   return useQuery({
     queryKey: ["currentUser"],
     queryFn: async () => {
-      const response = await apiResources.auth.me();
-      return response.data.user;
+      return await apiResources.auth.me();
     },
     staleTime: CACHE_TTL.user * 1000,
     retry: false,
@@ -37,8 +36,8 @@ export function useWorkspaces() {
   return useQuery({
     queryKey: ["workspaces"],
     queryFn: async () => {
-      const response = await apiResources.workspaces.list();
-      return response.data.workspaces;
+      const workspace = await apiResources.workspaces.getMyWorkspace();
+      return [workspace];
     },
     staleTime: CACHE_TTL.portal * 1000,
   });
@@ -51,9 +50,7 @@ export function useWorkspace(id: string | undefined) {
   return useQuery({
     queryKey: ["workspace", id],
     queryFn: async () => {
-      if (!id) throw new Error("Workspace ID required");
-      const response = await apiResources.workspaces.get(id);
-      return response.data.workspace;
+      return await apiResources.workspaces.getMyWorkspace();
     },
     enabled: !!id,
     staleTime: CACHE_TTL.portal * 1000,
@@ -68,8 +65,7 @@ export function usePortals(workspaceId: string | undefined, page = 1, limit = 20
     queryKey: ["portals", workspaceId, page, limit],
     queryFn: async () => {
       if (!workspaceId) throw new Error("Workspace ID required");
-      const response = await apiResources.portals.list(workspaceId, { page, limit });
-      return response.data;
+      return await apiResources.portals.getAll(page, limit);
     },
     enabled: !!workspaceId,
     staleTime: CACHE_TTL.portal * 1000,
@@ -84,8 +80,7 @@ export function usePortal(id: string | undefined) {
     queryKey: ["portal", id],
     queryFn: async () => {
       if (!id) throw new Error("Portal ID required");
-      const response = await apiResources.portals.get(id);
-      return response.data.portal;
+      return await apiResources.portals.getOne(id);
     },
     enabled: !!id,
     staleTime: CACHE_TTL.widget * 1000,
@@ -100,8 +95,7 @@ export function useWidgets(portalId: string | undefined) {
     queryKey: ["widgets", portalId],
     queryFn: async () => {
       if (!portalId) throw new Error("Portal ID required");
-      const response = await apiResources.widgets.list(portalId);
-      return response.data.widgets;
+      return await apiResources.widgets.getAllByPortal(portalId);
     },
     enabled: !!portalId,
     staleTime: CACHE_TTL.widget * 1000,
@@ -119,12 +113,11 @@ export function useDashboardAnalytics(
     queryKey: ["analytics", "dashboard", workspaceId, dateRange],
     queryFn: async () => {
       if (!workspaceId) throw new Error("Workspace ID required");
-      const response = await apiResources.analytics.dashboard(workspaceId, dateRange);
-      return response.data.metrics;
+      return await apiResources.analytics.getDashboard(workspaceId, dateRange);
     },
     enabled: !!workspaceId,
     staleTime: CACHE_TTL.analytics * 1000,
-    refetchInterval: 60000, // Refetch every minute
+    refetchInterval: 60000,
   });
 }
 
@@ -136,10 +129,54 @@ export function useAIInsights(portalId: string | undefined) {
     queryKey: ["ai-insights", portalId],
     queryFn: async () => {
       if (!portalId) throw new Error("Portal ID required");
-      const response = await apiResources.aiInsights.generate(portalId);
-      return response.data.insights;
+      return await apiResources.aiInsights.getInsights(portalId);
     },
     enabled: !!portalId,
+    staleTime: CACHE_TTL.analytics * 1000,
+  });
+}
+
+/**
+ * Hook to fetch workspace-level AI insights
+ */
+export function useWorkspaceAIInsights(workspaceId: string | undefined) {
+  return useQuery({
+    queryKey: ["ai-insights", "workspace", workspaceId],
+    queryFn: async () => {
+      if (!workspaceId) throw new Error("Workspace ID required");
+      return await apiResources.aiInsights.getWorkspaceInsights(workspaceId);
+    },
+    enabled: !!workspaceId,
+    staleTime: CACHE_TTL.analytics * 1000,
+  });
+}
+
+/**
+ * Hook to fetch AI recommendations
+ */
+export function useAIRecommendations(portalId: string | undefined) {
+  return useQuery({
+    queryKey: ["ai-recommendations", portalId],
+    queryFn: async () => {
+      if (!portalId) throw new Error("Portal ID required");
+      return await apiResources.aiInsights.getRecommendations(portalId);
+    },
+    enabled: !!portalId,
+    staleTime: CACHE_TTL.analytics * 1000,
+  });
+}
+
+/**
+ * Hook to fetch anomalies
+ */
+export function useAnomalies(workspaceId: string | undefined, days: number = 7) {
+  return useQuery({
+    queryKey: ["ai-anomalies", workspaceId, days],
+    queryFn: async () => {
+      if (!workspaceId) throw new Error("Workspace ID required");
+      return await apiResources.aiInsights.getAnomalies(workspaceId, days);
+    },
+    enabled: !!workspaceId,
     staleTime: CACHE_TTL.analytics * 1000,
   });
 }
@@ -155,18 +192,16 @@ export function useCreatePortal() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      workspaceId,
-      data,
-    }: {
-      workspaceId: string;
-      data: Record<string, unknown>;
+    mutationFn: async (data: {
+      name: string;
+      slug: string;
+      description?: string;
+      isPublic?: boolean;
     }) => {
-      const response = await apiResources.portals.create(workspaceId, data);
-      return response.data.portal;
+      return await apiResources.portals.create(data);
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["portals", variables.workspaceId] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["portals"] });
     },
   });
 }
@@ -185,8 +220,7 @@ export function useUpdatePortal() {
       id: string;
       data: Record<string, unknown>;
     }) => {
-      const response = await apiResources.portals.update(id, data);
-      return response.data.portal;
+      return await apiResources.portals.update(id, data);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["portal", variables.id] });
@@ -218,18 +252,22 @@ export function useCreateWidget() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      portalId,
-      data,
-    }: {
+    mutationFn: async (data: {
+      name: string;
+      type: string;
       portalId: string;
-      data: Record<string, unknown>;
+      integrationId?: string;
+      config?: Record<string, unknown>;
+      gridWidth?: number;
+      gridHeight?: number;
+      gridX?: number;
+      gridY?: number;
+      refreshInterval?: number;
     }) => {
-      const response = await apiResources.widgets.create(portalId, data);
-      return response.data.widget;
+      return await apiResources.widgets.create(data);
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["widgets", variables.portalId] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["widgets"] });
     },
   });
 }
@@ -248,8 +286,14 @@ export function useUpdateWidget() {
       id: string;
       data: Record<string, unknown>;
     }) => {
-      const response = await apiResources.widgets.update(id, data);
-      return response.data.widget;
+      // Use the widgets API to update
+      const response = await fetch(`/api/widgets/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error('Failed to update widget');
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["widgets"] });
@@ -257,7 +301,21 @@ export function useUpdateWidget() {
   });
 }
 
-// ============================================================================
+/**
+ * Hook to refresh widget data
+ */
+export function useRefreshWidget() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (widgetId: string) => {
+      return await apiResources.widgets.refreshData(widgetId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["widgets"] });
+    },
+  });
+}
 // UI HOOKS
 // ============================================================================
 
@@ -283,7 +341,7 @@ export function useThrottle<T extends (...args: unknown[]) => unknown>(
   delay: number = 500
 ): T {
   const lastCall = React.useRef<number>(0);
-  const lastCallTimer = React.useRef<NodeJS.Timeout>();
+  const lastCallTimer = React.useRef<NodeJS.Timeout | null>(null);
 
   return React.useCallback(
     ((...args: Parameters<T>) => {
@@ -294,7 +352,9 @@ export function useThrottle<T extends (...args: unknown[]) => unknown>(
         lastCall.current = now;
         callback(...args);
       } else {
-        clearTimeout(lastCallTimer.current);
+        if (lastCallTimer.current) {
+          clearTimeout(lastCallTimer.current);
+        }
         lastCallTimer.current = setTimeout(() => {
           lastCall.current = Date.now();
           callback(...args);
@@ -533,7 +593,7 @@ export function useCopyToClipboard(): [
  * Hook for previous value
  */
 export function usePrevious<T>(value: T): T | undefined {
-  const ref = React.useRef<T>();
+  const ref = React.useRef<T | undefined>(undefined);
   React.useEffect(() => {
     ref.current = value;
   }, [value]);

@@ -735,7 +735,7 @@ function NotificationItem({
       <div className="flex gap-3 pl-2">
         {/* Icon */}
         <div className={cn('p-2 rounded-lg shrink-0', config.color)}>
-          {React.cloneElement(config.icon as React.ReactElement, { className: 'h-4 w-4' })}
+          {React.cloneElement(config.icon as React.ReactElement, { className: 'h-4 w-4' } as any)}
         </div>
 
         {/* Content */}

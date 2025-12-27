@@ -14,25 +14,25 @@ import { PrismaService } from '../prisma/prisma.service';
 export class DataLoaderService {
   // User DataLoader
   private readonly userLoader: DataLoader<string, any>;
-  
+
   // Workspace DataLoader
   private readonly workspaceLoader: DataLoader<string, any>;
-  
+
   // Portal DataLoader
   private readonly portalLoader: DataLoader<string, any>;
-  
+
   // Widget DataLoader
   private readonly widgetLoader: DataLoader<string, any>;
-  
+
   // Widgets by Portal ID DataLoader
   private readonly widgetsByPortalLoader: DataLoader<string, any[]>;
-  
+
   // Integration DataLoader
   private readonly integrationLoader: DataLoader<string, any>;
-  
+
   // Alert DataLoader
   private readonly alertLoader: DataLoader<string, any>;
-  
+
   // Comment DataLoader
   private readonly commentLoader: DataLoader<string, any>;
 
@@ -116,10 +116,10 @@ export class DataLoaderService {
         });
 
         // Create a map for O(1) lookup
-        const userMap = new Map(users.map(user => [user.id, user]));
-        
+        const userMap = new Map(users.map((user) => [user.id, user]));
+
         // Return users in the same order as the input ids
-        return ids.map(id => userMap.get(id) || null);
+        return ids.map((id) => userMap.get(id) || null);
       },
       {
         cache: true,
@@ -135,8 +135,8 @@ export class DataLoaderService {
           where: { id: { in: [...ids] } },
         });
 
-        const workspaceMap = new Map(workspaces.map(ws => [ws.id, ws]));
-        return ids.map(id => workspaceMap.get(id) || null);
+        const workspaceMap = new Map(workspaces.map((ws) => [ws.id, ws]));
+        return ids.map((id) => workspaceMap.get(id) || null);
       },
       {
         cache: true,
@@ -152,8 +152,8 @@ export class DataLoaderService {
           where: { id: { in: [...ids] } },
         });
 
-        const portalMap = new Map(portals.map(p => [p.id, p]));
-        return ids.map(id => portalMap.get(id) || null);
+        const portalMap = new Map(portals.map((p) => [p.id, p]));
+        return ids.map((id) => portalMap.get(id) || null);
       },
       {
         cache: true,
@@ -169,8 +169,8 @@ export class DataLoaderService {
           where: { id: { in: [...ids] } },
         });
 
-        const widgetMap = new Map(widgets.map(w => [w.id, w]));
-        return ids.map(id => widgetMap.get(id) || null);
+        const widgetMap = new Map(widgets.map((w) => [w.id, w]));
+        return ids.map((id) => widgetMap.get(id) || null);
       },
       {
         cache: true,
@@ -196,7 +196,7 @@ export class DataLoaderService {
           widgetsByPortal.get(widget.portalId)?.push(widget);
         }
 
-        return portalIds.map(id => widgetsByPortal.get(id) || []);
+        return portalIds.map((id) => widgetsByPortal.get(id) || []);
       },
       {
         cache: true,
@@ -212,8 +212,8 @@ export class DataLoaderService {
           where: { id: { in: [...ids] } },
         });
 
-        const integrationMap = new Map(integrations.map(i => [i.id, i]));
-        return ids.map(id => integrationMap.get(id) || null);
+        const integrationMap = new Map(integrations.map((i) => [i.id, i]));
+        return ids.map((id) => integrationMap.get(id) || null);
       },
       {
         cache: true,
@@ -229,8 +229,8 @@ export class DataLoaderService {
           where: { id: { in: [...ids] } },
         });
 
-        const alertMap = new Map(alerts.map(a => [a.id, a]));
-        return ids.map(id => alertMap.get(id) || null);
+        const alertMap = new Map(alerts.map((a) => [a.id, a]));
+        return ids.map((id) => alertMap.get(id) || null);
       },
       {
         cache: true,
@@ -246,8 +246,8 @@ export class DataLoaderService {
           where: { id: { in: [...ids] } },
         });
 
-        const commentMap = new Map(comments.map(c => [c.id, c]));
-        return ids.map(id => commentMap.get(id) || null);
+        const commentMap = new Map(comments.map((c) => [c.id, c]));
+        return ids.map((id) => commentMap.get(id) || null);
       },
       {
         cache: true,

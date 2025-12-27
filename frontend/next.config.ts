@@ -61,7 +61,7 @@ const securityHeaders = [
   },
 ];
 
-const nextConfig: NextConfig = {
+const nextConfig: NextConfig & { eslint?: any } = {
   // Environment variables
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
@@ -106,6 +106,9 @@ const nextConfig: NextConfig = {
       'date-fns',
     ],
   },
+
+  // Turbopack configuration (Next.js 16+)
+  turbopack: {},
 
   // Webpack customization
   webpack: (config, { isServer }) => {

@@ -26,7 +26,7 @@ export default function WorkflowBuilderPage() {
   const loadWorkflow = async (id: string) => {
     try {
       const data = await workflowApi.getWorkflow(id);
-      setWorkflow(data);
+      setWorkflow(data.data);
     } catch (error) {
       console.error('Failed to load workflow:', error);
     } finally {

@@ -5,8 +5,6 @@ import { HttpService } from '@nestjs/axios';
 import { CreateAlertDto, UpdateAlertDto } from './dto/alert.dto';
 import { firstValueFrom } from 'rxjs';
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
-
 @Injectable()
 export class AlertsService {
   constructor(

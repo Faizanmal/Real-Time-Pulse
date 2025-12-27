@@ -33,7 +33,7 @@ export default function ARVisualization() {
     try {
       setLoading(true);
       const data = await arVisualizationApi.getScenes();
-      setScenes(data);
+      setScenes(data.data);
     } catch (error) {
       toast({
         title: 'Error',
@@ -47,14 +47,14 @@ export default function ARVisualization() {
 
   const loadSessions = async () => {
     try {
-      const data = await arVisualizationApi.getSessions();
-      setSessions(data);
+      const data = await arVisualizationApi.getAllSessions();
+      setSessions(data.data);
     } catch (error) {
       console.error('Failed to load sessions:', error);
     }
   };
 
-  const createScene = async (sceneData: Partial<ARScene>) => {
+  const createScene = async (sceneData: { name: string; description?: string; portalId?: string; sceneData: any; modelUrls: any }) => {
     try {
       await arVisualizationApi.createScene(sceneData);
       toast({
@@ -236,7 +236,7 @@ export default function ARVisualization() {
                         </div>
                         <p className="text-sm text-muted-foreground">
                           Device: {session.deviceInfo?.type || 'Unknown'} • 
-                          Duration: {Math.round((Date.now() - new Date(session.startTime).getTime()) / 60000)} min
+                          Duration: {session.startTime ? Math.round((Date.now() - new Date(session.startTime).getTime()) / 60000) : 0} min
                         </p>
                       </div>
                       <Button
@@ -312,7 +312,7 @@ export default function ARVisualization() {
   );
 }
 
-function CreateSceneForm({ onSubmit }: { onSubmit: (data: Partial<ARScene>) => void }) {
+function CreateSceneForm({ onSubmit }: { onSubmit: (data: { name: string; description?: string; portalId?: string; sceneData: any; modelUrls: any }) => void }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [sceneType, setSceneType] = useState<'dashboard' | 'chart' | 'table'>('dashboard');
@@ -322,10 +322,8 @@ function CreateSceneForm({ onSubmit }: { onSubmit: (data: Partial<ARScene>) => v
     onSubmit({
       name,
       description,
-      sceneType,
-      isActive: true,
-      objects: [],
-      dataSources: [],
+      sceneData: { sceneType },
+      modelUrls: {},
     });
   };
 

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { WorkflowExecutionStatus } from '@prisma/client';
 
@@ -7,15 +11,18 @@ export class WorkflowAutomationService {
   constructor(private prisma: PrismaService) {}
 
   // Workflows
-  async createWorkflow(workspaceId: string, data: {
-    name: string;
-    description?: string;
-    trigger: any;
-    actions: any;
-    conditions?: any;
-    nodes: any;
-    edges: any;
-  }) {
+  async createWorkflow(
+    workspaceId: string,
+    data: {
+      name: string;
+      description?: string;
+      trigger: any;
+      actions: any;
+      conditions?: any;
+      nodes: any;
+      edges: any;
+    },
+  ) {
     return this.prisma.workflow.create({
       data: {
         workspaceId,
@@ -106,21 +113,28 @@ export class WorkflowAutomationService {
     });
 
     // Execute workflow asynchronously
-    this.runWorkflow(workflow, execution.id, triggerData).catch(error => {
+    this.runWorkflow(workflow, execution.id, triggerData).catch((error) => {
       console.error('Workflow execution failed:', error);
     });
 
     return execution;
   }
 
-  private async runWorkflow(workflow: any, executionId: string, triggerData: any) {
+  private async runWorkflow(
+    workflow: any,
+    executionId: string,
+    triggerData: any,
+  ) {
     const startTime = Date.now();
     const steps: any[] = [];
 
     try {
       // Evaluate conditions
       if (workflow.conditions) {
-        const conditionsMet = await this.evaluateConditions(workflow.conditions, triggerData);
+        const conditionsMet = await this.evaluateConditions(
+          workflow.conditions,
+          triggerData,
+        );
         if (!conditionsMet) {
           await this.prisma.workflowExecution.update({
             where: { id: executionId },
@@ -137,13 +151,17 @@ export class WorkflowAutomationService {
 
       // Execute actions
       const actions = workflow.actions as any[];
-      
+
       for (const action of actions) {
         const stepStartTime = Date.now();
-        
+
         try {
-          const result = await this.executeAction(action, triggerData, workflow.workspaceId);
-          
+          const result = await this.executeAction(
+            action,
+            triggerData,
+            workflow.workspaceId,
+          );
+
           steps.push({
             action: action.type,
             status: 'success',
@@ -157,7 +175,7 @@ export class WorkflowAutomationService {
             error: error.message,
             duration: Date.now() - stepStartTime,
           });
-          
+
           throw error;
         }
       }
@@ -183,7 +201,6 @@ export class WorkflowAutomationService {
           averageExecutionTime: Date.now() - startTime,
         },
       });
-
     } catch (error) {
       // Update execution as failed
       await this.prisma.workflowExecution.update({
@@ -209,22 +226,29 @@ export class WorkflowAutomationService {
     }
   }
 
-  private async evaluateConditions(conditions: any, data: any): Promise<boolean> {
+  private async evaluateConditions(
+    conditions: any,
+    data: any,
+  ): Promise<boolean> {
     // Simple condition evaluation
     // In production, use a proper rules engine
-    
+
     if (conditions.operator === 'AND') {
-      return conditions.rules.every((rule: any) => this.evaluateRule(rule, data));
+      return conditions.rules.every((rule: any) =>
+        this.evaluateRule(rule, data),
+      );
     } else if (conditions.operator === 'OR') {
-      return conditions.rules.some((rule: any) => this.evaluateRule(rule, data));
+      return conditions.rules.some((rule: any) =>
+        this.evaluateRule(rule, data),
+      );
     }
-    
+
     return this.evaluateRule(conditions, data);
   }
 
   private evaluateRule(rule: any, data: any): boolean {
     const value = this.getNestedValue(data, rule.field);
-    
+
     switch (rule.operator) {
       case 'equals':
         return value === rule.value;
@@ -247,26 +271,30 @@ export class WorkflowAutomationService {
     return path.split('.').reduce((current, prop) => current?.[prop], obj);
   }
 
-  private async executeAction(action: any, triggerData: any, workspaceId: string): Promise<any> {
+  private async executeAction(
+    action: any,
+    triggerData: any,
+    workspaceId: string,
+  ): Promise<any> {
     switch (action.type) {
       case 'send_email':
         return this.sendEmail(action.config, triggerData);
-      
+
       case 'send_notification':
         return this.sendNotification(action.config, workspaceId);
-      
+
       case 'create_alert':
         return this.createAlert(action.config, workspaceId);
-      
+
       case 'update_widget':
         return this.updateWidget(action.config, workspaceId);
-      
+
       case 'webhook':
         return this.callWebhook(action.config, triggerData);
-      
+
       case 'slack_message':
         return this.sendSlackMessage(action.config, triggerData);
-      
+
       default:
         throw new Error(`Unknown action type: ${action.type}`);
     }
@@ -278,7 +306,10 @@ export class WorkflowAutomationService {
     return { sent: true, to: config.to };
   }
 
-  private async sendNotification(config: any, workspaceId: string): Promise<any> {
+  private async sendNotification(
+    config: any,
+    workspaceId: string,
+  ): Promise<any> {
     // Create notification in database
     return { sent: true, message: config.message };
   }
@@ -359,10 +390,7 @@ export class WorkflowAutomationService {
         isPublic: true,
         ...(category && { category }),
       },
-      orderBy: [
-        { rating: 'desc' },
-        { usageCount: 'desc' },
-      ],
+      orderBy: [{ rating: 'desc' }, { usageCount: 'desc' }],
     });
   }
 

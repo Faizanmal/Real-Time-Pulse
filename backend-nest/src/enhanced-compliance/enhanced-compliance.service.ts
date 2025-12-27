@@ -1,6 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { ComplianceStatus, DataSensitivity, IncidentSeverity, IncidentCategory, IncidentStatus } from '@prisma/client';
+import {
+  ComplianceStatus,
+  DataSensitivity,
+  IncidentSeverity,
+  IncidentCategory,
+  IncidentStatus,
+} from '@prisma/client';
 
 @Injectable()
 export class EnhancedComplianceService {
@@ -47,7 +53,10 @@ export class EnhancedComplianceService {
     const framework = await this.getFramework(frameworkId);
 
     // Perform assessment
-    const assessmentResults = await this.performAssessment(workspaceId, framework);
+    const assessmentResults = await this.performAssessment(
+      workspaceId,
+      framework,
+    );
 
     return this.prisma.complianceAssessment.create({
       data: {
@@ -59,7 +68,9 @@ export class EnhancedComplianceService {
         gaps: assessmentResults.gaps,
         recommendations: assessmentResults.recommendations,
         assessedBy,
-        nextAssessmentDue: this.calculateNextAssessment(framework.auditSchedule),
+        nextAssessmentDue: this.calculateNextAssessment(
+          framework.auditSchedule || undefined,
+        ),
       },
       include: {
         framework: true,
@@ -116,18 +127,21 @@ export class EnhancedComplianceService {
   }
 
   // Data Mapping
-  async createDataMapping(workspaceId: string, data: {
-    dataType: string;
-    location: string;
-    fields: any;
-    sensitivity: DataSensitivity;
-    category: string;
-    processingPurpose: string;
-    legalBasis?: string;
-    retentionPeriod?: string;
-    encryptionMethod?: string;
-    accessControls?: any;
-  }) {
+  async createDataMapping(
+    workspaceId: string,
+    data: {
+      dataType: string;
+      location: string;
+      fields: any;
+      sensitivity: DataSensitivity;
+      category: string;
+      processingPurpose: string;
+      legalBasis?: string;
+      retentionPeriod?: string;
+      encryptionMethod?: string;
+      accessControls?: any;
+    },
+  ) {
     return this.prisma.dataMapping.create({
       data: {
         workspaceId,
@@ -142,10 +156,7 @@ export class EnhancedComplianceService {
         workspaceId,
         ...(sensitivity && { sensitivity }),
       },
-      orderBy: [
-        { sensitivity: 'desc' },
-        { createdAt: 'desc' },
-      ],
+      orderBy: [{ sensitivity: 'desc' }, { createdAt: 'desc' }],
     });
   }
 
@@ -182,15 +193,18 @@ export class EnhancedComplianceService {
   }
 
   // Security Incidents
-  async createIncident(workspaceId: string, data: {
-    title: string;
-    description: string;
-    severity: IncidentSeverity;
-    category: IncidentCategory;
-    affectedSystems?: any;
-    affectedUsers?: any;
-    assignedTo?: string;
-  }) {
+  async createIncident(
+    workspaceId: string,
+    data: {
+      title: string;
+      description: string;
+      severity: IncidentSeverity;
+      category: IncidentCategory;
+      affectedSystems?: any;
+      affectedUsers?: any;
+      assignedTo?: string;
+    },
+  ) {
     return this.prisma.securityIncident.create({
       data: {
         workspaceId,
@@ -200,20 +214,20 @@ export class EnhancedComplianceService {
     });
   }
 
-  async getIncidents(workspaceId: string, filters?: {
-    severity?: IncidentSeverity;
-    status?: IncidentStatus;
-    category?: IncidentCategory;
-  }) {
+  async getIncidents(
+    workspaceId: string,
+    filters?: {
+      severity?: IncidentSeverity;
+      status?: IncidentStatus;
+      category?: IncidentCategory;
+    },
+  ) {
     return this.prisma.securityIncident.findMany({
       where: {
         workspaceId,
         ...filters,
       },
-      orderBy: [
-        { severity: 'desc' },
-        { detectedAt: 'desc' },
-      ],
+      orderBy: [{ severity: 'desc' }, { detectedAt: 'desc' }],
     });
   }
 
@@ -259,24 +273,28 @@ export class EnhancedComplianceService {
     ]);
 
     const recentAssessment = assessments[0];
-    const criticalIncidents = incidents.filter(i => 
-      i.severity === IncidentSeverity.CRITICAL && 
-      i.status !== IncidentStatus.CLOSED
+    const criticalIncidents = incidents.filter(
+      (i) =>
+        i.severity === IncidentSeverity.CRITICAL &&
+        i.status !== IncidentStatus.CLOSED,
     );
-    const openIncidents = incidents.filter(i => 
-      i.status !== IncidentStatus.CLOSED && 
-      i.status !== IncidentStatus.RESOLVED
+    const openIncidents = incidents.filter(
+      (i) =>
+        i.status !== IncidentStatus.CLOSED &&
+        i.status !== IncidentStatus.RESOLVED,
     );
 
-    const sensitiveData = mappings.filter(m => 
-      m.sensitivity === DataSensitivity.RESTRICTED || 
-      m.sensitivity === DataSensitivity.CONFIDENTIAL
+    const sensitiveData = mappings.filter(
+      (m) =>
+        m.sensitivity === DataSensitivity.RESTRICTED ||
+        m.sensitivity === DataSensitivity.CONFIDENTIAL,
     );
 
     return {
       overview: {
         complianceScore: recentAssessment?.score || 0,
-        complianceStatus: recentAssessment?.status || ComplianceStatus.NOT_ASSESSED,
+        complianceStatus:
+          recentAssessment?.status || ComplianceStatus.NOT_ASSESSED,
         lastAssessment: recentAssessment?.assessedAt,
         nextAssessment: recentAssessment?.nextAssessmentDue,
       },
@@ -300,19 +318,19 @@ export class EnhancedComplianceService {
   private async performAssessment(workspaceId: string, framework: any) {
     // Simulate compliance assessment
     // In production, implement actual compliance checks
-    
+
     const requirements = framework.requirements as any[];
     const findings: any[] = [];
     const gaps: any[] = [];
     const recommendations: any[] = [];
-    
+
     let passedChecks = 0;
     const totalChecks = requirements.length;
 
     for (const requirement of requirements) {
       // Simulate check
       const passed = Math.random() > 0.3; // 70% pass rate for demo
-      
+
       if (passed) {
         passedChecks++;
         findings.push({
@@ -326,7 +344,7 @@ export class EnhancedComplianceService {
           severity: 'MEDIUM',
           description: `Requirement ${requirement.id} not fully implemented`,
         });
-        
+
         recommendations.push({
           requirement: requirement.id,
           action: `Implement ${requirement.name}`,
@@ -336,7 +354,7 @@ export class EnhancedComplianceService {
     }
 
     const score = (passedChecks / totalChecks) * 100;
-    
+
     let status: ComplianceStatus;
     if (score >= 90) status = ComplianceStatus.COMPLIANT;
     else if (score >= 70) status = ComplianceStatus.PARTIALLY_COMPLIANT;
@@ -360,16 +378,22 @@ export class EnhancedComplianceService {
   }
 
   private groupByCategory(mappings: any[]): Record<string, number> {
-    return mappings.reduce((acc, mapping) => {
-      acc[mapping.category] = (acc[mapping.category] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    return mappings.reduce(
+      (acc, mapping) => {
+        acc[mapping.category] = (acc[mapping.category] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
   }
 
   private groupBySensitivity(mappings: any[]): Record<string, number> {
-    return mappings.reduce((acc, mapping) => {
-      acc[mapping.sensitivity] = (acc[mapping.sensitivity] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    return mappings.reduce(
+      (acc, mapping) => {
+        acc[mapping.sensitivity] = (acc[mapping.sensitivity] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
   }
 }

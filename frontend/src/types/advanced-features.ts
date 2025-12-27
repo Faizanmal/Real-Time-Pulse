@@ -201,6 +201,9 @@ export interface ARScene {
   interactions: any;
   scale: number;
   lighting: any;
+  sceneType?: string;
+  objects?: any[];
+  dataSources?: any[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -215,8 +218,24 @@ export interface ARSession {
   interactions: any;
   fps: number | null;
   latency: number | null;
+  status?: string;
+  deviceInfo?: { type: string };
+  startTime?: string;
   startedAt: string;
   endedAt: string | null;
+}
+
+export interface ARMarker {
+  id: string;
+  sceneId: string;
+  type: string;
+  position: { x: number; y: number; z: number };
+  rotation: { x: number; y: number; z: number };
+  scale: { x: number; y: number; z: number };
+  data: any;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Workflow Automation
@@ -276,6 +295,25 @@ export interface WorkflowTemplate {
   usageCount: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface WorkflowTrigger {
+  type: string;
+  config: any;
+  conditions?: any;
+}
+
+export interface WorkflowAction {
+  type: string;
+  config: any;
+  order: number;
+}
+
+export interface WorkflowCondition {
+  type: string;
+  config: any;
+  operator: string;
+  value: any;
 }
 
 // Enhanced Compliance

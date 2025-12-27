@@ -91,8 +91,14 @@ export class CircuitBreakerService {
   /**
    * Get all circuit statuses
    */
-  getAllCircuitStatuses(): Record<string, { state: CircuitState; metrics: CircuitMetrics }> {
-    const statuses: Record<string, { state: CircuitState; metrics: CircuitMetrics }> = {};
+  getAllCircuitStatuses(): Record<
+    string,
+    { state: CircuitState; metrics: CircuitMetrics }
+  > {
+    const statuses: Record<
+      string,
+      { state: CircuitState; metrics: CircuitMetrics }
+    > = {};
     for (const [name, circuit] of this.circuits) {
       statuses[name] = {
         state: circuit.state,

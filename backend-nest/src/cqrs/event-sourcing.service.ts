@@ -64,7 +64,11 @@ export abstract class AggregateRoot {
 
 // Event Handler Decorator
 export function EventHandler(eventType: string): MethodDecorator {
-  return (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => {
+  return (
+    target: any,
+    propertyKey: string | symbol,
+    descriptor: PropertyDescriptor,
+  ) => {
     Reflect.defineMetadata('eventHandler', eventType, target, propertyKey);
     return descriptor;
   };
@@ -128,14 +132,18 @@ export class EventSourcingService {
   // Dispatch an event to all registered handlers
   async dispatch(event: DomainEvent): Promise<void> {
     const handlers = this.eventHandlers.get(event.eventType) || [];
-    
-    this.logger.debug(`Dispatching event ${event.eventType} to ${handlers.length} handlers`);
-    
+
+    this.logger.debug(
+      `Dispatching event ${event.eventType} to ${handlers.length} handlers`,
+    );
+
     for (const handler of handlers) {
       try {
         await handler(event);
       } catch (error) {
-        this.logger.error(`Error in event handler for ${event.eventType}: ${error.message}`);
+        this.logger.error(
+          `Error in event handler for ${event.eventType}: ${error.message}`,
+        );
         throw error;
       }
     }
@@ -164,7 +172,12 @@ export class PortalAggregate extends AggregateRoot {
   }
 
   // Factory method
-  static create(id: string, name: string, workspaceId: string, userId: string): PortalAggregate {
+  static create(
+    id: string,
+    name: string,
+    workspaceId: string,
+    userId: string,
+  ): PortalAggregate {
     const portal = new PortalAggregate(id);
     portal.apply({
       eventId: `evt_${Date.now()}`,
@@ -196,7 +209,8 @@ export class PortalAggregate extends AggregateRoot {
 
   public addWidget(widgetId: string, userId: string): void {
     if (this.isDeleted) throw new Error('Cannot add widget to deleted portal');
-    if (this.widgets.includes(widgetId)) throw new Error('Widget already exists');
+    if (this.widgets.includes(widgetId))
+      throw new Error('Widget already exists');
     this.apply({
       eventId: `evt_${Date.now()}`,
       aggregateId: this.id,
@@ -224,7 +238,8 @@ export class PortalAggregate extends AggregateRoot {
   }
 
   public setVisibility(isPublic: boolean, userId: string): void {
-    if (this.isDeleted) throw new Error('Cannot change visibility of deleted portal');
+    if (this.isDeleted)
+      throw new Error('Cannot change visibility of deleted portal');
     this.apply({
       eventId: `evt_${Date.now()}`,
       aggregateId: this.id,
@@ -265,7 +280,9 @@ export class PortalAggregate extends AggregateRoot {
         this.widgets.push(event.payload.widgetId);
         break;
       case 'WidgetRemoved':
-        this.widgets = this.widgets.filter(id => id !== event.payload.widgetId);
+        this.widgets = this.widgets.filter(
+          (id) => id !== event.payload.widgetId,
+        );
         break;
       case 'VisibilityChanged':
         this.isPublic = event.payload.isPublic;
@@ -277,9 +294,19 @@ export class PortalAggregate extends AggregateRoot {
   }
 
   // Getters for read model
-  public getName(): string { return this.name; }
-  public getWorkspaceId(): string { return this.workspaceId; }
-  public getWidgets(): string[] { return [...this.widgets]; }
-  public getIsPublic(): boolean { return this.isPublic; }
-  public getIsDeleted(): boolean { return this.isDeleted; }
+  public getName(): string {
+    return this.name;
+  }
+  public getWorkspaceId(): string {
+    return this.workspaceId;
+  }
+  public getWidgets(): string[] {
+    return [...this.widgets];
+  }
+  public getIsPublic(): boolean {
+    return this.isPublic;
+  }
+  public getIsDeleted(): boolean {
+    return this.isDeleted;
+  }
 }

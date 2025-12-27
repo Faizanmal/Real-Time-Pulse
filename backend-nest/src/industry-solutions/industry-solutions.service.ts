@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { IndustryType } from '@prisma/client';
 
@@ -13,10 +17,7 @@ export class IndustrySolutionsService {
         isActive: true,
         ...(industry && { industry }),
       },
-      orderBy: [
-        { rating: 'desc' },
-        { usageCount: 'desc' },
-      ],
+      orderBy: [{ rating: 'desc' }, { usageCount: 'desc' }],
     });
   }
 
@@ -168,9 +169,8 @@ export class IndustrySolutionsService {
     const template = await this.getTemplate(templateId);
 
     // Calculate new average rating (simple average for now)
-    const newRating = template.rating === 0 
-      ? rating 
-      : (template.rating + rating) / 2;
+    const newRating =
+      template.rating === 0 ? rating : (template.rating + rating) / 2;
 
     return this.prisma.industryTemplate.update({
       where: { id: templateId },
@@ -200,7 +200,9 @@ export class IndustrySolutionsService {
       deployment,
       complianceStatus: deployment.complianceStatus,
       lastCheck: deployment.lastComplianceCheck,
-      recommendations: this.getComplianceRecommendations(deployment.template.industry),
+      recommendations: this.getComplianceRecommendations(
+        deployment.template.industry,
+      ),
     };
   }
 

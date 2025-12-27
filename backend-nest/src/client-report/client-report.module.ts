@@ -5,9 +5,10 @@ import { ReportGeneratorService } from './report-generator.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { HttpModule } from '@nestjs/axios';
+import { EmailModule } from '../email/email.module';
 
 @Module({
-  imports: [PrismaModule, ScheduleModule.forRoot(), HttpModule],
+  imports: [PrismaModule, ScheduleModule.forRoot(), HttpModule, EmailModule],
   controllers: [ClientReportController],
   providers: [ClientReportService, ReportGeneratorService],
   exports: [ClientReportService, ReportGeneratorService],

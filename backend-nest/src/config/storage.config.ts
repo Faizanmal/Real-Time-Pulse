@@ -50,9 +50,7 @@ export default registerAs('storage', () => ({
         {
           id: 'archive-old-reports',
           prefix: 'reports/',
-          transitions: [
-            { days: 90, storageClass: 'GLACIER' },
-          ],
+          transitions: [{ days: 90, storageClass: 'GLACIER' }],
           expiration: { days: 365 },
         },
         {
@@ -212,9 +210,18 @@ export default registerAs('storage', () => ({
 
   // Presigned URLs Configuration
   presignedUrls: {
-    uploadExpiration: parseInt(process.env.PRESIGNED_UPLOAD_EXPIRATION || '3600', 10), // 1 hour
-    downloadExpiration: parseInt(process.env.PRESIGNED_DOWNLOAD_EXPIRATION || '86400', 10), // 24 hours
-    multipartThreshold: parseInt(process.env.MULTIPART_THRESHOLD || '104857600', 10), // 100MB
+    uploadExpiration: parseInt(
+      process.env.PRESIGNED_UPLOAD_EXPIRATION || '3600',
+      10,
+    ), // 1 hour
+    downloadExpiration: parseInt(
+      process.env.PRESIGNED_DOWNLOAD_EXPIRATION || '86400',
+      10,
+    ), // 24 hours
+    multipartThreshold: parseInt(
+      process.env.MULTIPART_THRESHOLD || '104857600',
+      10,
+    ), // 100MB
     partSize: parseInt(process.env.MULTIPART_PART_SIZE || '10485760', 10), // 10MB
   },
 

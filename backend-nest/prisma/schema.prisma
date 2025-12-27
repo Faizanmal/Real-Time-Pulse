@@ -22,6 +22,7 @@ model User {
   lastName  String?
   name      String? // Full name for analytics
   avatar    String?
+  phone     String? // Phone number for SMS notifications
 
   // OAuth providers
   googleId    String? @unique
@@ -68,6 +69,7 @@ model User {
   auditLogs          AuditLog[]       @relation("UserAuditLogs")
   apiKeys            ApiKey[]
   aiQueries          AIQuery[]
+  pushTokens         PushToken[]
 
   @@index([workspaceId])
   @@index([email])
@@ -75,6 +77,24 @@ model User {
   @@index([githubId])
   @@index([firebaseUid])
   @@map("users")
+}
+
+// Push notification tokens for users
+model PushToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  platform  String   // 'ios', 'android', 'web'
+  deviceId  String?  // Optional device identifier
+  isActive  Boolean  @default(true)
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("push_tokens")
 }
 
 enum WorkspaceRole {
@@ -1085,6 +1105,10 @@ model AIInsight {
   dismissedBy String?
   dismissedAt DateTime?
   
+  // Quality tracking (feedback loop)
+  qualityScore  Float? // 0.0 to 1.0 based on user feedback
+  feedbackCount Int @default(0)
+  
   // Validity
   validFrom DateTime @default(now())
   validUntil DateTime?
@@ -1093,11 +1117,40 @@ model AIInsight {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Relations
+  feedback AIFeedback[]
+
   @@index([workspaceId])
   @@index([portalId])
   @@index([type])
   @@index([status])
+  @@index([qualityScore])
   @@map("ai_insights")
+}
+
+// User feedback on AI insights for continuous improvement
+model AIFeedback {
+  id String @id @default(uuid())
+
+  // Insight reference
+  insightId String
+  insight   AIInsight @relation(fields: [insightId], references: [id], onDelete: Cascade)
+
+  // User who provided feedback
+  userId String
+
+  // Feedback details
+  rating      String // 'helpful', 'not_helpful', 'neutral'
+  comment     String? @db.Text
+  actionTaken String? // What action user took based on insight
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([insightId])
+  @@index([userId])
+  @@index([rating])
+  @@map("ai_feedback")
 }
 
 enum InsightType {
@@ -2707,4 +2760,55 @@ enum IncidentStatus {
   CONTAINED
   RESOLVED
   CLOSED
+}
+
+// ========================================
+// CQRS - EVENT SOURCING
+// ========================================
+
+model EventStoreEvent {
+  id            String   @id @default(uuid())
+  eventId       String   @unique
+  aggregateId   String
+  aggregateType String
+  eventType     String
+  version       Int
+  timestamp     DateTime @default(now())
+  payload       String   // JSON string
+  metadata      String?  // JSON string
+  archived      Boolean  @default(false)
+
+  @@index([aggregateId])
+  @@index([aggregateType])
+  @@index([eventType])
+  @@index([timestamp])
+  @@map("event_store_events")
+}
+
+model EventStoreSnapshot {
+  aggregateId   String   @id
+  aggregateType String
+  version       Int
+  state         String   // JSON string
+  timestamp     DateTime @default(now())
+
+  @@index([aggregateType])
+  @@index([timestamp])
+  @@map("event_store_snapshots")
+}
+
+model SagaState {
+  sagaId       String   @id @default(uuid())
+  sagaType     String
+  state        String   // JSON string
+  context      String?  // JSON string
+  currentStep  String?
+  startedAt    DateTime @default(now())
+  completedAt  DateTime?
+  failedAt     DateTime?
+  error        String?
+
+  @@index([sagaType])
+  @@index([state])
+  @@map("saga_states")
 }

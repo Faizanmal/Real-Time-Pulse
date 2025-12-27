@@ -1,7 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { DataValidationService } from './data-validation.service';
+import { EmailService } from '../email/email.service';
+import { CacheService } from '../cache/cache.service';
 import { ValidationRuleType, ValidationSeverity } from '@prisma/client';
 
 @Injectable()
@@ -11,6 +13,9 @@ export class ValidationEngineService {
   constructor(
     private prisma: PrismaService,
     private dataValidationService: DataValidationService,
+    private emailService: EmailService,
+    @Inject(forwardRef(() => CacheService))
+    private cacheService: CacheService,
   ) {}
 
   // Run validation checks every 10 minutes
@@ -68,20 +73,93 @@ export class ValidationEngineService {
   }
 
   private async fetchDataForValidation(rule: any): Promise<any> {
-    // Fetch recent data from the integration
-    // This is a placeholder - in production, you'd fetch from your data cache/warehouse
-    if (rule.integration) {
-      // Get cached widget data or fetch from integration
+    // First, try to get data from cache
+    if (rule.integrationId) {
+      // Get widgets using this integration
       const widgets = await this.prisma.widget.findMany({
         where: { integrationId: rule.integrationId },
-        take: 1,
+        include: {
+          portal: { select: { workspaceId: true } },
+        },
+        take: 10,
       });
 
-      if (widgets.length > 0 && widgets[0].cachedData) {
-        return widgets[0].cachedData;
+      if (widgets.length > 0) {
+        // Try to get cached widget data
+        for (const widget of widgets) {
+          const cachedData = await this.cacheService.getWidgetData(widget.id);
+          if (cachedData) {
+            this.logger.debug(`Using cached data for widget ${widget.id}`);
+            return cachedData;
+          }
+        }
+
+        // Fall back to widget config if no cached data
+        const widgetWithConfig = widgets.find(
+          (w) => w.config && Object.keys(w.config as object).length > 0,
+        );
+        if (widgetWithConfig) {
+          return widgetWithConfig.config;
+        }
       }
     }
 
+    // If no integration-based data, check for portal-level data
+    if (rule.portalId) {
+      const portal = await this.prisma.portal.findUnique({
+        where: { id: rule.portalId },
+        include: {
+          widgets: {
+            take: 5,
+            orderBy: { updatedAt: 'desc' },
+          },
+        },
+      });
+
+      if (portal && portal.widgets.length > 0) {
+        // Aggregate data from widgets
+        const aggregatedData: Record<string, any> = {};
+        for (const widget of portal.widgets) {
+          const cachedData = await this.cacheService.getWidgetData(widget.id);
+          if (cachedData) {
+            aggregatedData[widget.name] = cachedData;
+          } else if (widget.config) {
+            aggregatedData[widget.name] = widget.config;
+          }
+        }
+        return aggregatedData;
+      }
+    }
+
+    // Check for workspace-level metrics
+    if (rule.workspaceId) {
+      const workspace = await this.prisma.workspace.findUnique({
+        where: { id: rule.workspaceId },
+        include: {
+          portals: {
+            take: 1,
+            include: {
+              widgets: { take: 3 },
+            },
+          },
+        },
+      });
+
+      if (workspace && workspace.portals.length > 0) {
+        const portal = workspace.portals[0];
+        if (portal.widgets.length > 0) {
+          for (const widget of portal.widgets) {
+            const cachedData = await this.cacheService.getWidgetData(widget.id);
+            if (cachedData) {
+              return cachedData;
+            }
+          }
+          return portal.widgets[0].config;
+        }
+      }
+    }
+
+    this.logger.debug(`No data available for validation rule ${rule.id}`);
     return null;
   }
 
@@ -154,7 +232,10 @@ export class ValidationEngineService {
 
     const { min, max } = config;
 
-    if ((min !== undefined && value < min) || (max !== undefined && value > max)) {
+    if (
+      (min !== undefined && value < min) ||
+      (max !== undefined && value > max)
+    ) {
       return {
         type: 'OUT_OF_RANGE',
         expectedValue: `${min} - ${max}`,
@@ -169,16 +250,17 @@ export class ValidationEngineService {
     if (typeof value !== 'number') return null;
 
     // Get historical values
-    const historicalViolations = await this.prisma.dataValidationViolation.findMany({
-      where: {
-        ruleId: rule.id,
-        timestamp: {
-          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+    const historicalViolations =
+      await this.prisma.dataValidationViolation.findMany({
+        where: {
+          ruleId: rule.id,
+          timestamp: {
+            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+          },
         },
-      },
-      orderBy: { timestamp: 'desc' },
-      take: 100,
-    });
+        orderBy: { timestamp: 'desc' },
+        take: 100,
+      });
 
     if (historicalViolations.length < 10) {
       // Not enough historical data
@@ -249,7 +331,7 @@ export class ValidationEngineService {
 
     if (compareWidgets.length === 0) return null;
 
-    const compareData = compareWidgets[0].cachedData;
+    const compareData = compareWidgets[0].config;
     const compareValue = this.getValueByPath(compareData, compareFieldPath);
 
     if (typeof value === 'number' && typeof compareValue === 'number') {
@@ -361,7 +443,7 @@ export class ValidationEngineService {
       },
     });
 
-    const results = [];
+    const results: any[] = [];
 
     for (const rule of rules) {
       const value = this.getValueByPath(data, fieldPath);

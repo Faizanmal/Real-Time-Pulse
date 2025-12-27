@@ -28,11 +28,8 @@ export interface RequestUser {
 /**
  * Authenticated request with user context
  */
-export interface AuthenticatedRequest extends Request {
+export interface AuthenticatedRequest {
   user: RequestUser;
-  requestId?: string;
-  correlationId?: string;
-  startTime?: number;
 }
 
 /**
@@ -55,8 +52,13 @@ export interface ApiKeyRequest extends Request {
 /**
  * Type guard to check if user is authenticated
  */
-export function isAuthenticated(req: Request): req is AuthenticatedRequest {
-  return 'user' in req && req.user !== undefined && typeof (req as AuthenticatedRequest).user.id === 'string';
+export function isAuthenticated(req: Request): boolean {
+  return (
+    'user' in req &&
+    req.user !== undefined &&
+    typeof (req as any).user.id === 'string' &&
+    typeof (req as any).user.email === 'string'
+  );
 }
 
 /**

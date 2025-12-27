@@ -34,7 +34,7 @@ import { DataLoaderService } from './dataloader.service';
         sortSchema: true,
         playground: configService.get('graphql.playground'),
         introspection: configService.get('graphql.introspection'),
-        
+
         // Subscriptions via graphql-ws
         subscriptions: {
           'graphql-ws': {
@@ -49,7 +49,7 @@ import { DataLoaderService } from './dataloader.service';
             },
           },
         },
-        
+
         // Context for each request
         context: ({ req, res, connection }) => {
           if (connection) {
@@ -61,12 +61,12 @@ import { DataLoaderService } from './dataloader.service';
             // Data loaders will be injected per request
           };
         },
-        
+
         // Error formatting
         formatError: (error) => {
           // Remove stack traces in production
           if (process.env.NODE_ENV === 'production') {
-            delete error.extensions?.exception?.stacktrace;
+            delete (error.extensions?.exception as any)?.stacktrace;
           }
           return {
             message: error.message,
@@ -78,19 +78,19 @@ import { DataLoaderService } from './dataloader.service';
             },
           };
         },
-        
+
         // Plugins
         plugins: [],
-        
+
         // Cache configuration
         cache: 'bounded',
         persistedQueries: {
           ttl: 900, // 15 minutes
         },
-        
+
         // Upload configuration
         uploads: false, // Handled separately
-        
+
         // CORS handled by main app
         cors: false,
       }),

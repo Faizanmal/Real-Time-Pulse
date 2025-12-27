@@ -12,7 +12,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { DomainEvent } from './event-sourcing.service';
 
 // Saga State
-export type SagaState = 'STARTED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'COMPENSATING' | 'COMPENSATED';
+export type SagaState =
+  | 'STARTED'
+  | 'RUNNING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'COMPENSATING'
+  | 'COMPENSATED';
 
 // Saga Step
 export interface SagaStep<T = any> {
@@ -103,7 +109,7 @@ export class SagaOrchestrator implements OnModuleInit {
     this.runningSagas.set(sagaId, context);
 
     // Start execution
-    this.executeSaga(context, definition).catch(error => {
+    this.executeSaga(context, definition).catch((error) => {
       this.logger.error(`Saga ${sagaId} failed: ${error.message}`);
     });
 
@@ -124,12 +130,14 @@ export class SagaOrchestrator implements OnModuleInit {
         const step = definition.steps[i];
         context.currentStep = i;
 
-        this.logger.debug(`Executing step ${step.name} for saga ${context.sagaId}`);
+        this.logger.debug(
+          `Executing step ${step.name} for saga ${context.sagaId}`,
+        );
 
         try {
           // Execute with timeout and retries
           await this.executeStepWithRetry(step, context);
-          
+
           context.completedSteps.push(step.name);
           await this.persistSagaState(context);
 
@@ -221,7 +229,7 @@ export class SagaOrchestrator implements OnModuleInit {
     // Execute compensation in reverse order
     for (let i = context.completedSteps.length - 1; i >= 0; i--) {
       const stepName = context.completedSteps[i];
-      const step = definition.steps.find(s => s.name === stepName);
+      const step = definition.steps.find((s) => s.name === stepName);
 
       if (step) {
         try {
@@ -233,8 +241,12 @@ export class SagaOrchestrator implements OnModuleInit {
             step: step.name,
           });
         } catch (error) {
-          this.logger.error(`Compensation for step ${step.name} failed: ${error.message}`);
-          context.errors.push(`Compensation failed for ${step.name}: ${error.message}`);
+          this.logger.error(
+            `Compensation for step ${step.name} failed: ${error.message}`,
+          );
+          context.errors.push(
+            `Compensation failed for ${step.name}: ${error.message}`,
+          );
         }
       }
     }
@@ -317,12 +329,10 @@ export class SagaOrchestrator implements OnModuleInit {
         state: context.state,
         context: JSON.stringify(context),
         startedAt: context.startedAt,
-        updatedAt: new Date(),
       },
       update: {
         state: context.state,
         context: JSON.stringify(context),
-        updatedAt: new Date(),
       },
     });
   }
@@ -349,7 +359,7 @@ export class SagaOrchestrator implements OnModuleInit {
   }
 
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 

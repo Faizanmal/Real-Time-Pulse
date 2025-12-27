@@ -2,7 +2,7 @@
  * =============================================================================
  * REAL-TIME PULSE - ADVANCED SECURITY SERVICE
  * =============================================================================
- * 
+ *
  * Enterprise-grade security including rate limiting, IP filtering, encryption,
  * input sanitization, and security headers.
  */
@@ -22,7 +22,8 @@ import * as bcrypt from 'bcrypt';
 // Rate limiter using sliding window algorithm
 @Injectable()
 export class RateLimiterService {
-  private windows: Map<string, { count: number; timestamps: number[] }> = new Map();
+  private windows: Map<string, { count: number; timestamps: number[] }> =
+    new Map();
   private readonly windowSizeMs: number;
   private readonly maxRequests: number;
 
@@ -34,7 +35,11 @@ export class RateLimiterService {
     setInterval(() => this.cleanup(), 60000);
   }
 
-  isAllowed(key: string): { allowed: boolean; remaining: number; resetMs: number } {
+  isAllowed(key: string): {
+    allowed: boolean;
+    remaining: number;
+    resetMs: number;
+  } {
     const now = Date.now();
     const windowStart = now - this.windowSizeMs;
 
@@ -91,7 +96,10 @@ export class RateLimitGuard implements CanActivate {
 
     response.setHeader('X-RateLimit-Limit', '100');
     response.setHeader('X-RateLimit-Remaining', result.remaining.toString());
-    response.setHeader('X-RateLimit-Reset', Math.ceil(result.resetMs / 1000).toString());
+    response.setHeader(
+      'X-RateLimit-Reset',
+      Math.ceil(result.resetMs / 1000).toString(),
+    );
 
     if (!result.allowed) {
       throw new HttpException(
@@ -120,7 +128,11 @@ export class RateLimitGuard implements CanActivate {
 export class IPFilterService {
   private whitelist: Set<string> = new Set();
   private blacklist: Set<string> = new Set();
-  private ipRanges: { start: number; end: number; type: 'whitelist' | 'blacklist' }[] = [];
+  private ipRanges: {
+    start: number;
+    end: number;
+    type: 'whitelist' | 'blacklist';
+  }[] = [];
 
   addToWhitelist(ip: string) {
     this.whitelist.add(ip);
@@ -193,7 +205,11 @@ export class EncryptionService {
   // Encrypt data
   encrypt(plaintext: string): string {
     const iv = crypto.randomBytes(this.ivLength);
-    const cipher = crypto.createCipheriv(this.algorithm, this.encryptionKey, iv);
+    const cipher = crypto.createCipheriv(
+      this.algorithm,
+      this.encryptionKey,
+      iv,
+    );
 
     let encrypted = cipher.update(plaintext, 'utf8', 'hex');
     encrypted += cipher.final('hex');
@@ -207,7 +223,7 @@ export class EncryptionService {
   // Decrypt data
   decrypt(ciphertext: string): string {
     const [ivHex, tagHex, encrypted] = ciphertext.split(':');
-    
+
     if (!ivHex || !tagHex || !encrypted) {
       throw new Error('Invalid ciphertext format');
     }
@@ -215,7 +231,11 @@ export class EncryptionService {
     const iv = Buffer.from(ivHex, 'hex');
     const tag = Buffer.from(tagHex, 'hex');
 
-    const decipher = crypto.createDecipheriv(this.algorithm, this.encryptionKey, iv);
+    const decipher = crypto.createDecipheriv(
+      this.algorithm,
+      this.encryptionKey,
+      iv,
+    );
     decipher.setAuthTag(tag);
 
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');
@@ -261,7 +281,10 @@ export class EncryptionService {
   // Verify HMAC signature
   verifySignature(data: string, signature: string, secret?: string): boolean {
     const expected = this.sign(data, secret);
-    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+    return crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expected),
+    );
   }
 }
 
@@ -313,12 +336,15 @@ export class SanitizationService {
   }
 
   // Strip potentially dangerous characters
-  sanitizeString(input: string, options?: { maxLength?: number; allowNewlines?: boolean }): string {
+  sanitizeString(
+    input: string,
+    options?: { maxLength?: number; allowNewlines?: boolean },
+  ): string {
     let result = input.trim();
-    
+
     // Remove null bytes
     result = result.replace(/\0/g, '');
-    
+
     // Remove control characters except newlines if allowed
     if (options?.allowNewlines) {
       result = result.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, '');
@@ -341,39 +367,39 @@ export class SecurityHeadersMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     // Prevent clickjacking
     res.setHeader('X-Frame-Options', 'DENY');
-    
+
     // Prevent MIME type sniffing
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    
+
     // Enable XSS protection
     res.setHeader('X-XSS-Protection', '1; mode=block');
-    
+
     // Referrer policy
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    
+
     // Content Security Policy
     res.setHeader(
       'Content-Security-Policy',
       "default-src 'self'; " +
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; " +
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-      "font-src 'self' https://fonts.gstatic.com; " +
-      "img-src 'self' data: https:; " +
-      "connect-src 'self' wss: https:; " +
-      "frame-ancestors 'none';"
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; " +
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+        "font-src 'self' https://fonts.gstatic.com; " +
+        "img-src 'self' data: https:; " +
+        "connect-src 'self' wss: https:; " +
+        "frame-ancestors 'none';",
     );
-    
+
     // Permissions Policy
     res.setHeader(
       'Permissions-Policy',
-      'camera=(), microphone=(), geolocation=(), interest-cohort=()'
+      'camera=(), microphone=(), geolocation=(), interest-cohort=()',
     );
-    
+
     // HSTS (enable in production with proper SSL)
     if (process.env.NODE_ENV === 'production') {
       res.setHeader(
         'Strict-Transport-Security',
-        'max-age=31536000; includeSubDomains; preload'
+        'max-age=31536000; includeSubDomains; preload',
       );
     }
 
@@ -411,7 +437,7 @@ export class CsrfService {
     }
     return crypto.timingSafeEqual(
       Buffer.from(stored.token),
-      Buffer.from(token)
+      Buffer.from(token),
     );
   }
 
@@ -428,7 +454,15 @@ export class CsrfService {
 // Brute force protection
 @Injectable()
 export class BruteForceProtectionService {
-  private attempts: Map<string, { count: number; firstAttempt: number; blocked: boolean; blockExpiry?: number }> = new Map();
+  private attempts: Map<
+    string,
+    {
+      count: number;
+      firstAttempt: number;
+      blocked: boolean;
+      blockExpiry?: number;
+    }
+  > = new Map();
   private readonly maxAttempts = 5;
   private readonly windowMs = 900000; // 15 minutes
   private readonly blockDurationMs = 3600000; // 1 hour

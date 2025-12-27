@@ -12,7 +12,12 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { EnhancedComplianceService } from './enhanced-compliance.service';
-import { DataSensitivity, IncidentSeverity, IncidentCategory, IncidentStatus } from '@prisma/client';
+import {
+  DataSensitivity,
+  IncidentSeverity,
+  IncidentCategory,
+  IncidentStatus,
+} from '@prisma/client';
 
 @Controller('enhanced-compliance')
 @UseGuards(JwtAuthGuard)
@@ -193,10 +198,7 @@ export class EnhancedComplianceController {
 
   @Get('incidents/:id')
   async getIncident(@Param('id') id: string, @Req() req: any) {
-    return this.enhancedComplianceService.getIncident(
-      id,
-      req.user.workspaceId,
-    );
+    return this.enhancedComplianceService.getIncident(id, req.user.workspaceId);
   }
 
   @Patch('incidents/:id')

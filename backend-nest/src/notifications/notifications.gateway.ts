@@ -37,7 +37,6 @@ export class NotificationsGateway
   async handleConnection(client: AuthenticatedSocket) {
     try {
       // Authenticate WebSocket connection
-      /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 
       const authData = client.handshake.auth as any;
       const authHeader = client.handshake.headers.authorization;
@@ -61,8 +60,6 @@ export class NotificationsGateway
 
       (client as any).workspaceId = workspaceId;
 
-      /* eslint-enable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
-
       // Track user's sockets
       if (!this.userSockets.has(userId)) {
         this.userSockets.set(userId, new Set());
@@ -73,7 +70,6 @@ export class NotificationsGateway
       void client.join(`workspace:${workspaceId}`);
 
       this.logger.log(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         `Client connected: ${client.id} (User: ${(client as any).userId as string})`,
       );
 

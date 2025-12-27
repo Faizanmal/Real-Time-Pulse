@@ -12,7 +12,7 @@ export interface TraceMetadata {
 /**
  * Decorator for tracing and logging operations
  * Adds correlation ID tracking and operation timing
- * 
+ *
  * @param operationName - Name of the operation for logging
  * @param options - Additional tracing options
  */
@@ -43,7 +43,8 @@ export const SENSITIVE_FIELDS_KEY = 'sensitive_fields';
 
 export function SensitiveData(): PropertyDecorator {
   return (target: object, propertyKey: string | symbol) => {
-    const existingFields = Reflect.getMetadata(SENSITIVE_FIELDS_KEY, target.constructor) || [];
+    const existingFields =
+      Reflect.getMetadata(SENSITIVE_FIELDS_KEY, target.constructor) || [];
     Reflect.defineMetadata(
       SENSITIVE_FIELDS_KEY,
       [...existingFields, propertyKey],

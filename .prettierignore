@@ -1,0 +1,31 @@
+# Ignore dependencies
+node_modules/
+**/node_modules/
+
+# Ignore build outputs
+dist/
+build/
+.next/
+out/
+
+# Ignore generated files
+*.generated.*
+prisma/generated/
+
+# Ignore coverage
+coverage/
+
+# Ignore lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Ignore environment files
+.env*
+
+# Ignore IDE files
+.idea/
+.vscode/
+
+# Ignore Prisma migrations (auto-generated)
+**/migrations/**/*.sql

@@ -139,14 +139,13 @@ export class VoiceController {
 
   @Post('accessibility/describe')
   @ApiOperation({ summary: 'Generate accessibility description for widget' })
-  async generateDescription(
+  generateDescription(
     @Body() dto: { widgetType: string; widgetData: Record<string, unknown> },
   ) {
-    const description =
-      await this.voiceService.generateAccessibilityDescription(
-        dto.widgetType,
-        dto.widgetData,
-      );
+    const description = this.voiceService.generateAccessibilityDescription(
+      dto.widgetType,
+      dto.widgetData,
+    );
     return { description };
   }
 }

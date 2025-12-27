@@ -43,10 +43,7 @@ export class GdprService {
     });
   }
 
-  async revokeConsent(
-    consentId: string,
-    reason?: string,
-  ) {
+  async revokeConsent(consentId: string, reason?: string) {
     return this.prisma.gDPRConsent.update({
       where: { id: consentId },
       data: {
@@ -285,10 +282,7 @@ export class GdprService {
     return `https://exports.example.com/data-${Date.now()}.json`;
   }
 
-  private async deleteOrAnonymizeUserData(
-    workspaceId: string,
-    email: string,
-  ) {
+  private async deleteOrAnonymizeUserData(workspaceId: string, email: string) {
     const user = await this.prisma.user.findFirst({
       where: { email, workspaceId },
     });

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { ClientReportService } from './client-report.service';
+import { EmailService } from '../email/email.service';
 import { ClientReportStatus } from '@prisma/client';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class ReportGeneratorService {
   constructor(
     private prisma: PrismaService,
     private clientReportService: ClientReportService,
+    private emailService: EmailService,
   ) {}
 
   // Check for scheduled reports every 10 minutes
@@ -84,7 +86,7 @@ export class ReportGeneratorService {
   }
 
   private async generateAIInsights(report: any): Promise<any[]> {
-    const insights = [];
+    const insights: any[] = [];
 
     if (report.project) {
       const prof = report.project.profitability;
@@ -188,9 +190,10 @@ export class ReportGeneratorService {
       }
 
       summary += `Resource utilization stands at ${prof.utilizationRate.toFixed(1)}%, `;
-      summary += prof.utilizationRate > 75
-        ? 'indicating efficient team deployment.\n\n'
-        : 'with opportunities for optimization.\n\n';
+      summary +=
+        prof.utilizationRate > 75
+          ? 'indicating efficient team deployment.\n\n'
+          : 'with opportunities for optimization.\n\n';
     }
 
     summary += `Key highlights include: `;
@@ -198,9 +201,7 @@ export class ReportGeneratorService {
       (i) => i.trend === 'positive' || i.type === 'success',
     );
     if (positiveInsights.length > 0) {
-      summary += positiveInsights
-        .map((i) => i.title.toLowerCase())
-        .join(', ');
+      summary += positiveInsights.map((i) => i.title.toLowerCase()).join(', ');
     } else {
       summary += 'ongoing progress on project deliverables';
     }
@@ -213,7 +214,7 @@ export class ReportGeneratorService {
     report: any,
     insights: any[],
   ): Promise<any[]> {
-    const recommendations = [];
+    const recommendations: any[] = [];
 
     // Extract warning and improvement insights
     const concerns = insights.filter(
@@ -301,12 +302,141 @@ export class ReportGeneratorService {
   }
 
   private async sendReport(reportId: string) {
-    // TODO: Implement actual email sending
-    // This would integrate with your email service (SendGrid, AWS SES, etc.)
     this.logger.log(`Sending report ${reportId}...`);
 
-    // Simulate sending
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const report = await this.clientReportService.getReportById(reportId);
+    if (!report) {
+      throw new Error('Report not found for sending');
+    }
+
+    // Get recipient email(s)
+    const recipients = report.recipientEmails || [];
+
+    if (recipients.length === 0) {
+      this.logger.warn(`No recipients for report ${reportId}, skipping email`);
+      return;
+    }
+
+    // Generate report content
+    const reportContent = this.generateReportHtml(report);
+
+    // Send email using EmailService
+    try {
+      await this.emailService.sendEmail({
+        to: recipients,
+        subject: `${report.reportType} Report: ${report.title || report.clientName}`,
+        template: 'client-report',
+        context: {
+          reportTitle: report.title || `${report.reportType} Report`,
+          clientName: report.clientName,
+          executiveSummary: report.executiveSummary,
+          keyInsights: report.keyInsights || [],
+          metrics: report.metrics || {},
+          recommendations: report.recommendations || [],
+          reportDate: new Date().toLocaleDateString(),
+          reportContent,
+        },
+      });
+
+      this.logger.log(
+        `Report ${reportId} sent successfully to ${recipients.join(', ')}`,
+      );
+    } catch (error) {
+      this.logger.error(`Failed to send report ${reportId}: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate HTML content for report email
+   */
+  private generateReportHtml(report: any): string {
+    let html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto;">
+        <h1 style="color: #1a1a2e;">${report.title || report.reportType} Report</h1>
+        <p style="color: #666;">Prepared for: ${report.clientName}</p>
+        <p style="color: #666;">Date: ${new Date().toLocaleDateString()}</p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+    `;
+
+    // Executive Summary
+    if (report.executiveSummary) {
+      html += `
+        <h2 style="color: #1a1a2e;">Executive Summary</h2>
+        <p style="color: #333; line-height: 1.6;">${report.executiveSummary}</p>
+      `;
+    }
+
+    // Key Insights
+    if (report.keyInsights && report.keyInsights.length > 0) {
+      html += `<h2 style="color: #1a1a2e;">Key Insights</h2><ul>`;
+      for (const insight of report.keyInsights) {
+        const trendIcon =
+          insight.trend === 'positive'
+            ? '📈'
+            : insight.trend === 'negative'
+              ? '📉'
+              : '➡️';
+        html += `<li style="margin-bottom: 10px;"><strong>${trendIcon} ${insight.title}</strong>: ${insight.description}</li>`;
+      }
+      html += `</ul>`;
+    }
+
+    // Metrics
+    if (report.metrics) {
+      html += `<h2 style="color: #1a1a2e;">Key Metrics</h2>`;
+      html += `<table style="width: 100%; border-collapse: collapse;">`;
+
+      if (report.metrics.financial) {
+        html += `
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Total Revenue</strong></td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">$${report.metrics.financial.totalRevenue?.toFixed(2) || '0.00'}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Profit Margin</strong></td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">${report.metrics.financial.profitMargin?.toFixed(1) || '0'}%</td></tr>
+        `;
+      }
+
+      if (report.metrics.time) {
+        html += `
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Total Hours</strong></td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">${report.metrics.time.totalHours || 0}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Utilization Rate</strong></td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">${report.metrics.time.utilizationRate?.toFixed(1) || '0'}%</td></tr>
+        `;
+      }
+
+      html += `</table>`;
+    }
+
+    // Recommendations
+    if (report.recommendations && report.recommendations.length > 0) {
+      html += `<h2 style="color: #1a1a2e;">Recommendations</h2><ul>`;
+      for (const rec of report.recommendations) {
+        const priorityColor =
+          rec.priority === 'high'
+            ? '#e74c3c'
+            : rec.priority === 'medium'
+              ? '#f39c12'
+              : '#27ae60';
+        html += `<li style="margin-bottom: 15px;">
+          <span style="background: ${priorityColor}; color: white; padding: 2px 8px; border-radius: 3px; font-size: 12px;">${rec.priority?.toUpperCase()}</span>
+          <strong style="margin-left: 8px;">${rec.title}</strong>
+          <p style="color: #666; margin: 5px 0 0 0;">${rec.action}</p>
+        </li>`;
+      }
+      html += `</ul>`;
+    }
+
+    html += `
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+        <p style="color: #999; font-size: 12px;">
+          This report was automatically generated by Real-Time Pulse.
+          <br />Visit your dashboard for more details.
+        </p>
+      </div>
+    `;
+
+    return html;
   }
 
   async generateReportOnDemand(reportId: string) {

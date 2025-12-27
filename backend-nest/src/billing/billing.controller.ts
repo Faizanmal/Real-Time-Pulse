@@ -23,7 +23,7 @@ import {
   CreatePortalSessionDto,
   ChangePlanDto,
 } from './dto/billing.dto';
-import { AuthenticatedRequest } from '../common/interfaces/auth.interface';
+import type { AuthenticatedRequest } from '../common/interfaces/auth.interface';
 
 @ApiTags('Billing')
 @Controller('billing')
@@ -108,7 +108,10 @@ export class BillingController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Change subscription plan' })
   @ApiResponse({ status: 200, description: 'Plan changed' })
-  async changePlan(@Request() req: AuthenticatedRequest, @Body() dto: ChangePlanDto) {
+  async changePlan(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: ChangePlanDto,
+  ) {
     return this.billingService.changePlan(req.user.workspaceId, dto.plan);
   }
 
@@ -117,7 +120,10 @@ export class BillingController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get billing history' })
   @ApiResponse({ status: 200, description: 'Returns billing events' })
-  async getBillingHistory(@Request() req: AuthenticatedRequest, @Query('limit') limit?: number) {
+  async getBillingHistory(
+    @Request() req: AuthenticatedRequest,
+    @Query('limit') limit?: number,
+  ) {
     return this.billingService.getBillingHistory(
       req.user.workspaceId,
       limit || 20,
