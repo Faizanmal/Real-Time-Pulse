@@ -69,6 +69,7 @@ model User {
   auditLogs          AuditLog[]       @relation("UserAuditLogs")
   apiKeys            ApiKey[]
   aiQueries          AIQuery[]
+  aiConversations    AIConversation[]
   pushTokens         PushToken[]
   gamificationProfile GamificationProfile?
 
@@ -134,6 +135,7 @@ model Workspace {
   scheduledReports      ScheduledReport[]
   webhooks              Webhook[]
   aiInsights            AIInsight[]
+  aiConversations       AIConversation[]
   members               WorkspaceMember[]
   dataSourceHealth      DataSourceHealth[]
   dataValidationRules   DataValidationRule[]
@@ -154,6 +156,9 @@ model Workspace {
   complianceAssessments ComplianceAssessment[]
   dataMappings          DataMapping[]
   securityIncidents     SecurityIncident[]
+  iotDevices            IoTDevice[]
+  edgeNodes             EdgeNode[]
+  etlPipelines          ETLPipeline[]
 
   @@map("workspaces")
 }
@@ -262,6 +267,7 @@ model Integration {
 }
 
 enum IntegrationProvider {
+  // Original Integrations
   ASANA
   CLICKUP
   TRELLO
@@ -276,6 +282,93 @@ enum IntegrationProvider {
   MONDAY
   NOTION
   STRIPE
+
+  // E-commerce Integrations
+  SHOPIFY
+  WOOCOMMERCE
+  BIGCOMMERCE
+  STRIPE_CONNECT
+  SQUARE
+  PAYPAL
+
+  // Marketing Integrations
+  FACEBOOK_ADS
+  GOOGLE_ADS
+  LINKEDIN_ADS
+  TIKTOK_ADS
+  TWITTER_ADS
+  PINTEREST_ADS
+  MAILCHIMP
+  SENDGRID
+  KLAVIYO
+
+  // CRM Integrations
+  SALESFORCE
+  PIPEDRIVE
+  ZOHO_CRM
+  FRESHSALES
+  COPPER
+  CLOSE_CRM
+
+  // Support Integrations
+  ZENDESK
+  INTERCOM
+  FRESHDESK
+  HELPSCOUT
+  DRIFT
+  CRISP
+  FRONT
+
+  // Database Integrations
+  MONGODB_ATLAS
+  POSTGRESQL_DIRECT
+  MYSQL_DIRECT
+  REDIS_CLOUD
+  ELASTICSEARCH
+  DYNAMODB
+  FIREBASE_REALTIME
+  SUPABASE
+
+  // Cloud Monitoring Integrations
+  AWS_CLOUDWATCH
+  GCP_MONITORING
+  AZURE_MONITOR
+  AWS_S3
+  AZURE_BLOB
+  GCS_STORAGE
+
+  // DevOps Integrations
+  DATADOG
+  NEW_RELIC
+  SENTRY
+  PAGERDUTY
+  SPLUNK
+  GRAFANA
+  PROMETHEUS
+  OPSGENIE
+
+  // Data Warehouse Integrations
+  SNOWFLAKE
+  BIGQUERY
+  REDSHIFT
+  DATABRICKS
+  DATALAKE_S3
+  AZURE_SYNAPSE
+
+  // IoT & Streaming
+  AWS_IOT
+  AZURE_IOT
+  KAFKA
+  MQTT_BROKER
+  NATS
+
+  // Productivity
+  AIRTABLE
+  CODA
+  BASECAMP
+  LINEAR
+  FIGMA
+  MIRO
 }
 
 enum IntegrationStatus {
@@ -325,6 +418,7 @@ model Portal {
   shareLinks       ShareLink[]
   scheduledReports ScheduledReport[]
   aiInsights       AIInsight[]
+  aiConversations  AIConversation[]
   industryDeployment IndustryDeployment?
   aiPredictions    AIPrediction[]
   aiQueries        AIQuery[]
@@ -1168,6 +1262,41 @@ model AIFeedback {
   @@index([userId])
   @@index([rating])
   @@map("ai_feedback")
+}
+
+// AI Conversation history for conversational AI assistant
+model AIConversation {
+  id String @id @default(uuid())
+
+  // Workspace & User
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Optional portal context
+  portalId String?
+  portal   Portal? @relation(fields: [portalId], references: [id], onDelete: SetNull)
+
+  // Conversation data
+  query       String   @db.Text
+  response    Json
+  queryType   String?
+  success     Boolean  @default(true)
+  
+  // Metadata
+  processingTime Int?     // milliseconds
+  tokenCount     Int?
+  modelUsed      String?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([portalId])
+  @@index([createdAt])
+  @@map("ai_conversations")
 }
 
 enum InsightType {
@@ -2940,4 +3069,220 @@ enum AchievementCategory {
   SOCIAL
   CREATION
   EXPLORATION
+}
+
+// ========================================
+// IOT & EDGE COMPUTING
+// ========================================
+
+model IoTDevice {
+  id String @id @default(uuid())
+
+  // Workspace relationship
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // Device details
+  name       String
+  deviceType String
+  status     String @default("offline") // online, offline, warning, error
+  
+  // Configuration
+  metadata   Json   @default("{}")
+  location   Json?  // { lat, lng, address }
+  tags       String[]
+  
+  // Timestamps
+  lastSeen  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  metrics    IoTMetric[]
+  alerts     IoTAlert[]
+  thresholds IoTThreshold[]
+  commands   IoTCommandLog[]
+
+  @@index([workspaceId])
+  @@index([status])
+  @@index([deviceType])
+  @@map("iot_devices")
+}
+
+model IoTMetric {
+  id String @id @default(uuid())
+
+  // Device relationship
+  deviceId String
+  device   IoTDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  // Metric data
+  timestamp DateTime
+  metrics   Json // { temperature: 25.5, humidity: 60, etc }
+
+  @@index([deviceId])
+  @@index([timestamp])
+  @@map("iot_metrics")
+}
+
+model IoTAlert {
+  id String @id @default(uuid())
+
+  // Device relationship
+  deviceId String
+  device   IoTDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  // Alert details
+  type       String // threshold, anomaly, offline, error
+  severity   String // info, warning, critical
+  message    String
+  timestamp  DateTime @default(now())
+  
+  // Status
+  acknowledged   Boolean   @default(false)
+  acknowledgedAt DateTime?
+  acknowledgedBy String?
+
+  @@index([deviceId])
+  @@index([severity])
+  @@index([acknowledged])
+  @@map("iot_alerts")
+}
+
+model IoTThreshold {
+  id String @id @default(uuid())
+
+  // Device relationship
+  deviceId String
+  device   IoTDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  // Threshold configuration
+  metricName String
+  operator   String // gt, gte, lt, lte, eq
+  value      Float
+  severity   String @default("warning") // info, warning, critical
+  enabled    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([deviceId])
+  @@map("iot_thresholds")
+}
+
+model IoTCommandLog {
+  id String @id @default(uuid())
+
+  // Device relationship
+  deviceId String
+  device   IoTDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  // Command details
+  command  String
+  payload  Json
+  status   String // sent, acknowledged, executed, failed
+  response Json?
+  
+  // Timestamps
+  sentAt      DateTime @default(now())
+  executedAt  DateTime?
+
+  @@index([deviceId])
+  @@index([sentAt])
+  @@map("iot_command_logs")
+}
+
+model EdgeNode {
+  id String @id @default(uuid())
+
+  // Workspace relationship
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // Node details
+  name     String
+  location String
+  status   String @default("inactive") // active, inactive, maintenance
+
+  // Configuration
+  processingRules  Json @default("[]")
+  dataFilters      Json @default("[]")
+  aggregationConfig Json @default("{}")
+
+  // Resources
+  cpuUsage     Float @default(0)
+  memoryUsage  Float @default(0)
+  storageUsage Float @default(0)
+
+  // Stats
+  devicesConnected   Int @default(0)
+  messagesProcessed  Int @default(0)
+  
+  // Timestamps
+  lastHeartbeat DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([status])
+  @@map("edge_nodes")
+}
+
+// ========================================
+// ETL PIPELINES
+// ========================================
+
+model ETLPipeline {
+  id String @id @default(uuid())
+
+  // Workspace relationship
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // Pipeline details
+  name        String
+  description String?
+  
+  // Pipeline configuration
+  nodes  Json // Array of ETLNode
+  edges  Json // Array of ETLEdge
+  
+  // Scheduling
+  schedule Json? // { cron, timezone, enabled }
+  
+  // Status
+  status String @default("draft") // draft, active, paused, error
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  executions ETLExecution[]
+
+  @@index([workspaceId])
+  @@index([status])
+  @@map("etl_pipelines")
+}
+
+model ETLExecution {
+  id String @id @default(uuid())
+
+  // Pipeline relationship
+  pipelineId String
+  pipeline   ETLPipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+
+  // Execution details
+  status        String // pending, running, completed, failed
+  startedAt     DateTime
+  completedAt   DateTime?
+  rowsProcessed Int @default(0)
+  
+  // Results
+  errors    String[]
+  nodeStats Json @default("{}")
+
+  @@index([pipelineId])
+  @@index([startedAt])
+  @@map("etl_executions")
 }

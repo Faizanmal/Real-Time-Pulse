@@ -66,6 +66,10 @@ import { VoiceControlModule } from './voice-control/voice-control.module';
 import { GamificationModule } from './gamification/gamification.module';
 import { AnnotationsModule } from './annotations/annotations.module';
 
+// ML/AI & Industry Solutions (Phase 3)
+import { MLModule } from './ml/ml.module';
+import { IndustryModule } from './industry/industry.module';
+
 // Config imports
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
@@ -183,6 +187,9 @@ import firebaseConfig from './config/firebase.config';
     EnhancedComplianceModule,
     GamificationModule,
     AnnotationsModule,
+    // ML/AI & Industry Solutions (Phase 3)
+    MLModule,
+    IndustryModule,
   ],
   controllers: [AppController],
   providers: [
