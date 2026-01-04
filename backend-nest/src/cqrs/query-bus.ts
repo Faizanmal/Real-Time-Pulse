@@ -179,7 +179,7 @@ export class QueryBus {
   }
 
   // Cache management
-  private getFromCache(key: string): any | null {
+  private getFromCache(key: string): any {
     const cached = this.cache.get(key);
     if (cached && cached.expiresAt > Date.now()) {
       return cached.data;

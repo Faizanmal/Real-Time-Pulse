@@ -219,32 +219,35 @@ export class PortalSummaryProjection implements IProjection {
         });
         break;
 
-      case 'PortalUpdated':
+      case 'PortalUpdated': {
         const portal = this.summaries.get(event.aggregateId);
         if (portal) {
           Object.assign(portal, event.payload, { updatedAt: event.timestamp });
         }
         break;
+      }
 
       case 'PortalDeleted':
         this.summaries.delete(event.aggregateId);
         break;
 
-      case 'WidgetAdded':
+      case 'WidgetAdded': {
         const p1 = this.summaries.get(event.aggregateId);
         if (p1) {
           p1.widgetCount++;
           p1.updatedAt = event.timestamp;
         }
         break;
+      }
 
-      case 'WidgetRemoved':
+      case 'WidgetRemoved': {
         const p2 = this.summaries.get(event.aggregateId);
         if (p2) {
           p2.widgetCount--;
           p2.updatedAt = event.timestamp;
         }
         break;
+      }
     }
   }
 

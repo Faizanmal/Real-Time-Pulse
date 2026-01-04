@@ -632,7 +632,7 @@ export class NotificationService implements OnModuleInit {
 
   private interpolate(template: string, data: Record<string, unknown>): string {
     return template.replace(/\{\{(\w+)\}\}/g, (_, key) =>
-      String(data[key] || ''),
+      String((data[key] as any) || ''),
     );
   }
 
@@ -780,30 +780,32 @@ export class NotificationService implements OnModuleInit {
 
   // Queue processor
   private startQueueProcessor(): void {
-    setInterval(async () => {
-      if (this.processing || this.queue.length === 0) return;
+    setInterval(() => {
+      void (async () => {
+        if (this.processing || this.queue.length === 0) return;
 
-      this.processing = true;
-      const now = new Date();
+        this.processing = true;
+        const now = new Date();
 
-      const toProcess = this.queue.filter(
-        (p) => !p.scheduledFor || p.scheduledFor <= now,
-      );
+        const toProcess = this.queue.filter(
+          (p) => !p.scheduledFor || p.scheduledFor <= now,
+        );
 
-      this.queue = this.queue.filter(
-        (p) => p.scheduledFor && p.scheduledFor > now,
-      );
+        this.queue = this.queue.filter(
+          (p) => p.scheduledFor && p.scheduledFor > now,
+        );
 
-      for (const payload of toProcess) {
-        try {
-          await this.send(payload);
-        } catch (error) {
-          this.logger.error('Failed to process queued notification', error);
+        for (const payload of toProcess) {
+          try {
+            await this.send(payload);
+          } catch (error) {
+            this.logger.error('Failed to process queued notification', error);
+          }
         }
-      }
 
-      this.processing = false;
-    }, 60000); // Check every minute
+        this.processing = false;
+      })();
+    }, 60000);
   }
 }
 

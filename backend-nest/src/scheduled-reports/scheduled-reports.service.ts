@@ -227,7 +227,10 @@ export class ScheduledReportsService {
       },
     });
 
-    this.logger.log(`Found ${dueReports.length} reports due for execution`);
+    // Only log if there are reports to execute (reduce log noise)
+    if (dueReports.length > 0) {
+      this.logger.log(`Found ${dueReports.length} reports due for execution`);
+    }
 
     for (const report of dueReports) {
       try {

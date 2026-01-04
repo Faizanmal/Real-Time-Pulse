@@ -2,7 +2,7 @@
  * =============================================================================
  * REAL-TIME PULSE - API UTILITIES
  * =============================================================================
- * 
+ *
  * Standardized pagination, rate limit handling, and API helpers.
  */
 
@@ -146,14 +146,15 @@ export function createCursorPaginatedResponse<T extends { id: string }>(
 ): CursorPaginatedResponse<T> {
   const hasMore = data.length > limit;
   const items = hasMore ? data.slice(0, limit) : data;
-  
+
   return {
     data: items,
     meta: {
       hasMore,
-      nextCursor: hasMore && items.length > 0 
-        ? String(items[items.length - 1][cursorField]) 
-        : null,
+      nextCursor:
+        hasMore && items.length > 0
+          ? String(items[items.length - 1][cursorField])
+          : null,
       prevCursor: items.length > 0 ? String(items[0][cursorField]) : null,
       count: items.length,
     },
@@ -174,7 +175,9 @@ export interface RateLimitInfo {
 /**
  * Create rate limit response headers
  */
-export function createRateLimitHeaders(info: RateLimitInfo): Record<string, string> {
+export function createRateLimitHeaders(
+  info: RateLimitInfo,
+): Record<string, string> {
   const headers: Record<string, string> = {
     'X-RateLimit-Limit': info.limit.toString(),
     'X-RateLimit-Remaining': info.remaining.toString(),
@@ -222,7 +225,10 @@ export interface ErrorResponse {
 /**
  * Create success response
  */
-export function success<T>(data: T, meta?: Record<string, unknown>): SuccessResponse<T> {
+export function success<T>(
+  data: T,
+  meta?: Record<string, unknown>,
+): SuccessResponse<T> {
   return {
     success: true,
     data,
@@ -278,8 +284,8 @@ export function createDeprecationHeaders(
   successor?: string,
 ): Record<string, string> {
   const headers: Record<string, string> = {
-    'Deprecation': 'true',
-    'Sunset': sunset.toUTCString(),
+    Deprecation: 'true',
+    Sunset: sunset.toUTCString(),
   };
 
   if (successor) {
@@ -296,18 +302,18 @@ export function createDeprecationHeaders(
 /**
  * Standard filter operators
  */
-export type FilterOperator = 
-  | 'eq'      // equals
-  | 'neq'     // not equals
-  | 'gt'      // greater than
-  | 'gte'     // greater than or equal
-  | 'lt'      // less than
-  | 'lte'     // less than or equal
-  | 'in'      // in array
-  | 'nin'     // not in array
-  | 'like'    // contains (case insensitive)
+export type FilterOperator =
+  | 'eq' // equals
+  | 'neq' // not equals
+  | 'gt' // greater than
+  | 'gte' // greater than or equal
+  | 'lt' // less than
+  | 'lte' // less than or equal
+  | 'in' // in array
+  | 'nin' // not in array
+  | 'like' // contains (case insensitive)
   | 'between' // between two values
-  | 'null'    // is null
+  | 'null' // is null
   | 'notnull'; // is not null
 
 /**
@@ -324,7 +330,9 @@ export interface FilterCondition {
  * Format: field[operator]=value
  * Example: ?status[eq]=active&createdAt[gte]=2024-01-01
  */
-export function parseFilters(query: Record<string, unknown>): FilterCondition[] {
+export function parseFilters(
+  query: Record<string, unknown>,
+): FilterCondition[] {
   const filters: FilterCondition[] = [];
   const filterRegex = /^(\w+)\[(\w+)\]$/;
 
@@ -372,10 +380,14 @@ export function filtersToPrismaWhere(
         where[filter.field] = { lte: filter.value };
         break;
       case 'in':
-        where[filter.field] = { in: Array.isArray(filter.value) ? filter.value : [filter.value] };
+        where[filter.field] = {
+          in: Array.isArray(filter.value) ? filter.value : [filter.value],
+        };
         break;
       case 'nin':
-        where[filter.field] = { notIn: Array.isArray(filter.value) ? filter.value : [filter.value] };
+        where[filter.field] = {
+          notIn: Array.isArray(filter.value) ? filter.value : [filter.value],
+        };
         break;
       case 'like':
         where[filter.field] = { contains: filter.value, mode: 'insensitive' };
@@ -405,7 +417,8 @@ export function filtersToPrismaWhere(
  * Validate ID format (UUID)
  */
 export function isValidUUID(id: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRegex.test(id);
 }
 

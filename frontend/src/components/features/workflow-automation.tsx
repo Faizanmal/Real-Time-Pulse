@@ -21,7 +21,15 @@ export default function WorkflowAutomation() {
   const loadWorkflows = async () => {
     try {
       const response = await workflowApi.getWorkflows();
-      setWorkflows(response.data);
+      const data = response.data;
+      if (Array.isArray(data)) {
+        setWorkflows(data);
+      } else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as any).data)) {
+        setWorkflows((data as any).data);
+      } else {
+        console.warn('Unexpected API response format for workflows:', data);
+        setWorkflows([]);
+      }
     } catch (error: any) {
       toast.error('Failed to load workflows');
     } finally {
@@ -134,8 +142,8 @@ export default function WorkflowAutomation() {
             <div className="text-2xl font-bold">
               {workflows.length > 0
                 ? Math.round(
-                    workflows.reduce((sum, w) => sum + getSuccessRate(w), 0) / workflows.length
-                  )
+                  workflows.reduce((sum, w) => sum + getSuccessRate(w), 0) / workflows.length
+                )
                 : 0}
               %
             </div>

@@ -106,7 +106,7 @@ export class ReportQueueProcessor {
           take: 10000,
         });
 
-      case 'performance':
+      case 'performance': {
         // Fetch performance metrics from widgets
         const widgets = await this.prisma.widget.findMany({
           where: {
@@ -130,10 +130,11 @@ export class ReportQueueProcessor {
           refreshInterval: w.refreshInterval,
           integrationProvider: w.integration?.provider,
         }));
+      }
 
       default:
         this.logger.warn(
-          `Unknown report type: ${reportType}, returning empty data`,
+          `Unknown report type: ${reportType as any}, returning empty data`,
         );
         return [];
     }
@@ -174,7 +175,7 @@ export class ReportQueueProcessor {
         if (val === null || val === undefined) return '';
         if (typeof val === 'object')
           return JSON.stringify(val).replace(/,/g, ';');
-        return String(val).replace(/,/g, ';');
+        return String(val as any).replace(/,/g, ';');
       });
       csvRows.push(values.join(','));
     }
@@ -258,7 +259,7 @@ export class ReportQueueProcessor {
                 ? 'N/A'
                 : typeof val === 'object'
                   ? JSON.stringify(val)
-                  : String(val);
+                  : String(val as any);
             doc.text(`  ${header}: ${displayVal}`);
           }
 

@@ -486,7 +486,7 @@ export const AdvancedChartPanel: React.FC<AdvancedChartPanelProps> = ({
             />
           </div>
         )}
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
           {renderChart()}
         </ResponsiveContainer>
       </div>

@@ -118,7 +118,11 @@ export class RateLimitGuard implements CanActivate {
   private getKey(request: Request): string {
     // Use user ID if authenticated, otherwise use IP
     const userId = (request as any).user?.id;
-    const ip = request.ip || request.headers['x-forwarded-for'] || 'unknown';
+    const forwardedFor = request.headers['x-forwarded-for'];
+    const ip =
+      request.ip ||
+      (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor) ||
+      'unknown';
     return userId ? `user:${userId}` : `ip:${ip}`;
   }
 }
@@ -347,8 +351,10 @@ export class SanitizationService {
 
     // Remove control characters except newlines if allowed
     if (options?.allowNewlines) {
+      // eslint-disable-next-line no-control-regex
       result = result.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, '');
     } else {
+      // eslint-disable-next-line no-control-regex
       result = result.replace(/[\x00-\x1F\x7F]/g, '');
     }
 

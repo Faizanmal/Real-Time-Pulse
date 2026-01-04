@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth';
@@ -31,13 +32,17 @@ import {
   Box,
   GitBranch,
   ArrowRight,
+  Moon,
+  Sun,
 } from 'lucide-react';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isAuthenticated, clearAuth } = useAuthStore();
+  const { user, isAuthenticated, clearAuth, isHydrated } = useAuthStore();
   const { notifications, isConnected, unreadCount } = useNotifications();
-  
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
   const [portals, setPortals] = useState<Portal[]>([]);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [stats, setStats] = useState<WorkspaceStats | null>(null);
@@ -45,7 +50,14 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [integrationCount, setIntegrationCount] = useState(0);
 
+  // Handle mounting for theme
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+
     if (!isAuthenticated) {
       router.push('/auth/login');
       return;
@@ -59,7 +71,7 @@ export default function DashboardPage() {
       window.removeEventListener('portal:updated', handlePortalUpdate);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isHydrated, router]);
 
   const loadData = async () => {
     try {
@@ -68,8 +80,8 @@ export default function DashboardPage() {
         workspaceApi.getMyWorkspace(),
         user?.workspaceId ? integrationApi.getAllByWorkspace(user.workspaceId).catch(() => []) : Promise.resolve([]),
       ]);
-      
-      setPortals(portalsData.portals);
+
+      setPortals(portalsData?.portals || []);
       setWorkspace(workspaceData);
       setIntegrationCount(Array.isArray(integrationsData) ? integrationsData.length : 0);
 
@@ -110,30 +122,30 @@ export default function DashboardPage() {
     }
   };
 
-  const filteredPortals = portals.filter((portal) =>
+  const filteredPortals = (portals || []).filter((portal) =>
     portal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     portal.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-purple-50 to-slate-100 dark:from-slate-950 dark:via-purple-950 dark:to-slate-950 flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="text-center"
         >
           <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-lg text-gray-300">Loading your dashboard...</p>
+          <p className="text-lg text-gray-600 dark:text-gray-300">Loading your dashboard...</p>
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-purple-50 to-slate-100 dark:from-slate-950 dark:via-purple-950 dark:to-slate-950">
       {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-slate-900/30 border-b border-slate-800/50">
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 dark:bg-slate-900/30 border-b border-slate-200 dark:border-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center gap-4">
@@ -145,10 +157,10 @@ export default function DashboardPage() {
                 <LayoutDashboard className="h-6 w-6 text-white" />
               </motion.div>
               <div>
-                <h1 className="text-2xl font-bold text-white">
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
                   {workspace?.name || 'Dashboard'}
                 </h1>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-slate-600 dark:text-gray-400">
                   {user?.firstName} {user?.lastName} • {user?.role}
                 </p>
               </div>
@@ -156,9 +168,9 @@ export default function DashboardPage() {
 
             <div className="flex items-center gap-3">
               {/* WebSocket Status */}
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700/50">
-                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
-                <span className="text-xs text-gray-400">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50">
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+                <span className="text-xs text-slate-600 dark:text-gray-400">
                   {isConnected ? 'Live' : 'Offline'}
                 </span>
               </div>
@@ -168,7 +180,7 @@ export default function DashboardPage() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="relative p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 text-gray-300 transition-colors"
+                  className="relative p-2 rounded-lg bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-700/50 border border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-gray-300 transition-colors"
                 >
                   <Bell className="h-5 w-5" />
                   {unreadCount > 0 && (
@@ -179,12 +191,29 @@ export default function DashboardPage() {
                 </motion.button>
               </Link>
 
+              {/* Theme Toggle */}
+              {mounted && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                  className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-700/50 border border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-gray-300 transition-colors"
+                  title={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} mode`}
+                >
+                  {resolvedTheme === 'dark' ? (
+                    <Sun className="h-5 w-5 text-yellow-500" />
+                  ) : (
+                    <Moon className="h-5 w-5 text-slate-600" />
+                  )}
+                </motion.button>
+              )}
+
               {/* Settings */}
               <Link href="/dashboard/settings">
                 <motion.button
                   whileHover={{ scale: 1.05, rotate: 90 }}
                   whileTap={{ scale: 0.95 }}
-                  className="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 text-gray-300 transition-colors"
+                  className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-700/50 border border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-gray-300 transition-colors"
                 >
                   <Settings className="h-5 w-5" />
                 </motion.button>
@@ -255,11 +284,11 @@ export default function DashboardPage() {
             <motion.div
               whileHover={{ scale: 1.05, y: -5 }}
               whileTap={{ scale: 0.95 }}
-              className="p-4 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/20 border border-blue-500/30 backdrop-blur-sm hover:border-blue-500/50 transition-all cursor-pointer"
+              className="p-4 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-500/20 dark:to-blue-600/20 border border-blue-300 dark:border-blue-500/30 backdrop-blur-sm hover:border-blue-400 dark:hover:border-blue-500/50 transition-all cursor-pointer"
             >
-              <Plus className="h-6 w-6 text-blue-400 mb-2" />
-              <h3 className="font-semibold text-white">New Portal</h3>
-              <p className="text-xs text-gray-400 mt-1">Create portal</p>
+              <Plus className="h-6 w-6 text-blue-600 dark:text-blue-400 mb-2" />
+              <h3 className="font-semibold text-slate-900 dark:text-white">New Portal</h3>
+              <p className="text-xs text-slate-600 dark:text-gray-400 mt-1">Create portal</p>
             </motion.div>
           </Link>
 
@@ -267,11 +296,11 @@ export default function DashboardPage() {
             <motion.div
               whileHover={{ scale: 1.05, y: -5 }}
               whileTap={{ scale: 0.95 }}
-              className="p-4 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/20 border border-purple-500/30 backdrop-blur-sm hover:border-purple-500/50 transition-all cursor-pointer"
+              className="p-4 rounded-xl bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-500/20 dark:to-purple-600/20 border border-purple-300 dark:border-purple-500/30 backdrop-blur-sm hover:border-purple-400 dark:hover:border-purple-500/50 transition-all cursor-pointer"
             >
-              <LayoutDashboard className="h-6 w-6 text-purple-400 mb-2" />
-              <h3 className="font-semibold text-white">Portals</h3>
-              <p className="text-xs text-gray-400 mt-1">Manage all</p>
+              <LayoutDashboard className="h-6 w-6 text-purple-600 dark:text-purple-400 mb-2" />
+              <h3 className="font-semibold text-slate-900 dark:text-white">Portals</h3>
+              <p className="text-xs text-slate-600 dark:text-gray-400 mt-1">Manage all</p>
             </motion.div>
           </Link>
 
@@ -279,11 +308,11 @@ export default function DashboardPage() {
             <motion.div
               whileHover={{ scale: 1.05, y: -5 }}
               whileTap={{ scale: 0.95 }}
-              className="p-4 rounded-xl bg-gradient-to-br from-green-500/20 to-green-600/20 border border-green-500/30 backdrop-blur-sm hover:border-green-500/50 transition-all cursor-pointer"
+              className="p-4 rounded-xl bg-gradient-to-br from-green-100 to-green-200 dark:from-green-500/20 dark:to-green-600/20 border border-green-300 dark:border-green-500/30 backdrop-blur-sm hover:border-green-400 dark:hover:border-green-500/50 transition-all cursor-pointer"
             >
-              <Zap className="h-6 w-6 text-green-400 mb-2" />
-              <h3 className="font-semibold text-white">Integrations</h3>
-              <p className="text-xs text-gray-400 mt-1">Connect services</p>
+              <Zap className="h-6 w-6 text-green-600 dark:text-green-400 mb-2" />
+              <h3 className="font-semibold text-slate-900 dark:text-white">Integrations</h3>
+              <p className="text-xs text-slate-600 dark:text-gray-400 mt-1">Connect services</p>
             </motion.div>
           </Link>
 
@@ -291,11 +320,11 @@ export default function DashboardPage() {
             <motion.div
               whileHover={{ scale: 1.05, y: -5 }}
               whileTap={{ scale: 0.95 }}
-              className="p-4 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-600/20 border border-orange-500/30 backdrop-blur-sm hover:border-orange-500/50 transition-all cursor-pointer"
+              className="p-4 rounded-xl bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-500/20 dark:to-orange-600/20 border border-orange-300 dark:border-orange-500/30 backdrop-blur-sm hover:border-orange-400 dark:hover:border-orange-500/50 transition-all cursor-pointer"
             >
-              <Settings className="h-6 w-6 text-orange-400 mb-2" />
-              <h3 className="font-semibold text-white">Settings</h3>
-              <p className="text-xs text-gray-400 mt-1">Workspace config</p>
+              <Settings className="h-6 w-6 text-orange-600 dark:text-orange-400 mb-2" />
+              <h3 className="font-semibold text-slate-900 dark:text-white">Settings</h3>
+              <p className="text-xs text-slate-600 dark:text-gray-400 mt-1">Workspace config</p>
             </motion.div>
           </Link>
         </motion.div>
@@ -308,20 +337,20 @@ export default function DashboardPage() {
           className="mb-8"
         >
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Sparkles className="h-7 w-7 text-yellow-400" />
               Enterprise Features
             </h2>
-            <Link href="/advanced-features">
+            <Link href="/enterprise/advanced-features">
               <Button variant="outline" className="gap-2">
                 View All
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Link href="/advanced-features?tab=industry">
+            <Link href="/enterprise/advanced-features?tab=industry">
               <Card className="hover:shadow-xl transition-all cursor-pointer border-2 hover:border-purple-500/50">
                 <CardHeader>
                   <div className="flex items-center gap-3">
@@ -335,14 +364,14 @@ export default function DashboardPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
                     Healthcare, Finance, Retail dashboards with compliance built-in
                   </p>
                 </CardContent>
               </Card>
             </Link>
 
-            <Link href="/advanced-features?tab=ai">
+            <Link href="/enterprise/advanced-features?tab=ai">
               <Card className="hover:shadow-xl transition-all cursor-pointer border-2 hover:border-blue-500/50">
                 <CardHeader>
                   <div className="flex items-center gap-3">
@@ -356,14 +385,14 @@ export default function DashboardPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
                     Ask questions, get predictions, detect anomalies with ML
                   </p>
                 </CardContent>
               </Card>
             </Link>
 
-            <Link href="/advanced-features?tab=workflows">
+            <Link href="/enterprise/advanced-features?tab=workflows">
               <Card className="hover:shadow-xl transition-all cursor-pointer border-2 hover:border-green-500/50">
                 <CardHeader>
                   <div className="flex items-center gap-3">
@@ -377,14 +406,14 @@ export default function DashboardPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
                     Build automated workflows with triggers and actions
                   </p>
                 </CardContent>
               </Card>
             </Link>
 
-            <Link href="/advanced-features?tab=compliance">
+            <Link href="/enterprise/advanced-features?tab=compliance">
               <Card className="hover:shadow-xl transition-all cursor-pointer border-2 hover:border-red-500/50">
                 <CardHeader>
                   <div className="flex items-center gap-3">
@@ -398,14 +427,14 @@ export default function DashboardPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
                     Monitor compliance, track incidents, manage data inventory
                   </p>
                 </CardContent>
               </Card>
             </Link>
 
-            <Link href="/advanced-features?tab=marketplace">
+            <Link href="/enterprise/advanced-features?tab=marketplace">
               <Card className="hover:shadow-xl transition-all cursor-pointer border-2 hover:border-orange-500/50">
                 <CardHeader>
                   <div className="flex items-center gap-3">
@@ -419,7 +448,7 @@ export default function DashboardPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
                     Connect to Salesforce, Stripe, Google Analytics and more
                   </p>
                 </CardContent>
@@ -439,7 +468,7 @@ export default function DashboardPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-slate-600 dark:text-slate-300">
                   Visualize your dashboards in augmented reality
                 </p>
               </CardContent>
@@ -453,21 +482,21 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="mb-8 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl"
+            className="mb-8 p-4 bg-blue-100 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-xl"
           >
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <Bell className="h-5 w-5 text-blue-400" />
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                <Bell className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 Recent Notifications
               </h3>
-              <Link href="/dashboard/notifications" className="text-sm text-blue-400 hover:text-blue-300">
+              <Link href="/dashboard/notifications" className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300">
                 View All
               </Link>
             </div>
             <div className="space-y-2">
               {notifications.slice(0, 3).map((notification) => (
-                <div key={notification.id} className="text-sm text-gray-300 flex items-start gap-2">
-                  <span className="text-blue-400">•</span>
+                <div key={notification.id} className="text-sm text-slate-600 dark:text-gray-300 flex items-start gap-2">
+                  <span className="text-blue-600 dark:text-blue-400">•</span>
                   <span>{notification.title}</span>
                 </div>
               ))}
@@ -482,27 +511,27 @@ export default function DashboardPage() {
           transition={{ delay: 0.25 }}
         >
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-            <h2 className="text-3xl font-bold text-white flex items-center gap-2">
-              <Activity className="h-8 w-8 text-purple-400" />
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Activity className="h-8 w-8 text-purple-600 dark:text-purple-400" />
               Your Portals
             </h2>
 
             {/* Search and Filter */}
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 dark:text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search portals..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  className="pl-10 pr-4 py-2 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 />
               </div>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 text-gray-300 transition-colors"
+                className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-700/50 border border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-gray-300 transition-colors"
                 title="Filter options (coming soon)"
               >
                 <Filter className="h-5 w-5" />
@@ -514,13 +543,13 @@ export default function DashboardPage() {
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="text-center py-20 bg-slate-900/30 rounded-2xl border border-slate-800/50"
+              className="text-center py-20 bg-slate-100 dark:bg-slate-900/30 rounded-2xl border border-slate-200 dark:border-slate-800/50"
             >
-              <LayoutDashboard className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">
+              <LayoutDashboard className="h-16 w-16 text-slate-400 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
                 {searchQuery ? 'No portals found' : 'No portals yet'}
               </h3>
-              <p className="text-gray-400 mb-6">
+              <p className="text-slate-600 dark:text-gray-400 mb-6">
                 {searchQuery
                   ? 'Try adjusting your search'
                   : 'Create your first portal to get started'}
@@ -565,13 +594,13 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="mt-8 p-6 bg-slate-900/30 rounded-2xl border border-slate-800/50"
+            className="mt-8 p-6 bg-slate-100 dark:bg-slate-900/30 rounded-2xl border border-slate-200 dark:border-slate-800/50"
           >
-            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 text-green-400" />
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
               Recent Activity
             </h3>
-            <p className="text-gray-400">
+            <p className="text-slate-600 dark:text-gray-400">
               {stats.recentActivity} actions in the last 24 hours
             </p>
           </motion.div>

@@ -1,4 +1,9 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
 import { PrismaClient, Prisma } from '@prisma/client';
 
 /**
@@ -33,7 +38,10 @@ export class PrismaService
     });
 
     // Setup query logging in development
-    if (process.env.NODE_ENV === 'development' || process.env.LOG_QUERIES === 'true') {
+    if (
+      process.env.NODE_ENV === 'development' ||
+      process.env.LOG_QUERIES === 'true'
+    ) {
       this.setupQueryLogging();
     }
 
@@ -87,48 +95,48 @@ export class PrismaService
     ];
 
     // Middleware for find operations - exclude soft deleted records
-    this.$use(async (params, next) => {
-      if (softDeleteModels.includes(params.model || '')) {
-        // For find operations, exclude deleted records by default
-        if (params.action === 'findUnique' || params.action === 'findFirst') {
-          params.action = 'findFirst';
-          params.args.where = {
-            ...params.args.where,
-            deletedAt: null,
-          };
-        }
-        
-        if (params.action === 'findMany') {
-          if (!params.args) params.args = {};
-          if (!params.args.where) params.args.where = {};
-          
-          // Allow explicit query for deleted records
-          if (params.args.where.deletedAt === undefined) {
-            params.args.where.deletedAt = null;
-          }
-        }
+    // this.$use(async (params, next) => {
+    //   if (softDeleteModels.includes(params.model || '')) {
+    //     // For find operations, exclude deleted records by default
+    //     if (params.action === 'findUnique' || params.action === 'findFirst') {
+    //       params.action = 'findFirst';
+    //       params.args.where = {
+    //         ...params.args.where,
+    //         deletedAt: null,
+    //       };
+    //     }
 
-        // Convert delete to soft delete
-        if (params.action === 'delete') {
-          params.action = 'update';
-          params.args.data = { deletedAt: new Date() };
-        }
+    //     if (params.action === 'findMany') {
+    //       if (!params.args) params.args = {};
+    //       if (!params.args.where) params.args.where = {};
 
-        if (params.action === 'deleteMany') {
-          params.action = 'updateMany';
-          if (!params.args) params.args = {};
-          params.args.data = { deletedAt: new Date() };
-        }
-      }
+    //       // Allow explicit query for deleted records
+    //       if (params.args.where.deletedAt === undefined) {
+    //         params.args.where.deletedAt = null;
+    //       }
+    //     }
 
-      return next(params);
-    });
+    //     // Convert delete to soft delete
+    //     if (params.action === 'delete') {
+    //       params.action = 'update';
+    //       params.args.data = { deletedAt: new Date() };
+    //     }
+
+    //     if (params.action === 'deleteMany') {
+    //       params.action = 'updateMany';
+    //       if (!params.args) params.args = {};
+    //       params.args.data = { deletedAt: new Date() };
+    //     }
+    //   }
+
+    //   return next(params);
+    // });
   }
 
   async onModuleInit() {
     await this.$connect();
     this.logger.log('Prisma connected to database');
-    
+
     // Log connection pool info
     this.logger.log({
       message: 'Database connection established',
@@ -159,9 +167,9 @@ export class PrismaService
         });
       } catch (error) {
         lastError = error as Error;
-        
+
         // Check if it's a deadlock or serialization failure
-        const isRetryable = 
+        const isRetryable =
           lastError.message.includes('deadlock') ||
           lastError.message.includes('could not serialize') ||
           lastError.message.includes('P2034');
@@ -172,19 +180,19 @@ export class PrismaService
             attempt,
             error: lastError.message,
           });
-          
+
           // Exponential backoff
-          await new Promise(resolve => 
-            setTimeout(resolve, Math.pow(2, attempt) * 100)
+          await new Promise((resolve) =>
+            setTimeout(resolve, Math.pow(2, attempt) * 100),
           );
           continue;
         }
-        
+
         throw error;
       }
     }
 
-    throw lastError;
+    throw lastError || new Error('Transaction failed after retries');
   }
 
   /**
@@ -199,11 +207,11 @@ export class PrismaService
 
     for (let i = 0; i < items.length; i += batchSize) {
       const batch = items.slice(i, i + batchSize);
-      
-      const batchResults = await this.$transaction(
-        batch.map(item => operation(item, this as unknown as Prisma.TransactionClient)),
-      );
-      
+
+      const batchResults = await this.$transaction(async (tx) => {
+        return Promise.all(batch.map((item) => operation(item, tx)));
+      });
+
       results.push(...(batchResults as R[]));
     }
 
@@ -231,10 +239,13 @@ export class PrismaService
    * Hard delete - permanently remove soft-deleted records
    * Use with caution!
    */
-  async hardDelete(model: string, where: Record<string, unknown>): Promise<number> {
+  async hardDelete(
+    model: string,
+    where: Record<string, unknown>,
+  ): Promise<number> {
     const modelKey = model.toLowerCase() as keyof PrismaClient;
     const prismaModel = this[modelKey] as any;
-    
+
     if (!prismaModel || typeof prismaModel.deleteMany !== 'function') {
       throw new Error(`Model ${model} not found`);
     }
@@ -259,10 +270,13 @@ export class PrismaService
   /**
    * Restore soft-deleted record
    */
-  async restore(model: string, where: Record<string, unknown>): Promise<number> {
+  async restore(
+    model: string,
+    where: Record<string, unknown>,
+  ): Promise<number> {
     const modelKey = model.toLowerCase() as keyof PrismaClient;
     const prismaModel = this[modelKey] as any;
-    
+
     if (!prismaModel || typeof prismaModel.updateMany !== 'function') {
       throw new Error(`Model ${model} not found`);
     }

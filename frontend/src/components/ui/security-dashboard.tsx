@@ -219,8 +219,13 @@ export function SecurityProvider({ children }: { children: ReactNode }) {
     enabled: true,
     method: 'app',
     backupCodesRemaining: 8,
-    lastVerified: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7),
+    lastVerified: new Date(),
   });
+
+  useEffect(() => {
+    // Set initial lastVerified date after mount or keep it null until loaded
+    setTwoFactorSettings(prev => ({ ...prev, lastVerified: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7) }));
+  }, []);
 
   useEffect(() => {
     // Simulate loading
@@ -289,7 +294,7 @@ export function SecurityProvider({ children }: { children: ReactNode }) {
 
   const generateBackupCodes = useCallback(async (): Promise<string[]> => {
     await new Promise(r => setTimeout(r, 500));
-    const codes = Array.from({ length: 10 }, () => 
+    const codes = Array.from({ length: 10 }, () =>
       Math.random().toString(36).substring(2, 6).toUpperCase() + '-' +
       Math.random().toString(36).substring(2, 6).toUpperCase()
     );
@@ -537,8 +542,8 @@ export function ActiveSessionsCard({ className }: { className?: string }) {
               layout
               className={cn(
                 'border rounded-xl overflow-hidden transition-colors',
-                session.isCurrent 
-                  ? 'border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10' 
+                session.isCurrent
+                  ? 'border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10'
                   : session.isSuspicious
                     ? 'border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10'
                     : 'dark:border-slate-700'
@@ -551,7 +556,7 @@ export function ActiveSessionsCard({ className }: { className?: string }) {
                 <div className="flex items-center gap-4">
                   <div className={cn(
                     'p-2 rounded-lg',
-                    session.isCurrent 
+                    session.isCurrent
                       ? 'bg-green-100 dark:bg-green-900/50 text-green-600'
                       : session.isSuspicious
                         ? 'bg-red-100 dark:bg-red-900/50 text-red-600'
@@ -674,7 +679,7 @@ export function TwoFactorCard({ className }: { className?: string }) {
         <div className="flex items-center gap-3">
           <div className={cn(
             'p-2 rounded-lg',
-            twoFactorSettings.enabled 
+            twoFactorSettings.enabled
               ? 'bg-green-100 dark:bg-green-900/50 text-green-600'
               : 'bg-gray-100 dark:bg-slate-800 text-gray-600'
           )}>
@@ -683,7 +688,7 @@ export function TwoFactorCard({ className }: { className?: string }) {
           <div>
             <h3 className="font-semibold">Two-Factor Authentication</h3>
             <p className="text-sm text-gray-500">
-              {twoFactorSettings.enabled 
+              {twoFactorSettings.enabled
                 ? `Enabled via ${twoFactorSettings.method === 'app' ? 'Authenticator App' : twoFactorSettings.method.toUpperCase()}`
                 : 'Add an extra layer of security'
               }

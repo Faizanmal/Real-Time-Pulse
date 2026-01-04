@@ -42,8 +42,10 @@ export function SanitizedString() {
 
     // Remove null bytes and control characters
     let sanitized = value
-      .replace(/\x00/g, '')
-      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+      // eslint-disable-next-line no-control-regex
+      .replace(/\u0000/g, '')
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
 
     // Trim whitespace
     sanitized = sanitized.trim();
@@ -91,7 +93,7 @@ export const SecurityPatterns = {
   SLUG: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
 
   // Safe filename pattern
-  SAFE_FILENAME: /^[a-zA-Z0-9_\-]+\.[a-zA-Z0-9]+$/,
+  SAFE_FILENAME: /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9]+$/,
 
   // API key pattern
   API_KEY: /^[a-z]+_[A-Za-z0-9_-]{32,}$/,
@@ -100,13 +102,13 @@ export const SecurityPatterns = {
   HEX_COLOR: /^#[0-9A-Fa-f]{6}$/,
 
   // No SQL injection characters
-  NO_SQL_INJECTION: /^[^'";\-\-\/\*]+$/,
+  NO_SQL_INJECTION: /^[^'";\-\-/*]+$/,
 
   // No script tags
   NO_SCRIPT: /^(?!.*<script).*$/i,
 
   // Safe URL
-  SAFE_URL: /^https?:\/\/[^\s<>\"]+$/,
+  SAFE_URL: /^https?:\/\/[^\s<>"]+$/,
 };
 
 /**

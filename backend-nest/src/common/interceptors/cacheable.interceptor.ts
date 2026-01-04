@@ -42,8 +42,8 @@ export class CacheableInterceptor implements NestInterceptor {
     // Handle cache invalidation
     if (invalidateKeys && invalidateKeys.length > 0) {
       return next.handle().pipe(
-        tap(async () => {
-          await this.invalidateCaches(invalidateKeys, context);
+        tap(() => {
+          void this.invalidateCaches(invalidateKeys, context);
         }),
       );
     }
@@ -71,19 +71,21 @@ export class CacheableInterceptor implements NestInterceptor {
     this.logger.debug(`Cache miss: ${cacheKey}`);
 
     return next.handle().pipe(
-      tap(async (result) => {
-        try {
-          await this.cacheService.set(
-            cacheKey,
-            JSON.stringify(result),
-            cacheConfig.ttlSeconds,
-          );
-          this.logger.debug(
-            `Cached: ${cacheKey} for ${cacheConfig.ttlSeconds}s`,
-          );
-        } catch (error) {
-          this.logger.warn(`Cache write error: ${error}`);
-        }
+      tap((result) => {
+        void (async () => {
+          try {
+            await this.cacheService.set(
+              cacheKey,
+              JSON.stringify(result),
+              cacheConfig.ttlSeconds,
+            );
+            this.logger.debug(
+              `Cached: ${cacheKey} for ${cacheConfig.ttlSeconds}s`,
+            );
+          } catch (error) {
+            this.logger.warn(`Cache write error: ${error}`);
+          }
+        })();
       }),
     );
   }

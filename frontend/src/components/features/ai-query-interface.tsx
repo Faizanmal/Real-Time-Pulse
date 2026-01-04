@@ -23,7 +23,15 @@ export default function AIQueryInterface() {
   const loadQueryHistory = async () => {
     try {
       const response = await advancedAiApi.getQueries();
-      setQueries(response.data);
+      const data = response.data;
+      if (Array.isArray(data)) {
+        setQueries(data);
+      } else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as any).data)) {
+        setQueries((data as any).data);
+      } else {
+        console.warn('Unexpected API response format for queries:', data);
+        setQueries([]);
+      }
     } catch (error: any) {
       console.error('Failed to load query history:', error);
     } finally {

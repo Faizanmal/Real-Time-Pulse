@@ -106,12 +106,24 @@ export class LoggingService implements NestLoggerService {
     });
   }
 
+  // Contexts to suppress (NestJS internal noisy logs)
+  private readonly suppressedContexts = [
+    'RouterExplorer',
+    'RoutesResolver',
+    'InstanceLoader',
+  ];
+
   setContext(context: string) {
     this.context = context;
   }
 
   log(message: string, context?: string) {
-    this.logger.info(message, { context: context || this.context });
+    const ctx = context || this.context;
+    // Suppress noisy internal logs
+    if (ctx && this.suppressedContexts.includes(ctx)) {
+      return;
+    }
+    this.logger.info(message, { context: ctx });
   }
 
   error(message: string, trace?: string, context?: string) {

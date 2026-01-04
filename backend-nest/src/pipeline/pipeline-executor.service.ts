@@ -282,7 +282,7 @@ export class PipelineExecutorService {
         }
         break;
 
-      case 'full':
+      case 'full': {
         const joinedRight = new Set<number>();
         for (const leftRow of leftData) {
           const matches = rightData
@@ -304,6 +304,7 @@ export class PipelineExecutorService {
           }
         }
         break;
+      }
     }
 
     return result;
@@ -606,7 +607,8 @@ export class PipelineExecutorService {
     }
 
     // Simple arithmetic
-    const match = expression.match(/^\$(\w+)\s*([\+\-\*\/])\s*(.+)$/);
+
+    const match = expression.match(/^\$(\w+)\s*([+\-*/])\s*(.+)$/);
     if (match) {
       const [, field, operator, operand] = match;
       const fieldValue = Number(row[field]);

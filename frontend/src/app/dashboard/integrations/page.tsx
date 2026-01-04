@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 
 export default function IntegrationsPage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, isHydrated } = useAuthStore();
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,6 +30,8 @@ export default function IntegrationsPage() {
   const [testingIds, setTestingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    if (!isHydrated) return;
+
     if (!isAuthenticated) {
       router.push('/auth/login');
       return;
@@ -43,7 +45,7 @@ export default function IntegrationsPage() {
       window.removeEventListener('integration:synced', handleIntegrationSync);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isHydrated, router]);
 
   const loadIntegrations = async () => {
     if (!user?.workspaceId) return;

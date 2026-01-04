@@ -620,8 +620,10 @@ export class WidgetCustomizationService {
   ): Record<string, unknown>[] {
     const { field, direction } = config;
     return [...data].sort((a, b) => {
-      const aVal = String(a[field] ?? '');
-      const bVal = String(b[field] ?? '');
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
+      const aVal = String(a[field] || '');
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
+      const bVal = String(b[field] || '');
       const comparison = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
       return direction === 'desc' ? -comparison : comparison;
     });

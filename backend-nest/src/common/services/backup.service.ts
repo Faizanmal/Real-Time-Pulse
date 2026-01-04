@@ -146,8 +146,7 @@ export class BackupService implements OnModuleInit {
 
       for (const table of tables) {
         try {
-          // @ts-ignore - dynamic table access
-          const data = await this.prisma[table].findMany();
+          const data = await (this.prisma as any)[table].findMany();
           backupData[table] = data;
           metadata.tables.push(table);
         } catch (error) {

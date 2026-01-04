@@ -2,7 +2,7 @@
  * =============================================================================
  * REAL-TIME PULSE - ENHANCED AI INSIGHTS SERVICE
  * =============================================================================
- * 
+ *
  * Advanced AI service with:
  * - Streaming responses for real-time UI updates
  * - Multi-provider support (OpenAI + Anthropic fallback)
@@ -25,7 +25,10 @@ export interface AIProvider {
   priority: number;
   isAvailable: boolean;
   generateResponse(prompt: string, options: GenerationOptions): Promise<string>;
-  generateStreamingResponse(prompt: string, options: GenerationOptions): AsyncGenerator<string>;
+  generateStreamingResponse(
+    prompt: string,
+    options: GenerationOptions,
+  ): AsyncGenerator<string>;
 }
 
 export interface GenerationOptions {
@@ -68,7 +71,10 @@ export interface InsightFeedbackSummary {
 export class EnhancedAIService {
   private readonly logger = new Logger(EnhancedAIService.name);
   private readonly providers: AIProvider[] = [];
-  private readonly responseCache = new Map<string, { response: string; timestamp: number }>();
+  private readonly responseCache = new Map<
+    string,
+    { response: string; timestamp: number }
+  >();
   private readonly cacheTTL = 5 * 60 * 1000; // 5 minutes
 
   constructor(
@@ -119,7 +125,9 @@ export class EnhancedAIService {
     this.providers.sort((a, b) => a.priority - b.priority);
 
     if (this.providers.length === 0) {
-      this.logger.warn('No AI providers configured. AI features will be limited.');
+      this.logger.warn(
+        'No AI providers configured. AI features will be limited.',
+      );
     }
   }
 
@@ -130,22 +138,25 @@ export class EnhancedAIService {
   /**
    * Generate response with automatic failover between providers
    */
-  async generate(prompt: string, options: GenerationOptions = {}): Promise<string> {
+  async generate(
+    prompt: string,
+    options: GenerationOptions = {},
+  ): Promise<string> {
     // Check cache first
     const cacheKey = this.getCacheKey(prompt, options);
     const cached = this.responseCache.get(cacheKey);
-    
+
     if (cached && Date.now() - cached.timestamp < this.cacheTTL) {
       this.logger.debug('Returning cached AI response');
       return cached.response;
     }
 
     // Try each provider in priority order
-    for (const provider of this.providers.filter(p => p.isAvailable)) {
+    for (const provider of this.providers.filter((p) => p.isAvailable)) {
       try {
         this.logger.debug(`Attempting generation with ${provider.name}`);
         const response = await provider.generateResponse(prompt, options);
-        
+
         // Cache successful response
         this.responseCache.set(cacheKey, {
           response,
@@ -165,25 +176,30 @@ export class EnhancedAIService {
           `${provider.name} generation failed, trying next provider`,
           error instanceof Error ? error.message : 'Unknown error',
         );
-        
+
         // Mark provider as temporarily unavailable
         this.handleProviderError(provider, error);
       }
     }
 
     // All providers failed
-    this.eventEmitter.emit('ai.generation.failed', { prompt: prompt.substring(0, 100) });
+    this.eventEmitter.emit('ai.generation.failed', {
+      prompt: prompt.substring(0, 100),
+    });
     return this.getFallbackResponse(prompt);
   }
 
   /**
    * Stream response with automatic failover
    */
-  async *stream(prompt: string, options: GenerationOptions = {}): AsyncGenerator<StreamChunk> {
-    for (const provider of this.providers.filter(p => p.isAvailable)) {
+  async *stream(
+    prompt: string,
+    options: GenerationOptions = {},
+  ): AsyncGenerator<StreamChunk> {
+    for (const provider of this.providers.filter((p) => p.isAvailable)) {
       try {
         this.logger.debug(`Starting streaming with ${provider.name}`);
-        
+
         yield {
           type: 'text',
           content: '',
@@ -191,7 +207,10 @@ export class EnhancedAIService {
           timestamp: Date.now(),
         };
 
-        for await (const chunk of provider.generateStreamingResponse(prompt, options)) {
+        for await (const chunk of provider.generateStreamingResponse(
+          prompt,
+          options,
+        )) {
           yield {
             type: 'text',
             content: chunk,
@@ -209,9 +228,11 @@ export class EnhancedAIService {
 
         return;
       } catch (error) {
-        this.logger.warn(`${provider.name} streaming failed, trying next provider`);
+        this.logger.warn(
+          `${provider.name} streaming failed, trying next provider`,
+        );
         this.handleProviderError(provider, error);
-        
+
         yield {
           type: 'error',
           content: `${provider.name} failed, switching providers...`,
@@ -312,7 +333,7 @@ export class EnhancedAIService {
         if (line.startsWith('data: ')) {
           const data = line.slice(6);
           if (data === '[DONE]') return;
-          
+
           try {
             const parsed = JSON.parse(data);
             const content = parsed.choices[0]?.delta?.content;
@@ -437,7 +458,9 @@ export class EnhancedAIService {
     // Update insight quality score
     await this.updateInsightQualityScore(feedback.insightId);
 
-    this.logger.log(`Feedback recorded for insight ${feedback.insightId}: ${feedback.rating}`);
+    this.logger.log(
+      `Feedback recorded for insight ${feedback.insightId}: ${feedback.rating}`,
+    );
   }
 
   /**
@@ -449,12 +472,15 @@ export class EnhancedAIService {
       orderBy: { createdAt: 'desc' },
     });
 
-    const helpful = feedbacks.filter(f => f.rating === 'helpful').length;
-    const notHelpful = feedbacks.filter(f => f.rating === 'not_helpful').length;
-    
-    const score = feedbacks.length > 0
-      ? (helpful * 1 + notHelpful * -1) / feedbacks.length
-      : 0;
+    const helpful = feedbacks.filter((f) => f.rating === 'helpful').length;
+    const notHelpful = feedbacks.filter(
+      (f) => f.rating === 'not_helpful',
+    ).length;
+
+    const score =
+      feedbacks.length > 0
+        ? (helpful * 1 + notHelpful * -1) / feedbacks.length
+        : 0;
 
     return {
       insightId,
@@ -463,9 +489,9 @@ export class EnhancedAIService {
       notHelpfulCount: notHelpful,
       averageScore: Math.round(score * 100) / 100,
       recentComments: feedbacks
-        .filter(f => f.comment)
+        .filter((f) => f.comment)
         .slice(0, 5)
-        .map(f => f.comment!),
+        .map((f) => f.comment!),
     };
   }
 
@@ -474,11 +500,12 @@ export class EnhancedAIService {
    */
   private async updateInsightQualityScore(insightId: string): Promise<void> {
     const summary = await this.getFeedbackSummary(insightId);
-    
+
     // Calculate quality score (0-1 scale)
-    const qualityScore = summary.totalFeedback > 0
-      ? (summary.helpfulCount / summary.totalFeedback)
-      : 0.5; // Default neutral score
+    const qualityScore =
+      summary.totalFeedback > 0
+        ? summary.helpfulCount / summary.totalFeedback
+        : 0.5; // Default neutral score
 
     await this.prisma.aIInsight.update({
       where: { id: insightId },
@@ -507,10 +534,7 @@ export class EnhancedAIService {
         qualityScore: { gte: 0.8 },
         feedbackCount: { gte: 3 },
       },
-      orderBy: [
-        { qualityScore: 'desc' },
-        { feedbackCount: 'desc' },
-      ],
+      orderBy: [{ qualityScore: 'desc' }, { feedbackCount: 'desc' }],
       take: limit,
     });
   }
@@ -524,10 +548,7 @@ export class EnhancedAIService {
         qualityScore: { lte: 0.3 },
         feedbackCount: { gte: 3 },
       },
-      orderBy: [
-        { qualityScore: 'asc' },
-        { feedbackCount: 'desc' },
-      ],
+      orderBy: [{ qualityScore: 'asc' }, { feedbackCount: 'desc' }],
       take: limit,
     });
   }
@@ -545,13 +566,13 @@ export class EnhancedAIService {
   ): Promise<any> {
     // Gather comprehensive context
     const context = await this.gatherEnhancedContext(workspaceId, portalId);
-    
+
     // Get high-quality insight examples for few-shot learning
     const exemplars = await this.getHighQualityInsights(3);
-    
+
     // Build enhanced prompt
     const systemPrompt = this.buildEnhancedSystemPrompt(context, exemplars);
-    
+
     // Generate insights using AI
     const response = await this.generate(
       `Analyze this portal data and generate actionable insights:\n${JSON.stringify(context.portalData, null, 2)}`,
@@ -568,41 +589,44 @@ export class EnhancedAIService {
     } catch {
       // If response isn't valid JSON, return as text insight
       return {
-        insights: [{
-          type: 'ANALYSIS',
-          title: 'AI Analysis',
-          description: response,
-          severity: 'INFO',
-          confidence: 0.7,
-        }],
+        insights: [
+          {
+            type: 'ANALYSIS',
+            title: 'AI Analysis',
+            description: response,
+            severity: 'INFO',
+            confidence: 0.7,
+          },
+        ],
       };
     }
   }
 
   private async gatherEnhancedContext(workspaceId: string, portalId: string) {
-    const [portal, integrations, recentActivity, historicalInsights] = await Promise.all([
-      this.prisma.portal.findUnique({
-        where: { id: portalId },
-        include: {
-          widgets: {
-            include: { integration: true },
+    const [portal, integrations, recentActivity, historicalInsights] =
+      await Promise.all([
+        this.prisma.portal.findUnique({
+          where: { id: portalId },
+          include: {
+            widgets: {
+              include: { integration: true },
+            },
           },
-        },
-      }),
-      this.prisma.integration.findMany({
-        where: { workspaceId },
-      }),
-      this.prisma.auditLog.findMany({
-        where: { workspaceId },
-        orderBy: { createdAt: 'desc' },
-        take: 50,
-      }),
-      this.prisma.aIInsight.findMany({
-        where: { workspaceId, portalId },
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-      }),
-    ]);
+        }),
+        this.prisma.integration.findMany({
+          where: { workspaceId },
+        }),
+        this.prisma.auditLog.findMany({
+          where: { workspaceId },
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+        }),
+        this.prisma.aIInsight.findMany({
+          where: { workspaceId, portalId },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        }),
+      ]);
 
     return {
       portalData: portal,
@@ -614,9 +638,10 @@ export class EnhancedAIService {
   }
 
   private buildEnhancedSystemPrompt(context: any, exemplars: any[]): string {
-    const exemplarText = exemplars.length > 0
-      ? `\n\nExamples of high-quality insights:\n${exemplars.map(e => `- ${e.title}: ${e.description}`).join('\n')}`
-      : '';
+    const exemplarText =
+      exemplars.length > 0
+        ? `\n\nExamples of high-quality insights:\n${exemplars.map((e) => `- ${e.title}: ${e.description}`).join('\n')}`
+        : '';
 
     return `You are an AI analytics assistant for Real-Time Pulse, a client dashboard platform.
 Your role is to analyze portal and widget data to generate actionable insights.
@@ -654,7 +679,7 @@ Return a JSON object with an "insights" array containing objects with:
   private handleProviderError(provider: AIProvider, error: unknown): void {
     // Temporarily mark provider as unavailable
     provider.isAvailable = false;
-    
+
     // Re-enable after 1 minute
     setTimeout(() => {
       provider.isAvailable = true;
@@ -670,23 +695,27 @@ Return a JSON object with an "insights" array containing objects with:
   private getFallbackResponse(prompt: string): string {
     // Provide basic response when all providers fail
     const keywords = prompt.toLowerCase();
-    
+
     if (keywords.includes('anomaly') || keywords.includes('issue')) {
       return 'Unable to perform real-time analysis. Please check your data sources and try again.';
     }
-    
+
     if (keywords.includes('recommend') || keywords.includes('suggest')) {
       return 'AI recommendations are temporarily unavailable. Consider reviewing your dashboard metrics manually.';
     }
-    
+
     return 'AI analysis is temporarily unavailable. Please try again later or contact support.';
   }
 
   /**
    * Get provider health status
    */
-  getProviderStatus(): { name: string; available: boolean; priority: number }[] {
-    return this.providers.map(p => ({
+  getProviderStatus(): {
+    name: string;
+    available: boolean;
+    priority: number;
+  }[] {
+    return this.providers.map((p) => ({
       name: p.name,
       available: p.isAvailable,
       priority: p.priority,

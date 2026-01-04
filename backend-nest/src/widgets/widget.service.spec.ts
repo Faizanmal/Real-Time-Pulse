@@ -60,7 +60,6 @@ describe('WidgetService', () => {
         {
           provide: IntegrationService,
           useValue: {
-            findOne: jest.fn().mockResolvedValue(mockIntegration),
             fetchData: jest.fn().mockResolvedValue({
               success: true,
               data: [{ metric: 'pageviews', value: 1000 }],
@@ -80,24 +79,25 @@ describe('WidgetService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('findByPortal', () => {
+  describe('findAllByPortal', () => {
     it('should return widgets for a portal', async () => {
-      const result = await service.findByPortal('portal-1');
+      const result = await service.findAllByPortal('portal-1', 'workspace-1');
       expect(result).toEqual([mockWidget]);
       expect(prisma.widget.findMany).toHaveBeenCalledWith({
-        where: { portalId: 'portal-1', isActive: true },
-        orderBy: { createdAt: 'asc' },
+        where: { portalId: 'portal-1' },
+        include: expect.any(Object),
+        orderBy: { order: 'asc' },
       });
     });
   });
 
   describe('findOne', () => {
     it('should return a widget by id', async () => {
-      const result = await service.findOne('widget-1');
+      const result = await service.findOne('widget-1', 'workspace-1');
       expect(result).toEqual(mockWidget);
       expect(prisma.widget.findUnique).toHaveBeenCalledWith({
         where: { id: 'widget-1' },
-        include: { integration: true },
+        include: { portal: true, integration: expect.any(Object) },
       });
     });
   });
@@ -113,7 +113,7 @@ describe('WidgetService', () => {
         position: { x: 0, y: 0, w: 4, h: 3 },
       };
 
-      const result = await service.create(createDto as any);
+      const result = await service.create('workspace-1', createDto as any);
       expect(result).toEqual(mockWidget);
       expect(prisma.widget.create).toHaveBeenCalled();
     });
@@ -121,9 +121,8 @@ describe('WidgetService', () => {
 
   describe('refreshData', () => {
     it('should fetch data from integration and update widget', async () => {
-      const result = await service.refreshData('widget-1');
-      
-      expect(integrationService.findOne).toHaveBeenCalledWith('integration-1');
+      const result = await service.refreshData('widget-1', 'workspace-1');
+
       expect(integrationService.fetchData).toHaveBeenCalled();
       expect(prisma.widget.update).toHaveBeenCalled();
       expect(result.cachedData).toBeDefined();
@@ -135,14 +134,14 @@ describe('WidgetService', () => {
         error: 'API error',
       });
 
-      const result = await service.refreshData('widget-1');
+      const result = await service.refreshData('widget-1', 'workspace-1');
       expect(result.cachedData).toBeDefined();
     });
   });
 
-  describe('delete', () => {
+  describe('remove', () => {
     it('should delete a widget', async () => {
-      await service.delete('widget-1');
+      await service.remove('widget-1', 'workspace-1');
       expect(prisma.widget.delete).toHaveBeenCalledWith({
         where: { id: 'widget-1' },
       });

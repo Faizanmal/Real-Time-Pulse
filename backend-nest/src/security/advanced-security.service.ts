@@ -2,7 +2,7 @@
  * =============================================================================
  * REAL-TIME PULSE - ADVANCED SECURITY SERVICE
  * =============================================================================
- * 
+ *
  * Enhanced security features including:
  * - Action-based rate limiting
  * - Brute force protection with progressive delays
@@ -11,7 +11,12 @@
  * - Suspicious activity detection
  */
 
-import { Injectable, Logger, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../cache/redis.service';
@@ -23,8 +28,8 @@ import * as crypto from 'crypto';
 // ============================================================================
 
 export interface RateLimitConfig {
-  points: number;      // Number of allowed requests
-  duration: number;    // Time window in seconds
+  points: number; // Number of allowed requests
+  duration: number; // Time window in seconds
   blockDuration?: number; // Block duration when limit exceeded
 }
 
@@ -36,7 +41,7 @@ export interface ApiKeyScope {
   read: boolean;
   write: boolean;
   admin: boolean;
-  resources: string[];  // Specific resources this key can access
+  resources: string[]; // Specific resources this key can access
   rateLimit?: RateLimitConfig;
 }
 
@@ -44,11 +49,11 @@ export interface BruteForceResult {
   allowed: boolean;
   remainingAttempts: number;
   blockedUntil?: Date;
-  delay?: number;  // Progressive delay in ms
+  delay?: number; // Progressive delay in ms
 }
 
 export interface IpReputation {
-  score: number;        // 0-100, higher is more trusted
+  score: number; // 0-100, higher is more trusted
   failedAttempts: number;
   successfulAttempts: number;
   lastSeen: Date;
@@ -71,7 +76,7 @@ export interface SuspiciousActivity {
 @Injectable()
 export class AdvancedSecurityService {
   private readonly logger = new Logger(AdvancedSecurityService.name);
-  
+
   // Redis key prefixes
   private readonly RATE_LIMIT_PREFIX = 'ratelimit:';
   private readonly BRUTE_FORCE_PREFIX = 'bruteforce:';
@@ -81,23 +86,23 @@ export class AdvancedSecurityService {
 
   // Default rate limits per action
   private readonly defaultActionLimits: ActionRateLimits = {
-    'login': { points: 5, duration: 300, blockDuration: 900 },          // 5 attempts per 5 min
-    'register': { points: 3, duration: 3600, blockDuration: 3600 },     // 3 per hour
-    'password-reset': { points: 3, duration: 3600 },                     // 3 per hour
-    'api-call': { points: 100, duration: 60 },                           // 100 per minute
-    'export': { points: 10, duration: 3600 },                            // 10 per hour
-    'ai-query': { points: 20, duration: 3600 },                          // 20 AI queries per hour
-    'webhook-create': { points: 10, duration: 3600 },                    // 10 webhooks per hour
-    'integration-sync': { points: 30, duration: 3600 },                  // 30 syncs per hour
-    'report-generate': { points: 20, duration: 3600 },                   // 20 reports per hour
-    'bulk-operation': { points: 5, duration: 3600 },                     // 5 bulk ops per hour
+    login: { points: 5, duration: 300, blockDuration: 900 }, // 5 attempts per 5 min
+    register: { points: 3, duration: 3600, blockDuration: 3600 }, // 3 per hour
+    'password-reset': { points: 3, duration: 3600 }, // 3 per hour
+    'api-call': { points: 100, duration: 60 }, // 100 per minute
+    export: { points: 10, duration: 3600 }, // 10 per hour
+    'ai-query': { points: 20, duration: 3600 }, // 20 AI queries per hour
+    'webhook-create': { points: 10, duration: 3600 }, // 10 webhooks per hour
+    'integration-sync': { points: 30, duration: 3600 }, // 30 syncs per hour
+    'report-generate': { points: 20, duration: 3600 }, // 20 reports per hour
+    'bulk-operation': { points: 5, duration: 3600 }, // 5 bulk ops per hour
   };
 
   // Brute force protection config
   private readonly bruteForceConfig = {
     maxAttempts: 5,
-    windowSeconds: 300,         // 5 minute window
-    blockSeconds: 900,          // 15 minute block
+    windowSeconds: 300, // 5 minute window
+    blockSeconds: 900, // 15 minute block
     progressiveDelays: [0, 1000, 2000, 5000, 10000], // Progressive delays in ms
   };
 
@@ -116,38 +121,40 @@ export class AdvancedSecurityService {
    * Check and consume rate limit for a specific action
    */
   async checkRateLimit(
-    identifier: string,  // userId, IP, or apiKey
+    identifier: string, // userId, IP, or apiKey
     action: string,
     customConfig?: RateLimitConfig,
   ): Promise<{ allowed: boolean; remaining: number; resetAt: Date }> {
-    const config = customConfig || this.defaultActionLimits[action] || {
-      points: 100,
-      duration: 60,
-    };
+    const config = customConfig ||
+      this.defaultActionLimits[action] || {
+        points: 100,
+        duration: 60,
+      };
 
     const key = `${this.RATE_LIMIT_PREFIX}${action}:${identifier}`;
     const now = Date.now();
-    const windowStart = now - (config.duration * 1000);
+    const windowStart = now - config.duration * 1000;
 
     try {
       // Use Redis sorted set for sliding window
       const client = this.redis.getClient();
-      
+
       // Remove old entries outside the window
       await client.zremrangebyscore(key, 0, windowStart);
-      
+
       // Count current entries
       const count = await client.zcard(key);
-      
+
       if (count >= config.points) {
         // Rate limited
         const oldestEntry = await client.zrange(key, 0, 0, 'WITHSCORES');
-        const resetTime = oldestEntry.length > 1 
-          ? new Date(parseInt(oldestEntry[1]) + (config.duration * 1000))
-          : new Date(now + (config.duration * 1000));
+        const resetTime =
+          oldestEntry.length > 1
+            ? new Date(parseInt(oldestEntry[1]) + config.duration * 1000)
+            : new Date(now + config.duration * 1000);
 
         this.logger.warn(`Rate limit exceeded for ${action} by ${identifier}`);
-        
+
         return {
           allowed: false,
           remaining: 0,
@@ -162,7 +169,7 @@ export class AdvancedSecurityService {
       return {
         allowed: true,
         remaining: config.points - count - 1,
-        resetAt: new Date(now + (config.duration * 1000)),
+        resetAt: new Date(now + config.duration * 1000),
       };
     } catch (error) {
       this.logger.error(`Rate limit check failed: ${error}`);
@@ -174,10 +181,15 @@ export class AdvancedSecurityService {
   /**
    * Get rate limit headers for response
    */
-  getRateLimitHeaders(result: { remaining: number; resetAt: Date }): Record<string, string> {
+  getRateLimitHeaders(result: {
+    remaining: number;
+    resetAt: Date;
+  }): Record<string, string> {
     return {
       'X-RateLimit-Remaining': result.remaining.toString(),
-      'X-RateLimit-Reset': Math.floor(result.resetAt.getTime() / 1000).toString(),
+      'X-RateLimit-Reset': Math.floor(
+        result.resetAt.getTime() / 1000,
+      ).toString(),
     };
   }
 
@@ -211,16 +223,22 @@ export class AdvancedSecurityService {
       }
 
       // Get current attempt count
-      const attempts = parseInt(await client.get(key) || '0');
+      const attempts = parseInt((await client.get(key)) || '0');
       const remaining = this.bruteForceConfig.maxAttempts - attempts;
 
       if (remaining <= 0) {
         // Block the identifier
-        const blockUntil = Date.now() + (this.bruteForceConfig.blockSeconds * 1000);
-        await client.set(blockKey, blockUntil.toString(), 'EX', this.bruteForceConfig.blockSeconds);
-        
+        const blockUntil =
+          Date.now() + this.bruteForceConfig.blockSeconds * 1000;
+        await client.set(
+          blockKey,
+          blockUntil.toString(),
+          'EX',
+          this.bruteForceConfig.blockSeconds,
+        );
+
         this.logger.warn(`Brute force protection triggered for ${identifier}`);
-        
+
         return {
           allowed: false,
           remainingAttempts: 0,
@@ -229,9 +247,10 @@ export class AdvancedSecurityService {
       }
 
       // Calculate progressive delay
-      const delay = this.bruteForceConfig.progressiveDelays[
-        Math.min(attempts, this.bruteForceConfig.progressiveDelays.length - 1)
-      ];
+      const delay =
+        this.bruteForceConfig.progressiveDelays[
+          Math.min(attempts, this.bruteForceConfig.progressiveDelays.length - 1)
+        ];
 
       return {
         allowed: true,
@@ -296,7 +315,8 @@ export class AdvancedSecurityService {
     await this.prisma.apiKey.create({
       data: {
         name,
-        hashedKey,
+        keyHash: hashedKey,
+        keyPrefix: key.substring(0, 8),
         workspaceId,
         userId,
         scopes: scope as any,
@@ -313,7 +333,9 @@ export class AdvancedSecurityService {
         scope,
         expiresAt: expiresAt?.toISOString(),
       },
-      expiresAt ? Math.floor((expiresAt.getTime() - Date.now()) / 1000) : 86400 * 30,
+      expiresAt
+        ? Math.floor((expiresAt.getTime() - Date.now()) / 1000)
+        : 86400 * 30,
     );
 
     this.logger.log(`API key created for workspace ${workspaceId}`);
@@ -328,7 +350,12 @@ export class AdvancedSecurityService {
     key: string,
     requiredScope: 'read' | 'write' | 'admin',
     resource?: string,
-  ): Promise<{ valid: boolean; workspaceId?: string; userId?: string; error?: string }> {
+  ): Promise<{
+    valid: boolean;
+    workspaceId?: string;
+    userId?: string;
+    error?: string;
+  }> {
     const hashedKey = this.hashApiKey(key);
     const cacheKey = `${this.API_KEY_PREFIX}${hashedKey}`;
 
@@ -344,7 +371,7 @@ export class AdvancedSecurityService {
       // Fallback to database
       if (!keyData) {
         const dbKey = await this.prisma.apiKey.findUnique({
-          where: { hashedKey },
+          where: { keyHash: hashedKey },
         });
 
         if (!dbKey) {
@@ -370,17 +397,35 @@ export class AdvancedSecurityService {
       // Check scope
       const scope = keyData.scope;
       if (requiredScope === 'admin' && !scope.admin) {
-        return { valid: false, error: 'Insufficient permissions: admin required' };
+        return {
+          valid: false,
+          error: 'Insufficient permissions: admin required',
+        };
       }
       if (requiredScope === 'write' && !scope.write && !scope.admin) {
-        return { valid: false, error: 'Insufficient permissions: write required' };
+        return {
+          valid: false,
+          error: 'Insufficient permissions: write required',
+        };
       }
-      if (requiredScope === 'read' && !scope.read && !scope.write && !scope.admin) {
-        return { valid: false, error: 'Insufficient permissions: read required' };
+      if (
+        requiredScope === 'read' &&
+        !scope.read &&
+        !scope.write &&
+        !scope.admin
+      ) {
+        return {
+          valid: false,
+          error: 'Insufficient permissions: read required',
+        };
       }
 
       // Check resource access
-      if (resource && scope.resources.length > 0 && !scope.resources.includes(resource)) {
+      if (
+        resource &&
+        scope.resources.length > 0 &&
+        !scope.resources.includes(resource)
+      ) {
         return { valid: false, error: `No access to resource: ${resource}` };
       }
 
@@ -400,12 +445,12 @@ export class AdvancedSecurityService {
    */
   async revokeApiKey(hashedKey: string): Promise<void> {
     await this.prisma.apiKey.update({
-      where: { hashedKey },
+      where: { keyHash: hashedKey },
       data: { revokedAt: new Date() },
     });
 
     await this.redis.del(`${this.API_KEY_PREFIX}${hashedKey}`);
-    
+
     this.logger.log(`API key revoked: ${hashedKey.substring(0, 8)}...`);
   }
 
@@ -502,10 +547,20 @@ export class AdvancedSecurityService {
     this.logger.warn(`IP ${ip} blocked: ${reason}`);
 
     await this.audit.log({
-      action: 'IP_BLOCKED',
-      category: 'SECURITY',
-      severity: 'HIGH',
-      details: { ip, reason },
+      workspaceId: 'SYSTEM',
+      userEmail: 'system@internal',
+      entity: 'IpBlocklist',
+      entityId: ip,
+      method: 'INTERNAL',
+      endpoint: 'blockIp',
+      action: 'UPDATE',
+      metadata: {
+        ip,
+        reason,
+        action: 'IP_BLOCKED',
+        category: 'SECURITY',
+        severity: 'HIGH',
+      },
     });
   }
 
@@ -529,7 +584,7 @@ export class AdvancedSecurityService {
 
     try {
       const client = this.redis.getClient();
-      
+
       // Store as list (most recent first)
       await client.lpush(key, JSON.stringify(fullActivity));
       await client.ltrim(key, 0, 99); // Keep last 100 activities
@@ -537,6 +592,10 @@ export class AdvancedSecurityService {
 
       // Log critical activities
       if (activity.severity === 'critical' || activity.severity === 'high') {
+        const user = userId
+          ? await this.prisma.user.findUnique({ where: { id: userId } })
+          : null;
+
         this.logger.warn(`Suspicious activity detected: ${activity.type}`, {
           userId,
           ip,
@@ -544,11 +603,20 @@ export class AdvancedSecurityService {
         });
 
         await this.audit.log({
-          action: 'SUSPICIOUS_ACTIVITY',
-          category: 'SECURITY',
-          userId: userId || undefined,
-          severity: activity.severity === 'critical' ? 'CRITICAL' : 'HIGH',
-          details: { ip, ...activity },
+          workspaceId: user?.workspaceId || 'SYSTEM',
+          userEmail: user?.email || 'system@internal',
+          entity: 'SecurityIncident',
+          entityId: userId || ip,
+          method: 'INTERNAL',
+          endpoint: 'recordSuspiciousActivity',
+          action: 'UPDATE',
+          metadata: {
+            ip,
+            activityType: 'SUSPICIOUS_ACTIVITY',
+            ...activity,
+            category: 'SECURITY',
+            severity: activity.severity === 'critical' ? 'CRITICAL' : 'HIGH',
+          } as any,
         });
       }
     } catch (error) {
@@ -648,33 +716,53 @@ export class AdvancedSecurityService {
    */
   async calculateSecurityScore(workspaceId: string): Promise<{
     score: number;
-    factors: Array<{ name: string; score: number; maxScore: number; recommendation?: string }>;
+    factors: Array<{
+      name: string;
+      score: number;
+      maxScore: number;
+      recommendation?: string;
+    }>;
   }> {
-    const factors: Array<{ name: string; score: number; maxScore: number; recommendation?: string }> = [];
+    const factors: Array<{
+      name: string;
+      score: number;
+      maxScore: number;
+      recommendation?: string;
+    }> = [];
 
     // Check 2FA adoption
     const users = await this.prisma.user.findMany({
       where: { workspaceId },
       select: { twoFactorEnabled: true },
     });
-    const twoFactorRate = users.filter((u) => u.twoFactorEnabled).length / users.length;
+    const twoFactorRate =
+      users.filter((u) => u.twoFactorEnabled).length / users.length;
     factors.push({
       name: '2FA Adoption',
       score: Math.round(twoFactorRate * 25),
       maxScore: 25,
-      recommendation: twoFactorRate < 1 ? 'Enable 2FA for all users' : undefined,
+      recommendation:
+        twoFactorRate < 1 ? 'Enable 2FA for all users' : undefined,
     });
 
     // Check API key usage
     const apiKeys = await this.prisma.apiKey.findMany({
       where: { workspaceId, revokedAt: null },
     });
-    const expiredKeys = apiKeys.filter((k) => k.expiresAt && k.expiresAt < new Date());
+    const expiredKeys = apiKeys.filter(
+      (k) => k.expiresAt && k.expiresAt < new Date(),
+    );
     factors.push({
       name: 'API Key Hygiene',
-      score: expiredKeys.length === 0 ? 20 : Math.max(0, 20 - expiredKeys.length * 5),
+      score:
+        expiredKeys.length === 0
+          ? 20
+          : Math.max(0, 20 - expiredKeys.length * 5),
       maxScore: 20,
-      recommendation: expiredKeys.length > 0 ? `Revoke ${expiredKeys.length} expired API keys` : undefined,
+      recommendation:
+        expiredKeys.length > 0
+          ? `Revoke ${expiredKeys.length} expired API keys`
+          : undefined,
     });
 
     // Check recent suspicious activities
@@ -686,9 +774,10 @@ export class AdvancedSecurityService {
       name: 'Incident History',
       score: Math.max(0, 25 - highSeverityIncidents * 5),
       maxScore: 25,
-      recommendation: highSeverityIncidents > 0 
-        ? 'Review and address recent security incidents' 
-        : undefined,
+      recommendation:
+        highSeverityIncidents > 0
+          ? 'Review and address recent security incidents'
+          : undefined,
     });
 
     // Check password policy compliance (assuming we track this)

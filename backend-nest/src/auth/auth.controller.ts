@@ -86,8 +86,15 @@ export class AuthController {
   @Get('google')
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Initiate Google OAuth flow' })
+  @ApiResponse({
+    status: 302,
+    description: 'Redirects to Google OAuth consent screen',
+  })
+  @ApiResponse({ status: 500, description: 'Google OAuth not configured' })
   async googleAuth() {
-    // Initiates Google OAuth flow
+    // The guard handles the redirect to Google
+    // If we reach here without redirect, credentials might be missing
+    // This is handled by the GoogleAuthGuard
   }
 
   @Get('google/callback')

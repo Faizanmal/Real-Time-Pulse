@@ -1,10 +1,14 @@
 import { Module } from '@nestjs/common';
 import { NotificationsGateway } from './notifications.gateway';
+import { NotificationService } from './notification.service';
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [
+    PrismaModule,
+    ConfigModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService): JwtModuleOptions => {
@@ -18,7 +22,7 @@ import { ConfigService } from '@nestjs/config';
       },
     }),
   ],
-  providers: [NotificationsGateway],
-  exports: [NotificationsGateway],
+  providers: [NotificationsGateway, NotificationService],
+  exports: [NotificationsGateway, NotificationService],
 })
 export class NotificationsModule {}

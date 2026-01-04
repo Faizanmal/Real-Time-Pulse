@@ -68,7 +68,7 @@ export default function DataValidationDashboard() {
   const fetchValidationData = async () => {
     try {
       const workspaceId = 'your-workspace-id';
-      
+
       const [rulesRes, violationsRes, statsRes] = await Promise.all([
         fetch(`/api/data-validation/rules/workspace/${workspaceId}`),
         fetch(`/api/data-validation/violations/workspace/${workspaceId}?resolved=false`),
@@ -99,10 +99,10 @@ export default function DataValidationDashboard() {
           ...newRule
         })
       });
-      
+
       setShowRuleDialog(false);
       fetchValidationData();
-      
+
       // Reset form
       setNewRule({
         name: '',
@@ -342,7 +342,7 @@ export default function DataValidationDashboard() {
             <CardDescription>Distribution of validation issues</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={300} minWidth={0}>
               <BarChart data={Object.entries(stats?.bySeverity || {}).map(([severity, count]) => ({
                 severity,
                 count
@@ -363,7 +363,7 @@ export default function DataValidationDashboard() {
             <CardDescription>Most common data quality issues</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={300} minWidth={0}>
               <PieChart>
                 <Pie
                   data={Object.entries(stats?.byType || {}).map(([type, count]) => ({

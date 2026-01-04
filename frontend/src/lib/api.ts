@@ -10,7 +10,9 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import type { User } from '../types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
+  ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
+  : 'http://localhost:3001/api/v1';
 
 // Create axios instance
 export const apiClient: AxiosInstance = axios.create({
@@ -279,9 +281,9 @@ export const authAPI = {
   },
 
   register: async (username: string, email: string, password: string, timezone?: string) => {
-    const response = await apiClient.post('/users/register/', { 
-      username, 
-      email, 
+    const response = await apiClient.post('/users/register/', {
+      username,
+      email,
       password,
       password_confirm: password,
       timezone: timezone || 'UTC'

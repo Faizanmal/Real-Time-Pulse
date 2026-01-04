@@ -63,7 +63,25 @@ const mockPortals = new Map([
   }],
 ]);
 
-const mockWidgets = new Map([
+interface Widget {
+  id: string;
+  title: string;
+  type: string;
+  portalId: string;
+  position: number;
+  config: { chartType?: string };
+  data: {
+    values?: number[];
+    value?: number;
+    unit?: string;
+    trend?: string;
+    lastRefreshed?: string;
+  } | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+const mockWidgets = new Map<string, Widget>([
   ['widget-1', {
     id: 'widget-1',
     title: 'Website Traffic',
@@ -103,18 +121,18 @@ const mockIntegrations = new Map([
 
 export const authHandlers = [
   // Login
-  http.post(`${API_URL}/auth/login`, async ({ request }) => {
+  http.post(`${API_URL}/auth/login`, async ({ request }: { request: any }) => {
     await delay(500);
-    
+
     const body = await request.json() as { email: string; password: string };
-    
+
     if (body.email === 'test@example.com' && body.password === 'password123') {
       return HttpResponse.json({
         accessToken: 'mock-access-token',
         user: mockUsers.get('user-1'),
       });
     }
-    
+
     return HttpResponse.json(
       { message: 'Invalid credentials' },
       { status: 401 },
@@ -122,11 +140,11 @@ export const authHandlers = [
   }),
 
   // Register
-  http.post(`${API_URL}/auth/register`, async ({ request }) => {
+  http.post(`${API_URL}/auth/register`, async ({ request }: { request: any }) => {
     await delay(500);
-    
+
     const body = await request.json() as { email: string; password: string; name: string };
-    
+
     const userId = generateId();
     const user = {
       id: userId,
@@ -138,9 +156,9 @@ export const authHandlers = [
       emailVerified: false,
       createdAt: new Date().toISOString(),
     };
-    
+
     mockUsers.set(userId, user);
-    
+
     return HttpResponse.json({
       accessToken: 'mock-access-token',
       user,
@@ -172,16 +190,16 @@ export const authHandlers = [
 
 export const portalHandlers = [
   // List portals
-  http.get(`${API_URL}/portals`, async ({ request }) => {
+  http.get(`${API_URL}/portals`, async ({ request }: { request: any }) => {
     await delay(300);
-    
+
     const url = new URL(request.url);
     const workspaceId = url.searchParams.get('workspaceId');
-    
+
     const portals = Array.from(mockPortals.values()).filter(
       p => !workspaceId || p.workspaceId === workspaceId,
     );
-    
+
     return HttpResponse.json({
       data: portals,
       meta: { total: portals.length, page: 1, limit: 20, totalPages: 1 },
@@ -189,24 +207,24 @@ export const portalHandlers = [
   }),
 
   // Get portal
-  http.get(`${API_URL}/portals/:id`, async ({ params }) => {
+  http.get(`${API_URL}/portals/:id`, async ({ params }: { params: any }) => {
     await delay(200);
-    
-    const portal = mockPortals.get(params.id as string);
-    
+
+    const portal = mockPortals.get(params.id);
+
     if (!portal) {
       return HttpResponse.json({ message: 'Portal not found' }, { status: 404 });
     }
-    
+
     return HttpResponse.json(portal);
   }),
 
   // Create portal
-  http.post(`${API_URL}/portals`, async ({ request }) => {
+  http.post(`${API_URL}/portals`, async ({ request }: { request: any }) => {
     await delay(500);
-    
+
     const body = await request.json() as { name: string; description?: string };
-    
+
     const portal = {
       id: generateId(),
       name: body.name,
@@ -217,39 +235,39 @@ export const portalHandlers = [
       createdAt: new Date().toISOString(),
       widgets: [],
     };
-    
+
     mockPortals.set(portal.id, portal);
-    
+
     return HttpResponse.json(portal, { status: 201 });
   }),
 
   // Update portal
-  http.patch(`${API_URL}/portals/:id`, async ({ params, request }) => {
+  http.patch(`${API_URL}/portals/:id`, async ({ params, request }: { params: any, request: any }) => {
     await delay(300);
-    
-    const portal = mockPortals.get(params.id as string);
-    
+
+    const portal = mockPortals.get(params.id);
+
     if (!portal) {
       return HttpResponse.json({ message: 'Portal not found' }, { status: 404 });
     }
-    
+
     const body = await request.json() as Partial<typeof portal>;
     const updated = { ...portal, ...body, updatedAt: new Date().toISOString() };
-    mockPortals.set(params.id as string, updated);
-    
+    mockPortals.set(params.id, updated);
+
     return HttpResponse.json(updated);
   }),
 
   // Delete portal
-  http.delete(`${API_URL}/portals/:id`, async ({ params }) => {
+  http.delete(`${API_URL}/portals/:id`, async ({ params }: { params: any }) => {
     await delay(300);
-    
-    if (!mockPortals.has(params.id as string)) {
+
+    if (!mockPortals.has(params.id)) {
       return HttpResponse.json({ message: 'Portal not found' }, { status: 404 });
     }
-    
-    mockPortals.delete(params.id as string);
-    
+
+    mockPortals.delete(params.id);
+
     return HttpResponse.json({ success: true });
   }),
 ];
@@ -260,39 +278,39 @@ export const portalHandlers = [
 
 export const widgetHandlers = [
   // List widgets
-  http.get(`${API_URL}/widgets`, async ({ request }) => {
+  http.get(`${API_URL}/widgets`, async ({ request }: { request: any }) => {
     await delay(200);
-    
+
     const url = new URL(request.url);
     const portalId = url.searchParams.get('portalId');
-    
+
     const widgets = Array.from(mockWidgets.values()).filter(
       w => !portalId || w.portalId === portalId,
     );
-    
+
     return HttpResponse.json(widgets);
   }),
 
   // Get widget
-  http.get(`${API_URL}/widgets/:id`, async ({ params }) => {
+  http.get(`${API_URL}/widgets/:id`, async ({ params }: { params: any }) => {
     await delay(150);
-    
-    const widget = mockWidgets.get(params.id as string);
-    
+
+    const widget = mockWidgets.get(params.id);
+
     if (!widget) {
       return HttpResponse.json({ message: 'Widget not found' }, { status: 404 });
     }
-    
+
     return HttpResponse.json(widget);
   }),
 
   // Create widget
-  http.post(`${API_URL}/widgets`, async ({ request }) => {
+  http.post(`${API_URL}/widgets`, async ({ request }: { request: any }) => {
     await delay(400);
-    
+
     const body = await request.json() as { title: string; type: string; portalId: string };
-    
-    const widget = {
+
+    const widget: Widget = {
       id: generateId(),
       title: body.title,
       type: body.type,
@@ -302,59 +320,59 @@ export const widgetHandlers = [
       data: null,
       createdAt: new Date().toISOString(),
     };
-    
+
     mockWidgets.set(widget.id, widget);
-    
+
     return HttpResponse.json(widget, { status: 201 });
   }),
 
   // Update widget
-  http.patch(`${API_URL}/widgets/:id`, async ({ params, request }) => {
+  http.patch(`${API_URL}/widgets/:id`, async ({ params, request }: { params: any, request: any }) => {
     await delay(250);
-    
-    const widget = mockWidgets.get(params.id as string);
-    
+
+    const widget = mockWidgets.get(params.id);
+
     if (!widget) {
       return HttpResponse.json({ message: 'Widget not found' }, { status: 404 });
     }
-    
-    const body = await request.json() as Partial<typeof widget>;
-    const updated = { ...widget, ...body, updatedAt: new Date().toISOString() };
-    mockWidgets.set(params.id as string, updated);
-    
+
+    const body = await request.json() as Partial<Widget>;
+    const updated: Widget = { ...widget, ...body, updatedAt: new Date().toISOString() };
+    mockWidgets.set(params.id, updated);
+
     return HttpResponse.json(updated);
   }),
 
   // Delete widget
-  http.delete(`${API_URL}/widgets/:id`, async ({ params }) => {
+  http.delete(`${API_URL}/widgets/:id`, async ({ params }: { params: any }) => {
     await delay(200);
-    
-    if (!mockWidgets.has(params.id as string)) {
+
+    if (!mockWidgets.has(params.id)) {
       return HttpResponse.json({ message: 'Widget not found' }, { status: 404 });
     }
-    
-    mockWidgets.delete(params.id as string);
-    
+
+    mockWidgets.delete(params.id);
+
     return HttpResponse.json({ success: true });
   }),
 
   // Refresh widget data
-  http.post(`${API_URL}/widgets/:id/refresh`, async ({ params }) => {
+  http.post(`${API_URL}/widgets/:id/refresh`, async ({ params }: { params: any }) => {
     await delay(1000);
-    
-    const widget = mockWidgets.get(params.id as string);
-    
+
+    const widget = mockWidgets.get(params.id);
+
     if (!widget) {
       return HttpResponse.json({ message: 'Widget not found' }, { status: 404 });
     }
-    
+
     // Simulate updated data
     widget.data = {
-      ...widget.data,
+      ...(widget.data || {}),
       lastRefreshed: new Date().toISOString(),
       value: Math.floor(Math.random() * 100),
     };
-    
+
     return HttpResponse.json(widget);
   }),
 ];
@@ -371,30 +389,30 @@ export const integrationHandlers = [
   }),
 
   // Get integration
-  http.get(`${API_URL}/integrations/:id`, async ({ params }) => {
+  http.get(`${API_URL}/integrations/:id`, async ({ params }: { params: any }) => {
     await delay(200);
-    
-    const integration = mockIntegrations.get(params.id as string);
-    
+
+    const integration = mockIntegrations.get(params.id);
+
     if (!integration) {
       return HttpResponse.json({ message: 'Integration not found' }, { status: 404 });
     }
-    
+
     return HttpResponse.json(integration);
   }),
 
   // Sync integration
-  http.post(`${API_URL}/integrations/:id/sync`, async ({ params }) => {
+  http.post(`${API_URL}/integrations/:id/sync`, async ({ params }: { params: any }) => {
     await delay(2000);
-    
-    const integration = mockIntegrations.get(params.id as string);
-    
+
+    const integration = mockIntegrations.get(params.id);
+
     if (!integration) {
       return HttpResponse.json({ message: 'Integration not found' }, { status: 404 });
     }
-    
+
     integration.lastSyncedAt = new Date().toISOString();
-    
+
     return HttpResponse.json({ success: true, lastSyncedAt: integration.lastSyncedAt });
   }),
 ];
@@ -405,12 +423,12 @@ export const integrationHandlers = [
 
 export const aiHandlers = [
   // Get AI insights
-  http.get(`${API_URL}/ai-insights`, async ({ request }) => {
+  http.get(`${API_URL}/ai-insights`, async ({ request }: { request: any }) => {
     await delay(500);
-    
+
     const url = new URL(request.url);
     const portalId = url.searchParams.get('portalId');
-    
+
     return HttpResponse.json([
       {
         id: generateId(),
@@ -436,7 +454,7 @@ export const aiHandlers = [
   // Generate insights
   http.post(`${API_URL}/ai-insights/generate`, async () => {
     await delay(3000);
-    
+
     return HttpResponse.json({
       success: true,
       insightsGenerated: 3,
@@ -444,11 +462,11 @@ export const aiHandlers = [
   }),
 
   // Natural language query
-  http.post(`${API_URL}/ai-insights/query`, async ({ request }) => {
+  http.post(`${API_URL}/ai-insights/query`, async ({ request }: { request: any }) => {
     await delay(1500);
-    
+
     const body = await request.json() as { query: string };
-    
+
     return HttpResponse.json({
       answer: `Based on your data, here's what I found regarding "${body.query}": Your metrics show positive trends with a 15% increase in overall engagement.`,
       confidence: 0.85,

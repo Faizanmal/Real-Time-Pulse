@@ -70,6 +70,7 @@ model User {
   apiKeys            ApiKey[]
   aiQueries          AIQuery[]
   pushTokens         PushToken[]
+  gamificationProfile GamificationProfile?
 
   @@index([workspaceId])
   @@index([email])
@@ -1045,12 +1046,18 @@ model Comment {
   portalId String
   widgetId String?
   
+  // Annotation Positioning (Phase 3)
+  positionX Float? // Percentage (0-100)
+  positionY Float? // Percentage (0-100)
+  dataPoint Json?  // Linked data point context
+
   // Author
   authorId String
   author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   // Content
   content  String   @db.Text
+  type     CommentType @default(COMMENT) // COMMENT, PIN, FLAG, etc.
   mentions String[] // User IDs mentioned in comment
   
   // Thread
@@ -1061,6 +1068,7 @@ model Comment {
   // Status
   isEdited  Boolean   @default(false)
   isDeleted Boolean   @default(false)
+  resolved  Boolean   @default(false)
   editedAt  DateTime?
 
   // Timestamps
@@ -1072,6 +1080,15 @@ model Comment {
   @@index([authorId])
   @@index([parentId])
   @@map("comments")
+}
+
+enum CommentType {
+  COMMENT
+  PIN
+  FLAG
+  ALERT
+  SUCCESS
+  INFO
 }
 
 // ========================================
@@ -2811,4 +2828,116 @@ model SagaState {
   @@index([sagaType])
   @@index([state])
   @@map("saga_states")
+}
+
+// ========================================
+// GAMIFICATION
+// ========================================
+
+model GamificationProfile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  xp        Int      @default(0)
+  level     Int      @default(1)
+  
+  // Streaks
+  currentStreak Int @default(0)
+  longestStreak Int @default(0)
+  lastActivityDate DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  badges       UserBadge[]
+  achievements UserAchievement[]
+
+  @@map("gamification_profiles")
+}
+
+model Badge {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  name        String
+  description String
+  icon        String
+  category    BadgeCategory
+  rarity      BadgeRarity @default(COMMON)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id        String   @id @default(uuid())
+  profileId String
+  profile   GamificationProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  
+  earnedAt  DateTime @default(now())
+
+  @@unique([profileId, badgeId])
+  @@map("user_badges")
+}
+
+model Achievement {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  name        String
+  description String
+  points      Int
+  category    AchievementCategory
+  criteria    Json // Logic to check if achieved
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String   @id @default(uuid())
+  profileId     String
+  profile       GamificationProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  
+  progress      Int      @default(0)
+  completed     Boolean  @default(false)
+  completedAt   DateTime?
+  
+  updatedAt     DateTime @updatedAt
+
+  @@unique([profileId, achievementId])
+  @@map("user_achievements")
+}
+
+enum BadgeCategory {
+  ACHIEVEMENT
+  MILESTONE
+  SKILL
+  SOCIAL
+  SPECIAL
+}
+
+enum BadgeRarity {
+  COMMON
+  UNCOMMON
+  RARE
+  EPIC
+  LEGENDARY
+}
+
+enum AchievementCategory {
+  USAGE
+  SOCIAL
+  CREATION
+  EXPLORATION
 }

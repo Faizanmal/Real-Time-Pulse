@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import NextImage from 'next/image';
+import Link from 'next/link';
 import {
   Box,
   Plus,
@@ -123,7 +124,7 @@ export function ARVisualizationPanel() {
         data: {},
       });
       const aframe = await arVisualizationAPI.exportToAFrame(sceneDefinition);
-      
+
       const blob = new Blob([aframe.html], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -265,11 +266,10 @@ export function ARVisualizationPanel() {
                         onClick={() =>
                           setNewScene({ ...newScene, visualizationType: type.value })
                         }
-                        className={`p-3 border rounded-lg flex items-center gap-2 ${
-                          newScene.visualizationType === type.value
-                            ? 'border-violet-500 bg-violet-50 text-violet-700'
-                            : 'hover:bg-gray-50'
-                        }`}
+                        className={`p-3 border rounded-lg flex items-center gap-2 ${newScene.visualizationType === type.value
+                          ? 'border-violet-500 bg-violet-50 text-violet-700'
+                          : 'hover:bg-gray-50'
+                          }`}
                       >
                         <type.icon className="h-5 w-5" />
                         {type.label}
@@ -302,9 +302,8 @@ export function ARVisualizationPanel() {
               {scenes.map((scene: ARScene) => (
                 <Card
                   key={scene.id}
-                  className={`overflow-hidden cursor-pointer transition-all hover:shadow-md ${
-                    selectedScene?.id === scene.id ? 'ring-2 ring-violet-500' : ''
-                  }`}
+                  className={`overflow-hidden cursor-pointer transition-all hover:shadow-md ${selectedScene?.id === scene.id ? 'ring-2 ring-violet-500' : ''
+                    }`}
                   onClick={() => setSelectedScene(scene)}
                 >
                   <div className="h-32 bg-gradient-to-br from-pink-400 to-violet-500 flex items-center justify-center">
@@ -451,10 +450,12 @@ export function ARVisualizationPanel() {
                     <Download className="h-4 w-4 mr-2" />
                     Export A-Frame HTML
                   </Button>
-                  <Button className="w-full justify-start" variant="outline">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Preview in Browser
-                  </Button>
+                  <Link href={`/ar/view/${selectedScene.id}`} className="w-full">
+                    <Button className="w-full justify-start" variant="outline">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Preview in Browser
+                    </Button>
+                  </Link>
                 </div>
               </Card>
 

@@ -60,7 +60,7 @@ export default function DataHealthMonitor() {
     try {
       // Replace with actual workspace ID
       const workspaceId = 'your-workspace-id';
-      
+
       const [healthRes, metricsRes] = await Promise.all([
         fetch(`/api/data-health/workspace/${workspaceId}`),
         fetch(`/api/data-health/workspace/${workspaceId}/metrics?days=7`)
@@ -216,7 +216,7 @@ export default function DataHealthMonitor() {
             <CardDescription>Status breakdown of data sources</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={300} minWidth={0}>
               <PieChart>
                 <Pie
                   data={pieData}
@@ -244,9 +244,9 @@ export default function DataHealthMonitor() {
             <CardDescription>Average response time over last checks</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={300} minWidth={0}>
               <AreaChart
-                data={healthData.flatMap(s => 
+                data={healthData.flatMap(s =>
                   s.healthChecks.slice(0, 10).map(check => ({
                     timestamp: new Date(check.timestamp).toLocaleTimeString(),
                     responseTime: check.responseTime,

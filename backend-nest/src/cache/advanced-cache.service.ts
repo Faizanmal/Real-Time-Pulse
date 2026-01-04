@@ -2,7 +2,7 @@
  * =============================================================================
  * REAL-TIME PULSE - ADVANCED CACHING SERVICE
  * =============================================================================
- * 
+ *
  * Enhanced caching with stale-while-revalidate, cache warming, pub/sub
  * invalidation, and comprehensive metrics.
  */
@@ -47,10 +47,10 @@ export class AdvancedCacheService implements OnModuleInit {
   private readonly TAG_PREFIX = 'tag:';
   private readonly LOCK_PREFIX = 'lock:';
   private readonly VERSION_KEY = 'cache:version';
-  
+
   private currentVersion = 1;
   private pendingRevalidations = new Map<string, Promise<unknown>>();
-  
+
   private metrics: CacheMetrics = {
     hits: 0,
     misses: 0,
@@ -70,10 +70,10 @@ export class AdvancedCacheService implements OnModuleInit {
   async onModuleInit() {
     // Subscribe to cache invalidation events
     this.setupPubSub();
-    
+
     // Load current version
     await this.loadVersion();
-    
+
     this.logger.log('Advanced cache service initialized');
   }
 
@@ -84,17 +84,17 @@ export class AdvancedCacheService implements OnModuleInit {
     try {
       const subscriber = this.redis.getClient().duplicate();
       await subscriber.subscribe('cache:invalidate');
-      
-      subscriber.on('message', async (channel, message) => {
+
+      subscriber.on('message', (channel, message) => {
         if (channel === 'cache:invalidate') {
           const { pattern, tags, global } = JSON.parse(message);
-          
+
           if (global) {
-            await this.incrementVersion();
+            void this.incrementVersion();
           } else if (tags) {
-            await this.invalidateByTagsLocal(tags);
+            void this.invalidateByTagsLocal(tags);
           } else if (pattern) {
-            await this.invalidatePatternLocal(pattern);
+            void this.invalidatePatternLocal(pattern);
           }
         }
       });
@@ -138,23 +138,23 @@ export class AdvancedCacheService implements OnModuleInit {
     } = options;
 
     const fullKey = this.getFullKey(key);
-    
+
     try {
       // Try to get from cache
       const cached = await this.getCacheEntry<T>(fullKey);
-      
+
       if (cached) {
         const now = Date.now();
-        const isExpired = now > cached.createdAt + (cached.ttl * 1000);
+        const isExpired = now > cached.createdAt + cached.ttl * 1000;
         const isStale = isExpired && now < cached.staleUntil;
         const isVersionMismatch = cached.version !== this.currentVersion;
-        
+
         // Fresh cache hit
         if (!isExpired && !isVersionMismatch) {
           this.metrics.hits++;
           return cached.data;
         }
-        
+
         // Stale but within grace period - return stale and revalidate in background
         if (isStale && !isVersionMismatch) {
           this.metrics.staleHits++;
@@ -162,7 +162,7 @@ export class AdvancedCacheService implements OnModuleInit {
           return cached.data;
         }
       }
-      
+
       // Cache miss - fetch fresh data
       this.metrics.misses++;
       return await this.fetchAndCache(key, fullKey, fetchFn, {
@@ -170,11 +170,10 @@ export class AdvancedCacheService implements OnModuleInit {
         staleWhileRevalidate,
         tags,
       });
-      
     } catch (error) {
       this.metrics.errors++;
       this.logger.error(`Cache error for key ${key}:`, error);
-      
+
       // Fallback to direct fetch
       return await fetchFn();
     }
@@ -183,10 +182,12 @@ export class AdvancedCacheService implements OnModuleInit {
   /**
    * Get cached entry with metadata
    */
-  private async getCacheEntry<T>(fullKey: string): Promise<CacheEntry<T> | null> {
+  private async getCacheEntry<T>(
+    fullKey: string,
+  ): Promise<CacheEntry<T> | null> {
     const data = await this.redis.get(fullKey);
     if (!data) return null;
-    
+
     try {
       return JSON.parse(data) as CacheEntry<T>;
     } catch {
@@ -204,48 +205,50 @@ export class AdvancedCacheService implements OnModuleInit {
     options: { ttl: number; staleWhileRevalidate: number; tags: string[] },
   ): Promise<T> {
     const startTime = Date.now();
-    
+
     // Acquire lock to prevent thundering herd
     const lockKey = `${this.LOCK_PREFIX}${key}`;
     const lockAcquired = await this.acquireLock(lockKey, 30);
-    
+
     if (!lockAcquired) {
       // Another process is fetching, wait a bit and try cache again
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
       const cached = await this.getCacheEntry<T>(fullKey);
       if (cached) {
         return cached.data;
       }
     }
-    
+
     try {
       const data = await fetchFn();
       const fetchTime = Date.now() - startTime;
-      
+
       this.metrics.totalFetchTime += fetchTime;
-      this.metrics.avgFetchTime = 
-        this.metrics.totalFetchTime / (this.metrics.misses + this.metrics.revalidations);
-      
+      this.metrics.avgFetchTime =
+        this.metrics.totalFetchTime /
+        (this.metrics.misses + this.metrics.revalidations);
+
       const entry: CacheEntry<T> = {
         data,
         createdAt: Date.now(),
         ttl: options.ttl,
-        staleUntil: Date.now() + ((options.ttl + options.staleWhileRevalidate) * 1000),
+        staleUntil:
+          Date.now() + (options.ttl + options.staleWhileRevalidate) * 1000,
         tags: options.tags,
         version: this.currentVersion,
       };
-      
+
       await this.redis.set(
         fullKey,
         JSON.stringify(entry),
         options.ttl + options.staleWhileRevalidate,
       );
-      
+
       // Store tag associations
       for (const tag of options.tags) {
         await this.addKeyToTag(tag, fullKey);
       }
-      
+
       return data;
     } finally {
       if (lockAcquired) {
@@ -267,13 +270,14 @@ export class AdvancedCacheService implements OnModuleInit {
     if (this.pendingRevalidations.has(key)) {
       return;
     }
-    
+
     const revalidation = (async () => {
       try {
         this.metrics.revalidations++;
         await this.fetchAndCache(key, fullKey, fetchFn, {
           ttl: options.ttl || this.DEFAULT_TTL,
-          staleWhileRevalidate: options.staleWhileRevalidate || this.DEFAULT_STALE_WINDOW,
+          staleWhileRevalidate:
+            options.staleWhileRevalidate || this.DEFAULT_STALE_WINDOW,
           tags: options.tags || [],
         });
       } catch (error) {
@@ -282,15 +286,20 @@ export class AdvancedCacheService implements OnModuleInit {
         this.pendingRevalidations.delete(key);
       }
     })();
-    
+
     this.pendingRevalidations.set(key, revalidation);
   }
 
   /**
    * Simple distributed lock
    */
-  private async acquireLock(lockKey: string, ttlSeconds: number): Promise<boolean> {
-    const result = await this.redis.getClient().set(lockKey, '1', 'EX', ttlSeconds, 'NX');
+  private async acquireLock(
+    lockKey: string,
+    ttlSeconds: number,
+  ): Promise<boolean> {
+    const result = await this.redis
+      .getClient()
+      .set(lockKey, '1', 'EX', ttlSeconds, 'NX');
     return result === 'OK';
   }
 
@@ -319,7 +328,9 @@ export class AdvancedCacheService implements OnModuleInit {
    * Invalidate cache by pattern (local)
    */
   private async invalidatePatternLocal(pattern: string): Promise<void> {
-    const keys = await this.redis.getClient().keys(`${this.CACHE_PREFIX}${pattern}`);
+    const keys = await this.redis
+      .getClient()
+      .keys(`${this.CACHE_PREFIX}${pattern}`);
     if (keys.length > 0) {
       await this.redis.getClient().del(...keys);
       this.metrics.invalidations += keys.length;
@@ -331,7 +342,9 @@ export class AdvancedCacheService implements OnModuleInit {
    */
   private async invalidateByTagsLocal(tags: string[]): Promise<void> {
     for (const tag of tags) {
-      const keys = await this.redis.getClient().smembers(`${this.TAG_PREFIX}${tag}`);
+      const keys = await this.redis
+        .getClient()
+        .smembers(`${this.TAG_PREFIX}${tag}`);
       if (keys.length > 0) {
         await this.redis.getClient().del(...keys);
         await this.redis.getClient().del(`${this.TAG_PREFIX}${tag}`);
@@ -345,12 +358,11 @@ export class AdvancedCacheService implements OnModuleInit {
    */
   async invalidatePattern(pattern: string): Promise<void> {
     await this.invalidatePatternLocal(pattern);
-    
+
     // Broadcast to other instances
-    await this.redis.getClient().publish(
-      'cache:invalidate',
-      JSON.stringify({ pattern }),
-    );
+    await this.redis
+      .getClient()
+      .publish('cache:invalidate', JSON.stringify({ pattern }));
   }
 
   /**
@@ -358,12 +370,11 @@ export class AdvancedCacheService implements OnModuleInit {
    */
   async invalidateByTags(tags: string[]): Promise<void> {
     await this.invalidateByTagsLocal(tags);
-    
+
     // Broadcast to other instances
-    await this.redis.getClient().publish(
-      'cache:invalidate',
-      JSON.stringify({ tags }),
-    );
+    await this.redis
+      .getClient()
+      .publish('cache:invalidate', JSON.stringify({ tags }));
   }
 
   /**
@@ -371,44 +382,52 @@ export class AdvancedCacheService implements OnModuleInit {
    */
   async invalidateAll(): Promise<void> {
     await this.incrementVersion();
-    
+
     // Broadcast to other instances
-    await this.redis.getClient().publish(
-      'cache:invalidate',
-      JSON.stringify({ global: true }),
-    );
+    await this.redis
+      .getClient()
+      .publish('cache:invalidate', JSON.stringify({ global: true }));
   }
 
   /**
    * Pre-warm cache with common data
    */
   async warmCache<T>(
-    entries: Array<{ key: string; fetchFn: () => Promise<T>; options?: CacheOptions }>,
+    entries: Array<{
+      key: string;
+      fetchFn: () => Promise<T>;
+      options?: CacheOptions;
+    }>,
   ): Promise<void> {
     this.logger.log(`Warming cache with ${entries.length} entries...`);
-    
+
     const results = await Promise.allSettled(
       entries.map(async ({ key, fetchFn, options }) => {
         const fullKey = this.getFullKey(key);
         await this.fetchAndCache(key, fullKey, fetchFn, {
           ttl: options?.ttl || this.DEFAULT_TTL,
-          staleWhileRevalidate: options?.staleWhileRevalidate || this.DEFAULT_STALE_WINDOW,
+          staleWhileRevalidate:
+            options?.staleWhileRevalidate || this.DEFAULT_STALE_WINDOW,
           tags: options?.tags || [],
         });
       }),
     );
-    
-    const successful = results.filter(r => r.status === 'fulfilled').length;
-    this.logger.log(`Cache warming complete: ${successful}/${entries.length} entries`);
+
+    const successful = results.filter((r) => r.status === 'fulfilled').length;
+    this.logger.log(
+      `Cache warming complete: ${successful}/${entries.length} entries`,
+    );
   }
 
   /**
    * Get cache metrics
    */
   getMetrics(): CacheMetrics & { hitRate: number } {
-    const total = this.metrics.hits + this.metrics.misses + this.metrics.staleHits;
-    const hitRate = total > 0 ? (this.metrics.hits + this.metrics.staleHits) / total : 0;
-    
+    const total =
+      this.metrics.hits + this.metrics.misses + this.metrics.staleHits;
+    const hitRate =
+      total > 0 ? (this.metrics.hits + this.metrics.staleHits) / total : 0;
+
     return {
       ...this.metrics,
       hitRate,
@@ -438,7 +457,7 @@ export class AdvancedCacheService implements OnModuleInit {
     const entry = await this.getCacheEntry<T>(this.getFullKey(key));
     if (entry && entry.version === this.currentVersion) {
       const now = Date.now();
-      const isExpired = now > entry.createdAt + (entry.ttl * 1000);
+      const isExpired = now > entry.createdAt + entry.ttl * 1000;
       if (!isExpired) {
         return entry.data;
       }
@@ -449,21 +468,30 @@ export class AdvancedCacheService implements OnModuleInit {
   /**
    * Simple set (for backwards compatibility)
    */
-  async set<T>(key: string, data: T, options: CacheOptions = {}): Promise<void> {
+  async set<T>(
+    key: string,
+    data: T,
+    options: CacheOptions = {},
+  ): Promise<void> {
     const fullKey = this.getFullKey(key);
     const ttl = options.ttl || this.DEFAULT_TTL;
-    const staleWhileRevalidate = options.staleWhileRevalidate || this.DEFAULT_STALE_WINDOW;
-    
+    const staleWhileRevalidate =
+      options.staleWhileRevalidate || this.DEFAULT_STALE_WINDOW;
+
     const entry: CacheEntry<T> = {
       data,
       createdAt: Date.now(),
       ttl,
-      staleUntil: Date.now() + ((ttl + staleWhileRevalidate) * 1000),
+      staleUntil: Date.now() + (ttl + staleWhileRevalidate) * 1000,
       tags: options.tags || [],
       version: this.currentVersion,
     };
-    
-    await this.redis.set(fullKey, JSON.stringify(entry), ttl + staleWhileRevalidate);
+
+    await this.redis.set(
+      fullKey,
+      JSON.stringify(entry),
+      ttl + staleWhileRevalidate,
+    );
   }
 
   /**

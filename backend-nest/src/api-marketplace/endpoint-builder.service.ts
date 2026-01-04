@@ -89,7 +89,7 @@ export class EndpointBuilderService {
         }
         break;
 
-      case 'parameters':
+      case 'parameters': {
         const params = step.data.parameters || [];
         params.forEach((param: any, index: number) => {
           if (!param.name)
@@ -100,6 +100,7 @@ export class EndpointBuilderService {
             errors.push(`Parameter ${index + 1}: Data type is required`);
         });
         break;
+      }
 
       case 'data_source':
         if (!step.data.type) errors.push('Data source type is required');

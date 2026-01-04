@@ -2,7 +2,7 @@
  * =============================================================================
  * REAL-TIME PULSE - ENHANCED OBSERVABILITY
  * =============================================================================
- * 
+ *
  * Comprehensive logging, metrics, and error tracking with structured output.
  */
 
@@ -54,7 +54,7 @@ export interface MetricsSnapshot {
     p99: number;
   };
   httpErrorRate: number;
-  
+
   // Business Metrics
   activeUsers: number;
   portalsCreated: number;
@@ -62,7 +62,7 @@ export interface MetricsSnapshot {
   integrationsConnected: number;
   aiQueriesProcessed: number;
   reportsGenerated: number;
-  
+
   // System Metrics
   memoryUsage: {
     heapUsed: number;
@@ -72,11 +72,11 @@ export interface MetricsSnapshot {
   };
   cpuUsage: number;
   eventLoopLag: number;
-  
+
   // Cache Metrics
   cacheHitRate: number;
   cacheMissRate: number;
-  
+
   // Queue Metrics
   queueDepth: number;
   queueProcessingRate: number;
@@ -112,20 +112,20 @@ export interface ErrorReport {
 @Injectable()
 export class EnhancedObservabilityService implements OnModuleInit {
   private readonly logger = new Logger(EnhancedObservabilityService.name);
-  
+
   private readonly serviceName: string;
   private readonly version: string;
   private readonly environment: string;
-  
+
   // Metrics storage
   private metrics: Map<string, MetricEntry[]> = new Map();
   private counters: Map<string, number> = new Map();
   private histograms: Map<string, number[]> = new Map();
-  
+
   // Error tracking
   private errorBuffer: ErrorReport[] = [];
   private errorFingerprints: Map<string, ErrorReport> = new Map();
-  
+
   // Request tracking
   private requestDurations: number[] = [];
   private readonly MAX_DURATIONS = 1000;
@@ -142,10 +142,10 @@ export class EnhancedObservabilityService implements OnModuleInit {
   async onModuleInit() {
     // Start metrics collection interval
     this.startMetricsCollection();
-    
+
     // Setup error aggregation
     this.setupErrorAggregation();
-    
+
     this.logger.log('Enhanced observability service initialized');
   }
 
@@ -159,7 +159,17 @@ export class EnhancedObservabilityService implements OnModuleInit {
   log(
     level: LogEntry['level'],
     message: string,
-    context?: Partial<Omit<LogEntry, 'timestamp' | 'level' | 'message' | 'service' | 'version' | 'environment'>>,
+    context?: Partial<
+      Omit<
+        LogEntry,
+        | 'timestamp'
+        | 'level'
+        | 'message'
+        | 'service'
+        | 'version'
+        | 'environment'
+      >
+    >,
   ): void {
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
@@ -173,7 +183,7 @@ export class EnhancedObservabilityService implements OnModuleInit {
 
     // Output as JSON for log aggregation systems
     const output = JSON.stringify(entry);
-    
+
     switch (level) {
       case 'debug':
         console.debug(output);
@@ -206,14 +216,20 @@ export class EnhancedObservabilityService implements OnModuleInit {
     this.log('warn', message, { metadata: context });
   }
 
-  error(message: string, error?: Error, context?: Record<string, unknown>): void {
+  error(
+    message: string,
+    error?: Error,
+    context?: Record<string, unknown>,
+  ): void {
     this.log('error', message, {
       metadata: context,
-      error: error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-      } : undefined,
+      error: error
+        ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          }
+        : undefined,
     });
 
     // Track error
@@ -229,7 +245,11 @@ export class EnhancedObservabilityService implements OnModuleInit {
   /**
    * Increment a counter metric
    */
-  incrementCounter(name: string, labels: Record<string, string> = {}, value = 1): void {
+  incrementCounter(
+    name: string,
+    labels: Record<string, string> = {},
+    value = 1,
+  ): void {
     const key = this.getMetricKey(name, labels);
     const current = this.counters.get(key) || 0;
     this.counters.set(key, current + value);
@@ -238,7 +258,11 @@ export class EnhancedObservabilityService implements OnModuleInit {
   /**
    * Set a gauge metric
    */
-  setGauge(name: string, value: number, labels: Record<string, string> = {}): void {
+  setGauge(
+    name: string,
+    value: number,
+    labels: Record<string, string> = {},
+  ): void {
     const key = this.getMetricKey(name, labels);
     this.counters.set(key, value);
   }
@@ -246,16 +270,20 @@ export class EnhancedObservabilityService implements OnModuleInit {
   /**
    * Record a histogram value (for timing, sizes, etc.)
    */
-  recordHistogram(name: string, value: number, labels: Record<string, string> = {}): void {
+  recordHistogram(
+    name: string,
+    value: number,
+    labels: Record<string, string> = {},
+  ): void {
     const key = this.getMetricKey(name, labels);
     const values = this.histograms.get(key) || [];
     values.push(value);
-    
+
     // Keep only last 1000 values
     if (values.length > 1000) {
       values.shift();
     }
-    
+
     this.histograms.set(key, values);
   }
 
@@ -270,10 +298,16 @@ export class EnhancedObservabilityService implements OnModuleInit {
     const start = Date.now();
     try {
       const result = await fn();
-      this.recordHistogram(name, Date.now() - start, { ...labels, status: 'success' });
+      this.recordHistogram(name, Date.now() - start, {
+        ...labels,
+        status: 'success',
+      });
       return result;
     } catch (error) {
-      this.recordHistogram(name, Date.now() - start, { ...labels, status: 'error' });
+      this.recordHistogram(name, Date.now() - start, {
+        ...labels,
+        status: 'error',
+      });
       throw error;
     }
   }
@@ -303,26 +337,28 @@ export class EnhancedObservabilityService implements OnModuleInit {
   getMetrics(): MetricsSnapshot {
     const sortedDurations = [...this.requestDurations].sort((a, b) => a - b);
     const memUsage = process.memoryUsage();
-    
+
     return {
       httpRequestsTotal: this.counters.get('http_requests_total') || 0,
       httpRequestDuration: {
-        avg: sortedDurations.length > 0 
-          ? sortedDurations.reduce((a, b) => a + b, 0) / sortedDurations.length 
-          : 0,
+        avg:
+          sortedDurations.length > 0
+            ? sortedDurations.reduce((a, b) => a + b, 0) /
+              sortedDurations.length
+            : 0,
         p50: this.getPercentile(sortedDurations, 50),
         p95: this.getPercentile(sortedDurations, 95),
         p99: this.getPercentile(sortedDurations, 99),
       },
       httpErrorRate: this.calculateErrorRate(),
-      
+
       activeUsers: this.counters.get('active_users') || 0,
       portalsCreated: this.counters.get('portals_created') || 0,
       widgetsRendered: this.counters.get('widgets_rendered') || 0,
       integrationsConnected: this.counters.get('integrations_connected') || 0,
       aiQueriesProcessed: this.counters.get('ai_queries_processed') || 0,
       reportsGenerated: this.counters.get('reports_generated') || 0,
-      
+
       memoryUsage: {
         heapUsed: memUsage.heapUsed,
         heapTotal: memUsage.heapTotal,
@@ -331,10 +367,10 @@ export class EnhancedObservabilityService implements OnModuleInit {
       },
       cpuUsage: 0, // Would need separate measurement
       eventLoopLag: 0, // Would need separate measurement
-      
+
       cacheHitRate: this.counters.get('cache_hit_rate') || 0,
       cacheMissRate: this.counters.get('cache_miss_rate') || 0,
-      
+
       queueDepth: this.counters.get('queue_depth') || 0,
       queueProcessingRate: this.counters.get('queue_processing_rate') || 0,
     };
@@ -345,30 +381,30 @@ export class EnhancedObservabilityService implements OnModuleInit {
    */
   getPrometheusMetrics(): string {
     const lines: string[] = [];
-    
+
     // Counters
     this.counters.forEach((value, key) => {
       lines.push(`# TYPE ${key} counter`);
       lines.push(`${key} ${value}`);
     });
-    
+
     // Histograms
     this.histograms.forEach((values, key) => {
       if (values.length === 0) return;
-      
+
       const sorted = [...values].sort((a, b) => a - b);
       const sum = values.reduce((a, b) => a + b, 0);
-      
+
       lines.push(`# TYPE ${key} histogram`);
       lines.push(`${key}_count ${values.length}`);
       lines.push(`${key}_sum ${sum}`);
-      lines.push(`${key}{le="0.1"} ${sorted.filter(v => v <= 100).length}`);
-      lines.push(`${key}{le="0.5"} ${sorted.filter(v => v <= 500).length}`);
-      lines.push(`${key}{le="1"} ${sorted.filter(v => v <= 1000).length}`);
-      lines.push(`${key}{le="5"} ${sorted.filter(v => v <= 5000).length}`);
+      lines.push(`${key}{le="0.1"} ${sorted.filter((v) => v <= 100).length}`);
+      lines.push(`${key}{le="0.5"} ${sorted.filter((v) => v <= 500).length}`);
+      lines.push(`${key}{le="1"} ${sorted.filter((v) => v <= 1000).length}`);
+      lines.push(`${key}{le="5"} ${sorted.filter((v) => v <= 5000).length}`);
       lines.push(`${key}{le="+Inf"} ${values.length}`);
     });
-    
+
     return lines.join('\n');
   }
 
@@ -397,7 +433,7 @@ export class EnhancedObservabilityService implements OnModuleInit {
     const now = new Date().toISOString();
 
     const existing = this.errorFingerprints.get(fingerprint);
-    
+
     if (existing) {
       existing.occurrences++;
       existing.lastSeen = now;
@@ -427,7 +463,7 @@ export class EnhancedObservabilityService implements OnModuleInit {
 
       this.errorFingerprints.set(fingerprint, report);
       this.errorBuffer.push(report);
-      
+
       // Keep buffer size manageable
       if (this.errorBuffer.length > 1000) {
         this.errorBuffer.shift();
@@ -445,18 +481,18 @@ export class EnhancedObservabilityService implements OnModuleInit {
       error.name,
       error.message.replace(/\d+/g, 'N'), // Normalize numbers
     ];
-    
+
     // Add first meaningful stack frame
     if (error.stack) {
       const lines = error.stack.split('\n');
       const meaningfulLine = lines.find(
-        line => line.includes('/src/') && !line.includes('node_modules'),
+        (line) => line.includes('/src/') && !line.includes('node_modules'),
       );
       if (meaningfulLine) {
         parts.push(meaningfulLine.trim());
       }
     }
-    
+
     return Buffer.from(parts.join('|')).toString('base64').substring(0, 32);
   }
 
@@ -494,16 +530,19 @@ export class EnhancedObservabilityService implements OnModuleInit {
 
   private setupErrorAggregation(): void {
     // Periodically flush old errors (older than 24 hours)
-    setInterval(() => {
-      const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      
-      this.errorBuffer = this.errorBuffer.filter(e => e.lastSeen > cutoff);
-      
-      this.errorFingerprints.forEach((report, fingerprint) => {
-        if (report.lastSeen < cutoff) {
-          this.errorFingerprints.delete(fingerprint);
-        }
-      });
-    }, 60 * 60 * 1000); // Every hour
+    setInterval(
+      () => {
+        const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+        this.errorBuffer = this.errorBuffer.filter((e) => e.lastSeen > cutoff);
+
+        this.errorFingerprints.forEach((report, fingerprint) => {
+          if (report.lastSeen < cutoff) {
+            this.errorFingerprints.delete(fingerprint);
+          }
+        });
+      },
+      60 * 60 * 1000,
+    ); // Every hour
   }
 }

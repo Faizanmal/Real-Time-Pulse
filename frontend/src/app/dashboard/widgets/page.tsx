@@ -48,7 +48,7 @@ function WidgetsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const portalId = searchParams.get('portalId');
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isHydrated } = useAuthStore();
 
   const [widgets, setWidgets] = useState<Widget[]>([]);
   const [portals, setPortals] = useState<Portal[]>([]);
@@ -59,6 +59,8 @@ function WidgetsPageContent() {
   const [filterType, setFilterType] = useState<string>('all');
 
   useEffect(() => {
+    if (!isHydrated) return;
+
     if (!isAuthenticated) {
       router.push('/auth/login');
       return;
@@ -72,7 +74,7 @@ function WidgetsPageContent() {
       window.removeEventListener('widget:refreshed', handleWidgetRefresh);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isHydrated, router]);
 
   useEffect(() => {
     if (selectedPortalId) {
@@ -200,7 +202,7 @@ function WidgetsPageContent() {
                 </h1>
                 <p className="text-sm text-gray-400">
                   {widgets.length} widget{widgets.length !== 1 ? 's' : ''}
-                  {selectedPortalId && portals.find(p => p.id === selectedPortalId) && 
+                  {selectedPortalId && portals.find(p => p.id === selectedPortalId) &&
                     ` in ${portals.find(p => p.id === selectedPortalId)?.name}`}
                 </p>
               </div>
@@ -267,7 +269,7 @@ function WidgetsPageContent() {
                 </option>
               ))}
             </select>
-            
+
             {/* Filter Icon Button */}
             <motion.button
               whileHover={{ scale: 1.05 }}

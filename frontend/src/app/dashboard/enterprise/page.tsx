@@ -23,17 +23,17 @@ import { APIMarketplacePanel } from '@/components/dashboard/APIMarketplacePanel'
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Download, 
-  Brain, 
-  Bell, 
-  Webhook, 
-  Calendar, 
-  Share2, 
-  MessageSquare, 
-  Palette, 
-  CreditCard, 
-  BarChart3, 
+import {
+  Download,
+  Brain,
+  Bell,
+  Webhook,
+  Calendar,
+  Share2,
+  MessageSquare,
+  Palette,
+  CreditCard,
+  BarChart3,
   Plug,
   Users,
   Search,
@@ -60,7 +60,7 @@ import {
  */
 export default function EnterpriseDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
-  
+
   // In a real app, these would come from your state management or API
   const portalId = 'portal-123';
 
@@ -167,8 +167,8 @@ export default function EnterpriseDashboard() {
             <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
             <div className="flex flex-wrap gap-4">
               <ExportButton portalId={portalId} />
-              <WidgetExportButton 
-                widgetId="widget-789" 
+              <WidgetExportButton
+                widgetId="widget-789"
                 widgetTitle="Revenue Chart"
               />
             </div>
@@ -187,7 +187,7 @@ export default function EnterpriseDashboard() {
                 </div>
               </div>
             </Card>
-            
+
             <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('alerts')}>
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-red-100 rounded-lg">
@@ -199,7 +199,7 @@ export default function EnterpriseDashboard() {
                 </div>
               </div>
             </Card>
-            
+
             <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('webhooks')}>
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
@@ -211,7 +211,7 @@ export default function EnterpriseDashboard() {
                 </div>
               </div>
             </Card>
-            
+
             <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('scheduled-reports')}>
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-green-100 rounded-lg">
@@ -223,7 +223,7 @@ export default function EnterpriseDashboard() {
                 </div>
               </div>
             </Card>
-            
+
             <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('share-links')}>
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-indigo-100 rounded-lg">
@@ -235,7 +235,7 @@ export default function EnterpriseDashboard() {
                 </div>
               </div>
             </Card>
-            
+
             <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('comments')}>
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-yellow-100 rounded-lg">
@@ -247,7 +247,7 @@ export default function EnterpriseDashboard() {
                 </div>
               </div>
             </Card>
-            
+
             <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('templates')}>
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-pink-100 rounded-lg">
@@ -259,7 +259,7 @@ export default function EnterpriseDashboard() {
                 </div>
               </div>
             </Card>
-            
+
             <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('billing')}>
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-emerald-100 rounded-lg">
@@ -271,7 +271,7 @@ export default function EnterpriseDashboard() {
                 </div>
               </div>
             </Card>
-            
+
             <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('analytics')}>
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-cyan-100 rounded-lg">
@@ -283,7 +283,7 @@ export default function EnterpriseDashboard() {
                 </div>
               </div>
             </Card>
-            
+
             <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('integrations')}>
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-orange-100 rounded-lg">
@@ -292,6 +292,102 @@ export default function EnterpriseDashboard() {
                 <div>
                   <h3 className="font-semibold">Integrations</h3>
                   <p className="text-sm text-gray-600">Connect external services</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('audit')}>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-slate-100 rounded-lg">
+                  <Download className="h-5 w-5 text-slate-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Audit Logs</h3>
+                  <p className="text-sm text-gray-600">Track system activity</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('roles')}>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-violet-100 rounded-lg">
+                  <Users className="h-5 w-5 text-violet-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Role Management</h3>
+                  <p className="text-sm text-gray-600">Manage user permissions</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('federated-search')}>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Search className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Federated Search</h3>
+                  <p className="text-sm text-gray-600">Search across data sources</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('ml-marketplace')}>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-fuchsia-100 rounded-lg">
+                  <Brain className="h-5 w-5 text-fuchsia-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">ML Marketplace</h3>
+                  <p className="text-sm text-gray-600">Deploy AI models</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('voice')}>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-rose-100 rounded-lg">
+                  <MessageSquare className="h-5 w-5 text-rose-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Voice Dashboard</h3>
+                  <p className="text-sm text-gray-600">Voice command analytics</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('blockchain')}>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-100 rounded-lg">
+                  <Activity className="h-5 w-5 text-indigo-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Blockchain Audit</h3>
+                  <p className="text-sm text-gray-600">Immutable audit trails</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('ar')}>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-pink-100 rounded-lg">
+                  <Zap className="h-5 w-5 text-pink-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">AR Visualization</h3>
+                  <p className="text-sm text-gray-600">Augmented reality views</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('api-marketplace')}>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-cyan-100 rounded-lg">
+                  <Puzzle className="h-5 w-5 text-cyan-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">API Marketplace</h3>
+                  <p className="text-sm text-gray-600">Connect external APIs</p>
                 </div>
               </div>
             </Card>

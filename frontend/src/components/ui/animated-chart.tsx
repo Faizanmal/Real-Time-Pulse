@@ -183,7 +183,7 @@ export function AnimatedChart({
       variants={chartVariants}
       className={cn("w-full rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800", className)}
     >
-      <ResponsiveContainer width="100%" height={height}>
+      <ResponsiveContainer width="100%" height={height} minWidth={0}>
         {renderChart()}
       </ResponsiveContainer>
     </motion.div>

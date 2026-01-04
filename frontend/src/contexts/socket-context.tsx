@@ -20,42 +20,53 @@ export interface SocketEvents {
   'portal:viewer:joined': (data: { userId: string; portalId: string }) => void;
   'portal:viewer:left': (data: { userId: string; portalId: string }) => void;
   'portal:viewers': (data: { portalId: string; viewers: any[] }) => void;
-  
+
   // Widget events
   'widget:created': (data: any) => void;
   'widget:updated': (data: any) => void;
   'widget:deleted': (data: { widgetId: string }) => void;
   'widget:data:updated': (data: { widgetId: string; data: any }) => void;
-  
+
   // Alert events
   'alert:triggered': (data: any) => void;
   'alert:resolved': (data: { alertId: string }) => void;
   'alert:new': (data: { type: string; message: string }) => void;
-  
+
   // Metrics events
   'metrics:update': (data: Partial<any>) => void;
-  
+
   // Insight events
   'insight:generated': (data: any) => void;
-  
+
   // Notification events
   'notification:new': (data: any) => void;
-  
+
   // Comment events
   'comment:added': (data: any) => void;
   'comment:updated': (data: any) => void;
   'comment:deleted': (data: { commentId: string }) => void;
   'comment:user:typing': (data: any) => void;
   'comment:user:stopped-typing': (data: any) => void;
-  
+
   // Presence events
   'presence:updated': (data: any) => void;
   'user:joined': (data: { userId: string }) => void;
   'user:left': (data: { userId: string }) => void;
-  
+
   // Cursor events
   'cursor:moved': (data: any) => void;
-  
+
+  // Gamification events
+  'xp_gained': (data: { userId: string; amount: number; totalXp: number; level: number }) => void;
+  'level_up': (data: { userId: string; level: number }) => void;
+  'badge_earned': (data: { userId: string; badge: any }) => void;
+
+  // Annotation events
+  'annotation:created': (data: any) => void;
+  'annotation:updated': (data: any) => void;
+  'annotation:deleted': (data: { id: string }) => void;
+  'annotation:reply_added': (data: any) => void;
+
   // Connection events
   'connect': () => void;
   'disconnect': (reason: string) => void;
@@ -70,26 +81,26 @@ interface SocketContextValue {
   socket: Socket | null;
   isConnected: boolean;
   connectionState: 'connecting' | 'connected' | 'disconnected' | 'reconnecting';
-  
+
   // Event subscription
   on: <K extends keyof SocketEvents>(event: K, handler: SocketEvents[K]) => void;
   off: <K extends keyof SocketEvents>(event: K, handler: SocketEvents[K]) => void;
-  
+
   // Portal methods
   joinPortal: (portalId: string) => void;
   leavePortal: (portalId: string) => void;
-  
+
   // Widget methods
   subscribeToWidgets: (widgetIds: string[]) => void;
   unsubscribeFromWidgets: (widgetIds: string[]) => void;
-  
+
   // Cursor methods
   sendCursorPosition: (portalId: string, x: number, y: number) => void;
-  
+
   // Typing methods
   sendTyping: (portalId: string, widgetId?: string) => void;
   sendStopTyping: (portalId: string) => void;
-  
+
   // Connection methods
   reconnect: () => void;
 }
@@ -104,7 +115,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionState, setConnectionState] = useState<SocketContextValue['connectionState']>('disconnected');
-  
+
   const { accessToken, isAuthenticated } = useAuthStore();
 
   // Initialize socket connection
@@ -117,9 +128,10 @@ export function SocketProvider({ children }: SocketProviderProps) {
       return;
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    
-    const newSocket = io(`${apiUrl}/realtime`, {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+    // Connect to the notifications namespace
+    const newSocket = io(`${apiUrl}/notifications`, {
       auth: { token: accessToken },
       transports: ['websocket', 'polling'],
       reconnection: true,

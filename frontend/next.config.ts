@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 /**
  * ============================================================================
@@ -46,18 +47,18 @@ const securityHeaders = [
     value: isDev
       ? '' // Relaxed CSP for development
       : [
-          "default-src 'self'",
-          "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com",
-          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-          "img-src 'self' data: blob: https:",
-          "font-src 'self' https://fonts.gstatic.com",
-          "connect-src 'self' https://api.stripe.com wss: https:",
-          "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
-          "object-src 'none'",
-          "base-uri 'self'",
-          "form-action 'self'",
-          "upgrade-insecure-requests",
-        ].join('; '),
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "img-src 'self' data: blob: https:",
+        "font-src 'self' https://fonts.gstatic.com",
+        "connect-src 'self' https://api.stripe.com wss: https:",
+        "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "upgrade-insecure-requests",
+      ].join('; '),
   },
 ];
 
@@ -84,17 +85,28 @@ const nextConfig: NextConfig & { eslint?: any } = {
 
   // Image optimization
   images: {
-    domains: [
-      'localhost',
-      'lh3.googleusercontent.com', // Google avatars
-      'avatars.githubusercontent.com', // GitHub avatars
-      'graph.microsoft.com', // Microsoft avatars
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'graph.microsoft.com',
+      },
     ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
+
+  // Resolution for multiple lockfiles warning
+  outputFileTracingRoot: path.join(__dirname, '../'),
 
   // Experimental features
   experimental: {
@@ -207,11 +219,7 @@ const nextConfig: NextConfig & { eslint?: any } = {
     ignoreBuildErrors: false,
   },
 
-  // Skip ESLint in builds if CI handles it
-  eslint: {
-    // Set to true if you want to ignore ESLint errors during build
-    ignoreDuringBuilds: false,
-  },
+
 
   // Logging configuration
   logging: {

@@ -2,6 +2,7 @@ import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { CacheService } from '../../cache/cache.service';
+import * as crypto from 'crypto';
 
 interface SecurityContext {
   ip: string;
@@ -18,16 +19,20 @@ export class SecurityMiddleware implements NestMiddleware {
   private readonly IP_BLOCK_PREFIX = 'ip_block:';
   private readonly IP_ATTEMPTS_PREFIX = 'ip_attempts:';
   private readonly SUSPICIOUS_PATTERNS: RegExp[];
+  private readonly isDevelopment: boolean;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly cacheService: CacheService,
   ) {
+    this.isDevelopment =
+      configService.get<string>('app.nodeEnv') !== 'production';
+
     // Patterns to detect common attacks
     this.SUSPICIOUS_PATTERNS = [
-      // SQL Injection patterns
+      // SQL Injection patterns (Removed quotes/semicolons as they trigger false positives in JSON/text)
       /(\b(union|select|insert|update|delete|drop|truncate|alter|exec|execute)\b.*\b(from|into|table|database|schema)\b)/i,
-      /('|"|;|--|\*|\/\*|\*\/|xp_)/i,
+      /(--|\/\*|\*\/|xp_)/i,
 
       // XSS patterns
       /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
@@ -42,13 +47,24 @@ export class SecurityMiddleware implements NestMiddleware {
       // Command injection
       /(\||;|`|\$\(|&&|\|\|)/,
 
-      // SSRF patterns
-      /\b(localhost|127\.0\.0\.1|0\.0\.0\.0|::1|internal|metadata)\b/i,
-
       // File inclusion
       /(php|data|file|zip|phar):\/\//i,
     ];
+
+    // Only add SSRF pattern in production (it blocks localhost which is needed for dev)
+    if (!this.isDevelopment) {
+      this.SUSPICIOUS_PATTERNS.push(
+        /\b(localhost|127\.0\.0\.1|0\.0\.0\.0|::1|internal|metadata)\b/i,
+      );
+    }
   }
+
+  // Paths to skip security pattern checks (OAuth callbacks contain special chars)
+  private readonly whitelistedPaths = [
+    '/api/v1/auth/google/callback',
+    '/api/v1/auth/github/callback',
+    '/auth/callback',
+  ];
 
   async use(req: Request, res: Response, next: NextFunction): Promise<void> {
     const context = this.extractSecurityContext(req);
@@ -65,16 +81,23 @@ export class SecurityMiddleware implements NestMiddleware {
         return;
       }
 
-      // Detect and log suspicious patterns
-      const suspiciousPatterns = this.detectSuspiciousPatterns(req);
-      if (suspiciousPatterns.length > 0) {
-        await this.handleSuspiciousRequest(context, suspiciousPatterns);
-        res.status(400).json({
-          statusCode: 400,
-          message: 'Request contains potentially malicious content',
-          error: 'Bad Request',
-        });
-        return;
+      // Skip pattern detection for whitelisted paths (OAuth callbacks)
+      const isWhitelisted = this.whitelistedPaths.some(
+        (path) => req.path.includes(path) || req.originalUrl.includes(path),
+      );
+
+      // Detect and log suspicious patterns (skip for whitelisted paths)
+      if (!isWhitelisted) {
+        const suspiciousPatterns = this.detectSuspiciousPatterns(req);
+        if (suspiciousPatterns.length > 0) {
+          await this.handleSuspiciousRequest(context, suspiciousPatterns);
+          res.status(400).json({
+            statusCode: 400,
+            message: 'Request contains potentially malicious content',
+            error: 'Bad Request',
+          });
+          return;
+        }
       }
 
       // Add security headers
@@ -129,7 +152,6 @@ export class SecurityMiddleware implements NestMiddleware {
     userAgent: string,
     headers: Request['headers'],
   ): string {
-    const crypto = require('crypto');
     const components = [
       ip,
       userAgent,

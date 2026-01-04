@@ -22,9 +22,27 @@ export default function ComplianceDashboard() {
   const loadDashboard = async () => {
     try {
       const response = await complianceApi.getDashboard();
-      setDashboard(response.data);
+      const data = response.data;
+
+      // Validate structure matches ComplianceDashboard interface
+      if (data && data.overview && data.incidents && data.dataInventory && data.frameworks) {
+        setDashboard(data);
+      } else {
+        console.warn('Invalid compliance dashboard data:', data);
+        // Fallback to null or default if needed, but for now just don't set invalid data
+        // forcing the Loading... or handling it otherwise. 
+        // Actually best to set a default "empty" state if possible or keep loading false and dashboard null
+        // But dashboard null triggers "if (!dashboard) return null" which renders nothing.
+        // Let's keep dashboard null to avoid crashes and maybe show error toast.
+        setDashboard(null); // Keep or set to null
+        if (!data || Object.keys(data).length === 0) {
+          // If completely empty, maybe it's a 404 or backend issue, handled by catch usually but here we got 200 OK with bad data?
+        }
+      }
     } catch (error: any) {
+      console.error('Failed to load compliance dashboard:', error);
       toast.error('Failed to load compliance dashboard');
+      setDashboard(null);
     } finally {
       setLoading(false);
     }
@@ -62,7 +80,18 @@ export default function ComplianceDashboard() {
     );
   }
 
-  if (!dashboard) return null;
+  if (!dashboard) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center space-y-4">
+        <AlertTriangle className="h-12 w-12 text-muted-foreground" />
+        <h3 className="text-lg font-semibold">Unable to load dashboard</h3>
+        <p className="text-muted-foreground max-w-sm">
+          There was a problem loading the compliance data. Please try again later.
+        </p>
+        <Button onClick={loadDashboard}>Retry</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

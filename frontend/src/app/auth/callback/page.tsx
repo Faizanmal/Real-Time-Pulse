@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuthStore } from '@/lib/auth';
+import { useAuthStore } from '@/store/auth';
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setAuth } = useAuthStore();
@@ -14,6 +14,7 @@ export default function AuthCallbackPage() {
     const handleCallback = async () => {
       const token = searchParams.get('token');
       const errorParam = searchParams.get('error');
+      const provider = searchParams.get('provider');
 
       if (errorParam) {
         setError(decodeURIComponent(errorParam));
@@ -27,7 +28,8 @@ export default function AuthCallbackPage() {
 
       try {
         // Fetch user data with the token
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/auth/me`, {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+        const response = await fetch(`${apiUrl}/api/v1/auth/me`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -39,18 +41,25 @@ export default function AuthCallbackPage() {
 
         const userData = await response.json();
 
-        // Set authentication state
-        setAuth({
+        // Map the user data to match the User type from @/types
+        const user = {
           id: userData.sub || userData.id,
           email: userData.email,
-          name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email,
-          role: userData.role as 'ADMIN' | 'USER',
-        }, token);
+          firstName: userData.firstName || null,
+          lastName: userData.lastName || null,
+          workspaceId: userData.workspaceId,
+          role: userData.role || 'USER',
+        };
 
-        // Store token securely
+        // Set authentication state using the correct store
+        setAuth(user, token);
+
+        // Store token in sessionStorage as backup
         if (typeof window !== 'undefined') {
           sessionStorage.setItem('accessToken', token);
         }
+
+        console.log(`OAuth ${provider || 'unknown'} login successful for:`, user.email);
 
         // Redirect to dashboard
         router.push('/dashboard');
@@ -112,3 +121,21 @@ export default function AuthCallbackPage() {
     </div>
   );
 }
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="w-16 h-16 animate-spin">
+          <svg className="w-full h-full text-blue-600" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+        </div>
+      </div>
+    }>
+      <AuthCallbackContent />
+    </Suspense>
+  );
+}
+

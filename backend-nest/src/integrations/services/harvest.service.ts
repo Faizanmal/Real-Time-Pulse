@@ -82,9 +82,7 @@ export class HarvestService {
     integration: HarvestIntegration,
     dataType: string,
     params?: TimeEntryParams,
-  ): Promise<
-    HarvestTimeEntry[] | HarvestProject[] | HarvestClient[] | unknown
-  > {
+  ): Promise<any> {
     const headers = this.buildHeaders(integration);
 
     switch (dataType) {

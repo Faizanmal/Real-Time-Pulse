@@ -21,11 +21,18 @@ interface GitHubProfile {
 @Injectable()
 export class GitHubStrategy extends PassportStrategy(Strategy, 'github') {
   constructor(private configService: ConfigService) {
+    const clientID = configService.get<string>('oauth.github.clientId');
+    const clientSecret = configService.get<string>('oauth.github.clientSecret');
+
+    if (!clientID || !clientSecret) {
+      console.warn(
+        'GitHub OAuth credentials not provided. GitHub authentication will not work.',
+      );
+    }
+
     super({
-      clientID: configService.get<string>('oauth.github.clientId') as string,
-      clientSecret: configService.get<string>(
-        'oauth.github.clientSecret',
-      ) as string,
+      clientID: clientID || 'MISSING_CLIENT_ID',
+      clientSecret: clientSecret || 'MISSING_CLIENT_SECRET',
       callbackURL: configService.get<string>(
         'oauth.github.callbackUrl',
       ) as string,

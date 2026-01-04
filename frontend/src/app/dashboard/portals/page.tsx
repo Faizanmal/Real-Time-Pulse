@@ -21,7 +21,7 @@ import {
 
 export default function PortalsPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isHydrated } = useAuthStore();
   const [portals, setPortals] = useState<Portal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,13 +29,15 @@ export default function PortalsPage() {
   const [sortBy, setSortBy] = useState<'name' | 'created' | 'accessed'>('name');
 
   useEffect(() => {
+    if (!isHydrated) return;
+
     if (!isAuthenticated) {
       router.push('/auth/login');
       return;
     }
 
     loadPortals();
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isHydrated, router]);
 
   const loadPortals = async () => {
     try {
@@ -193,11 +195,10 @@ export default function PortalsPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-lg transition-all ${
-                  viewMode === 'grid'
+                className={`p-2 rounded-lg transition-all ${viewMode === 'grid'
                     ? 'bg-purple-500/20 text-purple-400'
                     : 'text-gray-400 hover:text-gray-300'
-                }`}
+                  }`}
               >
                 <Grid className="h-5 w-5" />
               </motion.button>
@@ -205,11 +206,10 @@ export default function PortalsPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setViewMode('list')}
-                className={`p-2 rounded-lg transition-all ${
-                  viewMode === 'list'
+                className={`p-2 rounded-lg transition-all ${viewMode === 'list'
                     ? 'bg-purple-500/20 text-purple-400'
                     : 'text-gray-400 hover:text-gray-300'
-                }`}
+                  }`}
               >
                 <List className="h-5 w-5" />
               </motion.button>

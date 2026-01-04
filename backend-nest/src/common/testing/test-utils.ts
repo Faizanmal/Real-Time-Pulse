@@ -2,12 +2,12 @@
  * =============================================================================
  * REAL-TIME PULSE - TEST UTILITIES & MOCKS
  * =============================================================================
- * 
+ *
  * Comprehensive testing utilities for unit and integration tests.
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
@@ -39,7 +39,9 @@ export function createMockUser(overrides: Partial<MockUser> = {}): MockUser {
 /**
  * Create mock workspace data
  */
-export function createMockWorkspace(overrides: Partial<MockWorkspace> = {}): MockWorkspace {
+export function createMockWorkspace(
+  overrides: Partial<MockWorkspace> = {},
+): MockWorkspace {
   return {
     id: 'workspace-123',
     name: 'Test Workspace',
@@ -54,7 +56,9 @@ export function createMockWorkspace(overrides: Partial<MockWorkspace> = {}): Moc
 /**
  * Create mock portal data
  */
-export function createMockPortal(overrides: Partial<MockPortal> = {}): MockPortal {
+export function createMockPortal(
+  overrides: Partial<MockPortal> = {},
+): MockPortal {
   return {
     id: 'portal-123',
     name: 'Test Portal',
@@ -71,7 +75,9 @@ export function createMockPortal(overrides: Partial<MockPortal> = {}): MockPorta
 /**
  * Create mock widget data
  */
-export function createMockWidget(overrides: Partial<MockWidget> = {}): MockWidget {
+export function createMockWidget(
+  overrides: Partial<MockWidget> = {},
+): MockWidget {
   return {
     id: 'widget-123',
     title: 'Test Widget',
@@ -89,7 +95,9 @@ export function createMockWidget(overrides: Partial<MockWidget> = {}): MockWidge
 /**
  * Create mock integration data
  */
-export function createMockIntegration(overrides: Partial<MockIntegration> = {}): MockIntegration {
+export function createMockIntegration(
+  overrides: Partial<MockIntegration> = {},
+): MockIntegration {
   return {
     id: 'integration-123',
     provider: 'ASANA',
@@ -179,6 +187,8 @@ export function createMockPrismaService(): MockPrismaService {
       findFirst: jest.fn(),
       findMany: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
       count: jest.fn(),
     },
     pushToken: {
@@ -188,6 +198,7 @@ export function createMockPrismaService(): MockPrismaService {
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      count: jest.fn(),
     },
     $connect: jest.fn(),
     $disconnect: jest.fn(),
@@ -200,7 +211,9 @@ export function createMockPrismaService(): MockPrismaService {
 /**
  * Create mock Config service
  */
-export function createMockConfigService(overrides: Record<string, unknown> = {}): Partial<ConfigService> {
+export function createMockConfigService(
+  overrides: Record<string, unknown> = {},
+): Partial<ConfigService> {
   const config: Record<string, unknown> = {
     'app.port': 3000,
     'app.env': 'test',
@@ -234,7 +247,7 @@ export function createMockConfigService(overrides: Record<string, unknown> = {})
  */
 export function createMockCacheService(): MockCacheService {
   const cache = new Map<string, unknown>();
-  
+
   return {
     get: jest.fn((key: string) => Promise.resolve(cache.get(key) || null)),
     set: jest.fn((key: string, value: unknown) => {
@@ -245,12 +258,14 @@ export function createMockCacheService(): MockCacheService {
       cache.delete(key);
       return Promise.resolve();
     }),
-    getOrFetch: jest.fn(async (key: string, fetchFn: () => Promise<unknown>) => {
-      if (cache.has(key)) return cache.get(key);
-      const value = await fetchFn();
-      cache.set(key, value);
-      return value;
-    }),
+    getOrFetch: jest.fn(
+      async (key: string, fetchFn: () => Promise<unknown>) => {
+        if (cache.has(key)) return cache.get(key);
+        const value = await fetchFn();
+        cache.set(key, value);
+        return value;
+      },
+    ),
     invalidatePattern: jest.fn(() => Promise.resolve()),
     getMetrics: jest.fn(() => ({
       hits: 0,
@@ -271,7 +286,7 @@ export function createMockCacheService(): MockCacheService {
  */
 export function createMockRedisService(): MockRedisService {
   const store = new Map<string, string>();
-  
+
   return {
     get: jest.fn((key: string) => Promise.resolve(store.get(key) || null)),
     set: jest.fn((key: string, value: string) => {
@@ -324,9 +339,17 @@ export function createMockJwtService(): Partial<JwtService> {
   return {
     sign: jest.fn(() => 'mock-jwt-token'),
     signAsync: jest.fn(() => Promise.resolve('mock-jwt-token')),
-    verify: jest.fn(() => ({ userId: 'user-123', workspaceId: 'workspace-123' })),
-    verifyAsync: jest.fn(() => Promise.resolve({ userId: 'user-123', workspaceId: 'workspace-123' })),
-    decode: jest.fn(() => ({ userId: 'user-123', workspaceId: 'workspace-123' })),
+    verify: jest.fn(() => ({
+      userId: 'user-123',
+      workspaceId: 'workspace-123',
+    })) as any,
+    verifyAsync: jest.fn(() =>
+      Promise.resolve({ userId: 'user-123', workspaceId: 'workspace-123' }),
+    ) as any,
+    decode: jest.fn(() => ({
+      userId: 'user-123',
+      workspaceId: 'workspace-123',
+    })) as any,
   };
 }
 
@@ -381,10 +404,10 @@ export async function buildTestModule(
   } = options;
 
   return Test.createTestingModule({
-    imports,
-    controllers,
+    imports: imports as any[],
+    controllers: controllers as any[],
     providers: [
-      ...providers,
+      ...(providers as any[]),
       { provide: PrismaService, useValue: mockPrisma },
       { provide: ConfigService, useValue: mockConfig },
       { provide: 'CacheService', useValue: mockCache },
@@ -407,19 +430,19 @@ export async function expectToThrow<T extends Error>(
   message?: string | RegExp,
 ): Promise<void> {
   let error: Error | null = null;
-  
+
   try {
     await fn();
   } catch (e) {
     error = e as Error;
   }
-  
+
   expect(error).not.toBeNull();
-  
+
   if (errorType) {
     expect(error).toBeInstanceOf(errorType);
   }
-  
+
   if (message) {
     if (typeof message === 'string') {
       expect(error?.message).toContain(message);
@@ -438,14 +461,14 @@ export async function waitFor(
   interval = 100,
 ): Promise<void> {
   const start = Date.now();
-  
+
   while (Date.now() - start < timeout) {
     if (await condition()) {
       return;
     }
-    await new Promise(resolve => setTimeout(resolve, interval));
+    await new Promise((resolve) => setTimeout(resolve, interval));
   }
-  
+
   throw new Error(`Timeout waiting for condition after ${timeout}ms`);
 }
 
@@ -455,7 +478,7 @@ export async function waitFor(
 export function mockDate(date: Date | string): () => void {
   const RealDate = Date;
   const mockDateValue = new Date(date);
-  
+
   global.Date = class extends RealDate {
     constructor(...args: unknown[]) {
       if (args.length === 0) {
@@ -464,12 +487,12 @@ export function mockDate(date: Date | string): () => void {
         super(...(args as [string | number | Date]));
       }
     }
-    
+
     static now(): number {
       return mockDateValue.getTime();
     }
   } as DateConstructor;
-  
+
   return () => {
     global.Date = RealDate;
   };

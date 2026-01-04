@@ -63,6 +63,8 @@ import { BackupModule } from './backup/backup.module';
 import { IntegrationBuilderModule } from './integration-builder/integration-builder.module';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { VoiceControlModule } from './voice-control/voice-control.module';
+import { GamificationModule } from './gamification/gamification.module';
+import { AnnotationsModule } from './annotations/annotations.module';
 
 // Config imports
 import appConfig from './config/app.config';
@@ -179,6 +181,8 @@ import firebaseConfig from './config/firebase.config';
     AdvancedAiModule,
     WorkflowAutomationModule,
     EnhancedComplianceModule,
+    GamificationModule,
+    AnnotationsModule,
   ],
   controllers: [AppController],
   providers: [

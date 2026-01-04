@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/refs */
 /**
  * =============================================================================
  * REAL-TIME PULSE - OPTIMISTIC UPDATES HOOK
@@ -13,25 +14,25 @@ import { toast } from 'sonner';
 interface OptimisticUpdateOptions<TData, TVariables, TContext> {
   // Query key(s) to invalidate on success
   queryKey: string | readonly unknown[];
-  
+
   // Function to optimistically update the cache before mutation
   optimisticUpdate?: (variables: TVariables, previousData: TData | undefined) => TData;
-  
+
   // Success callback
   onSuccess?: (data: TData, variables: TVariables, context: TContext) => void;
-  
+
   // Error callback (after rollback)
   onError?: (error: Error, variables: TVariables, context: TContext) => void;
-  
+
   // Success message to show
   successMessage?: string;
-  
+
   // Error message to show
   errorMessage?: string;
-  
+
   // Whether to show toast notifications
   showToast?: boolean;
-  
+
   // Rollback delay (for UI smoothness)
   rollbackDelay?: number;
 }
@@ -79,7 +80,7 @@ export function useOptimisticMutation<
 
   const mutation = useMutation<TData, Error, TVariables, { previousData: TData | undefined }>({
     mutationFn,
-    
+
     // Before mutation: optimistically update cache
     onMutate: async (variables) => {
       pendingMutationsRef.current++;
@@ -111,7 +112,7 @@ export function useOptimisticMutation<
         if (context?.previousData !== undefined) {
           queryClient.setQueryData([queryKey], context.previousData);
         }
-        
+
         if (pendingMutationsRef.current === 0) {
           setIsOptimistic(false);
         }
@@ -130,7 +131,7 @@ export function useOptimisticMutation<
     onSuccess: (data, variables, context) => {
       pendingMutationsRef.current--;
       setPendingMutations(pendingMutationsRef.current);
-      
+
       if (pendingMutationsRef.current === 0) {
         setIsOptimistic(false);
       }
@@ -170,7 +171,7 @@ export function useOptimisticList<TItem extends { id: string }>(
   // Optimistically add item to list
   const addItem = useCallback(
     async <TVariables>(
-      mutationFn: MutationFunction<TItem, TVariables>,
+      mutationFn: (variables: TVariables) => Promise<TItem>,
       variables: TVariables,
       tempItem: TItem,
     ): Promise<TItem> => {
@@ -188,7 +189,7 @@ export function useOptimisticList<TItem extends { id: string }>(
 
       try {
         const result = await mutationFn(variables);
-        
+
         // Replace temp item with real item
         queryClient.setQueryData<TItem[]>([queryKey], (old) =>
           old?.map((item) => (item.id === tempItem.id ? result : item)),
@@ -202,11 +203,11 @@ export function useOptimisticList<TItem extends { id: string }>(
       } catch (error) {
         // Rollback
         queryClient.setQueryData([queryKey], previousItems);
-        
+
         if (showToast) {
           toast.error('Failed to add item');
         }
-        
+
         throw error;
       }
     },
@@ -216,7 +217,7 @@ export function useOptimisticList<TItem extends { id: string }>(
   // Optimistically update item in list
   const updateItem = useCallback(
     async <TVariables>(
-      mutationFn: MutationFunction<TItem, TVariables>,
+      mutationFn: (variables: TVariables) => Promise<TItem>,
       variables: TVariables,
       itemId: string,
       updates: Partial<TItem>,
@@ -234,7 +235,7 @@ export function useOptimisticList<TItem extends { id: string }>(
 
       try {
         const result = await mutationFn(variables);
-        
+
         queryClient.setQueryData<TItem[]>([queryKey], (old) =>
           old?.map((item) => (item.id === itemId ? result : item)),
         );
@@ -246,11 +247,11 @@ export function useOptimisticList<TItem extends { id: string }>(
         return result;
       } catch (error) {
         queryClient.setQueryData([queryKey], previousItems);
-        
+
         if (showToast) {
           toast.error('Failed to update item');
         }
-        
+
         throw error;
       }
     },
@@ -260,7 +261,7 @@ export function useOptimisticList<TItem extends { id: string }>(
   // Optimistically delete item from list
   const deleteItem = useCallback(
     async <TVariables>(
-      mutationFn: MutationFunction<void, TVariables>,
+      mutationFn: (variables: TVariables) => Promise<void>,
       variables: TVariables,
       itemId: string,
     ): Promise<void> => {
@@ -281,11 +282,11 @@ export function useOptimisticList<TItem extends { id: string }>(
         }
       } catch (error) {
         queryClient.setQueryData([queryKey], previousItems);
-        
+
         if (showToast) {
           toast.error('Failed to delete item');
         }
-        
+
         throw error;
       }
     },
@@ -295,7 +296,7 @@ export function useOptimisticList<TItem extends { id: string }>(
   // Optimistically reorder items
   const reorderItems = useCallback(
     async <TVariables>(
-      mutationFn: MutationFunction<void, TVariables>,
+      mutationFn: (variables: TVariables) => Promise<void>,
       variables: TVariables,
       newOrder: TItem[],
     ): Promise<void> => {
@@ -314,11 +315,11 @@ export function useOptimisticList<TItem extends { id: string }>(
         }
       } catch (error) {
         queryClient.setQueryData([queryKey], previousItems);
-        
+
         if (showToast) {
           toast.error('Failed to update order');
         }
-        
+
         throw error;
       }
     },
@@ -353,7 +354,7 @@ export function useOptimisticBatch<TItem extends { id: string }>(
   const addOperation = useCallback(
     (type: 'add' | 'update' | 'delete', item: TItem | string) => {
       const previousState = queryClient.getQueryData<TItem[]>([queryKey]) || [];
-      
+
       operationsRef.current.push({
         type,
         item,
@@ -363,7 +364,7 @@ export function useOptimisticBatch<TItem extends { id: string }>(
       // Apply optimistically
       queryClient.setQueryData<TItem[]>([queryKey], (old) => {
         const current = old || [];
-        
+
         switch (type) {
           case 'add':
             return [...current, item as TItem];
@@ -414,6 +415,7 @@ export function useOptimisticBatch<TItem extends { id: string }>(
     addOperation,
     commitBatch,
     rollbackBatch,
+    // eslint-disable-next-line react-hooks/refs
     pendingOperations: operationsRef.current.length,
   };
 }

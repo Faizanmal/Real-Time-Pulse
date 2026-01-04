@@ -14,9 +14,18 @@ import { CacheModule } from '../cache/cache.module';
 import { AuditModule } from '../audit/audit.module';
 import { PrismaModule } from '../prisma/prisma.module';
 
+import { NotificationsModule } from '../notifications/notifications.module';
+
 @Global()
 @Module({
-  imports: [HttpModule, ConfigModule, CacheModule, AuditModule, PrismaModule],
+  imports: [
+    HttpModule,
+    ConfigModule,
+    CacheModule,
+    AuditModule,
+    PrismaModule,
+    NotificationsModule,
+  ],
   providers: [
     EncryptionService,
     S3Service,

@@ -2,7 +2,7 @@
  * =============================================================================
  * REAL-TIME PULSE - CORRELATION SERVICE
  * =============================================================================
- * 
+ *
  * Manages correlation IDs for distributed tracing across the application.
  * Uses AsyncLocalStorage for request-scoped context propagation.
  */
@@ -112,7 +112,7 @@ export class CorrelationService {
   createChildSpan(operationName: string): string {
     const context = this.getContext();
     const childSpanId = uuidv4().substring(0, 16);
-    
+
     if (context) {
       this.logger.debug({
         message: `Creating child span: ${operationName}`,
@@ -132,10 +132,10 @@ export class CorrelationService {
     const context = this.getContext();
     if (context) {
       const duration = Date.now() - context.startTime;
-      
+
       this.metrics.activeRequests--;
       this.metrics.responseTimeSum += duration;
-      this.metrics.avgResponseTime = 
+      this.metrics.avgResponseTime =
         this.metrics.responseTimeSum / this.metrics.totalRequests;
 
       if (duration > 5000) {
@@ -196,7 +196,7 @@ export class CorrelationService {
     data?: Record<string, unknown>,
   ): Record<string, unknown> {
     const context = this.getContext();
-    
+
     return {
       timestamp: new Date().toISOString(),
       level,

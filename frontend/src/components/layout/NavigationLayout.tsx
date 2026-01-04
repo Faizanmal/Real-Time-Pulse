@@ -4,6 +4,7 @@ import * as React from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import {
   Home,
@@ -99,21 +100,16 @@ export const NavigationLayout: React.FC<NavigationLayoutProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = React.useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = React.useState(false);
-  const [theme, setTheme] = React.useState<"light" | "dark" | "system">("system");
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
 
   const currentWorkspace = workspaces.find((w) => w.id === currentWorkspaceId);
 
-  // Theme handling
+  // Prevent hydration mismatch
   React.useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      root.classList.toggle("dark", systemTheme);
-    } else {
-      root.classList.toggle("dark", theme === "dark");
-    }
-  }, [theme]);
+    setMounted(true);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -217,16 +213,19 @@ export const NavigationLayout: React.FC<NavigationLayoutProps> = ({
             </button>
 
             {/* Theme Toggle */}
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="p-2 rounded-lg hover:bg-muted transition-colors"
-            >
-              {theme === "dark" ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-            </button>
+            {mounted && (
+              <button
+                onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+                className="p-2 rounded-lg hover:bg-muted transition-colors"
+                title={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
+              >
+                {resolvedTheme === "dark" ? (
+                  <Sun className="h-5 w-5 text-yellow-400" />
+                ) : (
+                  <Moon className="h-5 w-5 text-slate-600" />
+                )}
+              </button>
+            )}
 
             {/* User Menu */}
             {user && (

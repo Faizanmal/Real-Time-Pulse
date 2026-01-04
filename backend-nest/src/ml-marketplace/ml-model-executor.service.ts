@@ -31,7 +31,7 @@ export class MLModelExecutorService {
       case 'recommendation':
         return this.executeRecommendation(model, input, config);
       default:
-        throw new Error(`Unknown model category: ${model.category}`);
+        throw new Error(`Unknown model category: ${(model as any).category}`);
     }
   }
 

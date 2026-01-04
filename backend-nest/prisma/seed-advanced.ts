@@ -18,7 +18,11 @@ async function seedAdvancedFeatures() {
         widgets: [
           { type: 'METRIC', name: 'Patient Admissions', compliance: 'HIPAA' },
           { type: 'CHART', name: 'Treatment Outcomes', compliance: 'HIPAA' },
-          { type: 'TABLE', name: 'Medical Records Access Log', compliance: 'HIPAA' },
+          {
+            type: 'TABLE',
+            name: 'Medical Records Access Log',
+            compliance: 'HIPAA',
+          },
         ],
         security: {
           encryption: true,
@@ -43,7 +47,11 @@ async function seedAdvancedFeatures() {
       config: {
         widgets: [
           { type: 'METRIC', name: 'Transaction Volume', compliance: 'PCI_DSS' },
-          { type: 'CHART', name: 'Fraud Detection Rate', compliance: 'PCI_DSS' },
+          {
+            type: 'CHART',
+            name: 'Fraud Detection Rate',
+            compliance: 'PCI_DSS',
+          },
           { type: 'TABLE', name: 'Payment Processing', compliance: 'PCI_DSS' },
         ],
         security: {
@@ -107,7 +115,8 @@ async function seedAdvancedFeatures() {
     create: {
       id: 'salesforce-connector-1',
       name: 'Salesforce CRM',
-      description: 'Connect to Salesforce to track sales, leads, and opportunities',
+      description:
+        'Connect to Salesforce to track sales, leads, and opportunities',
       connectorType: 'REST',
       category: 'CRM',
       authType: 'OAUTH2',
@@ -135,7 +144,8 @@ async function seedAdvancedFeatures() {
     create: {
       id: 'shopify-connector-1',
       name: 'Shopify E-commerce',
-      description: 'Connect to Shopify to track orders, products, and customers',
+      description:
+        'Connect to Shopify to track orders, products, and customers',
       connectorType: 'REST',
       category: 'E-commerce',
       authType: 'API_KEY',
@@ -250,27 +260,32 @@ async function seedAdvancedFeatures() {
     create: {
       id: 'hipaa-framework',
       name: 'HIPAA',
-      description: 'Health Insurance Portability and Accountability Act compliance',
+      description:
+        'Health Insurance Portability and Accountability Act compliance',
       requirements: [
         {
           id: 'HIPAA-1',
           name: 'Access Controls',
-          description: 'Implement technical policies and procedures for electronic information systems',
+          description:
+            'Implement technical policies and procedures for electronic information systems',
         },
         {
           id: 'HIPAA-2',
           name: 'Audit Controls',
-          description: 'Implement hardware, software, and/or procedural mechanisms',
+          description:
+            'Implement hardware, software, and/or procedural mechanisms',
         },
         {
           id: 'HIPAA-3',
           name: 'Integrity Controls',
-          description: 'Implement policies to ensure ePHI is not improperly altered',
+          description:
+            'Implement policies to ensure ePHI is not improperly altered',
         },
         {
           id: 'HIPAA-4',
           name: 'Transmission Security',
-          description: 'Implement technical security measures to guard against unauthorized access',
+          description:
+            'Implement technical security measures to guard against unauthorized access',
         },
       ],
       controls: [
@@ -299,7 +314,8 @@ async function seedAdvancedFeatures() {
         {
           id: 'PCI-2',
           name: 'Password Security',
-          description: 'Do not use vendor-supplied defaults for system passwords',
+          description:
+            'Do not use vendor-supplied defaults for system passwords',
         },
         {
           id: 'PCI-3',
@@ -348,7 +364,8 @@ async function seedAdvancedFeatures() {
         {
           id: 'SOC2-4',
           name: 'Privacy',
-          description: 'Personal information is collected, used, retained, disclosed',
+          description:
+            'Personal information is collected, used, retained, disclosed',
         },
       ],
       controls: [

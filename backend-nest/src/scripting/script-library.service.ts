@@ -8,7 +8,7 @@ export class ScriptLibraryService {
   /**
    * Get all available library functions
    */
-  getLibraries(): Record<string, Record<string, Function>> {
+  getLibraries(): Record<string, Record<string, (...args: any[]) => any>> {
     return {
       math: this.getMathLibrary(),
       date: this.getDateLibrary(),
@@ -23,7 +23,7 @@ export class ScriptLibraryService {
   /**
    * Math utility functions
    */
-  private getMathLibrary(): Record<string, Function> {
+  private getMathLibrary(): Record<string, (...args: any[]) => any> {
     return {
       // Basic operations
       add: (a: number, b: number) => a + b,
@@ -89,7 +89,7 @@ export class ScriptLibraryService {
   /**
    * Date manipulation functions
    */
-  private getDateLibrary(): Record<string, Function> {
+  private getDateLibrary(): Record<string, (...args: any[]) => any> {
     return {
       // Creation
       now: () => new Date(),
@@ -235,7 +235,7 @@ export class ScriptLibraryService {
   /**
    * String manipulation functions
    */
-  private getStringLibrary(): Record<string, Function> {
+  private getStringLibrary(): Record<string, (...args: any[]) => any> {
     return {
       // Case conversion
       toLowerCase: (str: string) => String(str).toLowerCase(),
@@ -318,7 +318,7 @@ export class ScriptLibraryService {
   /**
    * Array manipulation functions
    */
-  private getArrayLibrary(): Record<string, Function> {
+  private getArrayLibrary(): Record<string, (...args: any[]) => any> {
     return {
       // Creation
       create: (...items: any[]) => [...items],
@@ -433,7 +433,7 @@ export class ScriptLibraryService {
   /**
    * Statistical functions
    */
-  private getStatsLibrary(): Record<string, Function> {
+  private getStatsLibrary(): Record<string, (...args: any[]) => any> {
     return {
       // Basic statistics
       sum: (arr: number[]) => arr.reduce((a, b) => a + b, 0),
@@ -564,7 +564,7 @@ export class ScriptLibraryService {
   /**
    * Formatting functions
    */
-  private getFormatLibrary(): Record<string, Function> {
+  private getFormatLibrary(): Record<string, (...args: any[]) => any> {
     return {
       // Numbers
       number: (n: number, decimals: number = 0) => n.toFixed(decimals),
@@ -639,7 +639,7 @@ export class ScriptLibraryService {
   /**
    * Data transformation functions
    */
-  private getTransformLibrary(): Record<string, Function> {
+  private getTransformLibrary(): Record<string, (...args: any[]) => any> {
     return {
       // Type conversion
       toNumber: (val: any) => Number(val),

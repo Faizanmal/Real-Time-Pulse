@@ -2,7 +2,7 @@
  * =============================================================================
  * REAL-TIME PULSE - CORRELATION ID MODULE
  * =============================================================================
- * 
+ *
  * Provides distributed tracing capabilities with correlation IDs that propagate
  * across services, databases, and external API calls.
  */

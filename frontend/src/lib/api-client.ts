@@ -1,16 +1,18 @@
 import { apiClient } from '@/lib/api';
-import type { 
-  AuthResponse, 
-  User, 
-  Workspace, 
-  Portal, 
-  WorkspaceMember, 
+import type {
+  AuthResponse,
+  User,
+  Workspace,
+  Portal,
+  WorkspaceMember,
   Widget,
   Integration,
   AuditLog,
   WorkspaceStats,
   HealthStatus
 } from '@/types';
+import { gamificationApi } from './api/gamification';
+import { annotationsApi } from './api/annotations';
 
 // Auth API
 export const authApi = {
@@ -693,6 +695,57 @@ export const gdprApi = {
   },
 };
 
+// ========================================
+// BLOCKCHAIN API
+// ========================================
+
+export const blockchainApi = {
+  createAuditEntry: async (data: {
+    entityType: string;
+    entityId: string;
+    action: string;
+    data: Record<string, any>;
+  }) => {
+    const response = await apiClient.post('/blockchain/audit', data);
+    return response.data;
+  },
+
+  forceCreateBlock: async () => {
+    const response = await apiClient.post('/blockchain/block');
+    return response.data;
+  },
+
+  verifyIntegrity: async () => {
+    const response = await apiClient.get('/blockchain/verify');
+    return response.data;
+  },
+
+  verifyEntry: async (entryId: string) => {
+    const response = await apiClient.get(`/blockchain/verify/${entryId}`);
+    return response.data;
+  },
+
+  getAuditTrail: async (entityType: string, entityId: string) => {
+    const response = await apiClient.get(`/blockchain/audit/${entityType}/${entityId}`);
+    return response.data;
+  },
+
+  generateComplianceReport: async (params?: {
+    startDate?: string;
+    endDate?: string;
+    entityTypes?: string[];
+    actions?: string[];
+  }) => {
+    const response = await apiClient.get('/blockchain/compliance', { params });
+    return response.data;
+  },
+
+  exportChain: async () => {
+    const response = await apiClient.get('/blockchain/export');
+    return response.data;
+  },
+};
+
 // Export all APIs as a single object
 export const apiResources = {
   auth: authApi,
@@ -709,6 +762,9 @@ export const apiResources = {
   profitability: profitabilityApi,
   clientReport: clientReportApi,
   gdpr: gdprApi,
+  gamification: gamificationApi,
+  annotations: annotationsApi,
+  blockchain: blockchainApi,
 };
 
 // Cache clearing function

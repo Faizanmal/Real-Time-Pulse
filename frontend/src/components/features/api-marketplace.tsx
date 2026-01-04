@@ -22,9 +22,21 @@ export default function APIMarketplace() {
   const loadConnectors = async () => {
     try {
       const response = await apiMarketplaceApi.getConnectors();
-      setConnectors(response.data);
+      // Handle potential different response structures
+      const data = response.data;
+      if (Array.isArray(data)) {
+        setConnectors(data);
+      } else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as any).data)) {
+        // Handle paginated response { data: [], total: ... }
+        setConnectors((data as any).data);
+      } else {
+        console.warn('Unexpected API response format for connectors:', data);
+        setConnectors([]);
+      }
     } catch (error: any) {
+      console.error('Failed to load connectors:', error);
       toast.error('Failed to load connectors');
+      setConnectors([]);
     } finally {
       setLoading(false);
     }

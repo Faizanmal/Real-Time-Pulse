@@ -139,7 +139,7 @@ cp .env.example .env.local  # Edit with API URL
 npm run dev
 ```
 
-📚 **Detailed Instructions:** See [SETUP_GUIDE.md](./SETUP_GUIDE.md)
+📚 **Detailed Instructions:** See [QUICK_START_DEPLOYMENT.md](./QUICK_START_DEPLOYMENT.md)
 
 ---
 
@@ -455,27 +455,23 @@ npm run dev
 ### Production Documentation
 | Document | Description |
 |----------|-------------|
-| [PRODUCTION_ENHANCEMENTS.md](./frontend/PRODUCTION_ENHANCEMENTS.md) | 🎯 **NEW** Complete production-ready features guide (10 modules) |
+| [frontend/PRODUCTION_ENHANCEMENTS.md](./frontend/PRODUCTION_ENHANCEMENTS.md) | 🎯 **NEW** Complete production-ready features guide (10 modules) |
 | [frontend/PERFORMANCE.md](./frontend/PERFORMANCE.md) | ⚡ Performance optimization guide |
 
 ### Enterprise Features Documentation
 | Document | Description |
 |----------|-------------|
-| [ENTERPRISE_FEATURES.md](./ENTERPRISE_FEATURES.md) | 📚 Complete enterprise features guide (13 modules) |
-| [NEW_FEATURES_README.md](./NEW_FEATURES_README.md) | 🎉 Latest implementation summary |
-| [FEATURES_GUIDE.md](./FEATURES_GUIDE.md) | 📖 Detailed feature documentation |
-| [API_REFERENCE.md](./API_REFERENCE.md) | 📖 Full API endpoint reference |
-| [QUICK_START.md](./QUICK_START.md) | ⚡ Quick start guide |
+| [PRODUCTION_READY.md](./PRODUCTION_READY.md) | 📚 Complete enterprise features guide & checklist |
+| [PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md) | 🎉 Latest implementation summary |
 | [frontend/FRONTEND_INTEGRATION.md](./frontend/FRONTEND_INTEGRATION.md) | 🎨 Frontend components guide |
+| [QUICK_START_DEPLOYMENT.md](./QUICK_START_DEPLOYMENT.md) | ⚡ Quick start deployment guide |
 
 ### General Documentation
 | Document | Description |
 |----------|-------------|
 | [IMPLEMENTATION_COMPLETE.md](./IMPLEMENTATION_COMPLETE.md) | ✅ Implementation completion status |
-| [IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md) | 📊 Technical implementation details |
-| [SETUP_CHECKLIST.md](./SETUP_CHECKLIST.md) | ✅ Setup verification checklist |
-| [QUICK_REFERENCE.md](./QUICK_REFERENCE.md) | 📋 Quick reference guide |
-| [PERFORMANCE.md](./frontend/PERFORMANCE.md) | ⚡ Performance optimization guide |
+| [DOCUMENTATION_INDEX.md](./DOCUMENTATION_INDEX.md) | 📋 Master documentation index |
+| [PRODUCTION_DEPLOYMENT.md](./PRODUCTION_DEPLOYMENT.md) | ✅ Detailed deployment guide |
 | [backend-nest/README.md](./backend-nest/README.md) | Backend-specific docs |
 
 ---
@@ -699,9 +695,9 @@ Proprietary - All rights reserved
 
 ## 🆘 Support
 
-- **Documentation**: Check the [docs](./docs) folder
+- **Documentation Index**: [DOCUMENTATION_INDEX.md](./DOCUMENTATION_INDEX.md)
 - **Issues**: Contact the development team
-- **Setup Help**: See [SETUP_GUIDE.md](./SETUP_GUIDE.md)
+- **Setup Help**: See [QUICK_START_DEPLOYMENT.md](./QUICK_START_DEPLOYMENT.md)
 
 ---
 
@@ -744,7 +740,7 @@ Proprietary - All rights reserved
 
 **Current Version:** 1.0.0  
 **Status:** Production Ready  
-**Last Updated:** December 23, 2025
+**Last Updated:** January 4, 2026
 
 ---
 

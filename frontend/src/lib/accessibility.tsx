@@ -329,7 +329,7 @@ export function useKeyboardShortcuts(shortcuts: ShortcutConfig[], deps: React.De
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 }
 
@@ -344,7 +344,7 @@ export function formatShortcut(shortcut: Omit<ShortcutConfig, 'handler'>): strin
   if (shortcut.alt) parts.push(isMac ? '⌥' : 'Alt');
   if (shortcut.shift) parts.push(isMac ? '⇧' : 'Shift');
   if (shortcut.meta) parts.push(isMac ? '⌘' : 'Win');
-  
+
   parts.push(shortcut.key.toUpperCase());
 
   return parts.join(isMac ? '' : '+');
@@ -383,12 +383,12 @@ export function useAriaIds(prefix: string): {
   descriptionId: string;
   errorId: string;
 } {
-  const id = useRef(`${prefix}-${Math.random().toString(36).substr(2, 9)}`);
-  
+  const [id] = useState(() => `${prefix}-${Math.random().toString(36).substr(2, 9)}`);
+
   return {
-    labelId: `${id.current}-label`,
-    descriptionId: `${id.current}-description`,
-    errorId: `${id.current}-error`,
+    labelId: `${id}-label`,
+    descriptionId: `${id}-description`,
+    errorId: `${id}-error`,
   };
 }
 
@@ -452,10 +452,10 @@ export function getContrastRatio(color1: string, color2: string): number {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result
       ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16),
-        }
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+      }
       : { r: 0, g: 0, b: 0 };
   };
 
@@ -481,7 +481,7 @@ export function meetsContrastRequirements(
   textSize: 'normal' | 'large' = 'normal'
 ): boolean {
   const ratio = getContrastRatio(foreground, background);
-  
+
   if (level === 'AAA') {
     return textSize === 'large' ? ratio >= 4.5 : ratio >= 7;
   }

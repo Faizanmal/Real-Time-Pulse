@@ -6,7 +6,7 @@ import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '../store/auth';
 import type { Notification } from '../types';
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000';
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3001';
 
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);

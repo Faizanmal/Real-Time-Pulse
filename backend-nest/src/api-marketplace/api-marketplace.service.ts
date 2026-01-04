@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { CacheService } from '../cache/cache.service';
 
 export interface MarketplaceConnector {
@@ -52,11 +52,13 @@ export interface InstalledConnector {
 }
 
 @Injectable()
-export class ApiMarketplaceService {
+export class ApiMarketplaceService implements OnModuleInit {
   private readonly logger = new Logger(ApiMarketplaceService.name);
 
-  constructor(private readonly cache: CacheService) {
-    this.initializeBuiltInConnectors();
+  constructor(private readonly cache: CacheService) {}
+
+  async onModuleInit() {
+    await this.initializeBuiltInConnectors();
   }
 
   /**

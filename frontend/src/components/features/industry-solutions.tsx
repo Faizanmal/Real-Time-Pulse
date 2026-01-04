@@ -39,7 +39,15 @@ export default function IndustrySolutionsComponent({ onSelectTemplate }: Props) 
     try {
       setLoading(true);
       const response = await industryApi.getTemplates(selectedIndustry || undefined);
-      setTemplates(response.data);
+      const data = response.data;
+      if (Array.isArray(data)) {
+        setTemplates(data);
+      } else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as any).data)) {
+        setTemplates((data as any).data);
+      } else {
+        console.warn('Unexpected API response format for templates:', data);
+        setTemplates([]);
+      }
     } catch (error: any) {
       toast.error('Failed to load templates', {
         description: error.response?.data?.message || error.message,

@@ -138,7 +138,7 @@ export class VoiceService {
     action?: { type: string; payload: any };
   }> {
     // Parse command from transcript
-    const command = await this.commandService.parseCommand(transcript);
+    const command = this.commandService.parseCommand(transcript);
 
     if (!command) {
       return {
@@ -149,10 +149,7 @@ export class VoiceService {
     }
 
     // Execute command
-    const result = await this.commandService.executeCommand(
-      workspaceId,
-      command,
-    );
+    const result = this.commandService.executeCommand(workspaceId, command);
 
     return {
       command,

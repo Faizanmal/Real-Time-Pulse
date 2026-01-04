@@ -107,9 +107,10 @@ export class ComplianceService {
     switch (reportType) {
       case ComplianceReportType.MONTHLY:
         return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      case ComplianceReportType.QUARTERLY:
+      case ComplianceReportType.QUARTERLY: {
         const quarter = Math.floor(now.getMonth() / 3) + 1;
         return `${now.getFullYear()}-Q${quarter}`;
+      }
       case ComplianceReportType.ANNUAL:
         return `${now.getFullYear()}`;
       default:

@@ -102,18 +102,17 @@ function MetricCard({ title, value, change, icon, color, sparkline }: MetricCard
           </div>
         </div>
         <div
-          className={`flex items-center gap-1 text-sm font-medium ${
-            isPositive ? 'text-green-600' : 'text-red-600'
-          }`}
+          className={`flex items-center gap-1 text-sm font-medium ${isPositive ? 'text-green-600' : 'text-red-600'
+            }`}
         >
           {isPositive ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
           {Math.abs(change)}%
         </div>
       </div>
-      
+
       {sparkline && sparkline.length > 0 && (
         <div className="mt-4 h-12">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <AreaChart data={sparkline.map((value, i) => ({ value, i }))}>
               <defs>
                 <linearGradient id={`gradient-${title}`} x1="0" y1="0" x2="0" y2="1">
@@ -365,15 +364,14 @@ export default function DashboardPage() {
                   <ChevronDown className="w-4 h-4" />
                 </button>
               </div>
-              
+
               {/* Live Toggle */}
               <button
                 onClick={() => setIsLive(!isLive)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isLive
-                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                    : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                }`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isLive
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                  }`}
               >
                 <span className={`w-2 h-2 rounded-full ${isLive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
                 {isLive ? 'Live' : 'Paused'}
@@ -441,11 +439,11 @@ export default function DashboardPage() {
               title="Revenue Overview"
               subtitle="Revenue trends over time"
               onRefresh={() => setData(generateData())}
-              onExpand={() => {}}
-              onMore={() => {}}
+              onExpand={() => { }}
+              onMore={() => { }}
             />
             <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <AreaChart data={data}>
                   <defs>
                     <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
@@ -496,7 +494,7 @@ export default function DashboardPage() {
               subtitle="Where your visitors come from"
             />
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <PieChart>
                   <Pie
                     data={pieData}
@@ -543,7 +541,7 @@ export default function DashboardPage() {
               subtitle="Active users over time"
             />
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <BarChart data={data.slice(-12)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis

@@ -185,7 +185,7 @@ export class VoiceControlService {
     const { target, type } = command.entities;
 
     switch (type) {
-      case 'dashboard':
+      case 'dashboard': {
         const dashboards = await this.findDashboards(target, workspaceId);
         if (dashboards.length > 0) {
           return {
@@ -196,8 +196,9 @@ export class VoiceControlService {
           };
         }
         break;
+      }
 
-      case 'project':
+      case 'project': {
         const projectName = target.replace(/project\s+/i, '').trim();
         const project = await this.findProject(projectName, workspaceId);
         if (project) {
@@ -209,6 +210,7 @@ export class VoiceControlService {
           };
         }
         break;
+      }
 
       case 'status':
         return {

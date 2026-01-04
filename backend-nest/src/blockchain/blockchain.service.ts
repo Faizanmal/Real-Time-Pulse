@@ -517,7 +517,12 @@ export class BlockchainService {
   ): Record<string, number> {
     return entries.reduce(
       (acc, entry) => {
-        const key = String(entry[field]);
+        const value = entry[field];
+        // Only convert to string if it's a primitive value
+        const key =
+          typeof value === 'object' && value !== null
+            ? JSON.stringify(value)
+            : String(value);
         acc[key] = (acc[key] || 0) + 1;
         return acc;
       },

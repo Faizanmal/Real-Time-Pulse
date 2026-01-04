@@ -202,6 +202,8 @@ export interface ARScene {
   scale: number;
   lighting: any;
   sceneType?: string;
+  type?: string;
+  config?: any;
   objects?: any[];
   dataSources?: any[];
   isActive: boolean;

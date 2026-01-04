@@ -25,7 +25,7 @@ import { toast } from 'sonner';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, isHydrated } = useAuthStore();
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,6 +39,8 @@ export default function SettingsPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
 
   useEffect(() => {
+    if (!isHydrated) return;
+
     if (!isAuthenticated) {
       router.push('/auth/login');
       return;
@@ -46,7 +48,7 @@ export default function SettingsPage() {
 
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isHydrated, router]);
 
   const loadData = async () => {
     if (!user?.workspaceId) return;
@@ -238,11 +240,10 @@ export default function SettingsPage() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                    activeTab === tab.id
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${activeTab === tab.id
                       ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
                       : 'text-gray-400 hover:text-gray-300 hover:bg-slate-800/50'
-                  }`}
+                    }`}
                 >
                   {tab.icon}
                   {tab.label}

@@ -101,7 +101,7 @@ describe('NotificationService', () => {
   describe('getUserPushTokens', () => {
     it('should return active push tokens for a user', async () => {
       const tokens = await (service as any).getUserPushTokens('user-1');
-      
+
       expect(tokens).toEqual(['token-1', 'token-2']);
       expect(prisma.pushToken.findMany).toHaveBeenCalledWith({
         where: { userId: 'user-1', isActive: true },
@@ -111,7 +111,7 @@ describe('NotificationService', () => {
 
     it('should return empty array when no tokens found', async () => {
       jest.spyOn(prisma.pushToken, 'findMany').mockResolvedValue([]);
-      
+
       const tokens = await (service as any).getUserPushTokens('user-1');
       expect(tokens).toEqual([]);
     });
@@ -120,7 +120,7 @@ describe('NotificationService', () => {
   describe('getUserPhone', () => {
     it('should return user phone number', async () => {
       const phone = await (service as any).getUserPhone('user-1');
-      
+
       expect(phone).toBe('+1234567890');
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
         where: { id: 'user-1' },
@@ -133,7 +133,7 @@ describe('NotificationService', () => {
         ...mockUser,
         phone: null,
       } as any);
-      
+
       const phone = await (service as any).getUserPhone('user-1');
       expect(phone).toBeNull();
     });
@@ -147,16 +147,16 @@ describe('NotificationService', () => {
         title: 'Test Alert',
         message: 'This is a test',
         channels: ['email' as const],
-        priority: 'HIGH' as const,
+        priority: 'high' as const,
       };
 
-      await service.send(notification);
-      
+      await service.send({ ...notification, body: 'test body' });
+
       expect(emailService.sendEmail).toHaveBeenCalledWith(
         expect.objectContaining({
           to: 'test@example.com',
           subject: 'Test Alert',
-        })
+        }),
       );
     });
 
@@ -167,11 +167,11 @@ describe('NotificationService', () => {
         title: 'Test Alert',
         message: 'This is a test',
         channels: ['push' as const],
-        priority: 'HIGH' as const,
+        priority: 'high' as const,
       };
 
-      await service.send(notification);
-      
+      await service.send({ ...notification, body: 'test body' });
+
       expect(httpService.post).toHaveBeenCalled();
     });
 
@@ -182,32 +182,13 @@ describe('NotificationService', () => {
         title: 'Test Alert',
         message: 'This is a test',
         channels: ['email' as const, 'push' as const],
-        priority: 'HIGH' as const,
+        priority: 'high' as const,
       };
 
-      await service.send(notification);
-      
+      await service.send({ ...notification, body: 'test body' });
+
       expect(emailService.sendEmail).toHaveBeenCalled();
       expect(httpService.post).toHaveBeenCalled();
-    });
-  });
-
-  describe('sendToWorkspace', () => {
-    it('should send notification to all workspace members', async () => {
-      const notification = {
-        type: 'ALERT' as const,
-        title: 'Workspace Alert',
-        message: 'Alert for all members',
-        channels: ['email' as const],
-        priority: 'MEDIUM' as const,
-      };
-
-      await service.sendToWorkspace('workspace-1', notification);
-      
-      expect(prisma.workspace.findUnique).toHaveBeenCalledWith({
-        where: { id: 'workspace-1' },
-        include: { members: true },
-      });
     });
   });
 });

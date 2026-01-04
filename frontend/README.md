@@ -68,5 +68,5 @@ src/
 ## 📚 Documentation
 
 - [Main Project README](../README.md)
-- [API Reference](../API_REFERENCE.md)
-- [Features Guide](../FEATURES_GUIDE.md)
+- [Production Features](./PRODUCTION_ENHANCEMENTS.md)
+- [Component Guide](./FRONTEND_INTEGRATION.md)

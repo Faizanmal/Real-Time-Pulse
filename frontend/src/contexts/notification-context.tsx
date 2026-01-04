@@ -25,6 +25,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const addNotification = (notification: Omit<Notification, 'id' | 'timestamp'>) => {
     const newNotification: Notification = {
       ...notification,
+      // eslint-disable-next-line react-hooks/purity
       id: Math.random().toString(36).substr(2, 9),
       timestamp: new Date(),
     };

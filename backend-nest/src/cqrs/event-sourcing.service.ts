@@ -93,7 +93,10 @@ export function QueryHandler(queryType: string): ClassDecorator {
 @Injectable()
 export class EventSourcingService {
   private readonly logger = new Logger(EventSourcingService.name);
-  private readonly eventHandlers = new Map<string, Function[]>();
+  private readonly eventHandlers = new Map<
+    string,
+    Array<(...args: any[]) => any>
+  >();
 
   constructor(
     @Inject('CQRS_OPTIONS') private readonly options: any,
@@ -122,7 +125,7 @@ export class EventSourcingService {
   }
 
   // Register an event handler
-  registerHandler(eventType: string, handler: Function): void {
+  registerHandler(eventType: string, handler: (...args: any[]) => any): void {
     const handlers = this.eventHandlers.get(eventType) || [];
     handlers.push(handler);
     this.eventHandlers.set(eventType, handlers);

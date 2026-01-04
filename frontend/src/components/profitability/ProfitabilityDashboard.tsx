@@ -52,7 +52,7 @@ export default function ProfitabilityDashboard() {
   const fetchData = async () => {
     try {
       const workspaceId = 'your-workspace-id';
-      
+
       const [projectsRes, clientsRes, summaryRes] = await Promise.all([
         fetch(`/api/profitability/projects/workspace/${workspaceId}`),
         fetch(`/api/profitability/workspace/${workspaceId}/client-scoring`),
@@ -198,7 +198,7 @@ export default function ProfitabilityDashboard() {
                       {level.label}
                     </Badge>
                   </div>
-                  
+
                   <div className="mt-4 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Revenue</span>
@@ -250,7 +250,7 @@ export default function ProfitabilityDashboard() {
           <CardDescription>Financial performance comparison</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={400}>
+          <ResponsiveContainer width="100%" height={400} minWidth={0}>
             <BarChart data={projects.slice(0, 10)}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
@@ -313,7 +313,7 @@ export default function ProfitabilityDashboard() {
             <CardDescription>Project distribution by margin range</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={300} minWidth={0}>
               <BarChart
                 data={[
                   {
@@ -354,7 +354,7 @@ export default function ProfitabilityDashboard() {
             <CardDescription>Correlation between resource use and profit</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={300} minWidth={0}>
               <ScatterChart>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="profitability.utilizationRate" name="Utilization %" unit="%" />

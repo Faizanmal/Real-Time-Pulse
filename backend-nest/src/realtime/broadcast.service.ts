@@ -290,7 +290,7 @@ export class BroadcastService {
 
   broadcast(
     workspaceId: string,
-    event: BroadcastEventType | string,
+    event: string,
     data: any,
     options?: BroadcastOptions,
   ): void {

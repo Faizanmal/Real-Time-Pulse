@@ -2,7 +2,7 @@
  * =============================================================================
  * REAL-TIME PULSE - CORRELATION INTERCEPTOR
  * =============================================================================
- * 
+ *
  * Automatically adds correlation context to all HTTP requests.
  */
 
@@ -61,36 +61,47 @@ export class CorrelationInterceptor implements NestInterceptor {
             response.setHeader('X-Span-ID', ctx.spanId);
           }
 
-          next.handle().pipe(
-            tap((data) => {
-              this.correlationService.completeRequest(true);
-              
-              // Log successful request
-              this.logger.log(
-                this.correlationService.createLogEntry('info', 'Request completed', {
-                  statusCode: response.statusCode,
-                })
-              );
+          next
+            .handle()
+            .pipe(
+              tap((data) => {
+                this.correlationService.completeRequest(true);
 
-              subscriber.next(data);
-              subscriber.complete();
-            }),
-            catchError((error) => {
-              this.correlationService.completeRequest(false);
-              
-              // Log error with correlation context
-              this.logger.error(
-                this.correlationService.createLogEntry('error', 'Request failed', {
-                  error: error.message,
-                  stack: error.stack,
-                  statusCode: error.status || 500,
-                })
-              );
+                // Log successful request
+                this.logger.log(
+                  this.correlationService.createLogEntry(
+                    'info',
+                    'Request completed',
+                    {
+                      statusCode: response.statusCode,
+                    },
+                  ),
+                );
 
-              subscriber.error(error);
-              return throwError(() => error);
-            }),
-          ).subscribe();
+                subscriber.next(data);
+                subscriber.complete();
+              }),
+              catchError((error) => {
+                this.correlationService.completeRequest(false);
+
+                // Log error with correlation context
+                this.logger.error(
+                  this.correlationService.createLogEntry(
+                    'error',
+                    'Request failed',
+                    {
+                      error: error.message,
+                      stack: error.stack,
+                      statusCode: error.status || 500,
+                    },
+                  ),
+                );
+
+                subscriber.error(error);
+                return throwError(() => error);
+              }),
+            )
+            .subscribe();
         },
       );
     });
