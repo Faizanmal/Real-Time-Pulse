@@ -1,28 +1,65 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Shield, AlertCircle, CheckCircle, Info, XCircle,
-  Plus, RefreshCw, Filter, TrendingDown
+  RefreshCw
 } from 'lucide-react';
 import { dataValidationApi } from '@/lib/api-client';
 
+interface ValidationRule {
+  id: string;
+  name: string;
+  type: string;
+  ruleType: string;
+  status: string;
+  fields: string[];
+  severity: string;
+  description: string;
+  violations?: ValidationViolation[];
+  [key: string]: unknown;
+}
+
+interface ValidationViolation {
+  id: string;
+  ruleId: string;
+  message: string;
+  severity: string;
+  rule: {
+    name: string;
+  };
+  fieldPath: string;
+  violationType: string;
+  actualValue?: string;
+  timestamp: string;
+  [key: string]: unknown;
+}
+
+interface ValidationStats {
+  total: number;
+  unresolved: number;
+  resolved: number;
+  bySeverity: {
+    CRITICAL: number;
+    WARNING: number;
+    [key: string]: number;
+  };
+  totalRules: number;
+  activeRules: number;
+  violations: number;
+  [key: string]: unknown;
+}
+
 export default function DataValidationDashboard({ workspaceId }: { workspaceId: string }) {
-  const [rules, setRules] = useState<any[]>([]);
-  const [violations, setViolations] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
+  const [rules, setRules] = useState<ValidationRule[]>([]);
+  const [violations, setViolations] = useState<ValidationViolation[]>([]);
+  const [stats, setStats] = useState<ValidationStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showNewRule, setShowNewRule] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, [workspaceId]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [rulesRes, violationsRes, statsRes] = await Promise.all([
@@ -38,7 +75,11 @@ export default function DataValidationDashboard({ workspaceId }: { workspaceId: 
     } finally {
       setLoading(false);
     }
-  };
+  }, [workspaceId]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const resolveViolation = async (violationId: string) => {
     try {
@@ -98,10 +139,6 @@ export default function DataValidationDashboard({ workspaceId }: { workspaceId: 
           <Button onClick={loadData}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
-          </Button>
-          <Button onClick={() => setShowNewRule(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Rule
           </Button>
         </div>
       </div>
@@ -173,7 +210,7 @@ export default function DataValidationDashboard({ workspaceId }: { workspaceId: 
                     <Badge className={getSeverityColor(rule.severity)}>
                       {rule.severity}
                     </Badge>
-                    {rule.violations?.length > 0 && (
+                    {rule.violations && rule.violations.length > 0 && (
                       <Badge variant="destructive">
                         {rule.violations.length} violations
                       </Badge>

@@ -91,42 +91,7 @@ export function useEnhancedOfflineSync(config?: Partial<OfflineCacheConfig>) {
     ...config,
   };
 
-  // Update online status
-  useEffect(() => {
-    const handleOnline = () => {
-      setStatus(prev => ({ ...prev, isOnline: true }));
-      toast.success('Back online', { description: 'Syncing pending changes...' });
-      syncPendingOperations();
-    };
-
-    const handleOffline = () => {
-      setStatus(prev => ({ ...prev, isOnline: false }));
-      toast.warning('You are offline', { 
-        description: 'Changes will be saved and synced when online.' 
-      });
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    // Periodic sync when online
-    syncIntervalRef.current = setInterval(() => {
-      if (navigator.onLine) {
-        syncPendingOperations();
-      }
-    }, 30000); // Every 30 seconds
-
-    // Initial sync check
-    updatePendingCount();
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      if (syncIntervalRef.current) {
-        clearInterval(syncIntervalRef.current);
-      }
-    };
-  }, []);
+  /* Online/offline effect moved below to avoid referencing callbacks before declaration (see the effect placed after syncPendingOperations). */
 
   // Update pending operations count
   const updatePendingCount = useCallback(async () => {
@@ -151,37 +116,30 @@ export function useEnhancedOfflineSync(config?: Partial<OfflineCacheConfig>) {
     }
   }, []);
 
-  // Queue an operation for sync
-  const queueOperation = useCallback(async (
-    type: SyncableOperation['type'],
-    entity: string,
-    payload: Record<string, unknown>,
-    entityId?: string,
-  ): Promise<string> => {
-    const operation: SyncableOperation = {
-      id: `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: Date.now(),
-      type,
-      entity,
-      entityId,
-      payload,
-      retryCount: 0,
-      status: 'pending',
-    };
-
-    await operationsStore.setItem(operation.id, operation);
-    await updatePendingCount();
-
-    // Try to sync immediately if online
-    if (navigator.onLine) {
-      syncPendingOperations();
-    }
-
-    return operation.id;
-  }, [updatePendingCount]);
-
   // Sync pending operations
   const syncPendingOperations = useCallback(async (): Promise<void> => {
+    // Execute a single operation
+    const executeOperation = async (operation: SyncableOperation): Promise<void> => {
+      const { type, entity, entityId, payload } = operation;
+
+      // Import API client dynamically to avoid circular deps
+      const { apiClient } = await import('./api');
+
+      switch (type) {
+        case 'create':
+          await apiClient.post(`/${entity}`, payload);
+          break;
+        case 'update':
+          if (!entityId) throw new Error('entityId required for update');
+          await apiClient.patch(`/${entity}/${entityId}`, payload);
+          break;
+        case 'delete':
+          if (!entityId) throw new Error('entityId required for delete');
+          await apiClient.delete(`/${entity}/${entityId}`);
+          break;
+      }
+    };
+
     if (syncInProgressRef.current || !navigator.onLine) return;
     
     syncInProgressRef.current = true;
@@ -207,7 +165,7 @@ export function useEnhancedOfflineSync(config?: Partial<OfflineCacheConfig>) {
           operation.status = 'syncing';
           await operationsStore.setItem(operation.id, operation);
 
-          // Execute the operation
+                // Execute the operation
           await executeOperation(operation);
 
           // Remove successful operation
@@ -259,27 +217,73 @@ export function useEnhancedOfflineSync(config?: Partial<OfflineCacheConfig>) {
     }
   }, [updatePendingCount]);
 
-  // Execute a single operation
-  const executeOperation = async (operation: SyncableOperation): Promise<void> => {
-    const { type, entity, entityId, payload } = operation;
-    
-    // Import API client dynamically to avoid circular deps
-    const { apiClient } = await import('./api');
-    
-    switch (type) {
-      case 'create':
-        await apiClient.post(`/${entity}`, payload);
-        break;
-      case 'update':
-        if (!entityId) throw new Error('entityId required for update');
-        await apiClient.patch(`/${entity}/${entityId}`, payload);
-        break;
-      case 'delete':
-        if (!entityId) throw new Error('entityId required for delete');
-        await apiClient.delete(`/${entity}/${entityId}`);
-        break;
+  // Online/offline handlers and periodic sync (moved here so callbacks are declared first)
+  useEffect(() => {
+    const handleOnline = () => {
+      setStatus(prev => ({ ...prev, isOnline: true }));
+      toast.success('Back online', { description: 'Syncing pending changes...' });
+      syncPendingOperations();
+    };
+
+    const handleOffline = () => {
+      setStatus(prev => ({ ...prev, isOnline: false }));
+      toast.warning('You are offline', { 
+        description: 'Changes will be saved and synced when online.' 
+      });
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Periodic sync when online
+    syncIntervalRef.current = setInterval(() => {
+      if (navigator.onLine) {
+        syncPendingOperations();
+      }
+    }, 30000); // Every 30 seconds
+
+    // Initial sync check
+    updatePendingCount();
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+      }
+    };
+  }, [syncPendingOperations, updatePendingCount]);
+
+
+
+  // Queue an operation for sync
+  const queueOperation = useCallback(async (
+    type: SyncableOperation['type'],
+    entity: string,
+    payload: Record<string, unknown>,
+    entityId?: string,
+  ): Promise<string> => {
+    const operation: SyncableOperation = {
+      id: `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
+      type,
+      entity,
+      entityId,
+      payload,
+      retryCount: 0,
+      status: 'pending',
+    };
+
+    await operationsStore.setItem(operation.id, operation);
+    await updatePendingCount();
+
+    // Try to sync immediately if online
+    if (navigator.onLine) {
+      syncPendingOperations();
     }
-  };
+
+    return operation.id;
+  }, [updatePendingCount, syncPendingOperations]);
 
   // Resolve a conflict
   const resolveConflict = useCallback(async (

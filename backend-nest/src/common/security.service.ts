@@ -352,10 +352,10 @@ export class SanitizationService {
     // Remove control characters except newlines if allowed
     if (options?.allowNewlines) {
       // eslint-disable-next-line no-control-regex
-      result = result.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, '');
+      result = result.replace(/[\0-\x09\x0B\x0C\x0E-\x1F\x7F]/g, '');
     } else {
       // eslint-disable-next-line no-control-regex
-      result = result.replace(/[\x00-\x1F\x7F]/g, '');
+      result = result.replace(/[\0-\x1F\x7F]/g, '');
     }
 
     // Truncate if needed

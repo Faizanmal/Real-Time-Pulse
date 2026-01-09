@@ -149,7 +149,7 @@ export function ARVisualizationPanel() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-pink-500 to-violet-500 rounded-lg">
+          <div className="p-2 bg-linear-to-br from-pink-500 to-violet-500 rounded-lg">
             <Box className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -306,7 +306,7 @@ export function ARVisualizationPanel() {
                     }`}
                   onClick={() => setSelectedScene(scene)}
                 >
-                  <div className="h-32 bg-gradient-to-br from-pink-400 to-violet-500 flex items-center justify-center">
+                  <div className="h-32 bg-linear-to-br from-pink-400 to-violet-500 flex items-center justify-center">
                     <Box className="h-16 w-16 text-white opacity-50" />
                   </div>
                   <div className="p-4">

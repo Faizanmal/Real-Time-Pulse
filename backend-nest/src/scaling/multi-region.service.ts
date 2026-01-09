@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import Redis from 'ioredis';
 
-interface RegionConfig {
+export interface RegionConfig {
   id: string;
   name: string;
   endpoint: string;
@@ -14,7 +14,7 @@ interface RegionConfig {
   features: string[];
 }
 
-interface RoutingRule {
+export interface RoutingRule {
   id: string;
   name: string;
   conditions: RoutingCondition[];
@@ -23,14 +23,14 @@ interface RoutingRule {
   enabled: boolean;
 }
 
-interface RoutingCondition {
+export interface RoutingCondition {
   type: 'geo' | 'header' | 'cookie' | 'query' | 'user_segment' | 'load';
   field?: string;
   operator: 'eq' | 'neq' | 'contains' | 'in' | 'gt' | 'lt';
   value: any;
 }
 
-interface ReplicaInfo {
+export interface ReplicaInfo {
   instanceId: string;
   region: string;
   pod: string;
@@ -95,14 +95,16 @@ export class MultiRegionService implements OnModuleInit {
     await this.redis.hset(
       'cluster:replicas',
       this.instanceId,
-      JSON.stringify(replicaInfo)
+      JSON.stringify(replicaInfo),
     );
 
     // Set TTL for automatic cleanup
     await this.redis.expire(`cluster:replica:${this.instanceId}`, 30);
 
     this.replicas.set(this.instanceId, replicaInfo);
-    this.logger.log(`Registered instance ${this.instanceId} in region ${this.currentRegion}`);
+    this.logger.log(
+      `Registered instance ${this.instanceId} in region ${this.currentRegion}`,
+    );
   }
 
   private async loadRegionConfigs() {
@@ -173,7 +175,12 @@ export class MultiRegionService implements OnModuleInit {
         id: 'rule-geo-eu',
         name: 'EU Traffic to EU Region',
         conditions: [
-          { type: 'geo', field: 'country', operator: 'in', value: ['DE', 'FR', 'GB', 'IT', 'ES', 'NL'] },
+          {
+            type: 'geo',
+            field: 'country',
+            operator: 'in',
+            value: ['DE', 'FR', 'GB', 'IT', 'ES', 'NL'],
+          },
         ],
         targetRegion: 'eu-west-1',
         priority: 1,
@@ -184,7 +191,12 @@ export class MultiRegionService implements OnModuleInit {
         id: 'rule-geo-apac',
         name: 'APAC Traffic to Singapore',
         conditions: [
-          { type: 'geo', field: 'country', operator: 'in', value: ['SG', 'JP', 'AU', 'IN', 'CN'] },
+          {
+            type: 'geo',
+            field: 'country',
+            operator: 'in',
+            value: ['SG', 'JP', 'AU', 'IN', 'CN'],
+          },
         ],
         targetRegion: 'ap-southeast-1',
         priority: 2,
@@ -195,18 +207,18 @@ export class MultiRegionService implements OnModuleInit {
 
   private startHealthMonitoring() {
     // Update instance metrics every 10 seconds
-    setInterval(async () => {
-      await this.updateInstanceMetrics();
+    setInterval(() => {
+      void this.updateInstanceMetrics();
     }, 10000);
 
     // Check region health every 30 seconds
-    setInterval(async () => {
-      await this.checkRegionHealth();
+    setInterval(() => {
+      void this.checkRegionHealth();
     }, 30000);
 
     // Cleanup stale replicas
-    setInterval(async () => {
-      await this.cleanupStaleReplicas();
+    setInterval(() => {
+      void this.cleanupStaleReplicas();
     }, 60000);
   }
 
@@ -225,14 +237,14 @@ export class MultiRegionService implements OnModuleInit {
     await this.redis.hset(
       'cluster:replicas',
       this.instanceId,
-      JSON.stringify(replica)
+      JSON.stringify(replica),
     );
 
     // Refresh TTL
     await this.redis.setex(
       `cluster:replica:${this.instanceId}:heartbeat`,
       30,
-      Date.now().toString()
+      Date.now().toString(),
     );
   }
 
@@ -245,11 +257,12 @@ export class MultiRegionService implements OnModuleInit {
         const latency = Date.now() - startTime;
 
         region.latency = latency;
-        region.healthStatus = latency < 500 ? 'healthy' : latency < 1000 ? 'degraded' : 'unhealthy';
+        region.healthStatus =
+          latency < 500 ? 'healthy' : latency < 1000 ? 'degraded' : 'unhealthy';
 
         // Simulate load changes
         region.currentLoad = Math.floor(region.capacity * Math.random() * 0.8);
-      } catch (error) {
+      } catch {
         region.healthStatus = 'unhealthy';
         this.logger.warn(`Region ${regionId} health check failed`);
       }
@@ -258,7 +271,7 @@ export class MultiRegionService implements OnModuleInit {
     // Store updated configs
     await this.redis.set(
       'cluster:regions',
-      JSON.stringify(Array.from(this.regions.values()))
+      JSON.stringify(Array.from(this.regions.values())),
     );
   }
 
@@ -266,9 +279,11 @@ export class MultiRegionService implements OnModuleInit {
     const allReplicas = await this.redis.hgetall('cluster:replicas');
     const now = Date.now();
 
-    for (const [instanceId, data] of Object.entries(allReplicas)) {
-      const heartbeat = await this.redis.get(`cluster:replica:${instanceId}:heartbeat`);
-      
+    for (const [instanceId, _data] of Object.entries(allReplicas)) {
+      const heartbeat = await this.redis.get(
+        `cluster:replica:${instanceId}:heartbeat`,
+      );
+
       if (!heartbeat || now - parseInt(heartbeat) > 60000) {
         await this.redis.hdel('cluster:replicas', instanceId);
         this.replicas.delete(instanceId);
@@ -288,13 +303,13 @@ export class MultiRegionService implements OnModuleInit {
   }): Promise<string> {
     // Sort rules by priority
     const sortedRules = [...this.routingRules]
-      .filter(r => r.enabled)
+      .filter((r) => r.enabled)
       .sort((a, b) => a.priority - b.priority);
 
     for (const rule of sortedRules) {
       if (this.matchesConditions(rule.conditions, context)) {
         const targetRegion = this.regions.get(rule.targetRegion);
-        
+
         // Ensure target region is healthy
         if (targetRegion?.healthStatus === 'healthy') {
           return rule.targetRegion;
@@ -306,8 +321,11 @@ export class MultiRegionService implements OnModuleInit {
     return this.selectBestRegion();
   }
 
-  private matchesConditions(conditions: RoutingCondition[], context: any): boolean {
-    return conditions.every(cond => {
+  private matchesConditions(
+    conditions: RoutingCondition[],
+    context: any,
+  ): boolean {
+    return conditions.every((cond) => {
       let value: any;
 
       switch (cond.type) {
@@ -326,32 +344,42 @@ export class MultiRegionService implements OnModuleInit {
         case 'user_segment':
           value = context.userSegment;
           break;
-        case 'load':
+        case 'load': {
           const region = this.regions.get(cond.field!);
           value = region ? region.currentLoad / region.capacity : 1;
           break;
+        }
       }
 
       switch (cond.operator) {
-        case 'eq': return value === cond.value;
-        case 'neq': return value !== cond.value;
-        case 'contains': return String(value).includes(cond.value);
-        case 'in': return Array.isArray(cond.value) && cond.value.includes(value);
-        case 'gt': return value > cond.value;
-        case 'lt': return value < cond.value;
-        default: return false;
+        case 'eq':
+          return value === cond.value;
+        case 'neq':
+          return value !== cond.value;
+        case 'contains':
+          return String(value).includes(cond.value);
+        case 'in':
+          return Array.isArray(cond.value) && cond.value.includes(value);
+        case 'gt':
+          return value > cond.value;
+        case 'lt':
+          return value < cond.value;
+        default:
+          return false;
       }
     });
   }
 
   private selectBestRegion(): string {
     // Find primary region
-    const primary = Array.from(this.regions.values()).find(r => r.isPrimary && r.healthStatus === 'healthy');
+    const primary = Array.from(this.regions.values()).find(
+      (r) => r.isPrimary && r.healthStatus === 'healthy',
+    );
     if (primary) return primary.id;
 
     // Select lowest latency healthy region
     const healthy = Array.from(this.regions.values())
-      .filter(r => r.healthStatus === 'healthy')
+      .filter((r) => r.healthStatus === 'healthy')
       .sort((a, b) => a.latency - b.latency);
 
     return healthy[0]?.id || this.currentRegion;
@@ -366,7 +394,10 @@ export class MultiRegionService implements OnModuleInit {
     return this.regions.get(id);
   }
 
-  async updateRegion(id: string, updates: Partial<RegionConfig>): Promise<RegionConfig> {
+  async updateRegion(
+    id: string,
+    updates: Partial<RegionConfig>,
+  ): Promise<RegionConfig> {
     const region = this.regions.get(id);
     if (!region) throw new Error(`Region ${id} not found`);
 
@@ -375,7 +406,7 @@ export class MultiRegionService implements OnModuleInit {
 
     await this.redis.set(
       'cluster:regions',
-      JSON.stringify(Array.from(this.regions.values()))
+      JSON.stringify(Array.from(this.regions.values())),
     );
 
     return updated;
@@ -398,8 +429,11 @@ export class MultiRegionService implements OnModuleInit {
     return newRule;
   }
 
-  async updateRoutingRule(id: string, updates: Partial<RoutingRule>): Promise<RoutingRule> {
-    const idx = this.routingRules.findIndex(r => r.id === id);
+  async updateRoutingRule(
+    id: string,
+    updates: Partial<RoutingRule>,
+  ): Promise<RoutingRule> {
+    const idx = this.routingRules.findIndex((r) => r.id === id);
     if (idx === -1) throw new Error(`Rule ${id} not found`);
 
     this.routingRules[idx] = { ...this.routingRules[idx], ...updates };
@@ -409,7 +443,7 @@ export class MultiRegionService implements OnModuleInit {
   }
 
   async deleteRoutingRule(id: string): Promise<void> {
-    const idx = this.routingRules.findIndex(r => r.id === id);
+    const idx = this.routingRules.findIndex((r) => r.id === id);
     if (idx !== -1) {
       this.routingRules.splice(idx, 1);
       await this.persistRoutingRules();
@@ -419,19 +453,19 @@ export class MultiRegionService implements OnModuleInit {
   private async persistRoutingRules() {
     await this.redis.set(
       'cluster:routing-rules',
-      JSON.stringify(this.routingRules)
+      JSON.stringify(this.routingRules),
     );
   }
 
   // Replica Management
   async getReplicas(): Promise<ReplicaInfo[]> {
     const allReplicas = await this.redis.hgetall('cluster:replicas');
-    return Object.values(allReplicas).map(d => JSON.parse(d));
+    return Object.values(allReplicas).map((d) => JSON.parse(d));
   }
 
   async getReplicasByRegion(region: string): Promise<ReplicaInfo[]> {
     const allReplicas = await this.getReplicas();
-    return allReplicas.filter(r => r.region === region);
+    return allReplicas.filter((r) => r.region === region);
   }
 
   // Cluster Stats
@@ -441,19 +475,24 @@ export class MultiRegionService implements OnModuleInit {
 
     const stats = {
       totalReplicas: replicas.length,
-      healthyReplicas: replicas.filter(r => r.status === 'running').length,
+      healthyReplicas: replicas.filter((r) => r.status === 'running').length,
       totalRegions: regions.length,
-      healthyRegions: regions.filter(r => r.healthStatus === 'healthy').length,
+      healthyRegions: regions.filter((r) => r.healthStatus === 'healthy')
+        .length,
       totalCapacity: regions.reduce((acc, r) => acc + r.capacity, 0),
       currentLoad: regions.reduce((acc, r) => acc + r.currentLoad, 0),
-      avgLatency: regions.length > 0 
-        ? regions.reduce((acc, r) => acc + r.latency, 0) / regions.length 
-        : 0,
-      byRegion: {} as Record<string, { replicas: number; load: number; health: string }>,
+      avgLatency:
+        regions.length > 0
+          ? regions.reduce((acc, r) => acc + r.latency, 0) / regions.length
+          : 0,
+      byRegion: {} as Record<
+        string,
+        { replicas: number; load: number; health: string }
+      >,
     };
 
-    regions.forEach(region => {
-      const regionReplicas = replicas.filter(r => r.region === region.id);
+    regions.forEach((region) => {
+      const regionReplicas = replicas.filter((r) => r.region === region.id);
       stats.byRegion[region.id] = {
         replicas: regionReplicas.length,
         load: region.currentLoad,
@@ -479,7 +518,7 @@ export class MultiRegionService implements OnModuleInit {
             sourceRegion: this.currentRegion,
             timestamp: Date.now(),
             data,
-          })
+          }),
         );
       } catch (error) {
         this.logger.error(`Failed to replicate to ${regionId}:`, error);
@@ -502,7 +541,7 @@ export class MultiRegionService implements OnModuleInit {
     from.healthStatus = 'unhealthy';
 
     // Update routing rules to bypass failed region
-    this.routingRules.forEach(rule => {
+    this.routingRules.forEach((rule) => {
       if (rule.targetRegion === fromRegion) {
         rule.enabled = false;
       }
@@ -516,7 +555,7 @@ export class MultiRegionService implements OnModuleInit {
 
     await this.redis.set(
       'cluster:regions',
-      JSON.stringify(Array.from(this.regions.values()))
+      JSON.stringify(Array.from(this.regions.values())),
     );
 
     await this.persistRoutingRules();

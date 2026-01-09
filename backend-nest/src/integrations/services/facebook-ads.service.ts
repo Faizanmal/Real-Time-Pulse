@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
-interface FacebookAdsIntegration {
+export interface FacebookAdsIntegration {
   accessToken: string;
   settings: {
     accountId: string;
@@ -77,17 +77,47 @@ export class FacebookAdsService {
 
     switch (dataType) {
       case 'campaigns':
-        return this.fetchCampaigns(version, accountId, integration.accessToken, params);
+        return this.fetchCampaigns(
+          version,
+          accountId,
+          integration.accessToken,
+          params,
+        );
       case 'adsets':
-        return this.fetchAdSets(version, accountId, integration.accessToken, params);
+        return this.fetchAdSets(
+          version,
+          accountId,
+          integration.accessToken,
+          params,
+        );
       case 'ads':
-        return this.fetchAds(version, accountId, integration.accessToken, params);
+        return this.fetchAds(
+          version,
+          accountId,
+          integration.accessToken,
+          params,
+        );
       case 'insights':
-        return this.fetchInsights(version, accountId, integration.accessToken, params);
+        return this.fetchInsights(
+          version,
+          accountId,
+          integration.accessToken,
+          params,
+        );
       case 'analytics':
-        return this.fetchAnalytics(version, accountId, integration.accessToken, params);
+        return this.fetchAnalytics(
+          version,
+          accountId,
+          integration.accessToken,
+          params,
+        );
       case 'audiences':
-        return this.fetchAudiences(version, accountId, integration.accessToken, params);
+        return this.fetchAudiences(
+          version,
+          accountId,
+          integration.accessToken,
+          params,
+        );
       default:
         throw new Error(`Unsupported Facebook Ads data type: ${dataType}`);
     }
@@ -104,14 +134,22 @@ export class FacebookAdsService {
       const status = params?.status as string[];
 
       const response = await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/${version}/${accountId}/campaigns`, {
-          params: {
-            access_token: accessToken,
-            fields: 'id,name,status,objective,created_time,daily_budget,lifetime_budget,start_time,stop_time',
-            limit,
-            ...(status && { filtering: JSON.stringify([{ field: 'effective_status', operator: 'IN', value: status }]) }),
+        this.httpService.get(
+          `${this.baseUrl}/${version}/${accountId}/campaigns`,
+          {
+            params: {
+              access_token: accessToken,
+              fields:
+                'id,name,status,objective,created_time,daily_budget,lifetime_budget,start_time,stop_time',
+              limit,
+              ...(status && {
+                filtering: JSON.stringify([
+                  { field: 'effective_status', operator: 'IN', value: status },
+                ]),
+              }),
+            },
           },
-        }),
+        ),
       );
 
       return response.data.data;
@@ -134,7 +172,8 @@ export class FacebookAdsService {
         this.httpService.get(`${this.baseUrl}/${version}/${accountId}/adsets`, {
           params: {
             access_token: accessToken,
-            fields: 'id,name,status,campaign_id,daily_budget,lifetime_budget,targeting,optimization_goal',
+            fields:
+              'id,name,status,campaign_id,daily_budget,lifetime_budget,targeting,optimization_goal',
             limit,
           },
         }),
@@ -189,19 +228,25 @@ export class FacebookAdsService {
       startDate.setDate(today.getDate() - days);
 
       const response = await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/${version}/${accountId}/insights`, {
-          params: {
-            access_token: accessToken,
-            fields: 'campaign_id,campaign_name,impressions,clicks,spend,reach,cpc,cpm,ctr,actions,conversions,cost_per_conversion',
-            level,
-            time_range: datePreset ? undefined : JSON.stringify({
-              since: startDate.toISOString().split('T')[0],
-              until: today.toISOString().split('T')[0],
-            }),
-            ...(datePreset && { date_preset: datePreset }),
-            time_increment: 1,
+        this.httpService.get(
+          `${this.baseUrl}/${version}/${accountId}/insights`,
+          {
+            params: {
+              access_token: accessToken,
+              fields:
+                'campaign_id,campaign_name,impressions,clicks,spend,reach,cpc,cpm,ctr,actions,conversions,cost_per_conversion',
+              level,
+              time_range: datePreset
+                ? undefined
+                : JSON.stringify({
+                    since: startDate.toISOString().split('T')[0],
+                    until: today.toISOString().split('T')[0],
+                  }),
+              ...(datePreset && { date_preset: datePreset }),
+              time_increment: 1,
+            },
           },
-        }),
+        ),
       );
 
       return response.data.data;
@@ -225,27 +270,34 @@ export class FacebookAdsService {
 
       // Fetch account-level insights
       const insightsResponse = await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/${version}/${accountId}/insights`, {
-          params: {
-            access_token: accessToken,
-            fields: 'impressions,clicks,spend,reach,cpc,cpm,ctr,frequency,actions',
-            time_range: JSON.stringify({
-              since: startDate.toISOString().split('T')[0],
-              until: today.toISOString().split('T')[0],
-            }),
+        this.httpService.get(
+          `${this.baseUrl}/${version}/${accountId}/insights`,
+          {
+            params: {
+              access_token: accessToken,
+              fields:
+                'impressions,clicks,spend,reach,cpc,cpm,ctr,frequency,actions',
+              time_range: JSON.stringify({
+                since: startDate.toISOString().split('T')[0],
+                until: today.toISOString().split('T')[0],
+              }),
+            },
           },
-        }),
+        ),
       );
 
       // Fetch campaign count
       const campaignsResponse = await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/${version}/${accountId}/campaigns`, {
-          params: {
-            access_token: accessToken,
-            summary: 'total_count',
-            limit: 1,
+        this.httpService.get(
+          `${this.baseUrl}/${version}/${accountId}/campaigns`,
+          {
+            params: {
+              access_token: accessToken,
+              summary: 'total_count',
+              limit: 1,
+            },
           },
-        }),
+        ),
       );
 
       const insights = insightsResponse.data.data?.[0] || {};
@@ -282,13 +334,17 @@ export class FacebookAdsService {
       const limit = (params?.limit as number) || 50;
 
       const response = await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/${version}/${accountId}/customaudiences`, {
-          params: {
-            access_token: accessToken,
-            fields: 'id,name,approximate_count,subtype,time_created,time_updated',
-            limit,
+        this.httpService.get(
+          `${this.baseUrl}/${version}/${accountId}/customaudiences`,
+          {
+            params: {
+              access_token: accessToken,
+              fields:
+                'id,name,approximate_count,subtype,time_created,time_updated',
+              limit,
+            },
           },
-        }),
+        ),
       );
 
       return response.data.data;

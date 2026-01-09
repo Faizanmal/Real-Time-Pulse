@@ -8,7 +8,7 @@
 
 import { IsNumber, IsOptional, IsString, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 // ============================================================================
 // PAGINATION

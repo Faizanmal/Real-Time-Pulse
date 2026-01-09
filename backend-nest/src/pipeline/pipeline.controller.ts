@@ -15,7 +15,6 @@ import {
   ApiOperation,
   ApiBearerAuth,
   ApiParam,
-  ApiBody,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PipelineService } from './pipeline.service';

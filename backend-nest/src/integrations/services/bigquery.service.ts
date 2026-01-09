@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
-interface BigQueryIntegration {
+export interface BigQueryIntegration {
   accessToken: string; // OAuth2 access token
   refreshToken?: string;
   settings: {
@@ -169,7 +169,9 @@ export class BigQueryService {
     };
   }
 
-  private async fetchDatasets(integration: BigQueryIntegration): Promise<unknown> {
+  private async fetchDatasets(
+    integration: BigQueryIntegration,
+  ): Promise<unknown> {
     try {
       const response = await firstValueFrom(
         this.httpService.get(
@@ -311,7 +313,7 @@ export class BigQueryService {
 
   private async fetchAnalytics(
     integration: BigQueryIntegration,
-    params?: Record<string, unknown>,
+    _params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
       const [datasets, recentJobs] = await Promise.all([
@@ -324,12 +326,14 @@ export class BigQueryService {
 
       // Calculate job statistics
       let totalBytesProcessed = 0;
-      let totalJobs = jobsArray.length;
+      const totalJobs = jobsArray.length;
       let successfulJobs = 0;
       let failedJobs = 0;
 
       jobsArray.forEach((job: any) => {
-        totalBytesProcessed += parseInt(job.statistics?.totalBytesProcessed || '0');
+        totalBytesProcessed += parseInt(
+          job.statistics?.totalBytesProcessed || '0',
+        );
         if (job.state === 'DONE' && !job.status?.errorResult) {
           successfulJobs++;
         } else if (job.status?.errorResult) {
@@ -341,7 +345,9 @@ export class BigQueryService {
       const datasetStats = await Promise.all(
         datasetsArray.slice(0, 5).map(async (ds: any) => {
           try {
-            const tables = await this.fetchTables(integration, { datasetId: ds.id });
+            const tables = await this.fetchTables(integration, {
+              datasetId: ds.id,
+            });
             return {
               dataset: ds.id,
               tableCount: (tables as any[]).length,
@@ -359,9 +365,14 @@ export class BigQueryService {
           recentJobs: totalJobs,
           successfulJobs,
           failedJobs,
-          successRate: totalJobs > 0 ? ((successfulJobs / totalJobs) * 100).toFixed(2) : '0',
+          successRate:
+            totalJobs > 0
+              ? ((successfulJobs / totalJobs) * 100).toFixed(2)
+              : '0',
           totalBytesProcessed,
-          totalGBProcessed: (totalBytesProcessed / 1024 / 1024 / 1024).toFixed(2),
+          totalGBProcessed: (totalBytesProcessed / 1024 / 1024 / 1024).toFixed(
+            2,
+          ),
         },
         datasetStats,
         recentQueries: jobsArray.slice(0, 10).map((job: any) => ({
@@ -371,7 +382,8 @@ export class BigQueryService {
           bytesProcessed: job.statistics?.totalBytesProcessed,
           duration:
             job.statistics?.endTime && job.statistics?.startTime
-              ? parseInt(job.statistics.endTime) - parseInt(job.statistics.startTime)
+              ? parseInt(job.statistics.endTime) -
+                parseInt(job.statistics.startTime)
               : null,
         })),
       };

@@ -1,32 +1,30 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   Database,
   Filter,
   GitMerge,
   Table2,
   Upload,
-  Download,
   Play,
   Save,
   Plus,
   Trash2,
   Settings,
-  ChevronRight,
-  GripVertical,
   Clock,
   CheckCircle,
   XCircle,
   Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface ETLNode {
   id: string;
   type: 'source' | 'transform' | 'filter' | 'aggregate' | 'join' | 'destination';
   name: string;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   position: { x: number; y: number };
 }
 
@@ -219,7 +217,7 @@ export function ETLPipelineBuilder({
   // Run pipeline
   const runPipeline = useCallback(async () => {
     if (!pipeline.id) {
-      alert('Please save the pipeline first');
+      toast.error('Please save the pipeline first');
       return;
     }
 
@@ -546,7 +544,7 @@ export function ETLPipelineBuilder({
               <div>
                 <label className="text-xs text-slate-400 block mb-1">Source Type</label>
                 <select
-                  value={selectedNode.config.sourceType || ''}
+                  value={String(selectedNode.config.sourceType || '')}
                   onChange={e => updateNode(selectedNode.id, { 
                     config: { ...selectedNode.config, sourceType: e.target.value } 
                   })}
@@ -568,7 +566,7 @@ export function ETLPipelineBuilder({
                 <label className="text-xs text-slate-400 block mb-1">Field</label>
                 <input
                   type="text"
-                  value={selectedNode.config.field || ''}
+                  value={String(selectedNode.config.field || '')}
                   onChange={e => updateNode(selectedNode.id, { 
                     config: { ...selectedNode.config, field: e.target.value } 
                   })}
@@ -579,7 +577,7 @@ export function ETLPipelineBuilder({
               <div>
                 <label className="text-xs text-slate-400 block mb-1">Operator</label>
                 <select
-                  value={selectedNode.config.operator || 'eq'}
+                  value={String(selectedNode.config.operator || 'eq')}
                   onChange={e => updateNode(selectedNode.id, { 
                     config: { ...selectedNode.config, operator: e.target.value } 
                   })}
@@ -596,7 +594,7 @@ export function ETLPipelineBuilder({
                 <label className="text-xs text-slate-400 block mb-1">Value</label>
                 <input
                   type="text"
-                  value={selectedNode.config.value || ''}
+                  value={String(selectedNode.config.value || '')}
                   onChange={e => updateNode(selectedNode.id, { 
                     config: { ...selectedNode.config, value: e.target.value } 
                   })}
@@ -611,7 +609,7 @@ export function ETLPipelineBuilder({
               <div>
                 <label className="text-xs text-slate-400 block mb-1">Destination Type</label>
                 <select
-                  value={selectedNode.config.destinationType || ''}
+                  value={String(selectedNode.config.destinationType || '')}
                   onChange={e => updateNode(selectedNode.id, { 
                     config: { ...selectedNode.config, destinationType: e.target.value } 
                   })}

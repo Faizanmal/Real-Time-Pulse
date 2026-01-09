@@ -46,7 +46,7 @@ export class BillingService {
 
     if (stripeSecretKey) {
       this.stripe = new Stripe(stripeSecretKey, {
-        apiVersion: '2025-02-24.acacia',
+        apiVersion: '2025-12-15.clover',
       });
     } else {
       this.logger.warn('Stripe secret key not configured');
@@ -465,7 +465,7 @@ export class BillingService {
       data: {
         status: statusMap[subscription.status] || 'ACTIVE',
         stripeCurrentPeriodEnd: new Date(
-          subscription.current_period_end * 1000,
+          (subscription as any).current_period_end * 1000,
         ),
         stripePriceId: subscription.items.data[0]?.price.id,
       },

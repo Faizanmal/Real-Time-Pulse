@@ -1,14 +1,8 @@
-import {
-  Injectable,
-  Logger,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CacheService } from '../../cache/cache.service';
 import { NotificationsGateway } from '../../notifications/notifications.gateway';
 import { Prisma } from '@prisma/client';
-import { v4 as uuidv4 } from 'uuid';
 
 export interface BulkOperationResult<T = unknown> {
   success: boolean;

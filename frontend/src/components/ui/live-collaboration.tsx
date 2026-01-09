@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
-    Users, Circle, MessageSquare, Eye, MousePointer2,
-    Wifi, Clock, UserPlus, Crown, Shield,
+    Users, MessageSquare, Eye, MousePointer2,
+    UserPlus, Crown, Shield,
 } from "lucide-react";
 
 // ============================================================================
@@ -40,7 +41,7 @@ const collaboratorColors = [
     "#ef4444", "#06b6d4", "#f97316", "#84cc16", "#a855f7",
 ];
 
-const getColorForUser = (userId: string): string => {
+const _getColorForUser = (userId: string): string => {
     const hash = userId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return collaboratorColors[hash % collaboratorColors.length];
 };
@@ -94,7 +95,7 @@ export function LiveCursor({ collaborator, position, showLabel = true }: LiveCur
                     style={{ backgroundColor: collaborator.color }}
                 >
                     {collaborator.avatar ? (
-                        <img src={collaborator.avatar} alt="" className="h-4 w-4 rounded-full" />
+                        <Image src={collaborator.avatar} alt="" width={16} height={16} className="h-4 w-4 rounded-full" />
                     ) : null}
                     <span>{collaborator.name}</span>
                     {collaborator.isTyping && (
@@ -197,9 +198,11 @@ export function PresenceIndicator({
                         title={`${collaborator.name} (${collaborator.status})`}
                     >
                         {collaborator.avatar ? (
-                            <img
+                            <Image
                                 src={collaborator.avatar}
                                 alt={collaborator.name}
+                                width={32}
+                                height={32}
                                 className={cn("rounded-full object-cover", classes.avatar)}
                             />
                         ) : (
@@ -348,9 +351,11 @@ export function CollaboratorPanel({
                             {/* Avatar */}
                             <div className="relative">
                                 {collaborator.avatar ? (
-                                    <img
+                                    <Image
                                         src={collaborator.avatar}
                                         alt={collaborator.name}
+                                        width={40}
+                                        height={40}
                                         className="h-10 w-10 rounded-full object-cover"
                                     />
                                 ) : (

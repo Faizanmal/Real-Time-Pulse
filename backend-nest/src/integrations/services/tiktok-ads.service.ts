@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
-interface TikTokAdsIntegration {
+export interface TikTokAdsIntegration {
   accessToken: string;
   settings: {
     advertiserId: string;
@@ -17,7 +17,9 @@ export class TikTokAdsService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  private getHeaders(integration: TikTokAdsIntegration): Record<string, string> {
+  private getHeaders(
+    integration: TikTokAdsIntegration,
+  ): Record<string, string> {
     return {
       'Access-Token': integration.accessToken,
       'Content-Type': 'application/json',
@@ -243,9 +245,11 @@ export class TikTokAdsService {
         totalVideoViews += parseInt(metrics.video_views || '0', 10);
       });
 
-      const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+      const ctr =
+        totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
       const cpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
-      const cpm = totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
+      const cpm =
+        totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
 
       return {
         summary: {

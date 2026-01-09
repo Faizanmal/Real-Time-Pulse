@@ -11,10 +11,6 @@ import {
   HardDrive,
   RefreshCw,
   Plus,
-  Settings,
-  Play,
-  Pause,
-  AlertTriangle,
   CheckCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';

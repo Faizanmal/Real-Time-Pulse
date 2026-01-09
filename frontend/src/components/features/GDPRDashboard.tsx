@@ -1,26 +1,64 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Shield, CheckCircle, XCircle, FileText, Users,
-  Plus, RefreshCw, Download, AlertTriangle, Clock
+  Shield, CheckCircle, XCircle, FileText,
+  RefreshCw, Download, Clock
 } from 'lucide-react';
 import { gdprApi } from '@/lib/api-client';
 
+interface GDPRDashboardData {
+  totalRequests: number;
+  pendingRequests: number;
+  completedRequests: number;
+  complianceScore: number;
+  consentStats: {
+    active: number;
+  };
+  requestStats: {
+    pending: number;
+    completed: number;
+    avgResponseTimeHours: number;
+  };
+  [key: string]: unknown;
+}
+
+interface GDPRRequest {
+  id: string;
+  type: string;
+  status: string;
+  createdAt: string;
+  requesterEmail: string;
+  requestType: string;
+  requesterName?: string;
+  processedAt?: string;
+  dataExportUrl?: string;
+  submittedAt: string;
+  [key: string]: unknown;
+}
+
+interface ConsentRecord {
+  id: string;
+  userId: string;
+  consentGiven: boolean;
+  timestamp: string;
+  subjectEmail: string;
+  purpose: string;
+  consentType: string;
+  createdAt: string;
+  [key: string]: unknown;
+}
+
 export default function GDPRDashboard({ workspaceId }: { workspaceId: string }) {
-  const [dashboard, setDashboard] = useState<any>(null);
-  const [requests, setRequests] = useState<any[]>([]);
-  const [consents, setConsents] = useState<any[]>([]);
+  const [dashboard, setDashboard] = useState<GDPRDashboardData | null>(null);
+  const [requests, setRequests] = useState<GDPRRequest[]>([]);
+  const [consents, setConsents] = useState<ConsentRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadData();
-  }, [workspaceId]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [dashboardRes, requestsRes, consentsRes] = await Promise.all([
@@ -28,15 +66,19 @@ export default function GDPRDashboard({ workspaceId }: { workspaceId: string }) 
         gdprApi.getDataRequests(workspaceId),
         gdprApi.getConsents(workspaceId),
       ]);
-      setDashboard(dashboardRes.data);
-      setRequests(requestsRes.data);
-      setConsents(consentsRes.data);
+      setDashboard(dashboardRes.data as GDPRDashboardData);
+      setRequests(requestsRes.data as GDPRRequest[]);
+      setConsents(consentsRes.data as ConsentRecord[]);
     } catch (error) {
       console.error('Failed to load GDPR data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [workspaceId]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const processRequest = async (requestId: string) => {
     try {
@@ -98,7 +140,7 @@ export default function GDPRDashboard({ workspaceId }: { workspaceId: string }) 
       {/* Compliance Score */}
       {dashboard && (
         <>
-          <Card className="p-8 bg-gradient-to-br from-blue-50 to-purple-50">
+          <Card className="p-8 bg-linear-to-br from-blue-50 to-purple-50">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-medium text-gray-600 uppercase">Compliance Score</h3>

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef, createContext, useContext } from "react";
-import { motion, AnimatePresence, useAnimation } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
     Lightbulb, X, ChevronRight, ChevronLeft, CheckCircle2, Sparkles,
-    Target, Rocket, Star, Play, SkipForward, HelpCircle, MousePointer2,
-    Hand, Info, AlertCircle, ArrowRight, Gift, Zap,
+    Rocket, Play, HelpCircle, MousePointer2,
+    Hand, ArrowRight, Gift,
 } from "lucide-react";
 
 // ============================================================================
@@ -244,7 +244,7 @@ export function TooltipGuide({
             {/* Progress bar */}
             <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                 <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
+                    className="h-full rounded-full bg-linear-to-r from-purple-500 to-pink-500"
                     initial={{ width: 0 }}
                     animate={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
                 />
@@ -440,7 +440,7 @@ export function TourLauncher({ tours, className }: TourLauncherProps) {
                 onClick={() => setIsOpen(!isOpen)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-r from-purple-500 to-pink-500 text-white shadow-lg"
             >
                 <HelpCircle className="h-6 w-6" />
             </motion.button>
@@ -532,6 +532,20 @@ export function FeatureAnnouncement({
     variant = "default",
     className,
 }: FeatureAnnouncementProps) {
+    const [sparkles, setSparkles] = useState<{ id: number; x: number; y: number; left: string; top: string }[] | null>(null);
+
+    useEffect(() => {
+        if (variant === "celebration" && !sparkles) {
+            setSparkles([...Array(6)].map((_, i) => ({
+                id: i,
+                x: (Math.random() - 0.5) * 100,
+                y: (Math.random() - 0.5) * 50,
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+            })));
+        }
+    }, [variant, sparkles]);
+
     const variants = {
         default: "from-blue-500/10 via-purple-500/10 to-pink-500/10 border-purple-500/30",
         celebration: "from-amber-500/10 via-orange-500/10 to-red-500/10 border-amber-500/30",
@@ -544,27 +558,27 @@ export function FeatureAnnouncement({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             className={cn(
-                "relative overflow-hidden rounded-2xl border bg-gradient-to-r p-4",
+                "relative overflow-hidden rounded-2xl border bg-linear-to-r p-4",
                 variants[variant],
                 className
             )}
         >
             {/* Animated background sparkles */}
-            {variant === "celebration" && (
+            {variant === "celebration" && sparkles && (
                 <div className="absolute inset-0 pointer-events-none">
-                    {[...Array(6)].map((_, i) => (
+                    {sparkles.map((sparkle) => (
                         <motion.div
-                            key={i}
+                            key={sparkle.id}
                             className="absolute h-2 w-2 rounded-full bg-amber-400"
                             initial={{ opacity: 0, scale: 0 }}
                             animate={{
                                 opacity: [0, 1, 0],
                                 scale: [0, 1, 0],
-                                x: [0, (Math.random() - 0.5) * 100],
-                                y: [0, (Math.random() - 0.5) * 50],
+                                x: [0, sparkle.x],
+                                y: [0, sparkle.y],
                             }}
-                            transition={{ duration: 2, delay: i * 0.3, repeat: Infinity }}
-                            style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }}
+                            transition={{ duration: 2, delay: sparkle.id * 0.3, repeat: Infinity }}
+                            style={{ left: sparkle.left, top: sparkle.top }}
                         />
                     ))}
                 </div>

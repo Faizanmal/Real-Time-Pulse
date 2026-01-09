@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -82,7 +87,7 @@ export class IoTDeviceService {
         deviceType: deviceData.deviceType,
         status: 'offline',
         metadata: deviceData.metadata || {},
-        location: deviceData.location || null,
+        location: deviceData.location || undefined,
         tags: deviceData.tags || [],
         lastSeen: new Date(),
       },
@@ -127,7 +132,7 @@ export class IoTDeviceService {
       orderBy: { lastSeen: 'desc' },
     });
 
-    return devices.map(device => ({
+    return devices.map((device) => ({
       id: device.id,
       name: device.name,
       deviceType: device.deviceType,
@@ -331,7 +336,7 @@ export class IoTDeviceService {
       orderBy: { timestamp: 'asc' },
     });
 
-    let result = data.map(d => ({
+    let result = data.map((d) => ({
       deviceId: d.deviceId,
       timestamp: d.timestamp,
       metrics: d.metrics as Record<string, number>,
@@ -339,10 +344,10 @@ export class IoTDeviceService {
 
     // Filter metrics if specified
     if (metrics && metrics.length > 0) {
-      result = result.map(d => ({
+      result = result.map((d) => ({
         ...d,
         metrics: Object.fromEntries(
-          Object.entries(d.metrics).filter(([key]) => metrics.includes(key))
+          Object.entries(d.metrics).filter(([key]) => metrics.includes(key)),
         ),
       }));
     }
@@ -372,7 +377,8 @@ export class IoTDeviceService {
     const buckets = new Map<number, DeviceMetric[]>();
 
     for (const metric of data) {
-      const bucketKey = Math.floor(metric.timestamp.getTime() / bucketMs) * bucketMs;
+      const bucketKey =
+        Math.floor(metric.timestamp.getTime() / bucketMs) * bucketMs;
       if (!buckets.has(bucketKey)) {
         buckets.set(bucketKey, []);
       }
@@ -423,13 +429,15 @@ export class IoTDeviceService {
         device: { workspaceId },
         ...(filters?.deviceId && { deviceId: filters.deviceId }),
         ...(filters?.severity && { severity: filters.severity }),
-        ...(filters?.acknowledged !== undefined && { acknowledged: filters.acknowledged }),
+        ...(filters?.acknowledged !== undefined && {
+          acknowledged: filters.acknowledged,
+        }),
       },
       orderBy: { timestamp: 'desc' },
       take: 100,
     });
 
-    return alerts.map(a => ({
+    return alerts.map((a) => ({
       id: a.id,
       deviceId: a.deviceId,
       type: a.type as any,
@@ -462,7 +470,7 @@ export class IoTDeviceService {
 
     try {
       await this.prisma.ioTMetric.createMany({
-        data: metrics.map(m => ({
+        data: metrics.map((m) => ({
           deviceId: m.deviceId,
           timestamp: m.timestamp,
           metrics: m.metrics,
@@ -488,7 +496,7 @@ export class IoTDeviceService {
 
     try {
       await this.prisma.ioTAlert.createMany({
-        data: alerts.map(a => ({
+        data: alerts.map((a) => ({
           deviceId: a.deviceId,
           type: a.type,
           severity: a.severity,

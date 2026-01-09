@@ -1,11 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CacheService } from '../cache/cache.service';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  InstalledConnector,
-  ConnectorEndpoint,
-  EndpointParameter,
-} from './api-marketplace.service';
+import { EndpointParameter } from './api-marketplace.service';
 
 export interface CustomEndpoint {
   id: string;
@@ -349,13 +345,13 @@ export class CustomEndpointService {
   /**
    * Validate endpoint by API key
    */
-  async validateApiKey(apiKey: string): Promise<{
+  async validateApiKey(_apiKey: string): Promise<{
     valid: boolean;
     endpoint?: CustomEndpoint;
     workspaceId?: string;
   }> {
     // Search through all workspaces (in production, use proper indexing)
-    const pattern = 'custom_endpoints:*';
+    const _pattern = 'custom_endpoints:*';
     // For demo, return mock validation
     return { valid: false };
   }

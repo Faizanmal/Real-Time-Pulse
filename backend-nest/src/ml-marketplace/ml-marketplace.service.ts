@@ -322,7 +322,7 @@ export class MLMarketplaceService {
     modelId: string,
     config: { widgetId?: string; config?: Record<string, any> },
   ): Promise<ModelDeployment> {
-    const model = await this.getModel(modelId);
+    await this.getModel(modelId);
 
     const deploymentId = `deploy_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -439,7 +439,7 @@ export class MLMarketplaceService {
       config?: Record<string, any>;
     },
   ): Promise<TrainingJob> {
-    const model = await this.getModel(data.modelId);
+    await this.getModel(data.modelId);
 
     const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -463,7 +463,7 @@ export class MLMarketplaceService {
     await this.cache.set(key, JSON.stringify(jobs), 86400 * 30);
 
     // Start training in background (simulated)
-    this.runTrainingJob(workspaceId, jobId);
+    void this.runTrainingJob(workspaceId, jobId);
 
     return job;
   }

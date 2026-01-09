@@ -69,7 +69,7 @@ export function StatsCard({
       transition={{ duration: 0.2, ease: "easeOut" }}
       style={{ willChange: 'transform' }}
       className={cn(
-        'relative overflow-hidden rounded-xl border bg-gradient-to-br backdrop-blur-sm p-6',
+        'relative overflow-hidden rounded-xl border bg-linear-to-br backdrop-blur-sm p-6',
         colorClasses[color],
         className
       )}
@@ -145,7 +145,7 @@ export function PortalCard({
       transition={{ duration: 0.2, ease: "easeOut" }}
       style={{ willChange: 'transform' }}
       className={cn(
-        'group relative overflow-hidden rounded-xl border border-slate-700 bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm p-6 hover:border-purple-500/50 transition-all',
+        'group relative overflow-hidden rounded-xl border border-slate-700 bg-linear-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm p-6 hover:border-purple-500/50 transition-all',
         className
       )}
     >
@@ -280,7 +280,7 @@ export function WidgetCard({
       transition={{ duration: 0.15, ease: "easeOut" }}
       style={{ willChange: 'transform' }}
       className={cn(
-        'relative overflow-hidden rounded-lg border border-slate-700 bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm p-4 hover:border-blue-500/50 transition-all',
+        'relative overflow-hidden rounded-lg border border-slate-700 bg-linear-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm p-4 hover:border-blue-500/50 transition-all',
         className
       )}
     >
@@ -375,7 +375,7 @@ export function IntegrationCard({
       transition={{ duration: 0.2, ease: "easeOut" }}
       style={{ willChange: 'transform' }}
       className={cn(
-        'relative overflow-hidden rounded-xl border border-slate-700 bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm p-5 hover:border-green-500/50 transition-all',
+        'relative overflow-hidden rounded-xl border border-slate-700 bg-linear-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm p-5 hover:border-green-500/50 transition-all',
         className
       )}
     >

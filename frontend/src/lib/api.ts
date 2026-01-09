@@ -555,6 +555,7 @@ export interface NotificationIntegration {
   channel_name?: string;
   created_at: string;
   updated_at: string;
+  settings?: unknown;
 }
 
 export interface NotificationLog {

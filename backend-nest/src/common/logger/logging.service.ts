@@ -17,7 +17,7 @@ export class LoggingService implements NestLoggerService {
   }
 
   private initializeLogger() {
-    const logLevel = this.configService.get<string>('logger.level', 'info');
+    const logLevel = this.configService.get<string>('logger.level', 'warn');
     const logFormat = this.configService.get<string>('logger.format', 'json');
     const logDir = this.configService.get<string>('logger.dirname', 'logs');
 

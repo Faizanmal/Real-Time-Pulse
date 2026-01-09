@@ -5,6 +5,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
 /**
  * Enhanced Prisma Service with:
@@ -23,18 +25,17 @@ export class PrismaService
   private slowQueryThreshold = 1000; // 1 second
 
   constructor() {
+    const connectionString = process.env.DATABASE_URL;
+    const pool = new Pool({ connectionString });
+    const adapter = new PrismaPg(pool);
+
     super({
+      adapter,
       log: [
         { level: 'query', emit: 'event' },
         { level: 'error', emit: 'stdout' },
         { level: 'warn', emit: 'stdout' },
       ],
-      // Connection pooling configuration
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL,
-        },
-      },
     });
 
     // Setup query logging in development
@@ -83,17 +84,16 @@ export class PrismaService
    */
   private setupSoftDeleteMiddleware(): void {
     // Soft delete models list
-    const softDeleteModels = [
-      'Portal',
-      'Widget',
-      'Integration',
-      'Alert',
-      'ScheduledReport',
-      'ShareLink',
-      'Comment',
-      'Webhook',
-    ];
-
+    // const softDeleteModels = [
+    //   'Portal',
+    //   'Widget',
+    //   'Integration',
+    //   'Alert',
+    //   'ScheduledReport',
+    //   'ShareLink',
+    //   'Comment',
+    //   'Webhook',
+    // ];
     // Middleware for find operations - exclude soft deleted records
     // this.$use(async (params, next) => {
     //   if (softDeleteModels.includes(params.model || '')) {
@@ -105,30 +105,25 @@ export class PrismaService
     //         deletedAt: null,
     //       };
     //     }
-
     //     if (params.action === 'findMany') {
     //       if (!params.args) params.args = {};
     //       if (!params.args.where) params.args.where = {};
-
     //       // Allow explicit query for deleted records
     //       if (params.args.where.deletedAt === undefined) {
     //         params.args.where.deletedAt = null;
     //       }
     //     }
-
     //     // Convert delete to soft delete
     //     if (params.action === 'delete') {
     //       params.action = 'update';
     //       params.args.data = { deletedAt: new Date() };
     //     }
-
     //     if (params.action === 'deleteMany') {
     //       params.action = 'updateMany';
     //       if (!params.args) params.args = {};
     //       params.args.data = { deletedAt: new Date() };
     //     }
     //   }
-
     //   return next(params);
     // });
   }

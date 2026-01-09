@@ -254,7 +254,7 @@ export class ARSceneService {
   /**
    * Create default visualization
    */
-  private createDefaultObject(data: any): SceneObject {
+  private createDefaultObject(_data: any): SceneObject {
     return {
       id: 'default-container',
       type: 'mesh',
@@ -277,7 +277,7 @@ export class ARSceneService {
   /**
    * Create interaction points for AR gestures
    */
-  private createInteractionPoints(data: any): SceneObject {
+  private createInteractionPoints(_data: any): SceneObject {
     return {
       id: 'interaction-points',
       type: 'mesh',
@@ -401,7 +401,7 @@ export class ARSceneService {
   /**
    * Get color for chart bar based on index
    */
-  private getColorForIndex(index: number, total: number): string {
+  private getColorForIndex(index: number, _total: number): string {
     const colors = [
       '#4a90d9',
       '#50c878',

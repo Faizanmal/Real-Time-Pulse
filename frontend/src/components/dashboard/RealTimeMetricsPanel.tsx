@@ -34,15 +34,11 @@ interface MetricData {
 }
 
 interface RealTimeMetricsPanelProps {
-  portalId?: string;
-  workspaceId?: string;
   className?: string;
   compact?: boolean;
 }
 
 export const RealTimeMetricsPanel: React.FC<RealTimeMetricsPanelProps> = ({
-  portalId,
-  workspaceId,
   className,
   compact = false,
 }) => {

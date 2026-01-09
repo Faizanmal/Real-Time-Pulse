@@ -33,10 +33,7 @@ import {
   TrendingDown,
   Download,
   Maximize2,
-  Settings,
   RefreshCw,
-  Calendar,
-  Filter,
 } from "lucide-react";
 
 // ============================================================================
@@ -169,7 +166,7 @@ export const AdvancedChartPanel: React.FC<AdvancedChartPanelProps> = ({
             <YAxis stroke="#9ca3af" fontSize={12} />
             {showTooltip && <Tooltip content={<CustomTooltip />} />}
             {showLegend && <Legend />}
-            {series.map((s, i) => (
+            {series.map((s, _i) => (
               <React.Fragment key={s.key}>
                 {gradient && (
                   <defs>

@@ -18,11 +18,11 @@ interface AnimatedCardProps extends Omit<HTMLMotionProps<"div">, "children"> {
 
 const variantStyles = {
   default: "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700",
-  gradient: "bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-blue-500/10 backdrop-blur-sm border border-purple-500/20",
+  gradient: "bg-linear-to-br from-purple-500/10 via-pink-500/10 to-blue-500/10 backdrop-blur-sm border border-purple-500/20",
   glass: "bg-white/10 dark:bg-gray-900/10 backdrop-blur-md border border-white/20 dark:border-gray-700/20",
   "hover-lift": "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-2xl hover:-translate-y-1",
   "border-glow": "bg-white dark:bg-gray-800 border-2 border-transparent hover:border-purple-500 hover:shadow-[0_0_30px_rgba(168,85,247,0.4)]",
-  premium: "bg-gradient-to-br from-yellow-400/10 via-orange-500/10 to-red-500/10 backdrop-blur-sm border border-yellow-500/30 shadow-xl",
+  premium: "bg-linear-to-br from-yellow-400/10 via-orange-500/10 to-red-500/10 backdrop-blur-sm border border-yellow-500/30 shadow-xl",
 };
 
 const paddingStyles = {
@@ -103,12 +103,10 @@ export function AnimatedCardTitle({
   children,
   className,
   size,
-  variant,
 }: {
   children: ReactNode;
   className?: string;
   size?: string;
-  variant?: string;
 }) {
   const sizeClasses = {
     default: "text-2xl",
@@ -125,11 +123,9 @@ export function AnimatedCardTitle({
 export function AnimatedCardDescription({
   children,
   className,
-  variant,
 }: {
   children: ReactNode;
   className?: string;
-  variant?: string;
 }) {
   return (
     <p className={cn("text-sm text-gray-500 dark:text-gray-400", className)}>
@@ -160,11 +156,9 @@ export function AnimatedCardContent({
 export function AnimatedCardFooter({
   children,
   className,
-  variant,
 }: {
   children: ReactNode;
   className?: string;
-  variant?: string;
 }) {
   return (
     <motion.div

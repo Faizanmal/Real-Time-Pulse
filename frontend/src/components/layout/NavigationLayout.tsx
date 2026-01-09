@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
@@ -18,11 +19,9 @@ import {
   Menu,
   X,
   ChevronDown,
-  ChevronRight,
   LogOut,
   Moon,
   Sun,
-  Laptop,
   HelpCircle,
   CreditCard,
   Shield,
@@ -32,7 +31,6 @@ import {
   Building2,
   FolderOpen,
   PanelLeft,
-  Command,
 } from "lucide-react";
 
 // ============================================================================
@@ -100,7 +98,7 @@ export const NavigationLayout: React.FC<NavigationLayoutProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = React.useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = React.useState(false);
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
 
@@ -132,7 +130,7 @@ export const NavigationLayout: React.FC<NavigationLayoutProps> = ({
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+              <div className="h-8 w-8 rounded-lg bg-linear-to-br from-primary to-secondary flex items-center justify-center">
                 <Zap className="h-5 w-5 text-white" />
               </div>
               <span className="font-bold text-lg hidden sm:inline">Real-Time Pulse</span>
@@ -236,9 +234,11 @@ export const NavigationLayout: React.FC<NavigationLayoutProps> = ({
                 >
                   <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
                     {user.avatar ? (
-                      <img
+                      <Image
                         src={user.avatar}
                         alt={user.name}
+                        width={32}
+                        height={32}
                         className="h-full w-full rounded-full object-cover"
                       />
                     ) : (

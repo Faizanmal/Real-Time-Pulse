@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import Redis from 'ioredis';
 
-interface ScalingPolicy {
+export interface ScalingPolicy {
   id: string;
   name: string;
   metric: 'cpu' | 'memory' | 'requests' | 'latency' | 'queue_depth' | 'custom';
@@ -17,7 +17,7 @@ interface ScalingPolicy {
   enabled: boolean;
 }
 
-interface ScalingEvent {
+export interface ScalingEvent {
   id: string;
   timestamp: Date;
   type: 'scale_up' | 'scale_down';
@@ -28,8 +28,13 @@ interface ScalingEvent {
   metrics: Record<string, number>;
 }
 
-interface LoadBalancerConfig {
-  algorithm: 'round_robin' | 'least_connections' | 'weighted' | 'ip_hash' | 'random';
+export interface LoadBalancerConfig {
+  algorithm:
+    | 'round_robin'
+    | 'least_connections'
+    | 'weighted'
+    | 'ip_hash'
+    | 'random';
   healthCheck: {
     path: string;
     interval: number;
@@ -150,21 +155,22 @@ export class HorizontalScalingService implements OnModuleInit {
         },
       ];
 
-      defaultPolicies.forEach(p => this.policies.set(p.id, p));
+      defaultPolicies.forEach((p) => this.policies.set(p.id, p));
     }
 
     this.logger.log(`Loaded ${this.policies.size} scaling policies`);
   }
 
   private startMetricsCollection() {
-    setInterval(async () => {
-      const metrics = await this.collectMetrics();
-      await this.redis.set(
-        `scaling:metrics:${Date.now()}`,
-        JSON.stringify(metrics),
-        'EX',
-        3600 // Keep for 1 hour
-      );
+    setInterval(() => {
+      void this.collectMetrics().then((metrics) => {
+        void this.redis.set(
+          `scaling:metrics:${Date.now()}`,
+          JSON.stringify(metrics),
+          'EX',
+          3600, // Keep for 1 hour
+        );
+      });
     }, 10000);
   }
 
@@ -180,9 +186,10 @@ export class HorizontalScalingService implements OnModuleInit {
   }
 
   private startScalingLoop() {
-    setInterval(async () => {
-      const metrics = await this.collectMetrics();
-      await this.evaluateScaling(metrics);
+    setInterval(() => {
+      void this.collectMetrics().then((metrics) => {
+        void this.evaluateScaling(metrics);
+      });
     }, 30000);
   }
 
@@ -196,28 +203,40 @@ export class HorizontalScalingService implements OnModuleInit {
       // Check cooldown
       const lastScale = this.lastScaleTime.get(policy.id);
       if (lastScale) {
-        const cooldownEnd = new Date(lastScale.getTime() + policy.threshold.cooldownPeriod * 1000);
+        const cooldownEnd = new Date(
+          lastScale.getTime() + policy.threshold.cooldownPeriod * 1000,
+        );
         if (new Date() < cooldownEnd) continue;
       }
 
       // Evaluate thresholds
-      if (metricValue > policy.threshold.scaleUp && this.currentReplicas < policy.maxReplicas) {
+      if (
+        metricValue > policy.threshold.scaleUp &&
+        this.currentReplicas < policy.maxReplicas
+      ) {
         const newReplicas = Math.min(
           this.currentReplicas + policy.scalingStep,
-          policy.maxReplicas
+          policy.maxReplicas,
         );
         await this.scaleUp(policy, newReplicas, metrics);
-      } else if (metricValue < policy.threshold.scaleDown && this.currentReplicas > policy.minReplicas) {
+      } else if (
+        metricValue < policy.threshold.scaleDown &&
+        this.currentReplicas > policy.minReplicas
+      ) {
         const newReplicas = Math.max(
           this.currentReplicas - policy.scalingStep,
-          policy.minReplicas
+          policy.minReplicas,
         );
         await this.scaleDown(policy, newReplicas, metrics);
       }
     }
   }
 
-  private async scaleUp(policy: ScalingPolicy, targetReplicas: number, metrics: Record<string, number>) {
+  private async scaleUp(
+    policy: ScalingPolicy,
+    targetReplicas: number,
+    metrics: Record<string, number>,
+  ) {
     const event: ScalingEvent = {
       id: `scale-${Date.now()}`,
       timestamp: new Date(),
@@ -241,7 +260,11 @@ export class HorizontalScalingService implements OnModuleInit {
     this.eventEmitter.emit('scaling.scale_up', event);
   }
 
-  private async scaleDown(policy: ScalingPolicy, targetReplicas: number, metrics: Record<string, number>) {
+  private async scaleDown(
+    policy: ScalingPolicy,
+    targetReplicas: number,
+    metrics: Record<string, number>,
+  ) {
     const event: ScalingEvent = {
       id: `scale-${Date.now()}`,
       timestamp: new Date(),
@@ -259,7 +282,9 @@ export class HorizontalScalingService implements OnModuleInit {
     await this.executeScale(targetReplicas);
 
     this.currentReplicas = targetReplicas;
-    this.logger.log(`Scaled DOWN to ${targetReplicas} replicas: ${event.reason}`);
+    this.logger.log(
+      `Scaled DOWN to ${targetReplicas} replicas: ${event.reason}`,
+    );
 
     this.eventEmitter.emit('scaling.scale_down', event);
   }
@@ -272,23 +297,32 @@ export class HorizontalScalingService implements OnModuleInit {
 
   // Load Balancer
   private startHealthChecks() {
-    setInterval(async () => {
+    setInterval(() => {
       for (const [service, instances] of this.instances) {
         for (const instance of instances) {
-          await this.checkInstanceHealth(service, instance);
+          void this.checkInstanceHealth(service, instance);
         }
       }
     }, this.lbConfig.healthCheck.interval);
   }
 
-  private async checkInstanceHealth(service: string, instance: ServiceInstance) {
+  private async checkInstanceHealth(
+    service: string,
+    instance: ServiceInstance,
+  ) {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), this.lbConfig.healthCheck.timeout);
+      const timeout = setTimeout(
+        () => controller.abort(),
+        this.lbConfig.healthCheck.timeout,
+      );
 
-      await fetch(`http://${instance.host}:${instance.port}${this.lbConfig.healthCheck.path}`, {
-        signal: controller.signal,
-      });
+      await fetch(
+        `http://${instance.host}:${instance.port}${this.lbConfig.healthCheck.path}`,
+        {
+          signal: controller.signal,
+        },
+      );
 
       clearTimeout(timeout);
       instance.healthy = true;
@@ -299,7 +333,7 @@ export class HorizontalScalingService implements OnModuleInit {
   }
 
   selectInstance(service: string, clientId?: string): ServiceInstance | null {
-    const instances = this.instances.get(service)?.filter(i => i.healthy);
+    const instances = this.instances.get(service)?.filter((i) => i.healthy);
     if (!instances?.length) return null;
 
     switch (this.lbConfig.algorithm) {
@@ -327,8 +361,8 @@ export class HorizontalScalingService implements OnModuleInit {
   }
 
   private leastConnections(instances: ServiceInstance[]): ServiceInstance {
-    return instances.reduce((min, inst) => 
-      inst.connections < min.connections ? inst : min
+    return instances.reduce((min, inst) =>
+      inst.connections < min.connections ? inst : min,
     );
   }
 
@@ -344,17 +378,22 @@ export class HorizontalScalingService implements OnModuleInit {
     return instances[instances.length - 1];
   }
 
-  private ipHash(instances: ServiceInstance[], clientId: string): ServiceInstance {
+  private ipHash(
+    instances: ServiceInstance[],
+    clientId: string,
+  ): ServiceInstance {
     let hash = 0;
     for (let i = 0; i < clientId.length; i++) {
-      hash = ((hash << 5) - hash) + clientId.charCodeAt(i);
+      hash = (hash << 5) - hash + clientId.charCodeAt(i);
       hash = hash & hash;
     }
     return instances[Math.abs(hash) % instances.length];
   }
 
   // Policy Management
-  async createPolicy(policy: Omit<ScalingPolicy, 'id'>): Promise<ScalingPolicy> {
+  async createPolicy(
+    policy: Omit<ScalingPolicy, 'id'>,
+  ): Promise<ScalingPolicy> {
     const newPolicy: ScalingPolicy = {
       ...policy,
       id: `policy-${Date.now()}`,
@@ -366,7 +405,10 @@ export class HorizontalScalingService implements OnModuleInit {
     return newPolicy;
   }
 
-  async updatePolicy(id: string, updates: Partial<ScalingPolicy>): Promise<ScalingPolicy> {
+  async updatePolicy(
+    id: string,
+    updates: Partial<ScalingPolicy>,
+  ): Promise<ScalingPolicy> {
     const policy = this.policies.get(id);
     if (!policy) throw new Error(`Policy ${id} not found`);
 
@@ -389,12 +431,18 @@ export class HorizontalScalingService implements OnModuleInit {
   private async persistPolicies() {
     await this.redis.set(
       'scaling:policies',
-      JSON.stringify(Array.from(this.policies.values()))
+      JSON.stringify(Array.from(this.policies.values())),
     );
   }
 
   // Instance Management
-  registerInstance(service: string, instance: Omit<ServiceInstance, 'healthy' | 'connections' | 'lastHealthCheck'>) {
+  registerInstance(
+    service: string,
+    instance: Omit<
+      ServiceInstance,
+      'healthy' | 'connections' | 'lastHealthCheck'
+    >,
+  ) {
     if (!this.instances.has(service)) {
       this.instances.set(service, []);
     }
@@ -407,16 +455,20 @@ export class HorizontalScalingService implements OnModuleInit {
     };
 
     this.instances.get(service)!.push(newInstance);
-    this.logger.log(`Registered instance ${instance.id} for service ${service}`);
+    this.logger.log(
+      `Registered instance ${instance.id} for service ${service}`,
+    );
   }
 
   deregisterInstance(service: string, instanceId: string) {
     const instances = this.instances.get(service);
     if (instances) {
-      const idx = instances.findIndex(i => i.id === instanceId);
+      const idx = instances.findIndex((i) => i.id === instanceId);
       if (idx !== -1) {
         instances.splice(idx, 1);
-        this.logger.log(`Deregistered instance ${instanceId} from service ${service}`);
+        this.logger.log(
+          `Deregistered instance ${instanceId} from service ${service}`,
+        );
       }
     }
   }
@@ -429,7 +481,7 @@ export class HorizontalScalingService implements OnModuleInit {
   async getScalingStats() {
     return {
       currentReplicas: this.currentReplicas,
-      policies: Array.from(this.policies.values()).map(p => ({
+      policies: Array.from(this.policies.values()).map((p) => ({
         id: p.id,
         name: p.name,
         enabled: p.enabled,
@@ -440,8 +492,11 @@ export class HorizontalScalingService implements OnModuleInit {
       instances: Object.fromEntries(
         Array.from(this.instances.entries()).map(([service, insts]) => [
           service,
-          { total: insts.length, healthy: insts.filter(i => i.healthy).length },
-        ])
+          {
+            total: insts.length,
+            healthy: insts.filter((i) => i.healthy).length,
+          },
+        ]),
       ),
     };
   }

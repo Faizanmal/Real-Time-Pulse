@@ -27,14 +27,12 @@ import {
   Moon,
   Sun,
   HelpCircle,
-  LogOut,
   ChevronDown,
   Building,
   CreditCard,
   Shield,
   Database,
   Plug,
-  Layers,
   Sparkles,
   Building2,
   GitBranch,
@@ -102,7 +100,7 @@ function NavItem({ item, collapsed }: NavItemProps) {
           : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
       }`}
     >
-      <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : ''}`} />
+      <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : ''}`} />
       <AnimatePresence>
         {!collapsed && (
           <motion.span
@@ -161,7 +159,7 @@ function Sidebar() {
       {/* Logo */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-linear-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
             <Zap className="w-5 h-5 text-white" />
           </div>
           <AnimatePresence>
@@ -200,7 +198,7 @@ function Sidebar() {
       {/* User Menu */}
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
         <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'}`}>
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
+          <div className="w-8 h-8 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
             JD
           </div>
           <AnimatePresence>
@@ -230,7 +228,7 @@ function Sidebar() {
 function Header() {
   const { collapsed } = useContext(SidebarContext);
   const [isDark, setIsDark] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
+  const [] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {

@@ -20,8 +20,8 @@ import {
     type InteractiveNotification,
 } from "@/components/ui";
 import {
-    Sparkles, Bell, BarChart3, Zap, Trophy, Target, Flame,
-    Gift, PartyPopper, Medal, Star, Activity, TrendingUp,
+    Sparkles, Zap, Trophy, Target, Flame,
+    PartyPopper, Medal, Star, Activity, TrendingUp,
 } from "lucide-react";
 
 // Demo Data
@@ -133,7 +133,7 @@ function CelebrationDemo() {
     };
 
     return (
-        <div className="rounded-2xl bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-blue-500/10 p-6">
+        <div className="rounded-2xl bg-linear-to-br from-purple-500/10 via-pink-500/10 to-blue-500/10 p-6">
             <h3 className="mb-4 flex items-center gap-2 text-lg font-bold">
                 <PartyPopper className="h-5 w-5 text-amber-500" />
                 Achievement Celebrations
@@ -169,7 +169,7 @@ function CelebrationDemo() {
                     </div>
                     <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700">
                         <motion.div
-                            className="h-full rounded-full bg-gradient-to-r from-green-400 to-emerald-500"
+                            className="h-full rounded-full bg-linear-to-r from-green-400 to-emerald-500"
                             initial={{ width: 0 }}
                             animate={{ width: `${goalProgress}%` }}
                         />
@@ -184,7 +184,7 @@ function CelebrationDemo() {
 export default function InteractiveFeaturesPage() {
     const [notifications, setNotifications] = useState(initialNotifications);
     const [revenueValue, setRevenueValue] = useState(45231);
-    const [connectionStatus, setConnectionStatus] = useState<"connected" | "connecting" | "disconnected">("connected");
+    const [connectionStatus, _setConnectionStatus] = useState<"connected" | "connecting" | "disconnected">("connected");
     const [lastUpdate, setLastUpdate] = useState(new Date());
     const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -227,7 +227,7 @@ export default function InteractiveFeaturesPage() {
                         animate={{ opacity: 1, y: 0 }}
                         className="text-center"
                     >
-                        <h1 className="bg-gradient-to-r from-purple-600 via-pink-500 to-blue-500 bg-clip-text text-4xl font-bold text-transparent">
+                        <h1 className="bg-linear-to-r from-purple-600 via-pink-500 to-blue-500 bg-clip-text text-4xl font-bold text-transparent">
                             Interactive Features Demo
                         </h1>
                         <p className="mt-2 text-gray-600 dark:text-gray-400">

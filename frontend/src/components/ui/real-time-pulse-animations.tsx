@@ -173,7 +173,9 @@ export function DataUpdateFlash({
         }
     }, [value]);
 
-    const getChangeDirection = () => {
+    const [direction, setDirection] = useState("neutral");
+
+    useEffect(() => {
         const current = typeof value === "number" ? value : parseFloat(String(value));
         const prev =
             previousValue !== undefined
@@ -184,13 +186,12 @@ export function DataUpdateFlash({
                     ? prevValueRef.current
                     : parseFloat(String(prevValueRef.current));
 
-        if (isNaN(current) || isNaN(prev)) return "neutral";
-        if (current > prev) return "up";
-        if (current < prev) return "down";
-        return "neutral";
-    };
+        if (isNaN(current) || isNaN(prev)) setDirection("neutral");
+        else if (current > prev) setDirection("up");
+        else if (current < prev) setDirection("down");
+        else setDirection("neutral");
+    }, [value, previousValue]);
 
-    const direction = getChangeDirection();
     const effectiveFlashColor =
         flashColor === "auto"
             ? direction === "up"
@@ -295,7 +296,7 @@ export function AnimatedCounter({
         animationRef.current = requestAnimationFrame(animate);
 
         return () => cancelAnimationFrame(animationRef.current);
-    }, [value, duration]);
+    }, [value, duration, displayValue]);
 
     const formatValue = (val: number) => {
         switch (format) {

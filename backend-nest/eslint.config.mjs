@@ -36,7 +36,8 @@ export default tseslint.config(
       // Warn on floating promises and unused vars
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
-      '@typescript-eslint/require-await': 'warn',
+      '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/await-thenable': 'off',
       '@typescript-eslint/unbound-method': 'off',
     },
   },

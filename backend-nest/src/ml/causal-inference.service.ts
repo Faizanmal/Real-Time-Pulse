@@ -1,20 +1,24 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
-interface CausalVariable {
+export interface CausalVariable {
   name: string;
   type: 'treatment' | 'outcome' | 'confounder' | 'mediator' | 'instrument';
   dataType: 'continuous' | 'binary' | 'categorical';
 }
 
-interface CausalGraph {
+export interface CausalGraph {
   id: string;
   name: string;
   variables: CausalVariable[];
-  edges: { from: string; to: string; type: 'causal' | 'confounding' | 'mediation' }[];
+  edges: {
+    from: string;
+    to: string;
+    type: 'causal' | 'confounding' | 'mediation';
+  }[];
 }
 
-interface CausalEffect {
+export interface CausalEffect {
   treatment: string;
   outcome: string;
   estimand: 'ate' | 'att' | 'atc' | 'cate';
@@ -25,14 +29,14 @@ interface CausalEffect {
   method: string;
 }
 
-interface CounterfactualResult {
+export interface CounterfactualResult {
   originalOutcome: number;
   counterfactualOutcome: number;
   causalEffect: number;
   scenario: Record<string, any>;
 }
 
-interface ABTestAnalysis {
+export interface ABTestAnalysis {
   testId: string;
   treatment: string;
   control: string;
@@ -54,13 +58,15 @@ export class CausalInferenceService {
   constructor(private readonly eventEmitter: EventEmitter2) {}
 
   // Causal Graph Management
-  async createCausalGraph(config: Omit<CausalGraph, 'id'>): Promise<CausalGraph> {
+  async createCausalGraph(
+    config: Omit<CausalGraph, 'id'>,
+  ): Promise<CausalGraph> {
     const id = `graph-${Date.now()}`;
     const graph: CausalGraph = { ...config, id };
-    
+
     this.graphs.set(id, graph);
     this.logger.log(`Created causal graph: ${graph.name}`);
-    
+
     return graph;
   }
 
@@ -72,13 +78,16 @@ export class CausalInferenceService {
     return this.graphs.get(id);
   }
 
-  async updateCausalGraph(id: string, updates: Partial<CausalGraph>): Promise<CausalGraph> {
+  async updateCausalGraph(
+    id: string,
+    updates: Partial<CausalGraph>,
+  ): Promise<CausalGraph> {
     const graph = this.graphs.get(id);
     if (!graph) throw new Error(`Graph ${id} not found`);
 
     const updated = { ...graph, ...updates };
     this.graphs.set(id, updated);
-    
+
     return updated;
   }
 
@@ -94,9 +103,14 @@ export class CausalInferenceService {
       treatment: string;
       outcome: string;
       estimand?: 'ate' | 'att' | 'atc' | 'cate';
-      method?: 'propensity_score' | 'inverse_propensity' | 'doubly_robust' | 'instrumental_variable' | 'regression_discontinuity';
+      method?:
+        | 'propensity_score'
+        | 'inverse_propensity'
+        | 'doubly_robust'
+        | 'instrumental_variable'
+        | 'regression_discontinuity';
       confounders?: string[];
-    }
+    },
   ): Promise<CausalEffect> {
     const graph = this.graphs.get(config.graphId);
     if (!graph) throw new Error(`Graph ${config.graphId} not found`);
@@ -104,10 +118,14 @@ export class CausalInferenceService {
     const method = config.method || 'doubly_robust';
     const estimand = config.estimand || 'ate';
 
-    this.logger.log(`Estimating causal effect: ${config.treatment} -> ${config.outcome}`);
+    this.logger.log(
+      `Estimating causal effect: ${config.treatment} -> ${config.outcome}`,
+    );
 
     // Identify confounders from graph if not specified
-    const confounders = config.confounders || this.identifyConfounders(graph, config.treatment, config.outcome);
+    const confounders =
+      config.confounders ||
+      this.identifyConfounders(graph, config.treatment, config.outcome);
 
     // Execute causal estimation
     const result = await this.executeEstimation(data, {
@@ -128,18 +146,22 @@ export class CausalInferenceService {
     return result;
   }
 
-  private identifyConfounders(graph: CausalGraph, treatment: string, outcome: string): string[] {
+  private identifyConfounders(
+    graph: CausalGraph,
+    treatment: string,
+    outcome: string,
+  ): string[] {
     // Simple backdoor criterion implementation
     const confounders = graph.variables
-      .filter(v => v.type === 'confounder')
-      .map(v => v.name);
+      .filter((v) => v.type === 'confounder')
+      .map((v) => v.name);
 
     // Add common causes from graph edges
     const commonCauses = new Set<string>();
-    
+
     for (const edge of graph.edges) {
       if (edge.to === treatment || edge.to === outcome) {
-        const variable = graph.variables.find(v => v.name === edge.from);
+        const variable = graph.variables.find((v) => v.name === edge.from);
         if (variable && variable.type !== 'mediator') {
           commonCauses.add(edge.from);
         }
@@ -149,32 +171,39 @@ export class CausalInferenceService {
     return [...new Set([...confounders, ...commonCauses])];
   }
 
-  private async executeEstimation(data: any[], config: {
-    treatment: string;
-    outcome: string;
-    confounders: string[];
-    method: string;
-    estimand: string;
-  }): Promise<CausalEffect> {
+  private async executeEstimation(
+    data: any[],
+    config: {
+      treatment: string;
+      outcome: string;
+      confounders: string[];
+      method: string;
+      estimand: string;
+    },
+  ): Promise<CausalEffect> {
     // In production, use actual causal inference library (DoWhy, CausalML, EconML)
     await this.simulateDelay(1000);
 
-    const treatmentValues = data.map(d => d[config.treatment]);
-    const outcomeValues = data.map(d => d[config.outcome]);
+    const _treatmentValues = data.map((d) => d[config.treatment]);
+    const _outcomeValues = data.map((d) => d[config.outcome]);
 
     // Calculate basic statistics
-    const treated = data.filter(d => d[config.treatment] === 1 || d[config.treatment] === true);
-    const control = data.filter(d => d[config.treatment] === 0 || d[config.treatment] === false);
+    const treated = data.filter(
+      (d) => d[config.treatment] === 1 || d[config.treatment] === true,
+    );
+    const control = data.filter(
+      (d) => d[config.treatment] === 0 || d[config.treatment] === false,
+    );
 
-    const treatedMean = this.mean(treated.map(d => d[config.outcome]));
-    const controlMean = this.mean(control.map(d => d[config.outcome]));
+    const treatedMean = this.mean(treated.map((d) => d[config.outcome]));
+    const controlMean = this.mean(control.map((d) => d[config.outcome]));
 
     const naiveEffect = treatedMean - controlMean;
-    
+
     // Simulate adjusted effect (would be properly computed in production)
     const adjustedEffect = naiveEffect * (0.8 + Math.random() * 0.4);
     const standardError = Math.abs(adjustedEffect) * 0.1 + Math.random() * 0.05;
-    
+
     const ciWidth = 1.96 * standardError;
     const pValue = Math.exp(-Math.abs(adjustedEffect / standardError));
 
@@ -198,7 +227,7 @@ export class CausalInferenceService {
       observation: Record<string, any>;
       intervention: Record<string, any>;
       outcomeVariable: string;
-    }
+    },
   ): Promise<CounterfactualResult> {
     const graph = this.graphs.get(config.graphId);
     if (!graph) throw new Error(`Graph ${config.graphId} not found`);
@@ -208,8 +237,10 @@ export class CausalInferenceService {
     // In production, use structural causal model
     await this.simulateDelay(500);
 
-    const originalOutcome = config.observation[config.outcomeVariable] || this.mean(data.map(d => d[config.outcomeVariable]));
-    
+    const originalOutcome =
+      config.observation[config.outcomeVariable] ||
+      this.mean(data.map((d) => d[config.outcomeVariable]));
+
     // Simulate counterfactual outcome
     let counterfactualOutcome = originalOutcome;
     for (const [variable, value] of Object.entries(config.intervention)) {
@@ -236,9 +267,9 @@ export class CausalInferenceService {
     method?: 'ttest' | 'bayesian' | 'cuped';
   }): Promise<ABTestAnalysis> {
     const alpha = config.alpha || 0.05;
-    
-    const treatmentValues = config.treatmentData.map(d => d[config.metric]);
-    const controlValues = config.controlData.map(d => d[config.metric]);
+
+    const treatmentValues = config.treatmentData.map((d) => d[config.metric]);
+    const controlValues = config.controlData.map((d) => d[config.metric]);
 
     const treatmentMean = this.mean(treatmentValues);
     const controlMean = this.mean(controlValues);
@@ -246,23 +277,25 @@ export class CausalInferenceService {
     const controlStd = this.std(controlValues);
 
     const meanEffect = treatmentMean - controlMean;
-    
+
     // Pooled standard error
     const n1 = treatmentValues.length;
     const n2 = controlValues.length;
-    const pooledSE = Math.sqrt((treatmentStd ** 2 / n1) + (controlStd ** 2 / n2));
-    
+    const pooledSE = Math.sqrt(treatmentStd ** 2 / n1 + controlStd ** 2 / n2);
+
     // t-statistic and p-value
     const tStat = meanEffect / pooledSE;
     const pValue = 2 * (1 - this.normalCDF(Math.abs(tStat)));
-    
+
     // Confidence interval
     const ciWidth = 1.96 * pooledSE;
-    
+
     // Power calculation
-    const effectSize = Math.abs(meanEffect) / Math.sqrt((treatmentStd ** 2 + controlStd ** 2) / 2);
+    const effectSize =
+      Math.abs(meanEffect) /
+      Math.sqrt((treatmentStd ** 2 + controlStd ** 2) / 2);
     const power = this.calculatePower(n1 + n2, effectSize, alpha);
-    
+
     // Required sample size for 80% power
     const requiredN = this.calculateRequiredSampleSize(effectSize, 0.8, alpha);
 
@@ -289,7 +322,7 @@ export class CausalInferenceService {
       treatment: string;
       outcome: string;
       unmeasuredConfoundingStrength: number[];
-    }
+    },
   ): Promise<{
     baselineEffect: number;
     sensitivityCurve: { confoundingStrength: number; adjustedEffect: number }[];
@@ -306,18 +339,22 @@ export class CausalInferenceService {
     });
 
     // Compute sensitivity curve
-    const sensitivityCurve = config.unmeasuredConfoundingStrength.map(strength => {
-      const adjustment = baselineResult.estimate * (1 - strength * 0.5);
-      return {
-        confoundingStrength: strength,
-        adjustedEffect: adjustment,
-      };
-    });
+    const sensitivityCurve = config.unmeasuredConfoundingStrength.map(
+      (strength) => {
+        const adjustment = baselineResult.estimate * (1 - strength * 0.5);
+        return {
+          confoundingStrength: strength,
+          adjustedEffect: adjustment,
+        };
+      },
+    );
 
     // Find robustness value (strength at which effect becomes insignificant)
-    const robustnessValue = sensitivityCurve.find(s => 
-      Math.sign(s.adjustedEffect) !== Math.sign(baselineResult.estimate)
-    )?.confoundingStrength || 1.0;
+    const robustnessValue =
+      sensitivityCurve.find(
+        (s) =>
+          Math.sign(s.adjustedEffect) !== Math.sign(baselineResult.estimate),
+      )?.confoundingStrength || 1.0;
 
     return {
       baselineEffect: baselineResult.estimate,
@@ -328,12 +365,12 @@ export class CausalInferenceService {
 
   // Mediation Analysis
   async performMediationAnalysis(
-    data: any[],
-    config: {
+    _data: any[],
+    _config: {
       treatment: string;
       mediator: string;
       outcome: string;
-    }
+    },
   ): Promise<{
     totalEffect: number;
     directEffect: number;
@@ -364,7 +401,8 @@ export class CausalInferenceService {
 
   private std(values: number[]): number {
     const m = this.mean(values);
-    const variance = values.reduce((acc, v) => acc + Math.pow(v - m, 2), 0) / values.length;
+    const variance =
+      values.reduce((acc, v) => acc + Math.pow(v - m, 2), 0) / values.length;
     return Math.sqrt(variance);
   }
 
@@ -381,25 +419,35 @@ export class CausalInferenceService {
     x = Math.abs(x) / Math.sqrt(2);
 
     const t = 1.0 / (1.0 + p * x);
-    const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+    const y =
+      1.0 -
+      ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
 
     return 0.5 * (1.0 + sign * y);
   }
 
-  private calculatePower(n: number, effectSize: number, alpha: number): number {
+  private calculatePower(
+    n: number,
+    effectSize: number,
+    _alpha: number,
+  ): number {
     const zAlpha = 1.96;
     const se = 1 / Math.sqrt(n / 2);
-    const zBeta = (effectSize / se) - zAlpha;
+    const zBeta = effectSize / se - zAlpha;
     return this.normalCDF(zBeta);
   }
 
-  private calculateRequiredSampleSize(effectSize: number, power: number, alpha: number): number {
+  private calculateRequiredSampleSize(
+    effectSize: number,
+    _power: number,
+    _alpha: number,
+  ): number {
     const zAlpha = 1.96;
-    const zBeta = 0.84;  // for 80% power
+    const zBeta = 0.84; // for 80% power
     return Math.ceil(2 * Math.pow((zAlpha + zBeta) / effectSize, 2));
   }
 
   private simulateDelay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

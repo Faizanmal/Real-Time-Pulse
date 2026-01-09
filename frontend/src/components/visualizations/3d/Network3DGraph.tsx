@@ -183,8 +183,6 @@ export function Network3DGraph({
   width = 600,
   height = 400,
   nodeSize = 0.08,
-  edgeWidth = 0.01,
-  showLabels = false,
   layoutType = 'force',
   enableRotation = true,
   onNodeClick,
@@ -212,10 +210,18 @@ export function Network3DGraph({
       case 'random':
         const random = new Map<string, { x: number; y: number; z: number }>();
         nodes.forEach(node => {
+          // Use a simple hash-based pseudo-random for deterministic random layout
+          const hash = node.id.split('').reduce((a, b) => {
+            a = ((a << 5) - a) + b.charCodeAt(0);
+            return a & a;
+          }, 0);
+          const randomX = (Math.sin(hash) * 10000) % 1;
+          const randomY = (Math.sin(hash + 1) * 10000) % 1;
+          const randomZ = (Math.sin(hash + 2) * 10000) % 1;
           random.set(node.id, {
-            x: node.x ?? (Math.random() - 0.5) * 2,
-            y: node.y ?? (Math.random() - 0.5) * 2,
-            z: node.z ?? (Math.random() - 0.5) * 2,
+            x: node.x ?? (randomX - 0.5) * 2,
+            y: node.y ?? (randomY - 0.5) * 2,
+            z: node.z ?? (randomZ - 0.5) * 2,
           });
         });
         return random;
@@ -241,6 +247,7 @@ export function Network3DGraph({
   // Initialize scene
   useEffect(() => {
     if (!containerRef.current) return;
+    const container = containerRef.current;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(backgroundColor);
@@ -253,7 +260,7 @@ export function Network3DGraph({
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
-    containerRef.current.appendChild(renderer.domElement);
+    container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -279,7 +286,9 @@ export function Network3DGraph({
 
     return () => {
       renderer.dispose();
-      containerRef.current?.removeChild(renderer.domElement);
+      if (container && container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
     };
   }, [width, height, backgroundColor, enableRotation]);
 
@@ -294,7 +303,7 @@ export function Network3DGraph({
     // Remove edges (line objects)
     const toRemove: THREE.Object3D[] = [];
     sceneRef.current.traverse(obj => {
-      if (obj instanceof THREE.Line || (obj as any).isEdge) {
+      if (obj instanceof THREE.Line || (obj as { isEdge?: boolean }).isEdge) {
         toRemove.push(obj);
       }
     });
@@ -319,7 +328,7 @@ export function Network3DGraph({
       });
 
       const line = new THREE.Line(geometry, material);
-      (line as any).isEdge = true;
+      line.userData = { isEdge: true };
       sceneRef.current?.add(line);
     });
 

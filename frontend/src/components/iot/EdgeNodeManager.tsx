@@ -7,10 +7,8 @@ import {
   HardDrive,
   Activity,
   Settings,
-  Power,
   RefreshCw,
   Plus,
-  ChevronRight,
   Play,
   Pause,
   Trash2,
@@ -36,7 +34,12 @@ interface ProcessingRule {
   name: string;
   condition: string;
   action: 'forward' | 'aggregate' | 'alert' | 'transform' | 'discard';
-  actionConfig?: Record<string, any>;
+  actionConfig?: {
+    destination?: string;
+    aggregationWindow?: number;
+    alertThreshold?: number;
+    transformation?: string;
+  };
 }
 
 interface EdgeNodeManagerProps {
@@ -65,15 +68,15 @@ const statusConfig = {
   },
 };
 
-export function EdgeNodeManager({ workspaceId, className }: EdgeNodeManagerProps) {
+export function EdgeNodeManager({ workspaceId: _workspaceId, className }: EdgeNodeManagerProps) {
   const [nodes, setNodes] = useState<EdgeNode[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedNode, setSelectedNode] = useState<EdgeNode | null>(null);
   const [showAddRule, setShowAddRule] = useState(false);
-  const [newRule, setNewRule] = useState({
+  const [newRule, setNewRule] = useState<Omit<ProcessingRule, 'id'>>({
     name: '',
     condition: '',
-    action: 'forward' as const,
+    action: 'forward',
   });
 
   // Fetch edge nodes
@@ -394,7 +397,7 @@ export function EdgeNodeManager({ workspaceId, className }: EdgeNodeManagerProps
                   />
                   <select
                     value={newRule.action}
-                    onChange={e => setNewRule({ ...newRule, action: e.target.value as any })}
+                    onChange={(e) => setNewRule({ ...newRule, action: e.target.value as 'forward' | 'aggregate' | 'alert' | 'transform' | 'discard' })}
                     className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white"
                   >
                     <option value="forward">Forward to Cloud</option>

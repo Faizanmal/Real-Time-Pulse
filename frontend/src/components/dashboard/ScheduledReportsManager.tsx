@@ -16,7 +16,6 @@ import {
   scheduledReportsApi,
   ScheduledReport,
   CreateScheduledReportDto,
-  downloadBlob,
 } from '@/lib/enterprise-api';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -93,7 +92,10 @@ export function ScheduledReportsManager({
 
   const sendNow = async (reportId: string) => {
     try {
-      await scheduledReportsApi.sendNow(reportId);
+      const result = await scheduledReportsApi.sendNow(reportId);
+      if (result.downloadUrl) {
+        window.open(result.downloadUrl, '_blank');
+      }
       toast.success('Report sent successfully');
       loadReports();
     } catch (error) {
@@ -104,12 +106,14 @@ export function ScheduledReportsManager({
 
   const previewReport = async (report: ScheduledReport) => {
     try {
-      const blob = await scheduledReportsApi.preview(report.id);
-      downloadBlob(blob, `${report.name}-preview.${report.format}`);
-      toast.success('Preview downloaded');
+      const result = await scheduledReportsApi.sendNow(report.id);
+      if (result.downloadUrl) {
+        window.open(result.downloadUrl, '_blank');
+      }
+      toast.success('Report generated successfully');
     } catch (error) {
-      console.error('Failed to preview report:', error);
-      toast.error('Failed to generate preview');
+      console.error('Failed to generate report:', error);
+      toast.error('Failed to generate report');
     }
   };
 

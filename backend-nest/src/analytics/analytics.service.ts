@@ -3,11 +3,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { UsageMetricType, PeriodType } from '@prisma/client';
 
-interface DateRange {
-  start: Date;
-  end: Date;
-}
-
 @Injectable()
 export class AnalyticsService {
   private readonly logger = new Logger(AnalyticsService.name);
@@ -463,10 +458,10 @@ export class AnalyticsService {
     for (const data of Object.values(grouped)) {
       await this.prisma.usageMetric.create({
         data: {
-          workspaceId: data.workspaceId,
-          metricType: data.metricType,
-          portalId: data.portalId,
-          value: data.value,
+          workspaceId: (data as any).workspaceId,
+          metricType: (data as any).metricType,
+          portalId: (data as any).portalId,
+          value: (data as any).value,
           period: yesterday,
           periodType: 'DAILY',
         },

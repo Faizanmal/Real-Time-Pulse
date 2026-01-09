@@ -1,12 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth';
 import { portalApi } from '@/lib/api-client';
 import { PortalCard } from '@/components/ui/feature-cards';
+import { toast } from 'sonner';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import type { Portal } from '@/types';
 import {
   LayoutDashboard,
@@ -17,7 +22,15 @@ import {
   Grid,
   List,
   SortAsc,
+  SortDesc,
+  X,
 } from 'lucide-react';
+
+interface PortalFilters {
+  showPublic: boolean;
+  showPrivate: boolean;
+  sortOrder: 'asc' | 'desc';
+}
 
 export default function PortalsPage() {
   const router = useRouter();
@@ -27,6 +40,12 @@ export default function PortalsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'name' | 'created' | 'accessed'>('name');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState<PortalFilters>({
+    showPublic: true,
+    showPrivate: true,
+    sortOrder: 'asc',
+  });
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -56,37 +75,62 @@ export default function PortalsPage() {
     try {
       await portalApi.delete(portalId);
       setPortals(portals.filter((p) => p.id !== portalId));
+      toast.success('Portal deleted successfully');
     } catch (error) {
       console.error('Failed to delete portal:', error);
-      alert('Failed to delete portal');
+      toast.error('Failed to delete portal');
     }
   };
 
-  const sortedAndFilteredPortals = portals
-    .filter(
-      (portal) =>
-        portal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        portal.description?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .sort((a, b) => {
-      switch (sortBy) {
-        case 'name':
-          return a.name.localeCompare(b.name);
-        case 'created':
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case 'accessed':
-          return (
-            new Date(b.lastAccessedAt || 0).getTime() -
-            new Date(a.lastAccessedAt || 0).getTime()
-          );
-        default:
-          return 0;
-      }
+  const sortedAndFilteredPortals = useMemo(() => {
+    return portals
+      .filter((portal) => {
+        // Text search
+        const matchesSearch = portal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          portal.description?.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        // Visibility filter
+        const matchesVisibility = (filters.showPublic && portal.isPublic) || 
+          (filters.showPrivate && !portal.isPublic);
+        
+        return matchesSearch && matchesVisibility;
+      })
+      .sort((a, b) => {
+        let comparison = 0;
+        switch (sortBy) {
+          case 'name':
+            comparison = a.name.localeCompare(b.name);
+            break;
+          case 'created':
+            comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+            break;
+          case 'accessed':
+            const aAccess = a.lastAccessedAt ? new Date(a.lastAccessedAt).getTime() : 0;
+            const bAccess = b.lastAccessedAt ? new Date(b.lastAccessedAt).getTime() : 0;
+            comparison = aAccess - bAccess;
+            break;
+        }
+        return filters.sortOrder === 'desc' ? -comparison : comparison;
+      });
+  }, [portals, searchQuery, sortBy, filters]);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (!filters.showPublic || !filters.showPrivate) count++;
+    return count;
+  }, [filters]);
+
+  const resetFilters = () => {
+    setFilters({
+      showPublic: true,
+      showPrivate: true,
+      sortOrder: 'asc',
     });
+  };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-slate-950 via-purple-950 to-slate-950 flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -100,7 +144,7 @@ export default function PortalsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950">
+    <div className="min-h-screen bg-linear-to-br from-slate-950 via-purple-950 to-slate-950">
       {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-slate-900/30 border-b border-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -169,25 +213,78 @@ export default function PortalsPage() {
               <option value="accessed">Sort by Accessed</option>
             </select>
 
-            {/* Sort Direction Indicator */}
+            {/* Sort Direction Toggle */}
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => setFilters(f => ({ ...f, sortOrder: f.sortOrder === 'asc' ? 'desc' : 'asc' }))}
               className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/50 text-purple-400 hover:bg-slate-700/50 transition-all"
-              title="Sorting A-Z"
+              title={filters.sortOrder === 'asc' ? 'Sorting Ascending' : 'Sorting Descending'}
             >
-              <SortAsc className="h-5 w-5" />
+              {filters.sortOrder === 'asc' ? <SortAsc className="h-5 w-5" /> : <SortDesc className="h-5 w-5" />}
             </motion.button>
 
-            {/* Filter Options Button */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/50 text-gray-300 hover:bg-slate-700/50 transition-all"
-              title="Filter options (coming soon)"
-            >
-              <Filter className="h-5 w-5" />
-            </motion.button>
+            {/* Filter Options Popover */}
+            <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+              <PopoverTrigger asChild>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="relative p-3 rounded-xl bg-slate-800/50 border border-slate-700/50 text-gray-300 hover:bg-slate-700/50 transition-all"
+                  title="Filter options"
+                >
+                  <Filter className="h-5 w-5" />
+                  {activeFilterCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-purple-600 text-white text-[10px] rounded-full flex items-center justify-center">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </motion.button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-4" align="end">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-sm">Filter Portals</h4>
+                    {activeFilterCount > 0 && (
+                      <Button variant="ghost" size="sm" onClick={resetFilters} className="h-7 px-2 text-xs">
+                        <X className="h-3 w-3 mr-1" />
+                        Reset
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <Label className="text-xs text-muted-foreground uppercase tracking-wide">Visibility</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="showPublic"
+                          checked={filters.showPublic}
+                          onCheckedChange={(checked) => 
+                            setFilters(f => ({ ...f, showPublic: checked as boolean }))
+                          }
+                        />
+                        <Label htmlFor="showPublic" className="text-sm font-normal cursor-pointer">
+                          Public portals
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="showPrivate"
+                          checked={filters.showPrivate}
+                          onCheckedChange={(checked) => 
+                            setFilters(f => ({ ...f, showPrivate: checked as boolean }))
+                          }
+                        />
+                        <Label htmlFor="showPrivate" className="text-sm font-normal cursor-pointer">
+                          Private portals
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
 
             {/* View Mode Toggle */}
             <div className="flex gap-1 p-1 bg-slate-800/50 border border-slate-700/50 rounded-xl">

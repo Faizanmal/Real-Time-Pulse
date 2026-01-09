@@ -264,7 +264,7 @@ export class AuthorizationMiddleware implements IQueryMiddleware {
 
   async handle(query: IQuery, next: () => Promise<any>): Promise<any> {
     // Check if user has permission to execute this query
-    const { userId, workspaceId } = query.metadata;
+    const { userId, workspaceId: _workspaceId } = query.metadata;
 
     if (!userId) {
       this.logger.warn(`Unauthorized query attempt: ${query.queryType}`);

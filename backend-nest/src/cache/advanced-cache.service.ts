@@ -69,7 +69,7 @@ export class AdvancedCacheService implements OnModuleInit {
 
   async onModuleInit() {
     // Subscribe to cache invalidation events
-    this.setupPubSub();
+    void this.setupPubSub();
 
     // Load current version
     await this.loadVersion();
@@ -98,7 +98,7 @@ export class AdvancedCacheService implements OnModuleInit {
           }
         }
       });
-    } catch (error) {
+    } catch {
       this.logger.warn('Failed to setup pub/sub, running in single-node mode');
     }
   }
@@ -110,7 +110,7 @@ export class AdvancedCacheService implements OnModuleInit {
     try {
       const version = await this.redis.get(this.VERSION_KEY);
       this.currentVersion = version ? parseInt(version, 10) : 1;
-    } catch (error) {
+    } catch {
       this.currentVersion = 1;
     }
   }

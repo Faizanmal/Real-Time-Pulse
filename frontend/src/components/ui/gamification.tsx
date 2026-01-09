@@ -3,12 +3,13 @@
 import { useState, useEffect, useCallback, createContext, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 import {
     Trophy, Star, Medal, Crown, Flame, Target, Zap, Award, Gift,
-    TrendingUp, Calendar, Users, CheckCircle2, Lock, ChevronRight,
-    Sparkles, Heart, Shield, Rocket, Diamond, Gem,
+    TrendingUp, CheckCircle2, Lock, ChevronRight,
+    Sparkles, Rocket, Diamond, Gem,
 } from "lucide-react";
-import { gamificationApi, GamificationProfile } from "@/lib/api/gamification";
+import { gamificationApi, type UserAchievement as ApiUserAchievement } from "@/lib/api/gamification";
 import { useSocketEvent } from "@/contexts/socket-context";
 
 // ============================================================================
@@ -16,6 +17,7 @@ import { useSocketEvent } from "@/contexts/socket-context";
 // ============================================================================
 
 type BadgeRarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
+type BadgeCategory = "achievement" | "milestone" | "skill" | "social" | "special";
 
 interface Badge {
     id: string;
@@ -38,7 +40,7 @@ interface Achievement {
     unlockedAt?: Date;
     progress: number;
     maxProgress: number;
-    category: string;
+    category: BadgeCategory;
     secret?: boolean;
 }
 
@@ -118,13 +120,13 @@ const ICON_MAP: Record<string, React.ReactNode> = {
     "diamond": <Diamond className="h-4 w-4" />,
 };
 
-const mapBackendBadge = (ub: any): Badge => ({
+const mapBackendBadge = (ub: { badge: { id: string; name: string; description: string; icon: string; rarity: string; category: string }; earnedAt: string }): Badge => ({
     id: ub.badge.id,
     name: ub.badge.name,
     description: ub.badge.description,
     icon: ICON_MAP[ub.badge.icon] || <Award className="h-4 w-4" />,
     rarity: ub.badge.rarity.toLowerCase() as BadgeRarity,
-    category: ub.badge.category.toLowerCase() as any,
+    category: ub.badge.category.toLowerCase() as BadgeCategory,
     unlockedAt: new Date(ub.earnedAt),
     progress: 100,
     maxProgress: 100
@@ -243,7 +245,7 @@ export function BadgeDisplay({
                 whileHover={!locked ? { scale: 1.1, rotate: 5 } : {}}
                 whileTap={!locked ? { scale: 0.95 } : {}}
                 className={cn(
-                    "relative flex items-center justify-center rounded-2xl border-2 bg-gradient-to-br shadow-lg transition-shadow",
+                    "relative flex items-center justify-center rounded-2xl border-2 bg-linear-to-br shadow-lg transition-shadow",
                     colors.bg,
                     colors.border,
                     !locked && colors.glow,
@@ -377,9 +379,14 @@ interface StreakDisplayProps {
 }
 
 export function StreakDisplay({ streak, compact = false, className }: StreakDisplayProps) {
-    const isActive = streak.lastActivity &&
-        Date.now() - new Date(streak.lastActivity).getTime() <
-        (streak.type === "daily" ? 86400000 : streak.type === "weekly" ? 604800000 : 2592000000);
+    const [isActive, setIsActive] = useState(false);
+
+    useEffect(() => {
+        const active = !!(streak.lastActivity &&
+            Date.now() - new Date(streak.lastActivity).getTime() <
+            (streak.type === "daily" ? 86400000 : streak.type === "weekly" ? 604800000 : 2592000000));
+        setIsActive(active);
+    }, [streak.lastActivity, streak.type]);
 
     if (compact) {
         return (
@@ -397,7 +404,7 @@ export function StreakDisplay({ streak, compact = false, className }: StreakDisp
             className={cn(
                 "rounded-2xl p-4 shadow-lg",
                 isActive
-                    ? "bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/30"
+                    ? "bg-linear-to-br from-orange-500/10 to-red-500/10 border border-orange-500/30"
                     : "bg-gray-100 dark:bg-gray-800",
                 className
             )}
@@ -491,7 +498,7 @@ export function Leaderboard({
 
                         {/* Avatar */}
                         {entry.avatar ? (
-                            <img src={entry.avatar} alt="" className="h-10 w-10 rounded-full object-cover" />
+                            <Image src={entry.avatar} alt="" width={40} height={40} className="h-10 w-10 rounded-full object-cover" />
                         ) : (
                             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-500 text-sm font-medium text-white">
                                 {entry.name.charAt(0)}
@@ -522,7 +529,7 @@ export function Leaderboard({
                                     <div
                                         key={badge.id}
                                         className={cn(
-                                            "flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br text-white text-xs border-2 border-white dark:border-gray-800",
+                                            "flex h-6 w-6 items-center justify-center rounded-full bg-linear-to-br text-white text-xs border-2 border-white dark:border-gray-800",
                                             RARITY_COLORS[badge.rarity].bg
                                         )}
                                     >
@@ -675,7 +682,7 @@ export function GamificationProvider({ children, initialState }: { children: Rea
     });
 
     useSocketEvent('badge_earned', (data) => {
-        setState(prev => ({ ...prev, badges: [...prev.badges, mapBackendBadge(data.badge)] }));
+        setState(prev => ({ ...prev, badges: [...prev.badges, mapBackendBadge(data.badge as { badge: { id: string; name: string; description: string; icon: string; rarity: string; category: string }; earnedAt: string })] }));
     });
 
     useEffect(() => {
@@ -687,17 +694,21 @@ export function GamificationProvider({ children, initialState }: { children: Rea
                 // Map backend badges to frontend format
                 const mappedBadges: Badge[] = profile.badges.map(mapBackendBadge);
 
-                const mappedAchievements: Achievement[] = profile.achievements.map((ua: any) => ({
-                    id: ua.achievement.id,
-                    name: ua.achievement.name,
-                    description: ua.achievement.description,
-                    icon: <Trophy className="h-4 w-4" />, // Default or map if available
-                    points: ua.achievement.points,
-                    unlockedAt: ua.completed ? new Date(ua.completedAt) : undefined,
-                    progress: ua.progress,
-                    maxProgress: 100, // Assumption or fetch real max
-                    category: ua.achievement.category?.toLowerCase() || 'general'
-                }));
+                const mappedAchievements: Achievement[] = profile.achievements.map((ua: ApiUserAchievement) => {
+                    const category = ua.achievement.category?.toLowerCase();
+                    const validCategory: BadgeCategory = (category === 'milestone' || category === 'skill' || category === 'social' || category === 'special') ? category : 'achievement';
+                    return {
+                        id: ua.achievement.id,
+                        name: ua.achievement.name,
+                        description: ua.achievement.description,
+                        icon: <Trophy className="h-4 w-4" />, // Default or map if available
+                        points: ua.achievement.points,
+                        unlockedAt: ua.completed && ua.completedAt ? new Date(ua.completedAt) : undefined,
+                        progress: ua.progress,
+                        maxProgress: 100, // Assumption or fetch real max
+                        category: validCategory
+                    };
+                });
 
                 setState(prev => ({
                     ...prev,

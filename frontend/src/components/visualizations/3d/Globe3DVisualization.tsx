@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
@@ -101,6 +101,7 @@ export function Globe3DVisualization({
   // Initialize scene
   useEffect(() => {
     if (!containerRef.current) return;
+    const container = containerRef.current;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(backgroundColor);
@@ -113,7 +114,7 @@ export function Globe3DVisualization({
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
-    containerRef.current.appendChild(renderer.domElement);
+    container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -219,7 +220,9 @@ export function Globe3DVisualization({
 
     return () => {
       renderer.dispose();
-      containerRef.current?.removeChild(renderer.domElement);
+      if (container && container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
     };
   }, [width, height, backgroundColor, globeColor, atmosphereColor, showAtmosphere, showGraticule, enableRotation, rotationSpeed]);
 

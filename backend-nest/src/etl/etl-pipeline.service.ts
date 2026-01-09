@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -19,7 +24,13 @@ export interface ETLPipelineConfig {
 
 export interface ETLNode {
   id: string;
-  type: 'source' | 'transform' | 'filter' | 'aggregate' | 'join' | 'destination';
+  type:
+    | 'source'
+    | 'transform'
+    | 'filter'
+    | 'aggregate'
+    | 'join'
+    | 'destination';
   name: string;
   config: Record<string, any>;
   position: { x: number; y: number };
@@ -41,7 +52,10 @@ export interface ETLExecution {
   completedAt?: Date;
   rowsProcessed: number;
   errors: string[];
-  nodeStats: Record<string, { processed: number; errors: number; duration: number }>;
+  nodeStats: Record<
+    string,
+    { processed: number; errors: number; duration: number }
+  >;
 }
 
 export interface TransformationResult {
@@ -85,9 +99,9 @@ export class ETLPipelineService {
         workspaceId,
         name: data.name,
         description: data.description,
-        nodes: data.nodes,
-        edges: data.edges,
-        schedule: data.schedule || null,
+        nodes: data.nodes as any,
+        edges: data.edges as any,
+        schedule: (data.schedule as any) || null,
         status: 'draft',
       },
     });
@@ -96,8 +110,8 @@ export class ETLPipelineService {
       id: pipeline.id,
       name: pipeline.name,
       description: pipeline.description || undefined,
-      nodes: pipeline.nodes as ETLNode[],
-      edges: pipeline.edges as ETLEdge[],
+      nodes: pipeline.nodes as unknown as ETLNode[],
+      edges: pipeline.edges as unknown as ETLEdge[],
       schedule: pipeline.schedule as any,
       status: pipeline.status as any,
     };
@@ -108,19 +122,23 @@ export class ETLPipelineService {
    */
   private validatePipeline(nodes: ETLNode[], edges: ETLEdge[]): void {
     // Check for at least one source and one destination
-    const sources = nodes.filter(n => n.type === 'source');
-    const destinations = nodes.filter(n => n.type === 'destination');
+    const sources = nodes.filter((n) => n.type === 'source');
+    const destinations = nodes.filter((n) => n.type === 'destination');
 
     if (sources.length === 0) {
-      throw new BadRequestException('Pipeline must have at least one source node');
+      throw new BadRequestException(
+        'Pipeline must have at least one source node',
+      );
     }
 
     if (destinations.length === 0) {
-      throw new BadRequestException('Pipeline must have at least one destination node');
+      throw new BadRequestException(
+        'Pipeline must have at least one destination node',
+      );
     }
 
     // Check that all edges reference valid nodes
-    const nodeIds = new Set(nodes.map(n => n.id));
+    const nodeIds = new Set(nodes.map((n) => n.id));
     for (const edge of edges) {
       if (!nodeIds.has(edge.source)) {
         throw new BadRequestException(`Invalid edge source: ${edge.source}`);
@@ -186,12 +204,12 @@ export class ETLPipelineService {
       orderBy: { updatedAt: 'desc' },
     });
 
-    return pipelines.map(p => ({
+    return pipelines.map((p) => ({
       id: p.id,
       name: p.name,
       description: p.description || undefined,
-      nodes: p.nodes as ETLNode[],
-      edges: p.edges as ETLEdge[],
+      nodes: p.nodes as unknown as ETLNode[],
+      edges: p.edges as unknown as ETLEdge[],
       schedule: p.schedule as any,
       status: p.status as any,
     }));
@@ -200,7 +218,10 @@ export class ETLPipelineService {
   /**
    * Get a single pipeline
    */
-  async getPipeline(pipelineId: string, workspaceId: string): Promise<ETLPipelineConfig> {
+  async getPipeline(
+    pipelineId: string,
+    workspaceId: string,
+  ): Promise<ETLPipelineConfig> {
     const pipeline = await this.prisma.eTLPipeline.findFirst({
       where: { id: pipelineId, workspaceId },
     });
@@ -213,8 +234,8 @@ export class ETLPipelineService {
       id: pipeline.id,
       name: pipeline.name,
       description: pipeline.description || undefined,
-      nodes: pipeline.nodes as ETLNode[],
-      edges: pipeline.edges as ETLEdge[],
+      nodes: pipeline.nodes as unknown as ETLNode[],
+      edges: pipeline.edges as unknown as ETLEdge[],
       schedule: pipeline.schedule as any,
       status: pipeline.status as any,
     };
@@ -251,10 +272,12 @@ export class ETLPipelineService {
       where: { id: pipelineId },
       data: {
         ...(data.name && { name: data.name }),
-        ...(data.description !== undefined && { description: data.description }),
-        ...(data.nodes && { nodes: data.nodes }),
-        ...(data.edges && { edges: data.edges }),
-        ...(data.schedule !== undefined && { schedule: data.schedule }),
+        ...(data.description !== undefined && {
+          description: data.description,
+        }),
+        ...(data.nodes && { nodes: data.nodes as any }),
+        ...(data.edges && { edges: data.edges as any }),
+        ...(data.schedule !== undefined && { schedule: data.schedule as any }),
         ...(data.status && { status: data.status }),
       },
     });
@@ -263,8 +286,8 @@ export class ETLPipelineService {
       id: updated.id,
       name: updated.name,
       description: updated.description || undefined,
-      nodes: updated.nodes as ETLNode[],
-      edges: updated.edges as ETLEdge[],
+      nodes: updated.nodes as unknown as ETLNode[],
+      edges: updated.edges as unknown as ETLEdge[],
       schedule: updated.schedule as any,
       status: updated.status as any,
     };
@@ -273,7 +296,10 @@ export class ETLPipelineService {
   /**
    * Execute a pipeline
    */
-  async executePipeline(pipelineId: string, workspaceId: string): Promise<ETLExecution> {
+  async executePipeline(
+    pipelineId: string,
+    workspaceId: string,
+  ): Promise<ETLExecution> {
     const pipeline = await this.getPipeline(pipelineId, workspaceId);
 
     const execution: ETLExecution = {
@@ -289,8 +315,11 @@ export class ETLPipelineService {
     this.runningExecutions.set(execution.id, execution);
 
     // Run in background
-    this.runPipeline(pipeline, execution).catch(error => {
-      this.logger.error(`Pipeline execution failed: ${error.message}`, error.stack);
+    this.runPipeline(pipeline, execution).catch((error) => {
+      this.logger.error(
+        `Pipeline execution failed: ${error.message}`,
+        error.stack,
+      );
       execution.status = 'failed';
       execution.errors.push(error.message);
       execution.completedAt = new Date();
@@ -313,10 +342,14 @@ export class ETLPipelineService {
 
     for (const node of sortedNodes) {
       const startTime = Date.now();
-      
+
       try {
         // Get input data from predecessor nodes
-        const inputData = this.getNodeInput(node.id, pipeline.edges, nodeOutputs);
+        const inputData = this.getNodeInput(
+          node.id,
+          pipeline.edges,
+          nodeOutputs,
+        );
 
         // Process node
         const output = await this.processNode(node, inputData);
@@ -331,7 +364,9 @@ export class ETLPipelineService {
         execution.rowsProcessed += output.metadata.outputRows;
 
         if (output.metadata.errors.length > 0) {
-          execution.errors.push(...output.metadata.errors.map(e => `${node.name}: ${e}`));
+          execution.errors.push(
+            ...output.metadata.errors.map((e) => `${node.name}: ${e}`),
+          );
         }
 
         this.eventEmitter.emit('etl.node.complete', {
@@ -386,9 +421,9 @@ export class ETLPipelineService {
       adjacency.get(edge.source)!.push(edge.target);
     }
 
-    const queue = nodes.filter(n => inDegree.get(n.id) === 0);
+    const queue = nodes.filter((n) => inDegree.get(n.id) === 0);
     const result: ETLNode[] = [];
-    const nodeMap = new Map(nodes.map(n => [n.id, n]));
+    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
 
     while (queue.length > 0) {
       const node = queue.shift()!;
@@ -413,8 +448,8 @@ export class ETLPipelineService {
     edges: ETLEdge[],
     outputs: Map<string, any[]>,
   ): any[] {
-    const incomingEdges = edges.filter(e => e.target === nodeId);
-    
+    const incomingEdges = edges.filter((e) => e.target === nodeId);
+
     if (incomingEdges.length === 0) {
       return [];
     }
@@ -424,7 +459,7 @@ export class ETLPipelineService {
     }
 
     // Multiple inputs - concatenate
-    return incomingEdges.flatMap(e => outputs.get(e.source) || []);
+    return incomingEdges.flatMap((e) => outputs.get(e.source) || []);
   }
 
   /**
@@ -448,14 +483,16 @@ export class ETLPipelineService {
       case 'destination':
         return this.processDestinationNode(node, inputData);
       default:
-        throw new Error(`Unknown node type: ${node.type}`);
+        throw new Error(`Unknown node type: ${String(node.type)}`);
     }
   }
 
   /**
    * Process source node - fetch data from source
    */
-  private async processSourceNode(node: ETLNode): Promise<TransformationResult> {
+  private async processSourceNode(
+    node: ETLNode,
+  ): Promise<TransformationResult> {
     const config = node.config;
     let data: any[] = [];
 
@@ -514,23 +551,37 @@ export class ETLPipelineService {
               delete row[transform.field];
               break;
             case 'map':
-              row[transform.field] = this.evaluateExpression(transform.expression, row);
+              row[transform.field] = this.evaluateExpression(
+                transform.expression,
+                row,
+              );
               break;
             case 'convert':
-              row[transform.field] = this.convertType(row[transform.field], transform.toType);
+              row[transform.field] = this.convertType(
+                row[transform.field],
+                transform.toType,
+              );
               break;
             case 'extract':
-              row[transform.targetField] = this.extractValue(row[transform.field], transform.pattern);
+              row[transform.targetField] = this.extractValue(
+                row[transform.field],
+                transform.pattern,
+              );
               break;
             case 'concatenate':
-              row[transform.targetField] = transform.fields.map((f: string) => row[f]).join(transform.separator || '');
+              row[transform.targetField] = transform.fields
+                .map((f: string) => row[f])
+                .join(transform.separator || '');
               break;
-            case 'split':
-              const parts = String(row[transform.field]).split(transform.separator);
+            case 'split': {
+              const parts = String(row[transform.field]).split(
+                transform.separator,
+              );
               transform.targetFields.forEach((f: string, idx: number) => {
                 row[f] = parts[idx];
               });
               break;
+            }
           }
         }
 
@@ -559,24 +610,37 @@ export class ETLPipelineService {
     inputData: any[],
   ): Promise<TransformationResult> {
     const config = node.config;
-    const filteredData = inputData.filter(row => {
+    const filteredData = inputData.filter((row) => {
       return config.conditions.every((condition: any) => {
         const value = row[condition.field];
-        
+
         switch (condition.operator) {
-          case 'eq': return value === condition.value;
-          case 'neq': return value !== condition.value;
-          case 'gt': return value > condition.value;
-          case 'gte': return value >= condition.value;
-          case 'lt': return value < condition.value;
-          case 'lte': return value <= condition.value;
-          case 'contains': return String(value).includes(condition.value);
-          case 'startsWith': return String(value).startsWith(condition.value);
-          case 'endsWith': return String(value).endsWith(condition.value);
-          case 'isNull': return value === null || value === undefined;
-          case 'isNotNull': return value !== null && value !== undefined;
-          case 'in': return condition.value.includes(value);
-          default: return true;
+          case 'eq':
+            return value === condition.value;
+          case 'neq':
+            return value !== condition.value;
+          case 'gt':
+            return value > condition.value;
+          case 'gte':
+            return value >= condition.value;
+          case 'lt':
+            return value < condition.value;
+          case 'lte':
+            return value <= condition.value;
+          case 'contains':
+            return String(value).includes(condition.value);
+          case 'startsWith':
+            return String(value).startsWith(condition.value);
+          case 'endsWith':
+            return String(value).endsWith(condition.value);
+          case 'isNull':
+            return value === null || value === undefined;
+          case 'isNotNull':
+            return value !== null && value !== undefined;
+          case 'in':
+            return condition.value.includes(value);
+          default:
+            return true;
         }
       });
     });
@@ -612,24 +676,30 @@ export class ETLPipelineService {
     }
 
     // Aggregate each group
-    const aggregatedData = Array.from(groups.entries()).map(([key, rows]) => {
+    const aggregatedData = Array.from(groups.entries()).map(([_, rows]) => {
       const result: Record<string, any> = {};
 
       // Add group by fields
-      config.groupBy.forEach((field: string, idx: number) => {
+      config.groupBy.forEach((field: string) => {
         result[field] = rows[0][field];
       });
 
       // Apply aggregations
       for (const agg of config.aggregations) {
-        const values = rows.map(r => r[agg.field]).filter(v => v !== null && v !== undefined);
-        
+        const values = rows
+          .map((r) => r[agg.field])
+          .filter((v) => v !== null && v !== undefined);
+
         switch (agg.operation) {
           case 'sum':
-            result[agg.alias || `${agg.field}_sum`] = values.reduce((a, b) => a + b, 0);
+            result[agg.alias || `${agg.field}_sum`] = values.reduce(
+              (a, b) => a + b,
+              0,
+            );
             break;
           case 'avg':
-            result[agg.alias || `${agg.field}_avg`] = values.reduce((a, b) => a + b, 0) / values.length;
+            result[agg.alias || `${agg.field}_avg`] =
+              values.reduce((a, b) => a + b, 0) / values.length;
             break;
           case 'min':
             result[agg.alias || `${agg.field}_min`] = Math.min(...values);
@@ -647,7 +717,8 @@ export class ETLPipelineService {
             result[agg.alias || `${agg.field}_first`] = values[0];
             break;
           case 'last':
-            result[agg.alias || `${agg.field}_last`] = values[values.length - 1];
+            result[agg.alias || `${agg.field}_last`] =
+              values[values.length - 1];
             break;
         }
       }
@@ -675,8 +746,8 @@ export class ETLPipelineService {
   ): Promise<TransformationResult> {
     // For simplicity, this expects concatenated input with a marker
     // In practice, you'd need separate inputs
-    const config = node.config;
-    
+    // const config = node.config;
+
     return {
       data: inputData,
       metadata: {
@@ -724,44 +795,45 @@ export class ETLPipelineService {
   }
 
   // Helper methods (stubs - would be fully implemented in production)
-  private async fetchFromDatabase(config: any): Promise<any[]> {
+  private async fetchFromDatabase(_config: any): Promise<any[]> {
     // Execute SQL query and return results
     return [];
   }
 
-  private async fetchFromAPI(config: any): Promise<any[]> {
+  private async fetchFromAPI(_config: any): Promise<any[]> {
     // Fetch from API endpoint
     return [];
   }
 
-  private async readFromFile(config: any): Promise<any[]> {
+  private async readFromFile(_config: any): Promise<any[]> {
     // Read from file (CSV, JSON, Parquet, etc.)
     return [];
   }
 
-  private async fetchFromIntegration(config: any): Promise<any[]> {
+  private async fetchFromIntegration(_config: any): Promise<any[]> {
     // Use integration service to fetch data
     return [];
   }
 
-  private async writeToDatabase(config: any, data: any[]): Promise<void> {
+  private async writeToDatabase(_config: any, _data: any[]): Promise<void> {
     // Write to database
   }
 
-  private async writeToAPI(config: any, data: any[]): Promise<void> {
+  private async writeToAPI(_config: any, _data: any[]): Promise<void> {
     // POST to API
   }
 
-  private async writeToFile(config: any, data: any[]): Promise<void> {
+  private async writeToFile(_config: any, _data: any[]): Promise<void> {
     // Write to file
   }
 
-  private async writeToWarehouse(config: any, data: any[]): Promise<void> {
+  private async writeToWarehouse(_config: any, _data: any[]): Promise<void> {
     // Write to data warehouse (Snowflake, BigQuery, etc.)
   }
 
   private evaluateExpression(expression: string, row: any): any {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval
       const fn = new Function('row', `with(row) { return ${expression}; }`);
       return fn(row);
     } catch {
@@ -771,11 +843,16 @@ export class ETLPipelineService {
 
   private convertType(value: any, toType: string): any {
     switch (toType) {
-      case 'string': return String(value);
-      case 'number': return Number(value);
-      case 'boolean': return Boolean(value);
-      case 'date': return new Date(value);
-      default: return value;
+      case 'string':
+        return String(value);
+      case 'number':
+        return Number(value);
+      case 'boolean':
+        return Boolean(value);
+      case 'date':
+        return new Date(value);
+      default:
+        return value;
     }
   }
 
@@ -804,14 +881,14 @@ export class ETLPipelineService {
       take: limit,
     });
 
-    return executions.map(e => ({
+    return executions.map((e) => ({
       id: e.id,
       pipelineId: e.pipelineId,
       status: e.status as any,
       startedAt: e.startedAt,
       completedAt: e.completedAt || undefined,
       rowsProcessed: e.rowsProcessed,
-      errors: e.errors as string[],
+      errors: e.errors,
       nodeStats: e.nodeStats as any,
     }));
   }
@@ -821,21 +898,28 @@ export class ETLPipelineService {
    */
   @Cron(CronExpression.EVERY_MINUTE)
   async checkScheduledPipelines(): Promise<void> {
-    const pipelines = await this.prisma.eTLPipeline.findMany({
+    const pipelines = await this.prisma.$queryRaw<Array<{ id: string }>>`
+      SELECT id FROM "etl_pipelines" 
+      WHERE status = 'active' 
+      AND schedule IS NOT NULL
+    `;
+
+    const pipelineIds = pipelines.map((p) => p.id);
+
+    const fullPipelines = await this.prisma.eTLPipeline.findMany({
       where: {
-        status: 'active',
-        schedule: { not: null },
+        id: { in: pipelineIds },
       },
     });
 
-    for (const pipeline of pipelines) {
+    for (const pipeline of fullPipelines) {
       const schedule = pipeline.schedule as any;
       if (!schedule?.enabled) continue;
 
       // Check if pipeline should run (simplified - use cron-parser in production)
       // This is a placeholder - real implementation would parse cron expression
       const shouldRun = this.shouldRunSchedule(schedule.cron);
-      
+
       if (shouldRun) {
         this.logger.log(`Executing scheduled pipeline: ${pipeline.name}`);
         await this.executePipeline(pipeline.id, pipeline.workspaceId);
@@ -843,7 +927,7 @@ export class ETLPipelineService {
     }
   }
 
-  private shouldRunSchedule(cron: string): boolean {
+  private shouldRunSchedule(_cron: string): boolean {
     // Simplified - in production use cron-parser library
     return false;
   }

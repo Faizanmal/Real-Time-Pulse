@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 interface UseOfflineSyncResult {
   isOnline: boolean;
@@ -10,6 +10,40 @@ interface UseOfflineSyncResult {
 export function useOfflineSync(): UseOfflineSyncResult {
   const [isOnline, setIsOnline] = useState(true);
   const [pendingSync, setPendingSync] = useState(0);
+
+  const updatePendingCount = useCallback(async () => {
+    try {
+      const cache = await caches.open('pending-sync');
+      const keys = await cache.keys();
+      setPendingSync(keys.length);
+    } catch (error) {
+      console.error('Failed to get pending count', error);
+    }
+  }, []);
+
+  const syncPendingRequests = useCallback(async () => {
+    if (!isOnline) return;
+
+    try {
+      const cache = await caches.open('pending-sync');
+      const requests = await cache.keys();
+
+      for (const request of requests) {
+        try {
+          const response = await fetch(request);
+          if (response.ok) {
+            await cache.delete(request);
+          }
+        } catch (error) {
+          console.error('Sync failed for request:', error);
+        }
+      }
+
+      await updatePendingCount();
+    } catch (error) {
+      console.error('Failed to sync pending requests', error);
+    }
+  }, [isOnline, updatePendingCount]);
 
   useEffect(() => {
     // Check online status
@@ -34,17 +68,7 @@ export function useOfflineSync(): UseOfflineSyncResult {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []);
-
-  const updatePendingCount = async () => {
-    try {
-      const cache = await caches.open('pending-sync');
-      const keys = await cache.keys();
-      setPendingSync(keys.length);
-    } catch (error) {
-      console.error('Failed to get pending count', error);
-    }
-  };
+  }, [syncPendingRequests, updatePendingCount]);
 
   const queueRequest = async (url: string, options: RequestInit) => {
     try {
@@ -58,34 +82,10 @@ export function useOfflineSync(): UseOfflineSyncResult {
       // Register background sync if available
       if ('sync' in navigator && 'serviceWorker' in navigator) {
         const registration = await navigator.serviceWorker.ready;
-        await (registration as any).sync.register('sync-dashboards');
+        await (registration as unknown as { sync: { register: (tag: string) => Promise<void> } }).sync.register('sync-dashboards');
       }
     } catch (error) {
       console.error('Failed to queue request', error);
-    }
-  };
-
-  const syncPendingRequests = async () => {
-    if (!isOnline) return;
-
-    try {
-      const cache = await caches.open('pending-sync');
-      const requests = await cache.keys();
-
-      for (const request of requests) {
-        try {
-          const response = await fetch(request);
-          if (response.ok) {
-            await cache.delete(request);
-          }
-        } catch (error) {
-          console.error('Sync failed for request:', error);
-        }
-      }
-
-      await updatePendingCount();
-    } catch (error) {
-      console.error('Failed to sync pending requests', error);
     }
   };
 

@@ -26,13 +26,13 @@ export default function AIQueryInterface() {
       const data = response.data;
       if (Array.isArray(data)) {
         setQueries(data);
-      } else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as any).data)) {
-        setQueries((data as any).data);
+      } else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as { data: unknown[] }).data)) {
+        setQueries((data as { data: AIQuery[] }).data);
       } else {
         console.warn('Unexpected API response format for queries:', data);
         setQueries([]);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to load query history:', error);
     } finally {
       setLoadingHistory(false);
@@ -49,9 +49,9 @@ export default function AIQueryInterface() {
       setQueries([response.data, ...queries]);
       setQuery('');
       toast.success('Query processed successfully');
-    } catch (error: any) {
+    } catch (error) {
       toast.error('Failed to process query', {
-        description: error.response?.data?.message || error.message,
+        description: (error as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (error as { message?: string })?.message,
       });
     } finally {
       setLoading(false);
@@ -67,9 +67,9 @@ export default function AIQueryInterface() {
       setQueries([response.data, ...queries]);
       setQuery('');
       toast.success('SQL generated successfully');
-    } catch (error: any) {
+    } catch (error) {
       toast.error('Failed to generate SQL', {
-        description: error.response?.data?.message || error.message,
+        description: (error as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (error as { message?: string })?.message,
       });
     } finally {
       setLoading(false);
@@ -155,13 +155,13 @@ export default function AIQueryInterface() {
                   <Badge>{q.queryType.replace(/_/g, ' ')}</Badge>
                 </div>
 
-                {q.response && (
+                {q.response ? (
                   <div className="bg-muted p-4 rounded-lg">
                     <pre className="text-sm whitespace-pre-wrap">
                       {JSON.stringify(q.response, null, 2)}
                     </pre>
                   </div>
-                )}
+                ) : null} 
 
                 {q.sqlGenerated && (
                   <div className="bg-slate-900 text-slate-50 p-4 rounded-lg">

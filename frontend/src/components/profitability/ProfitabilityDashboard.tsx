@@ -1,15 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DollarSign, TrendingUp, TrendingDown, Users, Clock, Target, PieChart as PieChartIcon } from 'lucide-react';
-import { BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter } from 'recharts';
+import { DollarSign, TrendingUp, TrendingDown, Target } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter } from 'recharts';
 
 interface Project {
   id: string;
@@ -38,18 +34,24 @@ interface ClientScore {
   clientScore: number;
 }
 
+interface SummaryData {
+  totalRevenue: number;
+  period: string;
+  totalProfit: number;
+  avgProfitMargin: number;
+  profitableProjects: number;
+  totalProjects: number;
+  unprofitableProjects: number;
+}
+
 export default function ProfitabilityDashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [clientScores, setClientScores] = useState<ClientScore[]>([]);
-  const [summary, setSummary] = useState<any>(null);
+  const [summary, setSummary] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState('all-time');
 
-  useEffect(() => {
-    fetchData();
-  }, [selectedPeriod]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const workspaceId = 'your-workspace-id';
 
@@ -67,7 +69,11 @@ export default function ProfitabilityDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedPeriod]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600 bg-green-100';
@@ -280,21 +286,21 @@ export default function ProfitabilityDashboard() {
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
                     <h4 className="font-semibold">{client.clientName}</h4>
-                    <Badge className={getScoreColor(client.clientScore)}>
-                      {client.clientScore}/100
+                    <Badge className={getScoreColor(client.clientScore as number)}>
+                      {(client.clientScore as number)}/100
                     </Badge>
                   </div>
                   <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                    <span>{client.projectCount} project(s)</span>
-                    <span>${client.totalRevenue.toLocaleString()} revenue</span>
-                    <span>${client.totalProfit.toLocaleString()} profit</span>
-                    <span>{client.avgProfitMargin.toFixed(1)}% margin</span>
+                    <span>{(client.projectCount as number)} project(s)</span>
+                    <span>${(client.totalRevenue as number).toLocaleString()} revenue</span>
+                    <span>${(client.totalProfit as number).toLocaleString()} profit</span>
+                    <span>{(client.avgProfitMargin as number).toFixed(1)}% margin</span>
                   </div>
                   <div className="mt-2">
                     <div className="w-full bg-gray-200 rounded-full h-1.5">
                       <div
-                        className={`h-1.5 rounded-full ${client.clientScore >= 80 ? 'bg-green-500' : client.clientScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                        style={{ width: `${client.clientScore}%` }}
+                        className={`h-1.5 rounded-full ${(client.clientScore as number) >= 80 ? 'bg-green-500' : (client.clientScore as number) >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                        style={{ width: `${(client.clientScore as number)}%` }}
                       />
                     </div>
                   </div>

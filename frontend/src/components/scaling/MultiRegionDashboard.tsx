@@ -12,11 +12,7 @@ import {
   MapPin,
   Zap,
   Clock,
-  Users,
-  TrendingUp,
   Settings,
-  Play,
-  Pause,
   ArrowRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -36,7 +32,7 @@ interface Region {
 interface RoutingRule {
   id: string;
   name: string;
-  conditions: any[];
+  conditions: unknown[];
   targetRegion: string;
   priority: number;
   enabled: boolean;

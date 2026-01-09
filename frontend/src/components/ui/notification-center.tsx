@@ -17,35 +17,26 @@ import React, {
   ReactNode,
   useMemo,
 } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Button } from './button';
 import {
   Bell,
   BellOff,
-  Check,
   CheckCheck,
   X,
   Settings,
-  Filter,
   Clock,
   AlertTriangle,
   Info,
   AlertCircle,
   CheckCircle,
   Zap,
-  MessageSquare,
-  Users,
   BarChart3,
-  FileText,
-  Shield,
   Trash2,
-  ChevronDown,
   ChevronRight,
-  ExternalLink,
   Volume2,
   VolumeX,
-  MoreHorizontal,
   Archive,
   Star,
   Eye,
@@ -735,7 +726,7 @@ function NotificationItem({
       <div className="flex gap-3 pl-2">
         {/* Icon */}
         <div className={cn('p-2 rounded-lg shrink-0', config.color)}>
-          {React.cloneElement(config.icon as React.ReactElement, { className: 'h-4 w-4' } as any)}
+          {React.cloneElement(config.icon as React.ReactElement, { className: 'h-4 w-4' } as unknown as React.Attributes)}
         </div>
 
         {/* Content */}
@@ -891,9 +882,9 @@ export function ActivityFeed({ activities, isLoading, className }: ActivityFeedP
           className="flex gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors"
         >
           {/* Avatar */}
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-sm font-medium shrink-0">
+          <div className="w-8 h-8 rounded-full bg-linear-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-sm font-medium shrink-0">
             {activity.actor.avatar ? (
-              <img src={activity.actor.avatar} alt="" className="w-full h-full rounded-full object-cover" />
+              <Image src={activity.actor.avatar} alt="" width={32} height={32} className="w-full h-full rounded-full object-cover" />
             ) : (
               activity.actor.name.charAt(0).toUpperCase()
             )}
@@ -928,10 +919,12 @@ export function ActivityFeed({ activities, isLoading, className }: ActivityFeedP
   );
 }
 
-export default {
+const NotificationCenter = {
   NotificationCenterProvider,
   useNotificationCenter,
   NotificationBell,
   NotificationPanel,
   ActivityFeed,
 };
+
+export default NotificationCenter;

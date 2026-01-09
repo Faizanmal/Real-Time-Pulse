@@ -8,7 +8,7 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { EventStore, EventQueryOptions } from './event-store';
+import { EventStore } from './event-store';
 import { DomainEvent, EventSourcingService } from './event-sourcing.service';
 
 // Replay Options

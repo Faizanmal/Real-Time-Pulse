@@ -7,9 +7,9 @@
  */
 
 import * as React from "react";
-import { useQuery, useMutation, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
-import { apiResources, clearCache } from "./api-client";
-import { CACHE_TTL, KEYBOARD_SHORTCUTS } from "./config";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiResources } from "./api-client";
+import { CACHE_TTL } from "./config";
 
 // ============================================================================
 // DATA FETCHING HOOKS
@@ -594,11 +594,14 @@ export function useCopyToClipboard(): [
  */
 export function usePrevious<T>(value: T): T | undefined {
   const ref = React.useRef<T | undefined>(undefined);
+  const [previous, setPrevious] = React.useState<T | undefined>(undefined);
+
   React.useEffect(() => {
+    setPrevious(ref.current);
     ref.current = value;
   }, [value]);
-  // eslint-disable-next-line react-hooks/refs
-  return ref.current;
+
+  return previous;
 }
 
 /**
@@ -647,7 +650,8 @@ export function useAsync<T>(
     return () => {
       mounted = false;
     };
-  }, deps);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [asyncFn, ...deps]);
 
   return state;
 }
@@ -678,7 +682,7 @@ export function useCounter(initialValue: number = 0) {
   };
 }
 
-export default {
+const hooksUtils = {
   useCurrentUser,
   useWorkspaces,
   useWorkspace,
@@ -709,3 +713,5 @@ export default {
   useToggle,
   useCounter,
 };
+
+export default hooksUtils;

@@ -7,7 +7,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ========================================
@@ -259,6 +258,8 @@ model Integration {
   widgets              Widget[]
   dataSourceHealth     DataSourceHealth?
   dataValidationRules  DataValidationRule[]
+  rateLimitConfig      RateLimitConfig?
+  rateLimitMetrics     RateLimitMetric[]
 
   @@unique([workspaceId, provider])
   @@index([workspaceId])
@@ -611,6 +612,11 @@ enum AuditAction {
   READ
   UPDATE
   DELETE
+
+  // API Keys
+  API_KEY_CREATED
+  API_KEY_DELETED
+  API_KEY_REGENERATED
 
   // Specific actions
   INVITE_USER
@@ -3286,3 +3292,28 @@ model ETLExecution {
   @@index([startedAt])
   @@map("etl_executions")
 }
+
+// Rate limit configuration and metrics
+model RateLimitConfig {
+  integrationId String @id
+  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  maxRequests   Int
+  windowMs      Int
+  burstLimit    Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("rate_limit_configs")
+}
+
+model RateLimitMetric {
+  id            String   @id @default(uuid())
+  integrationId String
+  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  timestamp     DateTime @default(now())
+  remainingQuota Int
+  resetAt       DateTime
+
+  @@map("rate_limit_metrics")
+}
+

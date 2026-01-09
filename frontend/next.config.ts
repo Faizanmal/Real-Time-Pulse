@@ -62,7 +62,7 @@ const securityHeaders = [
   },
 ];
 
-const nextConfig: NextConfig & { eslint?: any } = {
+const nextConfig: NextConfig & { eslint?: unknown } = {
   // Environment variables
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
@@ -123,7 +123,7 @@ const nextConfig: NextConfig & { eslint?: any } = {
   turbopack: {},
 
   // Webpack customization
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer: _isServer }) => {
     // Optimize for production
     if (isProd) {
       config.optimization = {

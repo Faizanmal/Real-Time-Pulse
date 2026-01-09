@@ -2,11 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SearchResult } from './federated-search.service';
 
-interface EmbeddingResult {
-  text: string;
-  embedding: number[];
-}
-
 @Injectable()
 export class SemanticSearchService {
   private readonly logger = new Logger(SemanticSearchService.name);

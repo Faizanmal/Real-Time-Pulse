@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { complianceApi } from '@/lib/advanced-api';
-import type { ComplianceDashboard, SecurityIncident } from '@/types/advanced-features';
+import type { ComplianceDashboard } from '@/types/advanced-features';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Shield, AlertTriangle, Database, FileCheck, TrendingUp } from 'lucide-react';
+import { Shield, AlertTriangle, Database, FileCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -39,7 +39,7 @@ export default function ComplianceDashboard() {
           // If completely empty, maybe it's a 404 or backend issue, handled by catch usually but here we got 200 OK with bad data?
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to load compliance dashboard:', error);
       toast.error('Failed to load compliance dashboard');
       setDashboard(null);
@@ -82,7 +82,7 @@ export default function ComplianceDashboard() {
 
   if (!dashboard) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-center space-y-4">
+      <div className="flex flex-col items-center justify-center min-h-100 text-center space-y-4">
         <AlertTriangle className="h-12 w-12 text-muted-foreground" />
         <h3 className="text-lg font-semibold">Unable to load dashboard</h3>
         <p className="text-muted-foreground max-w-sm">

@@ -273,7 +273,7 @@ export class GdprService {
     };
   }
 
-  private async generateDataExport(userData: any): Promise<string> {
+  private async generateDataExport(_userData: any): Promise<string> {
     // In production, this would:
     // 1. Create a JSON/CSV file
     // 2. Upload to S3/R2

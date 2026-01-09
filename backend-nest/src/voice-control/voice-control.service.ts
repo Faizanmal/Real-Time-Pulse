@@ -216,7 +216,7 @@ export class VoiceControlService {
         return {
           success: true,
           action: 'show_status',
-          data: await this.getOverallStatus(workspaceId),
+          data: this.getOverallStatus(workspaceId),
           message: "Here's the current status",
         };
     }
@@ -231,59 +231,59 @@ export class VoiceControlService {
   /**
    * Handle "create" commands
    */
-  private async handleCreateCommand(
+  private handleCreateCommand(
     command: VoiceCommand,
-    userId: string,
-    workspaceId: string,
+    _userId: string,
+    _workspaceId: string,
   ): Promise<CommandResponse> {
     const { target, type } = command.entities;
 
     switch (type) {
       case 'alert':
-        return {
+        return Promise.resolve({
           success: true,
           action: 'create_alert',
           data: { template: 'alert' },
           message: 'Opening alert creation form',
-        };
+        });
 
       case 'dashboard':
-        return {
+        return Promise.resolve({
           success: true,
           action: 'create_dashboard',
           data: { template: 'dashboard' },
           message: 'Opening dashboard creation',
-        };
+        });
 
       case 'widget':
-        return {
+        return Promise.resolve({
           success: true,
           action: 'create_widget',
           data: { template: 'widget' },
           message: 'Opening widget builder',
-        };
+        });
     }
 
-    return {
+    return Promise.resolve({
       success: false,
       action: 'create',
       message: `Cannot create ${target}`,
-    };
+    });
   }
 
   /**
    * Handle "generate" commands
    */
-  private async handleGenerateCommand(
+  private handleGenerateCommand(
     command: VoiceCommand,
-    userId: string,
-    workspaceId: string,
+    _userId: string,
+    _workspaceId: string,
   ): Promise<CommandResponse> {
     const { reportType, params } = command.entities;
 
     const period = this.extractTimePeriod(params);
 
-    return {
+    return Promise.resolve({
       success: true,
       action: 'generate_report',
       data: {
@@ -292,13 +292,13 @@ export class VoiceControlService {
         format: 'pdf',
       },
       message: `Generating ${period} ${reportType}`,
-    };
+    });
   }
 
   /**
    * Handle "alert" commands
    */
-  private async handleAlertCommand(
+  private handleAlertCommand(
     command: VoiceCommand,
     userId: string,
     workspaceId: string,
@@ -308,7 +308,7 @@ export class VoiceControlService {
     // Parse condition (e.g., "budget overruns", "delays")
     const alertType = this.parseAlertCondition(condition);
 
-    return {
+    return Promise.resolve({
       success: true,
       action: 'create_alert',
       data: {
@@ -318,40 +318,40 @@ export class VoiceControlService {
         workspaceId,
       },
       message: `Creating alert for ${condition}`,
-    };
+    });
   }
 
   /**
    * Handle "navigate" commands
    */
-  private async handleNavigateCommand(
+  private handleNavigateCommand(
     command: VoiceCommand,
-    userId: string,
-    workspaceId: string,
+    _userId: string,
+    _workspaceId: string,
   ): Promise<CommandResponse> {
     const { destination } = command.entities;
 
     const route = this.mapDestinationToRoute(destination);
 
-    return {
+    return Promise.resolve({
       success: true,
       action: 'navigate',
       data: { route },
       message: `Navigating to ${destination}`,
-    };
+    });
   }
 
   /**
    * Handle "filter" commands
    */
-  private async handleFilterCommand(
+  private handleFilterCommand(
     command: VoiceCommand,
-    userId: string,
-    workspaceId: string,
+    _userId: string,
+    _workspaceId: string,
   ): Promise<CommandResponse> {
     const { target, condition } = command.entities;
 
-    return {
+    return Promise.resolve({
       success: true,
       action: 'apply_filter',
       data: {
@@ -359,34 +359,34 @@ export class VoiceControlService {
         filter: condition,
       },
       message: `Filtering ${target} by ${condition}`,
-    };
+    });
   }
 
   /**
    * Handle "update" and "delete" commands (placeholders)
    */
-  private async handleUpdateCommand(
-    command: VoiceCommand,
-    userId: string,
-    workspaceId: string,
+  private handleUpdateCommand(
+    _command: VoiceCommand,
+    _userId: string,
+    _workspaceId: string,
   ): Promise<CommandResponse> {
-    return {
+    return Promise.resolve({
       success: false,
       action: 'update',
       message: 'Update command not yet implemented',
-    };
+    });
   }
 
-  private async handleDeleteCommand(
-    command: VoiceCommand,
-    userId: string,
-    workspaceId: string,
+  private handleDeleteCommand(
+    _command: VoiceCommand,
+    _userId: string,
+    _workspaceId: string,
   ): Promise<CommandResponse> {
-    return {
+    return Promise.resolve({
       success: false,
       action: 'delete',
       message: 'Delete command requires confirmation',
-    };
+    });
   }
 
   /**
@@ -411,7 +411,7 @@ export class VoiceControlService {
     return results[0] || null;
   }
 
-  private async getOverallStatus(workspaceId: string) {
+  private getOverallStatus(_workspaceId: string) {
     return {
       activeProjects: 10,
       completedTasks: 45,

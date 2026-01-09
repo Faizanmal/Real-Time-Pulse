@@ -2,8 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  Put,
-  Delete,
   Body,
   Param,
   Query,
@@ -11,7 +9,11 @@ import {
   Req,
 } from '@nestjs/common';
 import { IoTDeviceService, IoTDevice, DeviceAlert } from './iot-device.service';
-import { EdgeComputingService, EdgeNodeConfig, EdgeProcessingRule } from './edge-computing.service';
+import {
+  EdgeComputingService,
+  EdgeNodeConfig,
+  EdgeProcessingRule,
+} from './edge-computing.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 // DTOs
@@ -135,7 +137,12 @@ export class IoTController {
     return this.iotDeviceService.getAlerts(req.user.workspaceId, {
       deviceId,
       severity,
-      acknowledged: acknowledged === 'true' ? true : acknowledged === 'false' ? false : undefined,
+      acknowledged:
+        acknowledged === 'true'
+          ? true
+          : acknowledged === 'false'
+            ? false
+            : undefined,
     });
   }
 
@@ -143,7 +150,9 @@ export class IoTController {
    * Acknowledge an alert
    */
   @Post('alerts/:id/acknowledge')
-  async acknowledgeAlert(@Param('id') id: string): Promise<{ success: boolean }> {
+  async acknowledgeAlert(
+    @Param('id') id: string,
+  ): Promise<{ success: boolean }> {
     await this.iotDeviceService.acknowledgeAlert(id);
     return { success: true };
   }
@@ -154,7 +163,9 @@ export class IoTController {
    * Register an edge node
    */
   @Post('edge/nodes')
-  async registerEdgeNode(@Body() dto: RegisterEdgeNodeDto): Promise<{ success: boolean }> {
+  async registerEdgeNode(
+    @Body() dto: RegisterEdgeNodeDto,
+  ): Promise<{ success: boolean }> {
     const nodeId = `edge-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     await this.edgeComputingService.registerNode({
       id: nodeId,

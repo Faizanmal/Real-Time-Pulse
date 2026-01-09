@@ -11,8 +11,8 @@ import cookieParser from 'cookie-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
-    // Suppress verbose route mapping logs during startup
-    logger: ['error', 'warn', 'log'],
+    // Suppress info-level logs in console (only warn/error)
+    logger: ['error', 'warn'],
   });
 
   const configService = app.get(ConfigService);

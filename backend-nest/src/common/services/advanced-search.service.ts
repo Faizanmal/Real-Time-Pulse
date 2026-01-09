@@ -322,7 +322,7 @@ export class AdvancedSearchService {
   private async searchReports(
     workspaceId: string,
     query: string,
-    filters?: SearchFilters,
+    _filters?: SearchFilters,
   ): Promise<SearchResult[]> {
     const reports = await this.prisma.scheduledReport.findMany({
       where: {

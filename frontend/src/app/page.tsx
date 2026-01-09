@@ -76,7 +76,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950">
+    <div className="relative min-h-screen overflow-hidden bg-linear-to-br from-slate-950 via-purple-950 to-slate-950">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
@@ -179,7 +179,7 @@ export default function Home() {
             <motion.div
               whileHover={{ scale: 1.05, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="group relative overflow-hidden bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700 rounded-2xl p-8 hover:border-purple-500 transition-all"
+              className="group relative overflow-hidden bg-linear-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700 rounded-2xl p-8 hover:border-purple-500 transition-all"
             >
               <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-purple-500/20 blur-2xl group-hover:bg-purple-500/30 transition-colors" />
               <div className="relative z-10">
@@ -209,7 +209,7 @@ export default function Home() {
             <motion.div
               whileHover={{ scale: 1.05, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="group relative overflow-hidden bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700 rounded-2xl p-8 hover:border-blue-500 transition-all"
+              className="group relative overflow-hidden bg-linear-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700 rounded-2xl p-8 hover:border-blue-500 transition-all"
             >
               <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-blue-500/20 blur-2xl group-hover:bg-blue-500/30 transition-colors" />
               <div className="relative z-10">
@@ -252,11 +252,11 @@ export default function Home() {
                 transition={{ delay: 0.7 + index * 0.05, ease: "easeOut" }}
                 whileHover={{ scale: 1.05, y: -8 }}
                 style={{ willChange: 'transform' }}
-                className="group relative overflow-hidden bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700 rounded-xl p-6 hover:border-purple-500/50 transition-all"
+                className="group relative overflow-hidden bg-linear-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700 rounded-xl p-6 hover:border-purple-500/50 transition-all"
               >
-                <div className={`absolute -right-8 -top-8 h-32 w-32 rounded-full bg-gradient-to-br ${feature.color} opacity-20 blur-2xl group-hover:opacity-30 transition-opacity`} />
+                <div className={`absolute -right-8 -top-8 h-32 w-32 rounded-full bg-linear-to-br ${feature.color} opacity-20 blur-2xl group-hover:opacity-30 transition-opacity`} />
                 <div className="relative z-10">
-                  <div className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${feature.color} bg-opacity-20 text-white mb-4`}>
+                  <div className={`inline-flex p-3 rounded-xl bg-linear-to-br ${feature.color} bg-opacity-20 text-white mb-4`}>
                     {feature.icon}
                   </div>
                   <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>

@@ -9,11 +9,27 @@ export enum AnnotationType {
     INFO = 'INFO',
 }
 
+export interface CreateAnnotationDto {
+    portalId: string;
+    widgetId?: string;
+    content: string;
+    type: AnnotationType;
+    positionX: number;
+    positionY: number;
+    dataPoint?: Record<string, unknown>;
+}
+
+export interface UpdateAnnotationDto {
+    content?: string;
+    resolved?: boolean;
+}
+
 export interface Annotation {
     id: string;
     portalId: string;
     widgetId?: string;
-    author: {
+    userId: string;
+    author?: {
         id: string;
         firstName?: string;
         lastName?: string;
@@ -23,33 +39,26 @@ export interface Annotation {
     type: AnnotationType;
     positionX: number;
     positionY: number;
-    dataPoint?: any;
+    dataPoint?: Record<string, unknown>;
     resolved: boolean;
+    replies?: Annotation[];
     createdAt: string;
-    replies: Annotation[];
+    updatedAt: string;
 }
 
 export const annotationsApi = {
     getByPortal: async (portalId: string): Promise<Annotation[]> => {
-        const response = await apiClient.get(`/annotations/${portalId}`);
+        const response = await apiClient.get<Annotation[]>(`/annotations/${portalId}`);
         return response.data;
     },
 
-    create: async (data: {
-        portalId: string;
-        widgetId?: string;
-        content: string;
-        type: AnnotationType;
-        positionX: number;
-        positionY: number;
-        dataPoint?: any;
-    }): Promise<Annotation> => {
-        const response = await apiClient.post('/annotations', data);
+    create: async (data: CreateAnnotationDto): Promise<Annotation> => {
+        const response = await apiClient.post<Annotation>('/annotations', data);
         return response.data;
     },
 
     update: async (id: string, data: { content?: string; resolved?: boolean }): Promise<Annotation> => {
-        const response = await apiClient.put(`/annotations/${id}`, data);
+        const response = await apiClient.put<Annotation>(`/annotations/${id}`, data);
         return response.data;
     },
 
@@ -58,7 +67,8 @@ export const annotationsApi = {
     },
 
     reply: async (id: string, content: string): Promise<Annotation> => {
-        const response = await apiClient.post(`/annotations/${id}/reply`, { content });
+        const response = await apiClient.post<Annotation>(`/annotations/${id}/reply`, { content });
         return response.data;
     },
 };
+

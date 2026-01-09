@@ -4,11 +4,33 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Shield, CheckCircle, AlertTriangle, Clock, FileText, Download } from 'lucide-react';
+import { Shield, AlertTriangle, Clock, FileText } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
+interface ComplianceRecommendation {
+  title: string;
+  description: string;
+  priority: 'low' | 'medium' | 'high';
+  action: string;
+  impact: string;
+}
+
+interface ComplianceDashboard {
+  overallScore: number;
+  complianceScore: number;
+  consentStats: Record<string, number>;
+  requestStats: Record<string, number>;
+  categories: Array<{
+    name: string;
+    score: number;
+    status: string;
+    issues: string[];
+  }>;
+  recommendations?: ComplianceRecommendation[];
+}
+
 export default function GDPRComplianceDashboard() {
-  const [dashboard, setDashboard] = useState<any>(null);
+  const [dashboard, setDashboard] = useState<ComplianceDashboard | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,12 +47,6 @@ export default function GDPRComplianceDashboard() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-green-600';
-    if (score >= 75) return 'text-yellow-600';
-    return 'text-red-600';
   };
 
   if (loading) {
@@ -100,7 +116,7 @@ export default function GDPRComplianceDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{requests.total || 0}</div>
-            <p className="text-xs text-muted-foreground">{requests.byStatus?.PENDING || 0} pending</p>
+            <p className="text-xs text-muted-foreground">{requests.PENDING || 0} pending</p>
           </CardContent>
         </Card>
 
@@ -135,7 +151,7 @@ export default function GDPRComplianceDashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {dashboard?.recommendations?.map((rec: any, idx: number) => (
+            {dashboard?.recommendations?.map((rec: ComplianceRecommendation, idx: number) => (
               <div key={idx} className="flex items-start gap-4 p-4 border rounded-lg">
                 <div className={`p-2 rounded-full ${rec.priority === 'high' ? 'bg-red-100' : rec.priority === 'medium' ? 'bg-yellow-100' : 'bg-blue-100'}`}>
                   <Shield className={`h-5 w-5 ${rec.priority === 'high' ? 'text-red-600' : rec.priority === 'medium' ? 'text-yellow-600' : 'text-blue-600'}`} />

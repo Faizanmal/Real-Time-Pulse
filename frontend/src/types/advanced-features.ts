@@ -19,7 +19,7 @@ export interface IndustryTemplate {
   name: string;
   description: string | null;
   industry: IndustryType;
-  config: any;
+  config: Record<string, unknown>;
   thumbnail: string | null;
   isActive: boolean;
   usageCount: number;
@@ -33,13 +33,13 @@ export interface IndustryDeployment {
   workspaceId: string;
   templateId: string;
   portalId: string;
-  complianceStatus: any;
+  complianceStatus: unknown;
   lastComplianceCheck: string | null;
-  customizations: any;
+  customizations: unknown;
   createdAt: string;
   updatedAt: string;
   template?: IndustryTemplate;
-  portal?: any;
+  portal?: unknown;
 }
 
 // Advanced AI/ML
@@ -68,7 +68,7 @@ export interface AIModel {
   modelType: AIModelType;
   provider: AIProvider;
   modelId: string;
-  config: any;
+  config: unknown;
   accuracy: number | null;
   precision: number | null;
   recall: number | null;
@@ -84,8 +84,8 @@ export interface AIPrediction {
   id: string;
   modelId: string;
   workspaceId: string;
-  inputData: any;
-  prediction: any;
+  inputData: unknown;
+  prediction: unknown;
   confidence: number;
   widgetId: string | null;
   portalId: string | null;
@@ -108,7 +108,7 @@ export interface AIQuery {
   modelId: string | null;
   query: string;
   queryType: AIQueryType;
-  response: any;
+  response: unknown;
   sqlGenerated: string | null;
   portalId: string | null;
   createdAt: string;
@@ -144,7 +144,7 @@ export interface APIConnector {
   authType: APIAuthType;
   baseUrl: string | null;
   apiVersion: string | null;
-  configSchema: any;
+  configSchema: unknown;
   iconUrl: string | null;
   logoUrl: string | null;
   publisherId: string | null;
@@ -165,8 +165,8 @@ export interface APIConnectorInstallation {
   id: string;
   connectorId: string;
   workspaceId: string;
-  config: any;
-  credentials: any;
+  config: unknown;
+  credentials: unknown;
   isActive: boolean;
   lastSyncAt: string | null;
   syncStatus: string | null;
@@ -194,18 +194,18 @@ export interface ARScene {
   description: string | null;
   workspaceId: string;
   portalId: string | null;
-  sceneData: any;
-  arMarkers: any;
-  modelUrls: any;
-  textureUrls: any;
-  interactions: any;
+  sceneData: unknown;
+  arMarkers: unknown;
+  modelUrls: unknown;
+  textureUrls: unknown;
+  interactions: unknown;
   scale: number;
-  lighting: any;
+  lighting: unknown;
   sceneType?: string;
   type?: string;
-  config?: any;
-  objects?: any[];
-  dataSources?: any[];
+  config?: unknown;
+  objects?: unknown[];
+  dataSources?: unknown[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -217,7 +217,7 @@ export interface ARSession {
   userId: string;
   deviceType: string;
   duration: number;
-  interactions: any;
+  interactions: unknown;
   fps: number | null;
   latency: number | null;
   status?: string;
@@ -234,7 +234,7 @@ export interface ARMarker {
   position: { x: number; y: number; z: number };
   rotation: { x: number; y: number; z: number };
   scale: { x: number; y: number; z: number };
-  data: any;
+  data: unknown;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -254,11 +254,11 @@ export interface Workflow {
   name: string;
   description: string | null;
   workspaceId: string;
-  trigger: any;
-  actions: any;
-  conditions: any;
-  nodes: any;
-  edges: any;
+  trigger: Record<string, unknown>;
+  actions: Record<string, unknown>;
+  conditions: Record<string, unknown> | null;
+  nodes: Record<string, unknown>;
+  edges: Record<string, unknown>;
   isActive: boolean;
   version: number;
   executionCount: number;
@@ -273,9 +273,9 @@ export interface Workflow {
 export interface WorkflowExecution {
   id: string;
   workflowId: string;
-  triggerData: any;
+  triggerData: unknown;
   status: WorkflowExecutionStatus;
-  steps: any;
+  steps: unknown;
   startedAt: string;
   completedAt: string | null;
   duration: number | null;
@@ -290,7 +290,7 @@ export interface WorkflowTemplate {
   name: string;
   description: string | null;
   category: string;
-  template: any;
+  template: unknown;
   thumbnail: string | null;
   isPublic: boolean;
   rating: number;
@@ -301,21 +301,32 @@ export interface WorkflowTemplate {
 
 export interface WorkflowTrigger {
   type: string;
-  config: any;
-  conditions?: any;
+  config: unknown;
+  conditions?: unknown;
+  [key: string]: unknown;
 }
 
 export interface WorkflowAction {
   type: string;
-  config: any;
+  config: unknown;
   order: number;
+  [key: string]: unknown;
 }
 
 export interface WorkflowCondition {
   type: string;
-  config: any;
+  config: unknown;
   operator: string;
-  value: any;
+  value: unknown;
+  [key: string]: unknown;
+}
+
+export interface WorkflowEdge {
+  id: string;
+  source: string;
+  target: string;
+  sourceHandle?: string;
+  targetHandle?: string;
 }
 
 // Enhanced Compliance
@@ -330,8 +341,8 @@ export interface ComplianceFramework {
   id: string;
   name: string;
   description: string | null;
-  requirements: any;
-  controls: any;
+  requirements: unknown;
+  controls: unknown;
   auditSchedule: string | null;
   isActive: boolean;
   createdAt: string;
@@ -344,10 +355,10 @@ export interface ComplianceAssessment {
   frameworkId: string;
   status: ComplianceStatus;
   score: number;
-  findings: any;
-  gaps: any;
-  recommendations: any;
-  remediationPlan: any;
+  findings: unknown;
+  gaps: unknown;
+  recommendations: unknown;
+  remediationPlan: unknown;
   remediationStatus: string | null;
   assessedAt: string;
   assessedBy: string | null;
@@ -368,14 +379,14 @@ export interface DataMapping {
   workspaceId: string;
   dataType: string;
   location: string;
-  fields: any;
+  fields: unknown;
   sensitivity: DataSensitivity;
   category: string;
   processingPurpose: string;
   legalBasis: string | null;
   retentionPeriod: string | null;
   encryptionMethod: string | null;
-  accessControls: any;
+  accessControls: unknown;
   createdAt: string;
   updatedAt: string;
 }
@@ -416,14 +427,14 @@ export interface SecurityIncident {
   detectedAt: string;
   reportedAt: string | null;
   resolvedAt: string | null;
-  affectedSystems: any;
-  affectedUsers: any;
+  affectedSystems: unknown;
+  affectedUsers: unknown;
   rootCause: string | null;
-  responseActions: any;
+  responseActions: unknown;
   status: IncidentStatus;
   assignedTo: string | null;
   lessonsLearned: string | null;
-  preventiveMeasures: any;
+  preventiveMeasures: unknown;
   createdAt: string;
   updatedAt: string;
 }

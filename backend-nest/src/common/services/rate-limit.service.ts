@@ -210,7 +210,7 @@ export class RateLimitService {
    */
   async getRecentAnomalies(
     identifier: string,
-    limit: number = 10,
+    _limit: number = 10,
   ): Promise<AnomalyEvent[]> {
     // This would need a more sophisticated implementation
     // with proper data storage for production use

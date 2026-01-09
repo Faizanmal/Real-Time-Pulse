@@ -1,27 +1,58 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  DollarSign, TrendingUp, TrendingDown, Users, Clock,
-  Plus, RefreshCw, BarChart3, PieChart
+  DollarSign, TrendingUp,
+  RefreshCw, Plus, PieChart, BarChart3
 } from 'lucide-react';
 import { profitabilityApi } from '@/lib/api-client';
 
+interface Project {
+  id: string;
+  name: string;
+  clientName: string;
+  profitabilityScore: number;
+  profitMargin: number;
+  grossProfit: number;
+  totalHours: number;
+  billableHours: number;
+  status: string;
+  [key: string]: unknown;
+}
+
+interface ClientScore {
+  clientId: string;
+  score: number;
+  revenue: number;
+  clientScore: number;
+  clientName: string;
+  projectCount: number;
+  totalRevenue: number;
+  avgProfitMargin: number;
+  [key: string]: unknown;
+}
+
+interface SummaryData {
+  totalProjects: number;
+  profitableProjects: number;
+  averageProfitability: number;
+  totalRevenue: number;
+  totalProfit: number;
+  avgProfitMargin: number;
+  [key: string]: unknown;
+}
+
 export default function ProfitabilityDashboard({ workspaceId }: { workspaceId: string }) {
-  const [projects, setProjects] = useState<any[]>([]);
-  const [heatmap, setHeatmap] = useState<any[]>([]);
-  const [clientScoring, setClientScoring] = useState<any[]>([]);
-  const [summary, setSummary] = useState<any>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [heatmap, setHeatmap] = useState<Project[]>([]);
+  const [clientScoring, setClientScoring] = useState<ClientScore[]>([]);
+  const [summary, setSummary] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadData();
-  }, [workspaceId]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [projectsRes, heatmapRes, scoringRes, summaryRes] = await Promise.all([
@@ -30,16 +61,20 @@ export default function ProfitabilityDashboard({ workspaceId }: { workspaceId: s
         profitabilityApi.getClientScoring(workspaceId),
         profitabilityApi.getSummary(workspaceId, 'month'),
       ]);
-      setProjects(projectsRes.data);
-      setHeatmap(heatmapRes.data);
-      setClientScoring(scoringRes.data);
-      setSummary(summaryRes.data);
+      setProjects((projectsRes as { data: Project[] }).data);
+      setHeatmap((heatmapRes as { data: Project[] }).data);
+      setClientScoring((scoringRes as { data: ClientScore[] }).data);
+      setSummary((summaryRes as { data: SummaryData }).data);
     } catch (error) {
       console.error('Failed to load profitability data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [workspaceId]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'bg-green-500';

@@ -10,23 +10,26 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { arVisualizationApi } from '@/lib/advanced-api';
 import type { ARScene, ARSession, ARMarker } from '@/types/advanced-features';
-import { Eye, Play, Pause, Settings, Smartphone, Box, MapPin, Plus } from 'lucide-react';
+import { Eye, Play, Pause, Smartphone, Box, MapPin, Plus, QrCode, Trash2, Loader2, ImageIcon } from 'lucide-react';
 
 export default function ARVisualization() {
   const [scenes, setScenes] = useState<ARScene[]>([]);
   const [sessions, setSessions] = useState<ARSession[]>([]);
   const [markers, setMarkers] = useState<ARMarker[]>([]);
   const [loading, setLoading] = useState(true);
+  const [markersLoading, setMarkersLoading] = useState(false);
   const [selectedScene, setSelectedScene] = useState<ARScene | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const { toast } = useToast();
+  const [isCreateMarkerOpen, setIsCreateMarkerOpen] = useState(false);
+  const [deletingMarkerId, setDeletingMarkerId] = useState<string | null>(null);
 
   useEffect(() => {
     loadScenes();
     loadSessions();
+    loadMarkers();
   }, []);
 
   const loadScenes = async () => {
@@ -34,12 +37,8 @@ export default function ARVisualization() {
       setLoading(true);
       const data = await arVisualizationApi.getScenes();
       setScenes(data.data);
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load AR scenes',
-        variant: 'destructive',
-      });
+    } catch {
+      toast.error('Failed to load AR scenes');
     } finally {
       setLoading(false);
     }
@@ -54,55 +53,87 @@ export default function ARVisualization() {
     }
   };
 
-  const createScene = async (sceneData: { name: string; description?: string; portalId?: string; sceneData: any; modelUrls: any }) => {
+  const loadMarkers = async () => {
     try {
-      await arVisualizationApi.createScene(sceneData);
-      toast({
-        title: 'Success',
-        description: 'AR scene created successfully',
+      setMarkersLoading(true);
+      const data = await arVisualizationApi.getMarkers();
+      setMarkers(data.data);
+    } catch (error) {
+      console.error('Failed to load markers:', error);
+    } finally {
+      setMarkersLoading(false);
+    }
+  };
+
+  const createScene = async (sceneData: { name: string; description?: string; portalId?: string; sceneData: unknown; modelUrls: unknown }) => {
+    try {
+      await arVisualizationApi.createScene({
+        ...sceneData,
+        sceneData: sceneData.sceneData as Record<string, unknown>,
+        modelUrls: sceneData.modelUrls as string[]
       });
+      toast.success('AR scene created successfully');
       setIsCreateDialogOpen(false);
       loadScenes();
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to create AR scene',
-        variant: 'destructive',
-      });
+    } catch {
+      toast.error('Failed to create AR scene');
+    }
+  };
+
+  const createMarker = async (data: { sceneId: string; type: 'qr' | 'image' | 'location'; location?: { lat: number; lng: number; radius: number } }) => {
+    try {
+      await arVisualizationApi.createMarker(data.sceneId, { type: data.type, location: data.location });
+      toast.success('AR marker created successfully');
+      setIsCreateMarkerOpen(false);
+      loadMarkers();
+    } catch {
+      toast.error('Failed to create marker');
+    }
+  };
+
+  const deleteMarker = async (markerId: string) => {
+    try {
+      setDeletingMarkerId(markerId);
+      await arVisualizationApi.deleteMarker(markerId);
+      toast.success('Marker deleted successfully');
+      loadMarkers();
+    } catch {
+      toast.error('Failed to delete marker');
+    } finally {
+      setDeletingMarkerId(null);
     }
   };
 
   const startSession = async (sceneId: string) => {
     try {
-      const session = await arVisualizationApi.startSession(sceneId, 'web');
-      toast({
-        title: 'Session Started',
-        description: 'AR session is now active',
-      });
+      await arVisualizationApi.startSession(sceneId, 'web');
+      toast.success('AR session is now active');
       loadSessions();
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to start AR session',
-        variant: 'destructive',
-      });
+    } catch {
+      toast.error('Failed to start AR session');
     }
   };
 
   const endSession = async (sessionId: string) => {
     try {
       await arVisualizationApi.endSession(sessionId);
-      toast({
-        title: 'Session Ended',
-        description: 'AR session has been terminated',
-      });
+      toast.success('AR session has been terminated');
       loadSessions();
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to end session',
-        variant: 'destructive',
-      });
+    } catch {
+      toast.error('Failed to end session');
+    }
+  };
+
+  const getMarkerIcon = (type: string) => {
+    switch (type) {
+      case 'qr':
+        return <QrCode className="h-5 w-5" />;
+      case 'image':
+        return <ImageIcon className="h-5 w-5" />;
+      case 'location':
+        return <MapPin className="h-5 w-5" />;
+      default:
+        return <MapPin className="h-5 w-5" />;
     }
   };
 
@@ -256,12 +287,118 @@ export default function ARVisualization() {
         </TabsContent>
 
         <TabsContent value="markers" className="space-y-4">
-          <Card>
-            <CardContent className="py-10 text-center">
-              <MapPin className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">Marker management coming soon</p>
-            </CardContent>
-          </Card>
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold">AR Markers</h3>
+              <p className="text-sm text-muted-foreground">Manage QR codes, image targets, and location-based markers</p>
+            </div>
+            <Dialog open={isCreateMarkerOpen} onOpenChange={setIsCreateMarkerOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" disabled={scenes.length === 0}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Marker
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create AR Marker</DialogTitle>
+                  <DialogDescription>Add a new marker to an AR scene</DialogDescription>
+                </DialogHeader>
+                <CreateMarkerForm scenes={scenes} onSubmit={createMarker} />
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {markersLoading ? (
+            <Card>
+              <CardContent className="py-10 text-center">
+                <Loader2 className="h-8 w-8 mx-auto mb-4 animate-spin text-muted-foreground" />
+                <p className="text-muted-foreground">Loading markers...</p>
+              </CardContent>
+            </Card>
+          ) : markers.length === 0 ? (
+            <Card>
+              <CardContent className="py-10 text-center">
+                <MapPin className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">No markers created yet</p>
+                {scenes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground mt-2">Create a scene first to add markers</p>
+                ) : (
+                  <Button className="mt-4" size="sm" onClick={() => setIsCreateMarkerOpen(true)}>
+                    Create Your First Marker
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {markers.map((marker) => {
+                const scene = scenes.find(s => s.id === marker.sceneId);
+                return (
+                  <Card key={marker.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                            {getMarkerIcon(marker.type)}
+                          </div>
+                          <div>
+                            <CardTitle className="text-base capitalize">{marker.type} Marker</CardTitle>
+                            <CardDescription className="text-xs">{scene?.name || 'Unknown Scene'}</CardDescription>
+                          </div>
+                        </div>
+                        <Badge variant={marker.isActive ? 'default' : 'secondary'}>
+                          {marker.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="text-sm space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Position:</span>
+                            <span className="font-mono text-xs">
+                              ({marker.position?.x?.toFixed(1) || 0}, {marker.position?.y?.toFixed(1) || 0}, {marker.position?.z?.toFixed(1) || 0})
+                            </span>
+                          </div>
+                          {marker.type === 'location' && (marker.data as { location?: { lat: number; lng: number } })?.location && (
+                            <>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Lat:</span>
+                                <span className="font-mono text-xs">{(marker.data as { location: { lat: number; lng: number } }).location.lat}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Lng:</span>
+                                <span className="font-mono text-xs">{(marker.data as { location: { lat: number; lng: number } }).location.lng}</span>
+                              </div>
+                            </>
+                          )} 
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Created:</span>
+                            <span className="text-xs">{new Date(marker.createdAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="w-full"
+                          onClick={() => deleteMarker(marker.id)}
+                          disabled={deletingMarkerId === marker.id}
+                        >
+                          {deletingMarkerId === marker.id ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="mr-2 h-4 w-4" />
+                          )}
+                          Delete Marker
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 
@@ -284,23 +421,29 @@ export default function ARVisualization() {
                 <div>
                   <h4 className="font-semibold mb-2">Scene Objects</h4>
                   <div className="space-y-1 text-sm">
-                    {selectedScene.objects?.map((obj, i) => (
-                      <div key={i} className="flex justify-between">
-                        <span>{obj.type}</span>
-                        <Badge variant="outline">{obj.dataBinding || 'Static'}</Badge>
-                      </div>
-                    ))}
+                    {selectedScene.objects?.map((obj, i) => {
+                      const typedObj = obj as { type: string; dataBinding?: string };
+                      return (
+                        <div key={i} className="flex justify-between">
+                          <span>{typedObj.type}</span>
+                          <Badge variant="outline">{typedObj.dataBinding || 'Static'}</Badge>
+                        </div>
+                      );
+                    })} 
                   </div>
                 </div>
                 <div>
                   <h4 className="font-semibold mb-2">Data Sources</h4>
                   <div className="space-y-1 text-sm">
-                    {selectedScene.dataSources?.map((source, i) => (
-                      <div key={i} className="flex justify-between">
-                        <span>{source.name}</span>
-                        <Badge variant="outline">{source.refreshInterval}s</Badge>
-                      </div>
-                    ))}
+                    {selectedScene.dataSources?.map((source, i) => {
+                      const typedSource = source as { name: string; refreshInterval: number };
+                      return (
+                        <div key={i} className="flex justify-between">
+                          <span>{typedSource.name}</span>
+                          <Badge variant="outline">{typedSource.refreshInterval}s</Badge>
+                        </div>
+                      );
+                    })} 
                   </div>
                 </div>
               </div>
@@ -312,7 +455,7 @@ export default function ARVisualization() {
   );
 }
 
-function CreateSceneForm({ onSubmit }: { onSubmit: (data: { name: string; description?: string; portalId?: string; sceneData: any; modelUrls: any }) => void }) {
+function CreateSceneForm({ onSubmit }: { onSubmit: (data: { name: string; description?: string; portalId?: string; sceneData: unknown; modelUrls: unknown }) => void }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [sceneType, setSceneType] = useState<'dashboard' | 'chart' | 'table'>('dashboard');
@@ -351,7 +494,7 @@ function CreateSceneForm({ onSubmit }: { onSubmit: (data: { name: string; descri
       </div>
       <div>
         <Label htmlFor="sceneType">Scene Type</Label>
-        <Select value={sceneType} onValueChange={(v: any) => setSceneType(v)}>
+        <Select value={sceneType} onValueChange={(v: 'dashboard' | 'chart' | 'table') => setSceneType(v)}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
@@ -363,6 +506,133 @@ function CreateSceneForm({ onSubmit }: { onSubmit: (data: { name: string; descri
         </Select>
       </div>
       <Button type="submit" className="w-full">Create Scene</Button>
+    </form>
+  );
+}
+
+function CreateMarkerForm({ 
+  scenes, 
+  onSubmit 
+}: { 
+  scenes: ARScene[];
+  onSubmit: (data: { sceneId: string; type: 'qr' | 'image' | 'location'; location?: { lat: number; lng: number; radius: number } }) => void;
+}) {
+  const [sceneId, setSceneId] = useState(scenes[0]?.id || '');
+  const [markerType, setMarkerType] = useState<'qr' | 'image' | 'location'>('qr');
+  const [lat, setLat] = useState('');
+  const [lng, setLng] = useState('');
+  const [radius, setRadius] = useState('100');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const data: { sceneId: string; type: 'qr' | 'image' | 'location'; location?: { lat: number; lng: number; radius: number } } = {
+      sceneId,
+      type: markerType,
+    };
+    
+    if (markerType === 'location' && lat && lng) {
+      data.location = {
+        lat: parseFloat(lat),
+        lng: parseFloat(lng),
+        radius: parseFloat(radius) || 100,
+      };
+    }
+    
+    onSubmit(data);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="scene">Scene</Label>
+        <Select value={sceneId} onValueChange={setSceneId}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select a scene" />
+          </SelectTrigger>
+          <SelectContent>
+            {scenes.map((scene) => (
+              <SelectItem key={scene.id} value={scene.id}>
+                {scene.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div>
+        <Label htmlFor="markerType">Marker Type</Label>
+        <Select value={markerType} onValueChange={(v: 'qr' | 'image' | 'location') => setMarkerType(v)}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="qr">
+              <div className="flex items-center gap-2">
+                <QrCode className="h-4 w-4" />
+                QR Code
+              </div>
+            </SelectItem>
+            <SelectItem value="image">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="h-4 w-4" />
+                Image Target
+              </div>
+            </SelectItem>
+            <SelectItem value="location">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                Location-based
+              </div>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {markerType === 'location' && (
+        <div className="space-y-3 p-3 border rounded-lg bg-muted/50">
+          <p className="text-sm font-medium">Location Settings</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="lat">Latitude</Label>
+              <Input
+                id="lat"
+                type="number"
+                step="any"
+                value={lat}
+                onChange={(e) => setLat(e.target.value)}
+                placeholder="40.7128"
+                required={markerType === 'location'}
+              />
+            </div>
+            <div>
+              <Label htmlFor="lng">Longitude</Label>
+              <Input
+                id="lng"
+                type="number"
+                step="any"
+                value={lng}
+                onChange={(e) => setLng(e.target.value)}
+                placeholder="-74.0060"
+                required={markerType === 'location'}
+              />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="radius">Trigger Radius (meters)</Label>
+            <Input
+              id="radius"
+              type="number"
+              value={radius}
+              onChange={(e) => setRadius(e.target.value)}
+              placeholder="100"
+            />
+          </div>
+        </div>
+      )}
+
+      <Button type="submit" className="w-full" disabled={!sceneId}>
+        Create Marker
+      </Button>
     </form>
   );
 }

@@ -152,7 +152,7 @@ export class FederatedSearchService {
     workspaceId: string,
     sourceId: string,
     query: string,
-    options: SearchOptions,
+    _options: SearchOptions,
   ): Promise<SearchResult[]> {
     const results: SearchResult[] = [];
     const searchTerms = query.toLowerCase().split(/\s+/);
@@ -343,7 +343,7 @@ export class FederatedSearchService {
     workspaceId: string,
     source: DataSource,
     query: string,
-    options: SearchOptions,
+    _options: SearchOptions,
   ): Promise<SearchResult[]> {
     // This would connect to actual integrations
     // For now, return empty results
@@ -357,7 +357,7 @@ export class FederatedSearchService {
   private async searchExternal(
     source: DataSource,
     query: string,
-    options: SearchOptions,
+    _options: SearchOptions,
   ): Promise<SearchResult[]> {
     // This would connect to external APIs
     // For now, return empty results
@@ -539,7 +539,7 @@ export class FederatedSearchService {
   private async logSearch(
     workspaceId: string,
     query: string,
-    resultCount: number,
+    _resultCount: number,
   ): Promise<void> {
     // Log to analytics (simplified)
     const statsKey = `search_stats:${workspaceId}`;

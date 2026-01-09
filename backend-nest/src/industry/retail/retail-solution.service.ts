@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
-interface Product {
+export interface Product {
   id: string;
   sku: string;
   name: string;
@@ -15,7 +15,7 @@ interface Product {
   status: 'active' | 'discontinued' | 'seasonal';
 }
 
-interface InventoryLevel {
+export interface InventoryLevel {
   locationId: string;
   locationName: string;
   quantity: number;
@@ -51,7 +51,7 @@ interface Customer {
   };
 }
 
-interface Transaction {
+export interface Transaction {
   id: string;
   timestamp: string;
   customerId?: string;
@@ -76,7 +76,7 @@ interface TransactionItem {
   total: number;
 }
 
-interface DemandForecast {
+export interface DemandForecast {
   productId: string;
   sku: string;
   forecasts: {
@@ -90,7 +90,7 @@ interface DemandForecast {
   trend: 'increasing' | 'stable' | 'decreasing';
 }
 
-interface PricingRecommendation {
+export interface PricingRecommendation {
   productId: string;
   currentPrice: number;
   recommendedPrice: number;
@@ -101,7 +101,7 @@ interface PricingRecommendation {
   confidence: number;
 }
 
-interface CustomerSegmentAnalysis {
+export interface CustomerSegmentAnalysis {
   segment: string;
   count: number;
   avgLifetimeValue: number;
@@ -112,7 +112,7 @@ interface CustomerSegmentAnalysis {
   recommendations: string[];
 }
 
-interface PromotionAnalysis {
+export interface PromotionAnalysis {
   promotionId: string;
   name: string;
   startDate: string;
@@ -150,12 +150,33 @@ export class RetailSolutionService {
         subcategory: 'Shirts',
         brand: 'BrandA',
         price: 59.99,
-        costPrice: 25.00,
+        costPrice: 25.0,
         inventory: [
-          { locationId: 'store-1', locationName: 'Downtown Store', quantity: 50, reserved: 5, available: 45, reorderPoint: 10, reorderQuantity: 30, lastUpdated: new Date().toISOString() },
-          { locationId: 'warehouse-1', locationName: 'Central Warehouse', quantity: 200, reserved: 20, available: 180, reorderPoint: 50, reorderQuantity: 100, lastUpdated: new Date().toISOString() },
+          {
+            locationId: 'store-1',
+            locationName: 'Downtown Store',
+            quantity: 50,
+            reserved: 5,
+            available: 45,
+            reorderPoint: 10,
+            reorderQuantity: 30,
+            lastUpdated: new Date().toISOString(),
+          },
+          {
+            locationId: 'warehouse-1',
+            locationName: 'Central Warehouse',
+            quantity: 200,
+            reserved: 20,
+            available: 180,
+            reorderPoint: 50,
+            reorderQuantity: 100,
+            lastUpdated: new Date().toISOString(),
+          },
         ],
-        attributes: { size: ['S', 'M', 'L', 'XL'], color: ['White', 'Blue', 'Black'] },
+        attributes: {
+          size: ['S', 'M', 'L', 'XL'],
+          color: ['White', 'Blue', 'Black'],
+        },
         status: 'active',
       },
     ];
@@ -195,16 +216,23 @@ export class RetailSolutionService {
   }
 
   // Inventory Management
-  async getInventoryLevels(filters?: { locationId?: string; belowReorderPoint?: boolean }): Promise<{
-    product: Product;
-    inventory: InventoryLevel;
-  }[]> {
+  async getInventoryLevels(filters?: {
+    locationId?: string;
+    belowReorderPoint?: boolean;
+  }): Promise<
+    {
+      product: Product;
+      inventory: InventoryLevel;
+    }[]
+  > {
     const results: { product: Product; inventory: InventoryLevel }[] = [];
 
     for (const product of this.products.values()) {
       for (const inv of product.inventory) {
-        if (filters?.locationId && inv.locationId !== filters.locationId) continue;
-        if (filters?.belowReorderPoint && inv.available > inv.reorderPoint) continue;
+        if (filters?.locationId && inv.locationId !== filters.locationId)
+          continue;
+        if (filters?.belowReorderPoint && inv.available > inv.reorderPoint)
+          continue;
 
         results.push({ product, inventory: inv });
       }
@@ -213,12 +241,20 @@ export class RetailSolutionService {
     return results;
   }
 
-  async updateInventory(productId: string, locationId: string, quantityChange: number, reason: string): Promise<InventoryLevel> {
+  async updateInventory(
+    productId: string,
+    locationId: string,
+    quantityChange: number,
+    _reason: string,
+  ): Promise<InventoryLevel> {
     const product = this.products.get(productId);
     if (!product) throw new Error(`Product ${productId} not found`);
 
-    const inventory = product.inventory.find(i => i.locationId === locationId);
-    if (!inventory) throw new Error(`Inventory not found for location ${locationId}`);
+    const inventory = product.inventory.find(
+      (i) => i.locationId === locationId,
+    );
+    if (!inventory)
+      throw new Error(`Inventory not found for location ${locationId}`);
 
     inventory.quantity += quantityChange;
     inventory.available = inventory.quantity - inventory.reserved;
@@ -238,32 +274,49 @@ export class RetailSolutionService {
     return inventory;
   }
 
-  async transferInventory(productId: string, fromLocation: string, toLocation: string, quantity: number): Promise<void> {
-    await this.updateInventory(productId, fromLocation, -quantity, 'transfer_out');
+  async transferInventory(
+    productId: string,
+    fromLocation: string,
+    toLocation: string,
+    quantity: number,
+  ): Promise<void> {
+    await this.updateInventory(
+      productId,
+      fromLocation,
+      -quantity,
+      'transfer_out',
+    );
     await this.updateInventory(productId, toLocation, quantity, 'transfer_in');
 
-    this.logger.log(`Transferred ${quantity} units of ${productId} from ${fromLocation} to ${toLocation}`);
+    this.logger.log(
+      `Transferred ${quantity} units of ${productId} from ${fromLocation} to ${toLocation}`,
+    );
   }
 
   // Demand Forecasting
-  async generateDemandForecast(productId: string, days: number = 30): Promise<DemandForecast> {
+  async generateDemandForecast(
+    productId: string,
+    days: number = 30,
+  ): Promise<DemandForecast> {
     const product = this.products.get(productId);
     if (!product) throw new Error(`Product ${productId} not found`);
 
     const forecasts: DemandForecast['forecasts'] = [];
-    let baselineDemand = 10 + Math.random() * 20;
+    const baselineDemand = 10 + Math.random() * 20;
 
     for (let i = 0; i < days; i++) {
       const date = new Date(Date.now() + i * 24 * 60 * 60 * 1000);
       const dayOfWeek = date.getDay();
-      
+
       // Weekly seasonality
-      const weekendFactor = (dayOfWeek === 0 || dayOfWeek === 6) ? 1.3 : 1.0;
-      
+      const weekendFactor = dayOfWeek === 0 || dayOfWeek === 6 ? 1.3 : 1.0;
+
       // Random variation
       const randomFactor = 0.8 + Math.random() * 0.4;
-      
-      const predicted = Math.round(baselineDemand * weekendFactor * randomFactor);
+
+      const predicted = Math.round(
+        baselineDemand * weekendFactor * randomFactor,
+      );
       const uncertainty = predicted * 0.15;
 
       forecasts.push({
@@ -271,7 +324,7 @@ export class RetailSolutionService {
         predicted,
         lowerBound: Math.max(0, predicted - uncertainty),
         upperBound: predicted + uncertainty,
-        confidence: 0.85 - (i * 0.01), // Confidence decreases with time
+        confidence: 0.85 - i * 0.01, // Confidence decreases with time
       });
     }
 
@@ -321,12 +374,19 @@ export class RetailSolutionService {
         };
       }
 
-      const avgLTV = customers.reduce((sum, c) => sum + c.lifetime.totalSpent, 0) / customers.length;
-      const avgAOV = customers.reduce((sum, c) => sum + c.lifetime.avgOrderValue, 0) / customers.length;
-      const avgFrequency = customers.reduce((sum, c) => sum + c.rfm.frequency, 0) / customers.length;
+      const avgLTV =
+        customers.reduce((sum, c) => sum + c.lifetime.totalSpent, 0) /
+        customers.length;
+      const avgAOV =
+        customers.reduce((sum, c) => sum + c.lifetime.avgOrderValue, 0) /
+        customers.length;
+      const avgFrequency =
+        customers.reduce((sum, c) => sum + c.rfm.frequency, 0) /
+        customers.length;
 
       // Calculate churn risk based on RFM
-      const avgRecency = customers.reduce((sum, c) => sum + c.rfm.recency, 0) / customers.length;
+      const avgRecency =
+        customers.reduce((sum, c) => sum + c.rfm.recency, 0) / customers.length;
       const churnRisk = Math.min(1, avgRecency / 90); // Higher recency = higher risk
 
       // Get top categories
@@ -365,7 +425,12 @@ export class RetailSolutionService {
   }
 
   async getCustomerRecommendations(customerId: string): Promise<{
-    products: { productId: string; name: string; score: number; reason: string }[];
+    products: {
+      productId: string;
+      name: string;
+      score: number;
+      reason: string;
+    }[];
     nextBestAction: string;
     churnRisk: number;
     upsellOpportunity: number;
@@ -375,9 +440,9 @@ export class RetailSolutionService {
 
     // Get products matching customer preferences
     const products = Array.from(this.products.values())
-      .filter(p => customer.preferences.categories.includes(p.category))
+      .filter((p) => customer.preferences.categories.includes(p.category))
       .slice(0, 5)
-      .map(p => ({
+      .map((p) => ({
         productId: p.id,
         name: p.name,
         score: 0.7 + Math.random() * 0.3,
@@ -401,30 +466,44 @@ export class RetailSolutionService {
   }
 
   // Pricing Optimization
-  async getPricingRecommendation(productId: string): Promise<PricingRecommendation> {
+  async getPricingRecommendation(
+    productId: string,
+  ): Promise<PricingRecommendation> {
     const product = this.products.get(productId);
     if (!product) throw new Error(`Product ${productId} not found`);
 
     // Simulate price elasticity analysis
     const priceElasticity = -1.2 - Math.random() * 0.8; // Typically negative
-    
+
     // Simulate competitor prices
     const competitorPrices = [
-      { competitor: 'Competitor A', price: product.price * (0.9 + Math.random() * 0.2) },
-      { competitor: 'Competitor B', price: product.price * (0.85 + Math.random() * 0.3) },
-      { competitor: 'Competitor C', price: product.price * (0.95 + Math.random() * 0.15) },
+      {
+        competitor: 'Competitor A',
+        price: product.price * (0.9 + Math.random() * 0.2),
+      },
+      {
+        competitor: 'Competitor B',
+        price: product.price * (0.85 + Math.random() * 0.3),
+      },
+      {
+        competitor: 'Competitor C',
+        price: product.price * (0.95 + Math.random() * 0.15),
+      },
     ];
 
     // Calculate optimal price
-    const avgCompetitorPrice = competitorPrices.reduce((sum, c) => sum + c.price, 0) / competitorPrices.length;
+    const avgCompetitorPrice =
+      competitorPrices.reduce((sum, c) => sum + c.price, 0) /
+      competitorPrices.length;
     const costFloor = product.costPrice * 1.2; // 20% minimum margin
-    
-    let recommendedPrice = (product.price * 0.4 + avgCompetitorPrice * 0.6);
+
+    let recommendedPrice = product.price * 0.4 + avgCompetitorPrice * 0.6;
     recommendedPrice = Math.max(recommendedPrice, costFloor);
 
     const priceChange = (recommendedPrice - product.price) / product.price;
     const expectedVolumeChange = priceChange * priceElasticity;
-    const expectedRevenueChange = (1 + priceChange) * (1 + expectedVolumeChange) - 1;
+    const expectedRevenueChange =
+      (1 + priceChange) * (1 + expectedVolumeChange) - 1;
 
     return {
       productId,
@@ -456,7 +535,7 @@ export class RetailSolutionService {
         redemptions: Math.floor(500 + Math.random() * 1000),
         conversionRate: 0.15 + Math.random() * 0.1,
         averageBasketSize: 80 + Math.random() * 40,
-        roi: (incrementalRevenue / (totalRevenue * 0.1)) - 1, // Assuming 10% promo cost
+        roi: incrementalRevenue / (totalRevenue * 0.1) - 1, // Assuming 10% promo cost
       },
       cannibalizedProducts: [
         { productId: 'prod-x', name: 'Related Product X', impact: -0.15 },
@@ -468,9 +547,11 @@ export class RetailSolutionService {
   }
 
   // Transaction Processing
-  async processTransaction(data: Omit<Transaction, 'id' | 'timestamp'>): Promise<Transaction> {
+  async processTransaction(
+    data: Omit<Transaction, 'id' | 'timestamp'>,
+  ): Promise<Transaction> {
     const id = `txn-${Date.now()}`;
-    
+
     const transaction: Transaction = {
       ...data,
       id,
@@ -481,7 +562,12 @@ export class RetailSolutionService {
 
     // Update inventory
     for (const item of transaction.items) {
-      await this.updateInventory(item.productId, data.locationId, -item.quantity, 'sale');
+      await this.updateInventory(
+        item.productId,
+        data.locationId,
+        -item.quantity,
+        'sale',
+      );
     }
 
     // Update customer if known
@@ -490,10 +576,11 @@ export class RetailSolutionService {
       if (customer) {
         customer.lifetime.totalOrders++;
         customer.lifetime.totalSpent += transaction.total;
-        customer.lifetime.avgOrderValue = customer.lifetime.totalSpent / customer.lifetime.totalOrders;
+        customer.lifetime.avgOrderValue =
+          customer.lifetime.totalSpent / customer.lifetime.totalOrders;
         customer.lifetime.lastPurchase = transaction.timestamp;
         customer.rfm.recency = 0;
-        
+
         // Recalculate segment
         this.updateCustomerSegment(customer);
       }
@@ -526,18 +613,30 @@ export class RetailSolutionService {
     avgTransactionValue: number;
     byChannel: Record<string, { revenue: number; transactions: number }>;
     byCategory: Record<string, number>;
-    topProducts: { productId: string; name: string; revenue: number; units: number }[];
+    topProducts: {
+      productId: string;
+      name: string;
+      revenue: number;
+      units: number;
+    }[];
     hourlyDistribution: { hour: number; transactions: number }[];
   }> {
     const txns = Array.from(this.transactions.values()).filter(
-      t => t.timestamp >= timeRange.start && t.timestamp <= timeRange.end
+      (t) => t.timestamp >= timeRange.start && t.timestamp <= timeRange.end,
     );
 
     let totalRevenue = 0;
-    const byChannel: Record<string, { revenue: number; transactions: number }> = {};
+    const byChannel: Record<string, { revenue: number; transactions: number }> =
+      {};
     const byCategory: Record<string, number> = {};
-    const productRevenue: Record<string, { name: string; revenue: number; units: number }> = {};
-    const hourlyDistribution = Array.from({ length: 24 }, (_, i) => ({ hour: i, transactions: 0 }));
+    const productRevenue: Record<
+      string,
+      { name: string; revenue: number; units: number }
+    > = {};
+    const hourlyDistribution = Array.from({ length: 24 }, (_, i) => ({
+      hour: i,
+      transactions: 0,
+    }));
 
     for (const txn of txns) {
       totalRevenue += txn.total;
@@ -557,10 +656,15 @@ export class RetailSolutionService {
       for (const item of txn.items) {
         const product = this.products.get(item.productId);
         if (product) {
-          byCategory[product.category] = (byCategory[product.category] || 0) + item.total;
+          byCategory[product.category] =
+            (byCategory[product.category] || 0) + item.total;
 
           if (!productRevenue[item.productId]) {
-            productRevenue[item.productId] = { name: item.name, revenue: 0, units: 0 };
+            productRevenue[item.productId] = {
+              name: item.name,
+              revenue: 0,
+              units: 0,
+            };
           }
           productRevenue[item.productId].revenue += item.total;
           productRevenue[item.productId].units += item.quantity;

@@ -6,7 +6,6 @@ import {
   Param,
   Patch,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import { DataHealthService } from './data-health.service';
 import { HealthMonitorService } from './health-monitor.service';

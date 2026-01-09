@@ -1,17 +1,26 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Puzzle, Plus, Play, Settings } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface IntegrationBuilderProps {
   workspaceId: string;
 }
 
+interface Integration {
+  id: string;
+  name: string;
+  description: string;
+  authType: string;
+  endpoints: Array<{ id: string }>;
+}
+
 export function IntegrationBuilder({ workspaceId }: IntegrationBuilderProps) {
-  const [integrations, setIntegrations] = useState<any[]>([]);
+  const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [showBuilder, setShowBuilder] = useState(false);
 
-  const loadIntegrations = async () => {
+  const loadIntegrations = useCallback(async () => {
     try {
       const response = await fetch(`/api/integration-builder/integrations?workspaceId=${workspaceId}`);
       const data = await response.json();
@@ -19,7 +28,7 @@ export function IntegrationBuilder({ workspaceId }: IntegrationBuilderProps) {
     } catch (error) {
       console.error('Failed to load integrations', error);
     }
-  };
+  }, [workspaceId]);
 
   const testIntegration = async (integrationId: string, endpointId: string) => {
     try {
@@ -27,15 +36,20 @@ export function IntegrationBuilder({ workspaceId }: IntegrationBuilderProps) {
         method: 'POST',
       });
       const result = await response.json();
-      alert(result.success ? 'Test successful!' : 'Test failed');
+      if (result.success) {
+        toast.success('Test successful!');
+      } else {
+        toast.error('Test failed');
+      }
     } catch (error) {
       console.error('Test failed', error);
+      toast.error('Test failed');
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     loadIntegrations();
-  }, [workspaceId]);
+  }, [loadIntegrations]);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">

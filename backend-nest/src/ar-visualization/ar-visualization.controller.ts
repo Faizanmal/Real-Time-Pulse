@@ -118,6 +118,17 @@ export class ARVisualizationController {
     return this.arService.getMarkers(req.user.workspaceId, sceneId);
   }
 
+  @Delete('markers/:markerId')
+  @ApiOperation({ summary: 'Delete AR marker' })
+  @ApiParam({ name: 'markerId', description: 'Marker ID' })
+  async deleteMarker(@Request() req: any, @Param('markerId') markerId: string) {
+    const deleted = await this.arService.deleteMarker(
+      req.user.workspaceId,
+      markerId,
+    );
+    return { success: deleted };
+  }
+
   @Post('convert')
   @ApiOperation({ summary: 'Convert widget data to 3D format' })
   async convertTo3D(@Body() dto: { widgetType: string; widgetData: any }) {

@@ -2,10 +2,16 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 
-interface MLModel {
+export interface MLModel {
   id: string;
   name: string;
-  type: 'classification' | 'regression' | 'clustering' | 'timeseries' | 'anomaly' | 'nlp';
+  type:
+    | 'classification'
+    | 'regression'
+    | 'clustering'
+    | 'timeseries'
+    | 'anomaly'
+    | 'nlp';
   framework: 'sklearn' | 'tensorflow' | 'pytorch' | 'xgboost' | 'custom';
   version: string;
   status: 'training' | 'ready' | 'failed' | 'archived';
@@ -37,14 +43,14 @@ interface PredictionRequest {
   };
 }
 
-interface PredictionResult {
+export interface PredictionResult {
   prediction: any;
   probability?: number;
   confidence?: number;
   explanation?: FeatureImportance[];
 }
 
-interface FeatureImportance {
+export interface FeatureImportance {
   feature: string;
   importance: number;
   direction: 'positive' | 'negative';
@@ -118,7 +124,11 @@ export class MLModelService {
   }
 
   // Training
-  async trainModel(modelId: string, data: any[], config: TrainingConfig): Promise<MLModel> {
+  async trainModel(
+    modelId: string,
+    data: any[],
+    config: TrainingConfig,
+  ): Promise<MLModel> {
     const model = this.models.get(modelId);
     if (!model) throw new Error(`Model ${modelId} not found`);
 
@@ -129,12 +139,15 @@ export class MLModelService {
       if (config.automl) {
         const automlResult = await this.runAutoML(model, data, config);
         model.hyperparameters = automlResult.bestModel.hyperparameters;
-        model.metrics = { ...model.metrics, automl_score: automlResult.bestModel.score };
+        model.metrics = {
+          ...model.metrics,
+          automl_score: automlResult.bestModel.score,
+        };
       }
 
       // Simulate training process
       const trainingResult = await this.executeTraining(model, data, config);
-      
+
       model.metrics = trainingResult.metrics;
       model.hyperparameters = trainingResult.hyperparameters;
       model.status = 'ready';
@@ -150,7 +163,6 @@ export class MLModelService {
 
       this.logger.log(`Training completed for model ${model.name}`);
       return model;
-
     } catch (error) {
       model.status = 'failed';
       this.logger.error(`Training failed for model ${model.name}:`, error);
@@ -158,7 +170,11 @@ export class MLModelService {
     }
   }
 
-  private async executeTraining(model: MLModel, data: any[], config: TrainingConfig): Promise<{
+  private async executeTraining(
+    model: MLModel,
+    data: any[],
+    config: TrainingConfig,
+  ): Promise<{
     metrics: Record<string, number>;
     hyperparameters: Record<string, any>;
     weights: any;
@@ -188,7 +204,7 @@ export class MLModelService {
         return {
           accuracy: 0.85 + Math.random() * 0.1,
           precision: 0.82 + Math.random() * 0.1,
-          recall: 0.80 + Math.random() * 0.1,
+          recall: 0.8 + Math.random() * 0.1,
           f1_score: 0.81 + Math.random() * 0.1,
           auc_roc: 0.88 + Math.random() * 0.08,
         };
@@ -229,7 +245,11 @@ export class MLModelService {
   }
 
   // AutoML
-  async runAutoML(model: MLModel, data: any[], config: TrainingConfig): Promise<AutoMLResult> {
+  async runAutoML(
+    model: MLModel,
+    _data: any[],
+    _config: TrainingConfig,
+  ): Promise<AutoMLResult> {
     this.logger.log(`Running AutoML for model ${model.name}`);
 
     const algorithms = this.getAlgorithmsForType(model.type);
@@ -238,7 +258,7 @@ export class MLModelService {
     for (const algorithm of algorithms) {
       const startTime = Date.now();
       await this.simulateDelay(500);
-      
+
       const score = 0.7 + Math.random() * 0.25;
       candidates.push({
         algorithm,
@@ -251,11 +271,13 @@ export class MLModelService {
     candidates.sort((a, b) => b.score - a.score);
     const best = candidates[0];
 
-    const featureImportance = model.features.map(f => ({
-      feature: f,
-      importance: Math.random(),
-      direction: Math.random() > 0.5 ? 'positive' : 'negative' as const,
-    })).sort((a, b) => b.importance - a.importance);
+    const featureImportance: FeatureImportance[] = model.features
+      .map((f) => ({
+        feature: f,
+        importance: Math.random(),
+        direction: Math.random() > 0.5 ? 'positive' : 'negative',
+      }))
+      .sort((a, b) => b.importance - a.importance);
 
     return {
       bestModel: {
@@ -271,9 +293,22 @@ export class MLModelService {
   private getAlgorithmsForType(type: MLModel['type']): string[] {
     switch (type) {
       case 'classification':
-        return ['random_forest', 'xgboost', 'logistic_regression', 'svm', 'neural_network'];
+        return [
+          'random_forest',
+          'xgboost',
+          'logistic_regression',
+          'svm',
+          'neural_network',
+        ];
       case 'regression':
-        return ['linear_regression', 'ridge', 'lasso', 'random_forest', 'xgboost', 'neural_network'];
+        return [
+          'linear_regression',
+          'ridge',
+          'lasso',
+          'random_forest',
+          'xgboost',
+          'neural_network',
+        ];
       case 'clustering':
         return ['kmeans', 'dbscan', 'hierarchical', 'gaussian_mixture'];
       case 'timeseries':
@@ -307,17 +342,20 @@ export class MLModelService {
   async predict(request: PredictionRequest): Promise<PredictionResult> {
     const model = this.models.get(request.modelId);
     if (!model) throw new Error(`Model ${request.modelId} not found`);
-    if (model.status !== 'ready') throw new Error(`Model ${request.modelId} is not ready`);
+    if (model.status !== 'ready')
+      throw new Error(`Model ${request.modelId} is not ready`);
 
     // Validate features
-    const missingFeatures = model.features.filter(f => !(f in request.features));
+    const missingFeatures = model.features.filter(
+      (f) => !(f in request.features),
+    );
     if (missingFeatures.length > 0) {
       throw new Error(`Missing features: ${missingFeatures.join(', ')}`);
     }
 
     // Execute prediction
     const prediction = await this.executePrediction(model, request.features);
-    
+
     const result: PredictionResult = {
       prediction: prediction.value,
       probability: prediction.probability,
@@ -332,7 +370,10 @@ export class MLModelService {
     return result;
   }
 
-  private async executePrediction(model: MLModel, features: Record<string, any>): Promise<{
+  private async executePrediction(
+    model: MLModel,
+    _features: Record<string, any>,
+  ): Promise<{
     value: any;
     probability?: number;
     confidence?: number;
@@ -341,17 +382,19 @@ export class MLModelService {
     await this.simulateDelay(50);
 
     switch (model.type) {
-      case 'classification':
+      case 'classification': {
         const classes = ['A', 'B', 'C'];
         const probabilities = [Math.random(), Math.random(), Math.random()];
         const sum = probabilities.reduce((a, b) => a + b, 0);
-        const normalized = probabilities.map(p => p / sum);
+        const normalized = probabilities.map((p) => p / sum);
         const maxIdx = normalized.indexOf(Math.max(...normalized));
         return {
           value: classes[maxIdx],
           probability: normalized[maxIdx],
-          confidence: normalized[maxIdx] - (normalized.sort((a, b) => b - a)[1] || 0),
+          confidence:
+            normalized[maxIdx] - (normalized.sort((a, b) => b - a)[1] || 0),
         };
+      }
 
       case 'regression':
         return {
@@ -365,29 +408,38 @@ export class MLModelService {
           confidence: 0.7 + Math.random() * 0.2,
         };
 
-      case 'anomaly':
+      case 'anomaly': {
         const isAnomaly = Math.random() > 0.9;
         return {
           value: isAnomaly ? 'anomaly' : 'normal',
           probability: isAnomaly ? 0.85 : 0.15,
           confidence: 0.9,
         };
+      }
 
       default:
         return { value: null };
     }
   }
 
-  private generateExplanation(model: MLModel, features: Record<string, any>): FeatureImportance[] {
-    return model.features.map(feature => ({
-      feature,
-      importance: Math.random(),
-      direction: Math.random() > 0.5 ? 'positive' : 'negative',
-    })).sort((a, b) => b.importance - a.importance);
+  private generateExplanation(
+    model: MLModel,
+    _features: Record<string, any>,
+  ): FeatureImportance[] {
+    return model.features
+      .map((feature) => ({
+        feature,
+        importance: Math.random(),
+        direction: Math.random() > 0.5 ? 'positive' : 'negative',
+      }))
+      .sort((a, b) => b.importance - a.importance);
   }
 
   // Batch Prediction
-  async batchPredict(modelId: string, dataPoints: Record<string, any>[]): Promise<PredictionResult[]> {
+  async batchPredict(
+    modelId: string,
+    dataPoints: Record<string, any>[],
+  ): Promise<PredictionResult[]> {
     const results: PredictionResult[] = [];
 
     for (const features of dataPoints) {
@@ -399,7 +451,10 @@ export class MLModelService {
   }
 
   // Feature Engineering
-  async analyzeFeatures(data: any[], targetColumn: string): Promise<{
+  async analyzeFeatures(
+    data: any[],
+    targetColumn: string,
+  ): Promise<{
     features: {
       name: string;
       type: 'numeric' | 'categorical' | 'text' | 'datetime';
@@ -410,9 +465,9 @@ export class MLModelService {
     recommendations: string[];
   }> {
     const features = Object.keys(data[0] || {})
-      .filter(k => k !== targetColumn)
-      .map(name => {
-        const values = data.map(d => d[name]);
+      .filter((k) => k !== targetColumn)
+      .map((name) => {
+        const values = data.map((d) => d[name]);
         const type = this.inferFeatureType(values);
 
         return {
@@ -436,8 +491,10 @@ export class MLModelService {
     return { features, recommendations };
   }
 
-  private inferFeatureType(values: any[]): 'numeric' | 'categorical' | 'text' | 'datetime' {
-    const sample = values.find(v => v !== null && v !== undefined);
+  private inferFeatureType(
+    values: any[],
+  ): 'numeric' | 'categorical' | 'text' | 'datetime' {
+    const sample = values.find((v) => v !== null && v !== undefined);
     if (typeof sample === 'number') return 'numeric';
     if (sample instanceof Date) return 'datetime';
     if (typeof sample === 'string') {
@@ -448,13 +505,14 @@ export class MLModelService {
   }
 
   private calculateStats(values: any[], type: string): Record<string, any> {
-    const nonNull = values.filter(v => v !== null && v !== undefined);
+    const nonNull = values.filter((v) => v !== null && v !== undefined);
 
     if (type === 'numeric') {
-      const nums = nonNull.map(Number).filter(n => !isNaN(n));
+      const nums = nonNull.map(Number).filter((n) => !isNaN(n));
       const sum = nums.reduce((a, b) => a + b, 0);
       const mean = sum / nums.length;
-      const variance = nums.reduce((acc, n) => acc + Math.pow(n - mean, 2), 0) / nums.length;
+      const variance =
+        nums.reduce((acc, n) => acc + Math.pow(n - mean, 2), 0) / nums.length;
 
       return {
         count: nums.length,
@@ -483,6 +541,6 @@ export class MLModelService {
   }
 
   private simulateDelay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

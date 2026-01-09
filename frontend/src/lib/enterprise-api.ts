@@ -458,7 +458,7 @@ export const scheduledReportsApi = {
     await apiClient.delete(`/scheduled-reports/${id}`);
   },
 
-  sendNow: async (id: string): Promise<{ message: string }> => {
+  sendNow: async (id: string): Promise<{ message: string; downloadUrl?: string; }> => {
     const response = await apiClient.post(`/scheduled-reports/${id}/send`);
     return response.data;
   },

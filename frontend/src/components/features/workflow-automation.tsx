@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { workflowApi } from '@/lib/advanced-api';
-import type { Workflow, WorkflowExecution } from '@/types/advanced-features';
+import type { Workflow } from '@/types/advanced-features';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,13 +24,13 @@ export default function WorkflowAutomation() {
       const data = response.data;
       if (Array.isArray(data)) {
         setWorkflows(data);
-      } else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as any).data)) {
-        setWorkflows((data as any).data);
+      } else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as { data: unknown[] }).data)) {
+        setWorkflows((data as { data: Workflow[] }).data);
       } else {
         console.warn('Unexpected API response format for workflows:', data);
         setWorkflows([]);
       }
-    } catch (error: any) {
+    } catch {
       toast.error('Failed to load workflows');
     } finally {
       setLoading(false);
@@ -42,7 +42,7 @@ export default function WorkflowAutomation() {
       await workflowApi.toggleWorkflow(id, !isActive);
       toast.success(`Workflow ${!isActive ? 'activated' : 'deactivated'}`);
       loadWorkflows();
-    } catch (error: any) {
+    } catch {
       toast.error('Failed to toggle workflow');
     }
   };
@@ -54,7 +54,7 @@ export default function WorkflowAutomation() {
       await workflowApi.deleteWorkflow(id);
       toast.success('Workflow deleted');
       loadWorkflows();
-    } catch (error: any) {
+    } catch {
       toast.error('Failed to delete workflow');
     }
   };
@@ -63,7 +63,7 @@ export default function WorkflowAutomation() {
     try {
       await workflowApi.executeWorkflow(id, { manual: true });
       toast.success('Workflow execution started');
-    } catch (error: any) {
+    } catch {
       toast.error('Failed to execute workflow');
     }
   };
@@ -210,7 +210,7 @@ export default function WorkflowAutomation() {
                   </div>
                   <div>
                     <p className="text-muted-foreground">Actions</p>
-                    <p className="font-semibold">{workflow.actions?.length || 0}</p>
+                    <p className="font-semibold">{Array.isArray(workflow.actions) ? workflow.actions.length : 0}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Last Run</p>

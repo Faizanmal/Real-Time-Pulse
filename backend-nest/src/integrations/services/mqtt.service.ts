@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import * as mqtt from 'mqtt';
 import { EventEmitter } from 'events';
 
-interface MqttIntegration {
+export interface MqttIntegration {
   accessToken?: string; // Username
   refreshToken?: string; // Password
   settings: {
@@ -30,8 +30,14 @@ interface MqttIntegration {
 
 interface MqttConnectionPool {
   client: mqtt.MqttClient;
-  subscriptions: Map<string, { qos: 0 | 1 | 2; callback?: (topic: string, message: Buffer) => void }>;
-  messageBuffer: Map<string, { topic: string; message: string; timestamp: number }[]>;
+  subscriptions: Map<
+    string,
+    { qos: 0 | 1 | 2; callback?: (topic: string, message: Buffer) => void }
+  >;
+  messageBuffer: Map<
+    string,
+    { topic: string; message: string; timestamp: number }[]
+  >;
 }
 
 @Injectable()
@@ -55,7 +61,9 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
     return `${integration.settings.brokerUrl}_${integration.settings.clientId || 'default'}`;
   }
 
-  private async getClient(integration: MqttIntegration): Promise<MqttConnectionPool> {
+  private async getClient(
+    integration: MqttIntegration,
+  ): Promise<MqttConnectionPool> {
     const key = this.getConnectionKey(integration);
     let pool = this.connectionPool.get(key);
 
@@ -65,7 +73,8 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
 
     return new Promise((resolve, reject) => {
       const clientId =
-        integration.settings.clientId || `mqtt_client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        integration.settings.clientId ||
+        `mqtt_client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
       const options: mqtt.IClientOptions = {
         clientId,
@@ -92,10 +101,14 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
       }
 
       if (integration.settings.tls) {
-        options.rejectUnauthorized = integration.settings.tls.rejectUnauthorized ?? true;
-        if (integration.settings.tls.ca) options.ca = integration.settings.tls.ca;
-        if (integration.settings.tls.cert) options.cert = integration.settings.tls.cert;
-        if (integration.settings.tls.key) options.key = integration.settings.tls.key;
+        options.rejectUnauthorized =
+          integration.settings.tls.rejectUnauthorized ?? true;
+        if (integration.settings.tls.ca)
+          options.ca = integration.settings.tls.ca;
+        if (integration.settings.tls.cert)
+          options.cert = integration.settings.tls.cert;
+        if (integration.settings.tls.key)
+          options.key = integration.settings.tls.key;
       }
 
       const client = mqtt.connect(integration.settings.brokerUrl, options);
@@ -122,11 +135,15 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
       });
 
       client.on('close', () => {
-        this.logger.warn(`MQTT connection closed: ${integration.settings.brokerUrl}`);
+        this.logger.warn(
+          `MQTT connection closed: ${integration.settings.brokerUrl}`,
+        );
       });
 
       client.on('reconnect', () => {
-        this.logger.log(`MQTT reconnecting to ${integration.settings.brokerUrl}`);
+        this.logger.log(
+          `MQTT reconnecting to ${integration.settings.brokerUrl}`,
+        );
       });
     });
   }
@@ -194,7 +211,9 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
     }
   }
 
-  private async getConnectionStatus(integration: MqttIntegration): Promise<unknown> {
+  private async getConnectionStatus(
+    integration: MqttIntegration,
+  ): Promise<unknown> {
     try {
       const pool = await this.getClient(integration);
 
@@ -214,7 +233,9 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
     }
   }
 
-  private async getSubscriptions(integration: MqttIntegration): Promise<unknown> {
+  private async getSubscriptions(
+    integration: MqttIntegration,
+  ): Promise<unknown> {
     const key = this.getConnectionKey(integration);
     const pool = this.connectionPool.get(key);
 
@@ -255,7 +276,8 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
     }
 
     // Return messages from all topics
-    const allMessages: { topic: string; message: string; timestamp: number }[] = [];
+    const allMessages: { topic: string; message: string; timestamp: number }[] =
+      [];
 
     for (const [, messages] of pool.messageBuffer) {
       allMessages.push(...messages);
@@ -358,7 +380,7 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
 
   private async fetchAnalytics(
     integration: MqttIntegration,
-    params?: Record<string, unknown>,
+    _params?: Record<string, unknown>,
   ): Promise<unknown> {
     const key = this.getConnectionKey(integration);
     const pool = this.connectionPool.get(key);
@@ -378,14 +400,21 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
 
     // Calculate message statistics
     let totalMessages = 0;
-    const topicStats: { topic: string; messageCount: number; lastMessage?: number }[] = [];
+    const topicStats: {
+      topic: string;
+      messageCount: number;
+      lastMessage?: number;
+    }[] = [];
 
     for (const [topic, messages] of pool.messageBuffer) {
       totalMessages += messages.length;
       topicStats.push({
         topic,
         messageCount: messages.length,
-        lastMessage: messages.length > 0 ? messages[messages.length - 1].timestamp : undefined,
+        lastMessage:
+          messages.length > 0
+            ? messages[messages.length - 1].timestamp
+            : undefined,
       });
     }
 
@@ -470,7 +499,7 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
       results: results.map((r, i) => ({
         topic: messages[i].topic,
         success: r.status === 'fulfilled',
-        error: r.status === 'rejected' ? (r as PromiseRejectedResult).reason?.message : undefined,
+        error: r.status === 'rejected' ? r.reason?.message : undefined,
       })),
     };
   }

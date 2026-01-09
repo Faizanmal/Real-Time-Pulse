@@ -3,7 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import * as crypto from 'crypto';
 
-interface WooCommerceIntegration {
+export interface WooCommerceIntegration {
   accessToken: string; // Consumer key
   refreshToken: string; // Consumer secret
   settings: {
@@ -58,7 +58,9 @@ export class WooCommerceService {
     return `${integration.settings.siteUrl}/wp-json/${apiVersion}`;
   }
 
-  private getAuthHeaders(integration: WooCommerceIntegration): Record<string, string> {
+  private getAuthHeaders(
+    integration: WooCommerceIntegration,
+  ): Record<string, string> {
     const credentials = Buffer.from(
       `${integration.accessToken}:${integration.refreshToken}`,
     ).toString('base64');
@@ -214,19 +216,22 @@ export class WooCommerceService {
         0,
       );
       const totalOrders = orders.length;
-      const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+      const averageOrderValue =
+        totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
       // Status breakdown
       const statusBreakdown: Record<string, number> = {};
       orders.forEach((order) => {
-        statusBreakdown[order.status] = (statusBreakdown[order.status] || 0) + 1;
+        statusBreakdown[order.status] =
+          (statusBreakdown[order.status] || 0) + 1;
       });
 
       // Daily breakdown
       const dailyRevenue: Record<string, number> = {};
       orders.forEach((order) => {
         const date = order.date_created.split('T')[0];
-        dailyRevenue[date] = (dailyRevenue[date] || 0) + parseFloat(order.total);
+        dailyRevenue[date] =
+          (dailyRevenue[date] || 0) + parseFloat(order.total);
       });
 
       return {

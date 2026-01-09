@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { 
   Activity, Shield, DollarSign, FileText, CheckCircle,
-  TrendingUp, Users, AlertTriangle
+  TrendingUp
 } from 'lucide-react';
 import DataHealthDashboard from './DataHealthDashboard';
 import DataValidationDashboard from './DataValidationDashboard';
@@ -145,7 +145,7 @@ export default function FeaturesDashboard({ workspaceId }: { workspaceId: string
               </div>
             </Card>
 
-            <Card className="p-6 bg-gradient-to-br from-blue-50 to-purple-50">
+            <Card className="p-6 bg-linear-to-br from-blue-50 to-purple-50">
               <div className="text-center">
                 <h3 className="text-lg font-semibold mb-2">Impact Summary</h3>
                 <div className="space-y-3 mt-4">

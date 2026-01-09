@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
-interface ZohoCRMIntegration {
+export interface ZohoCRMIntegration {
   accessToken: string;
   refreshToken?: string;
   settings: {
@@ -201,7 +201,8 @@ export class ZohoCRMService {
       );
 
       // Stage breakdown
-      const stageBreakdown: Record<string, { count: number; value: number }> = {};
+      const stageBreakdown: Record<string, { count: number; value: number }> =
+        {};
       dealsArray.forEach((deal) => {
         const stage = deal.Stage || 'Unknown';
         if (!stageBreakdown[stage]) {

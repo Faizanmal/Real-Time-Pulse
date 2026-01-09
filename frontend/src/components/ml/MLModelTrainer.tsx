@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -13,15 +13,12 @@ import { Switch } from '@/components/ui/switch';
 import {
   Brain,
   Play,
-  Upload,
   Settings,
-  BarChart3,
   Cpu,
   Zap,
   Target,
   TrendingUp,
   Layers,
-  GitBranch,
   CheckCircle2,
   AlertTriangle,
   Clock,
@@ -112,9 +109,15 @@ export default function MLModelTrainer() {
     },
   ]);
 
-  const [newModel, setNewModel] = useState({
+  const [newModel, setNewModel] = useState<{
+    name: string;
+    type: 'classification' | 'regression' | 'clustering' | 'timeseries' | 'anomaly';
+    framework: string;
+    features: string;
+    target: string;
+  }>({
     name: '',
-    type: 'classification' as const,
+    type: 'classification',
     framework: 'sklearn',
     features: '',
     target: '',
@@ -133,6 +136,7 @@ export default function MLModelTrainer() {
 
   const [selectedModel, setSelectedModel] = useState<MLModel | null>(null);
   const [activeTab, setActiveTab] = useState('models');
+  const jobCounterRef = useRef(0);
 
   useEffect(() => {
     // Simulate training progress
@@ -178,8 +182,9 @@ export default function MLModelTrainer() {
   };
 
   const handleStartTraining = (modelId: string) => {
+    jobCounterRef.current += 1;
     const job: TrainingJob = {
-      id: `job-${Date.now()}`,
+      id: `job-${jobCounterRef.current}`,
       modelId,
       status: 'running',
       progress: 0,
@@ -414,7 +419,7 @@ export default function MLModelTrainer() {
                   {modelTypes.map(type => (
                     <button
                       key={type.value}
-                      onClick={() => setNewModel(prev => ({ ...prev, type: type.value as any }))}
+                      onClick={() => setNewModel(prev => ({ ...prev, type: type.value as 'classification' | 'regression' | 'clustering' | 'timeseries' | 'anomaly' }))}
                       className={`p-4 rounded-lg border text-left transition-colors ${
                         newModel.type === type.value
                           ? 'border-purple-500 bg-purple-500/10'

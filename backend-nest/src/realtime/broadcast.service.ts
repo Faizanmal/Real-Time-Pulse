@@ -84,7 +84,7 @@ export class BroadcastService {
   widgetCreated(
     portalId: string,
     widget: any,
-    options?: BroadcastOptions,
+    _options?: BroadcastOptions,
   ): void {
     this.gateway.broadcastToPortal(portalId, 'widget:created', widget);
   }
@@ -92,7 +92,7 @@ export class BroadcastService {
   widgetUpdated(
     portalId: string,
     widget: any,
-    options?: BroadcastOptions,
+    _options?: BroadcastOptions,
   ): void {
     this.gateway.broadcastToPortal(portalId, 'widget:updated', widget);
     this.gateway.broadcastToWidget(widget.id, 'widget:updated', widget);
@@ -101,7 +101,7 @@ export class BroadcastService {
   widgetDeleted(
     portalId: string,
     widgetId: string,
-    options?: BroadcastOptions,
+    _options?: BroadcastOptions,
   ): void {
     this.gateway.broadcastToPortal(portalId, 'widget:deleted', { widgetId });
   }
@@ -109,7 +109,7 @@ export class BroadcastService {
   widgetDataRefreshed(
     widgetId: string,
     data: any,
-    options?: BroadcastOptions,
+    _options?: BroadcastOptions,
   ): void {
     this.gateway.emitWidgetUpdate(widgetId, data);
   }
@@ -136,7 +136,7 @@ export class BroadcastService {
   alertTriggered(
     workspaceId: string,
     alert: any,
-    options?: BroadcastOptions,
+    _options?: BroadcastOptions,
   ): void {
     this.gateway.emitAlert(workspaceId, {
       type: 'triggered',
@@ -159,7 +159,7 @@ export class BroadcastService {
   insightGenerated(
     workspaceId: string,
     insight: any,
-    options?: BroadcastOptions,
+    _options?: BroadcastOptions,
   ): void {
     this.gateway.emitInsight(workspaceId, insight);
   }
@@ -167,7 +167,7 @@ export class BroadcastService {
   insightsUpdated(
     portalId: string,
     insights: any[],
-    options?: BroadcastOptions,
+    _options?: BroadcastOptions,
   ): void {
     this.gateway.broadcastToPortal(portalId, 'insights:updated', { insights });
   }
@@ -243,7 +243,7 @@ export class BroadcastService {
   commentAdded(
     portalId: string,
     comment: any,
-    options?: BroadcastOptions,
+    _options?: BroadcastOptions,
   ): void {
     this.gateway.broadcastToPortal(portalId, 'comment:added', comment);
   }
@@ -251,7 +251,7 @@ export class BroadcastService {
   commentUpdated(
     portalId: string,
     comment: any,
-    options?: BroadcastOptions,
+    _options?: BroadcastOptions,
   ): void {
     this.gateway.broadcastToPortal(portalId, 'comment:updated', comment);
   }
@@ -259,7 +259,7 @@ export class BroadcastService {
   commentDeleted(
     portalId: string,
     commentId: string,
-    options?: BroadcastOptions,
+    _options?: BroadcastOptions,
   ): void {
     this.gateway.broadcastToPortal(portalId, 'comment:deleted', { commentId });
   }

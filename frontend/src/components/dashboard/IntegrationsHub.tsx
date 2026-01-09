@@ -8,7 +8,6 @@ import {
   CheckCircle,
   AlertCircle,
   RefreshCw,
-  Settings,
   Plus,
   ExternalLink,
   Trash2,
@@ -561,10 +560,7 @@ function IntegrationDetailsDialog({ integration, onClose }: IntegrationDetailsDi
           </TabsContent>
 
           <TabsContent value="settings" className="mt-4">
-            <div className="text-center py-8 text-gray-500">
-              <Settings className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>Settings configuration coming soon</p>
-            </div>
+            <IntegrationSettingsSection integration={integration} onClose={onClose} />
           </TabsContent>
         </Tabs>
       </DialogContent>
@@ -813,6 +809,151 @@ function SlackDataView({ data, integrationId }: { data: SlackChannel[]; integrat
             {sending ? 'Sending...' : 'Send'}
           </Button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+interface IntegrationSettingsSectionProps {
+  integration: Integration;
+  onClose: () => void;
+}
+
+function IntegrationSettingsSection({ integration, onClose }: IntegrationSettingsSectionProps) {
+  const [settings, setSettings] = useState({
+    syncEnabled: integration.status === 'active',
+    syncInterval: '1h',
+    webhooksEnabled: false,
+    notifyOnSync: true,
+    notifyOnError: true,
+  });
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleSaveSettings = async () => {
+    setSaving(true);
+    try {
+      await api.integrations.update(integration.id, { settings });
+      toast.success('Settings saved successfully');
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      toast.error('Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteIntegration = async () => {
+    if (!confirm('Are you sure you want to delete this integration? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      await api.integrations.delete(integration.id);
+      toast.success('Integration deleted successfully');
+      onClose();
+    } catch (error) {
+      console.error('Failed to delete integration:', error);
+      toast.error('Failed to delete integration');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Sync Settings */}
+      <div className="space-y-4">
+        <h5 className="font-medium">Sync Settings</h5>
+        
+        <div className="flex items-center justify-between p-4 border rounded-lg">
+          <div>
+            <p className="font-medium">Enable Auto-Sync</p>
+            <p className="text-sm text-gray-500">Automatically sync data from this integration</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={settings.syncEnabled}
+              onChange={(e) => setSettings({ ...settings, syncEnabled: e.target.checked })}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+          </label>
+        </div>
+
+        <div className="p-4 border rounded-lg">
+          <Label htmlFor="syncInterval" className="font-medium">Sync Interval</Label>
+          <p className="text-sm text-gray-500 mb-2">How often to sync data</p>
+          <Select
+            value={settings.syncInterval}
+            onValueChange={(value) => setSettings({ ...settings, syncInterval: value })}
+          >
+            <SelectTrigger id="syncInterval">
+              <SelectValue placeholder="Select interval" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="15m">Every 15 minutes</SelectItem>
+              <SelectItem value="30m">Every 30 minutes</SelectItem>
+              <SelectItem value="1h">Every hour</SelectItem>
+              <SelectItem value="6h">Every 6 hours</SelectItem>
+              <SelectItem value="24h">Every 24 hours</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Notification Settings */}
+      <div className="space-y-4">
+        <h5 className="font-medium">Notifications</h5>
+        
+        <div className="flex items-center justify-between p-4 border rounded-lg">
+          <div>
+            <p className="font-medium">Notify on Sync</p>
+            <p className="text-sm text-gray-500">Get notified when sync completes</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={settings.notifyOnSync}
+              onChange={(e) => setSettings({ ...settings, notifyOnSync: e.target.checked })}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+          </label>
+        </div>
+
+        <div className="flex items-center justify-between p-4 border rounded-lg">
+          <div>
+            <p className="font-medium">Notify on Error</p>
+            <p className="text-sm text-gray-500">Get notified when sync fails</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={settings.notifyOnError}
+              onChange={(e) => setSettings({ ...settings, notifyOnError: e.target.checked })}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+          </label>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center justify-between pt-4 border-t">
+        <Button
+          variant="destructive"
+          onClick={handleDeleteIntegration}
+          disabled={deleting}
+        >
+          <Trash2 className="h-4 w-4 mr-2" />
+          {deleting ? 'Deleting...' : 'Delete Integration'}
+        </Button>
+        <Button onClick={handleSaveSettings} disabled={saving}>
+          {saving ? 'Saving...' : 'Save Settings'}
+        </Button>
       </div>
     </div>
   );

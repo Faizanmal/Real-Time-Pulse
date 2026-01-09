@@ -129,7 +129,7 @@ export class VoiceService {
   /**
    * Process voice command
    */
-  async processVoiceCommand(
+  processVoiceCommand(
     workspaceId: string,
     transcript: string,
   ): Promise<{

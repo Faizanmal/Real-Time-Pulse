@@ -15,7 +15,9 @@ export class IndustryController {
 
   // Healthcare Endpoints
   @Get('healthcare/patients')
-  async searchPatients(@Query() query: { mrn?: string; name?: string; dateOfBirth?: string }) {
+  async searchPatients(
+    @Query() query: { mrn?: string; name?: string; dateOfBirth?: string },
+  ) {
     return this.healthcare.searchPatients(query);
   }
 
@@ -23,7 +25,7 @@ export class IndustryController {
   async getPatient(
     @Param('id') id: string,
     @Query('userId') userId: string,
-    @Query('reason') reason: string
+    @Query('reason') reason: string,
   ) {
     return this.healthcare.getPatient(id, userId, reason);
   }
@@ -90,7 +92,10 @@ export class IndustryController {
   }
 
   @Post('finance/sox/controls/:id/test')
-  async testSOXControl(@Param('id') id: string, @Body() body: { evidence: string[] }) {
+  async testSOXControl(
+    @Param('id') id: string,
+    @Body() body: { evidence: string[] },
+  ) {
     return this.finance.testSOXControl(id, body.evidence);
   }
 
@@ -126,7 +131,10 @@ export class IndustryController {
   }
 
   @Put('manufacturing/equipment/:id/status')
-  async updateEquipmentStatus(@Param('id') id: string, @Body() body: { status: any }) {
+  async updateEquipmentStatus(
+    @Param('id') id: string,
+    @Body() body: { status: any },
+  ) {
     return this.manufacturing.updateEquipmentStatus(id, body.status);
   }
 
@@ -139,7 +147,7 @@ export class IndustryController {
   async getEquipmentOEE(
     @Param('id') id: string,
     @Query('start') start: string,
-    @Query('end') end: string
+    @Query('end') end: string,
   ) {
     return this.manufacturing.calculateOEE(id, { start, end });
   }
@@ -181,27 +189,49 @@ export class IndustryController {
 
   // Retail Endpoints
   @Get('retail/inventory')
-  async getInventory(@Query() filters: { locationId?: string; belowReorderPoint?: boolean }) {
+  async getInventory(
+    @Query() filters: { locationId?: string; belowReorderPoint?: boolean },
+  ) {
     return this.retail.getInventoryLevels(filters);
   }
 
   @Put('retail/inventory/:productId')
   async updateInventory(
     @Param('productId') productId: string,
-    @Body() body: { locationId: string; quantityChange: number; reason: string }
+    @Body()
+    body: { locationId: string; quantityChange: number; reason: string },
   ) {
-    return this.retail.updateInventory(productId, body.locationId, body.quantityChange, body.reason);
+    return this.retail.updateInventory(
+      productId,
+      body.locationId,
+      body.quantityChange,
+      body.reason,
+    );
   }
 
   @Post('retail/inventory/transfer')
   async transferInventory(
-    @Body() body: { productId: string; fromLocation: string; toLocation: string; quantity: number }
+    @Body()
+    body: {
+      productId: string;
+      fromLocation: string;
+      toLocation: string;
+      quantity: number;
+    },
   ) {
-    return this.retail.transferInventory(body.productId, body.fromLocation, body.toLocation, body.quantity);
+    return this.retail.transferInventory(
+      body.productId,
+      body.fromLocation,
+      body.toLocation,
+      body.quantity,
+    );
   }
 
   @Get('retail/forecast/:productId')
-  async getDemandForecast(@Param('productId') productId: string, @Query('days') days?: number) {
+  async getDemandForecast(
+    @Param('productId') productId: string,
+    @Query('days') days?: number,
+  ) {
     return this.retail.generateDemandForecast(productId, days);
   }
 
@@ -233,7 +263,7 @@ export class IndustryController {
   @Get('retail/analytics')
   async getSalesAnalytics(
     @Query('start') start: string,
-    @Query('end') end: string
+    @Query('end') end: string,
   ) {
     return this.retail.getSalesAnalytics({ start, end });
   }

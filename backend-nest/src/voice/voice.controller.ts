@@ -18,7 +18,6 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiConsumes,
-  ApiBody,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { VoiceService } from './voice.service';

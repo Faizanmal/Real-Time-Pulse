@@ -7,13 +7,7 @@ import { ScalingController } from './scaling.controller';
 @Module({
   imports: [EventEmitterModule.forRoot()],
   controllers: [ScalingController],
-  providers: [
-    MultiRegionService,
-    HorizontalScalingService,
-  ],
-  exports: [
-    MultiRegionService,
-    HorizontalScalingService,
-  ],
+  providers: [MultiRegionService, HorizontalScalingService],
+  exports: [MultiRegionService, HorizontalScalingService],
 })
 export class ScalingModule {}

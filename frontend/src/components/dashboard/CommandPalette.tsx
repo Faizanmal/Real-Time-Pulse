@@ -11,7 +11,6 @@ import {
   Users,
   FileText,
   BarChart3,
-  Bell,
   HelpCircle,
   LogOut,
   Moon,
@@ -20,17 +19,13 @@ import {
   Zap,
   Keyboard,
   ArrowRight,
-  History,
-  Star,
   Sparkles,
   Globe,
   Shield,
   CreditCard,
   Webhook,
   Bot,
-  Palette,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 // ============================================================================

@@ -33,7 +33,16 @@ export interface AggregationConfig {
 
 export interface MetricAggregation {
   field: string;
-  operations: ('sum' | 'avg' | 'min' | 'max' | 'count' | 'p50' | 'p95' | 'p99')[];
+  operations: (
+    | 'sum'
+    | 'avg'
+    | 'min'
+    | 'max'
+    | 'count'
+    | 'p50'
+    | 'p95'
+    | 'p99'
+  )[];
 }
 
 export interface EdgeNodeStatus {
@@ -169,7 +178,10 @@ export class EdgeComputingService {
   /**
    * Check if data passes all filters
    */
-  private passesFilters(data: Record<string, any>, filters: DataFilter[]): boolean {
+  private passesFilters(
+    data: Record<string, any>,
+    filters: DataFilter[],
+  ): boolean {
     for (const filter of filters) {
       const value = this.getNestedValue(data, filter.field);
       let matches = false;
@@ -208,9 +220,13 @@ export class EdgeComputingService {
   /**
    * Evaluate a JavaScript condition
    */
-  private evaluateCondition(condition: string, data: Record<string, any>): boolean {
+  private evaluateCondition(
+    condition: string,
+    data: Record<string, any>,
+  ): boolean {
     try {
       // Create a safe evaluation context
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval
       const fn = new Function('data', `with(data) { return ${condition}; }`);
       return fn(data);
     } catch {
@@ -250,7 +266,11 @@ export class EdgeComputingService {
     if (config.computed) {
       for (const [field, expression] of Object.entries(config.computed)) {
         try {
-          const fn = new Function('data', `with(data) { return ${expression}; }`);
+          // eslint-disable-next-line @typescript-eslint/no-implied-eval
+          const fn = new Function(
+            'data',
+            `with(data) { return ${expression as string}; }`,
+          );
           result[field] = fn(data);
         } catch {
           // Skip on error
@@ -290,7 +310,9 @@ export class EdgeComputingService {
   /**
    * Flush aggregated data
    */
-  flushAggregations(nodeId: string): Record<string, Record<string, number>> | null {
+  flushAggregations(
+    nodeId: string,
+  ): Record<string, Record<string, number>> | null {
     const buffer = this.aggregationBuffers.get(nodeId);
     if (!buffer || buffer.size === 0) return null;
 
@@ -311,7 +333,8 @@ export class EdgeComputingService {
             result[metric.field].sum = values.reduce((a, b) => a + b, 0);
             break;
           case 'avg':
-            result[metric.field].avg = values.reduce((a, b) => a + b, 0) / values.length;
+            result[metric.field].avg =
+              values.reduce((a, b) => a + b, 0) / values.length;
             break;
           case 'min':
             result[metric.field].min = Math.min(...values);
@@ -353,7 +376,10 @@ export class EdgeComputingService {
   /**
    * Update node heartbeat
    */
-  updateHeartbeat(nodeId: string, resources: { cpu: number; memory: number; storage: number }): void {
+  updateHeartbeat(
+    nodeId: string,
+    resources: { cpu: number; memory: number; storage: number },
+  ): void {
     const status = this.nodeStatuses.get(nodeId);
     if (status) {
       status.cpu = resources.cpu;
@@ -376,14 +402,17 @@ export class EdgeComputingService {
   /**
    * Deploy processing rules to edge node
    */
-  async deployRules(nodeId: string, rules: EdgeProcessingRule[]): Promise<void> {
+  async deployRules(
+    nodeId: string,
+    rules: EdgeProcessingRule[],
+  ): Promise<void> {
     const node = this.edgeNodes.get(nodeId);
     if (!node) {
       throw new Error('Edge node not found');
     }
 
     node.processingRules = rules;
-    
+
     this.eventEmitter.emit('edge.rules.deployed', {
       nodeId,
       rules,

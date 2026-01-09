@@ -17,7 +17,9 @@ export class PagerDutyService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  private getHeaders(integration: PagerDutyIntegration): Record<string, string> {
+  private getHeaders(
+    integration: PagerDutyIntegration,
+  ): Record<string, string> {
     return {
       Authorization: `Token token=${integration.accessToken}`,
       'Content-Type': 'application/json',
@@ -72,10 +74,16 @@ export class PagerDutyService {
   ): Promise<unknown> {
     try {
       const limit = (params?.limit as number) || 50;
-      const statuses = (params?.statuses as string[]) || ['triggered', 'acknowledged'];
-      const since = (params?.since as string) || new Date(Date.now() - 7 * 86400000).toISOString();
+      const statuses = (params?.statuses as string[]) || [
+        'triggered',
+        'acknowledged',
+      ];
+      const since =
+        (params?.since as string) ||
+        new Date(Date.now() - 7 * 86400000).toISOString();
       const until = (params?.until as string) || new Date().toISOString();
-      const serviceId = (params?.serviceId as string) || integration.settings.serviceId;
+      const serviceId =
+        (params?.serviceId as string) || integration.settings.serviceId;
 
       const queryParams: Record<string, unknown> = {
         limit,
@@ -257,14 +265,28 @@ export class PagerDutyService {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const [triggeredIncidents, acknowledgedIncidents, resolvedIncidents, services, oncalls] =
-        await Promise.all([
-          this.fetchIncidents(integration, { statuses: ['triggered'], limit: 100 }),
-          this.fetchIncidents(integration, { statuses: ['acknowledged'], limit: 100 }),
-          this.fetchIncidents(integration, { statuses: ['resolved'], limit: 100 }),
-          this.fetchServices(integration, { limit: 100 }),
-          this.fetchOnCalls(integration, params),
-        ]);
+      const [
+        triggeredIncidents,
+        acknowledgedIncidents,
+        resolvedIncidents,
+        services,
+        oncalls,
+      ] = await Promise.all([
+        this.fetchIncidents(integration, {
+          statuses: ['triggered'],
+          limit: 100,
+        }),
+        this.fetchIncidents(integration, {
+          statuses: ['acknowledged'],
+          limit: 100,
+        }),
+        this.fetchIncidents(integration, {
+          statuses: ['resolved'],
+          limit: 100,
+        }),
+        this.fetchServices(integration, { limit: 100 }),
+        this.fetchOnCalls(integration, params),
+      ]);
 
       const triggeredArray = triggeredIncidents as any[];
       const acknowledgedArray = acknowledgedIncidents as any[];
@@ -280,7 +302,10 @@ export class PagerDutyService {
       });
 
       // Service health
-      const serviceHealth: Record<string, { incidents: number; status: string }> = {};
+      const serviceHealth: Record<
+        string,
+        { incidents: number; status: string }
+      > = {};
       servicesArray.forEach((service: any) => {
         serviceHealth[service.name] = {
           incidents: 0,
@@ -306,7 +331,10 @@ export class PagerDutyService {
           resolutionCount++;
         }
       });
-      const mttr = resolutionCount > 0 ? totalResolutionTime / resolutionCount / 1000 / 60 : 0;
+      const mttr =
+        resolutionCount > 0
+          ? totalResolutionTime / resolutionCount / 1000 / 60
+          : 0;
 
       return {
         summary: {
@@ -365,7 +393,9 @@ export class PagerDutyService {
                 type: 'service_reference',
               },
               urgency: data.urgency || 'high',
-              body: data.body ? { type: 'incident_body', details: data.body } : undefined,
+              body: data.body
+                ? { type: 'incident_body', details: data.body }
+                : undefined,
             },
           },
           { headers: this.getHeaders(integration) },

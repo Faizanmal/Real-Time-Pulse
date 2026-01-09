@@ -440,7 +440,7 @@ export class WidgetService {
   /**
    * Get fallback data when integration fails
    */
-  private getFallbackData(widgetType: string): any {
+  private getFallbackData(_widgetType: string): any {
     return {
       items: [],
       count: 0,

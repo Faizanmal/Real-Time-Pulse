@@ -8,7 +8,7 @@
  * Main dashboard interface with real-time metrics, widgets, and analytics.
  */
 
-import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AreaChart,
@@ -32,15 +32,12 @@ import {
   DollarSign,
   Activity,
   Zap,
-  Bell,
-  Settings,
   Plus,
   MoreVertical,
   Maximize2,
   RefreshCw,
   Download,
   Share2,
-  Filter,
   Calendar,
   ChevronDown,
 } from 'lucide-react';
@@ -276,7 +273,7 @@ function TopProducts() {
 export default function DashboardPage() {
   const [data, setData] = useState(generateData);
   const [isLive, setIsLive] = useState(true);
-  const [timeRange, setTimeRange] = useState('24h');
+  const [timeRange] = useState('24h');
 
   // Simulate real-time updates
   useEffect(() => {
@@ -473,7 +470,7 @@ export default function DashboardPage() {
                       borderRadius: '8px',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                     }}
-                    formatter={(value: number | undefined) => [`$${value?.toLocaleString() || '0'}`, 'Revenue']}
+                    formatter={(value) => [`$${value?.toLocaleString() || '0'}`, 'Revenue']}
                   />
                   <Area
                     type="monotone"

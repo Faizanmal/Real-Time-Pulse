@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AIModelType, AIProvider, AIQueryType } from '@prisma/client';
 
@@ -299,8 +295,8 @@ export class AdvancedAiService {
   private async processQuery(
     model: any,
     query: string,
-    workspaceId: string,
-    portalId?: string,
+    _workspaceId: string,
+    _portalId?: string,
   ) {
     // Simulate NLP processing
     // In production, use OpenAI GPT-4, Claude, etc.
@@ -384,7 +380,7 @@ export class AdvancedAiService {
     }> = [];
     const threshold = 2; // 2 standard deviations
 
-    timeSeries.forEach((point, index) => {
+    timeSeries.forEach((point, _index) => {
       const zScore = Math.abs((point.value - mean) / stdDev);
       if (zScore > threshold) {
         anomalies.push({

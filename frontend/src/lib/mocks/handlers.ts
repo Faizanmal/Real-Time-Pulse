@@ -30,7 +30,7 @@ const mockUsers = new Map([
   }],
 ]);
 
-const mockWorkspaces = new Map([
+const _mockWorkspaces = new Map([
   ['workspace-1', {
     id: 'workspace-1',
     name: 'Test Workspace',
@@ -121,7 +121,7 @@ const mockIntegrations = new Map([
 
 export const authHandlers = [
   // Login
-  http.post(`${API_URL}/auth/login`, async ({ request }: { request: any }) => {
+  http.post(`${API_URL}/auth/login`, async ({ request }: { request: Request }) => {
     await delay(500);
 
     const body = await request.json() as { email: string; password: string };
@@ -140,7 +140,7 @@ export const authHandlers = [
   }),
 
   // Register
-  http.post(`${API_URL}/auth/register`, async ({ request }: { request: any }) => {
+  http.post(`${API_URL}/auth/register`, async ({ request }: { request: Request }) => {
     await delay(500);
 
     const body = await request.json() as { email: string; password: string; name: string };
@@ -190,7 +190,7 @@ export const authHandlers = [
 
 export const portalHandlers = [
   // List portals
-  http.get(`${API_URL}/portals`, async ({ request }: { request: any }) => {
+  http.get(`${API_URL}/portals`, async ({ request }: { request: Request }) => {
     await delay(300);
 
     const url = new URL(request.url);
@@ -207,7 +207,7 @@ export const portalHandlers = [
   }),
 
   // Get portal
-  http.get(`${API_URL}/portals/:id`, async ({ params }: { params: any }) => {
+  http.get(`${API_URL}/portals/:id`, async ({ params }: { params: Record<string, string> }) => {
     await delay(200);
 
     const portal = mockPortals.get(params.id);
@@ -220,7 +220,7 @@ export const portalHandlers = [
   }),
 
   // Create portal
-  http.post(`${API_URL}/portals`, async ({ request }: { request: any }) => {
+  http.post(`${API_URL}/portals`, async ({ request }: { request: Request }) => {
     await delay(500);
 
     const body = await request.json() as { name: string; description?: string };
@@ -242,8 +242,11 @@ export const portalHandlers = [
   }),
 
   // Update portal
-  http.patch(`${API_URL}/portals/:id`, async ({ params, request }: { params: any, request: any }) => {
+  http.patch(`${API_URL}/portals/:id`, async (info) => {
     await delay(300);
+
+    const params = info.params as Record<string, string>;
+    const request = info.request;
 
     const portal = mockPortals.get(params.id);
 
@@ -259,7 +262,7 @@ export const portalHandlers = [
   }),
 
   // Delete portal
-  http.delete(`${API_URL}/portals/:id`, async ({ params }: { params: any }) => {
+  http.delete(`${API_URL}/portals/:id`, async ({ params }: { params: Record<string, string> }) => {
     await delay(300);
 
     if (!mockPortals.has(params.id)) {
@@ -278,7 +281,7 @@ export const portalHandlers = [
 
 export const widgetHandlers = [
   // List widgets
-  http.get(`${API_URL}/widgets`, async ({ request }: { request: any }) => {
+  http.get(`${API_URL}/widgets`, async ({ request }: { request: Request }) => {
     await delay(200);
 
     const url = new URL(request.url);
@@ -292,9 +295,10 @@ export const widgetHandlers = [
   }),
 
   // Get widget
-  http.get(`${API_URL}/widgets/:id`, async ({ params }: { params: any }) => {
+  http.get(`${API_URL}/widgets/:id`, async (info) => {
     await delay(150);
 
+    const params = info.params as Record<string, string>;
     const widget = mockWidgets.get(params.id);
 
     if (!widget) {
@@ -305,7 +309,7 @@ export const widgetHandlers = [
   }),
 
   // Create widget
-  http.post(`${API_URL}/widgets`, async ({ request }: { request: any }) => {
+  http.post(`${API_URL}/widgets`, async ({ request }: { request: Request }) => {
     await delay(400);
 
     const body = await request.json() as { title: string; type: string; portalId: string };
@@ -327,8 +331,11 @@ export const widgetHandlers = [
   }),
 
   // Update widget
-  http.patch(`${API_URL}/widgets/:id`, async ({ params, request }: { params: any, request: any }) => {
+  http.patch(`${API_URL}/widgets/:id`, async (info) => {
     await delay(250);
+
+    const params = info.params as Record<string, string>;
+    const request = info.request;
 
     const widget = mockWidgets.get(params.id);
 
@@ -344,8 +351,10 @@ export const widgetHandlers = [
   }),
 
   // Delete widget
-  http.delete(`${API_URL}/widgets/:id`, async ({ params }: { params: any }) => {
+  http.delete(`${API_URL}/widgets/:id`, async (info) => {
     await delay(200);
+
+    const params = info.params as Record<string, string>;
 
     if (!mockWidgets.has(params.id)) {
       return HttpResponse.json({ message: 'Widget not found' }, { status: 404 });
@@ -357,7 +366,7 @@ export const widgetHandlers = [
   }),
 
   // Refresh widget data
-  http.post(`${API_URL}/widgets/:id/refresh`, async ({ params }: { params: any }) => {
+  http.post(`${API_URL}/widgets/:id/refresh`, async ({ params }: { params: Record<string, string> }) => {
     await delay(1000);
 
     const widget = mockWidgets.get(params.id);
@@ -389,7 +398,7 @@ export const integrationHandlers = [
   }),
 
   // Get integration
-  http.get(`${API_URL}/integrations/:id`, async ({ params }: { params: any }) => {
+  http.get(`${API_URL}/integrations/:id`, async ({ params }: { params: Record<string, string> }) => {
     await delay(200);
 
     const integration = mockIntegrations.get(params.id);
@@ -402,7 +411,7 @@ export const integrationHandlers = [
   }),
 
   // Sync integration
-  http.post(`${API_URL}/integrations/:id/sync`, async ({ params }: { params: any }) => {
+  http.post(`${API_URL}/integrations/:id/sync`, async ({ params }: { params: Record<string, string> }) => {
     await delay(2000);
 
     const integration = mockIntegrations.get(params.id);
@@ -423,7 +432,7 @@ export const integrationHandlers = [
 
 export const aiHandlers = [
   // Get AI insights
-  http.get(`${API_URL}/ai-insights`, async ({ request }: { request: any }) => {
+  http.get(`${API_URL}/ai-insights`, async ({ request }: { request: Request }) => {
     await delay(500);
 
     const url = new URL(request.url);
@@ -462,7 +471,7 @@ export const aiHandlers = [
   }),
 
   // Natural language query
-  http.post(`${API_URL}/ai-insights/query`, async ({ request }: { request: any }) => {
+  http.post(`${API_URL}/ai-insights/query`, async ({ request }: { request: Request }) => {
     await delay(1500);
 
     const body = await request.json() as { query: string };

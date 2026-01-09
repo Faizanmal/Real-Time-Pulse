@@ -252,6 +252,25 @@ export class ARVisualizationService {
   }
 
   /**
+   * Delete marker by ID
+   */
+  async deleteMarker(workspaceId: string, markerId: string): Promise<boolean> {
+    const key = `ar_markers:${workspaceId}`;
+    const markersJson = await this.cache.get(key);
+    const markers: ARMarker[] = markersJson ? JSON.parse(markersJson) : [];
+
+    const index = markers.findIndex((m) => m.id === markerId);
+    if (index === -1) {
+      return false;
+    }
+
+    markers.splice(index, 1);
+    await this.cache.set(key, JSON.stringify(markers), 86400 * 365);
+
+    return true;
+  }
+
+  /**
    * Convert widget data to 3D visualization format
    */
   convertToAR3D(
@@ -402,7 +421,7 @@ export class ARVisualizationService {
     values.forEach((value: number, i: number) => {
       const angle = (value / total) * Math.PI * 2;
       const endAngle = startAngle + angle;
-      const baseIndex = vertices.length / 3;
+      const _baseIndex = vertices.length / 3;
 
       const hue = i / values.length;
       const [r, g, b] = this.hslToRgb(hue, 0.7, 0.5);

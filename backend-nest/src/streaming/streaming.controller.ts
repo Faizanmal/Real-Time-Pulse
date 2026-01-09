@@ -7,7 +7,6 @@ import {
   Body,
   Param,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import { StreamProcessingService } from './stream-processing.service';
 import { CEPEngineService } from './cep-engine.service';
@@ -27,7 +26,8 @@ export class StreamingController {
 
   @Post('streams')
   async createStream(
-    @Body() body: {
+    @Body()
+    body: {
       name: string;
       topics: string[];
       consumerGroup?: string;
@@ -39,7 +39,7 @@ export class StreamingController {
       transformations?: any[];
       aggregations?: any[];
       sinks?: any[];
-    }
+    },
   ) {
     return this.streamService.createStream({
       name: body.name,
@@ -57,10 +57,7 @@ export class StreamingController {
   }
 
   @Put('streams/:id')
-  async updateStream(
-    @Param('id') id: string,
-    @Body() updates: any
-  ) {
+  async updateStream(@Param('id') id: string, @Body() updates: any) {
     return this.streamService.updateStream(id, updates);
   }
 
@@ -88,11 +85,18 @@ export class StreamingController {
 
   @Post('cep/rules')
   async createCEPRule(
-    @Body() body: {
+    @Body()
+    body: {
       name: string;
       description?: string;
       pattern: {
-        type: 'sequence' | 'absence' | 'frequency' | 'correlation' | 'threshold' | 'trend';
+        type:
+          | 'sequence'
+          | 'absence'
+          | 'frequency'
+          | 'correlation'
+          | 'threshold'
+          | 'trend';
         conditions: any[];
         withinWindow?: number;
         minOccurrences?: number;
@@ -101,12 +105,18 @@ export class StreamingController {
       };
       timeWindow: number;
       action: {
-        type: 'alert' | 'email' | 'webhook' | 'aggregate' | 'trigger_flow' | 'emit';
+        type:
+          | 'alert'
+          | 'email'
+          | 'webhook'
+          | 'aggregate'
+          | 'trigger_flow'
+          | 'emit';
         config: any;
       };
       enabled?: boolean;
       priority?: number;
-    }
+    },
   ) {
     return this.cepEngine.createRule({
       name: body.name,
@@ -120,10 +130,7 @@ export class StreamingController {
   }
 
   @Put('cep/rules/:id')
-  async updateCEPRule(
-    @Param('id') id: string,
-    @Body() updates: any
-  ) {
+  async updateCEPRule(@Param('id') id: string, @Body() updates: any) {
     return this.cepEngine.updateRule(id, updates);
   }
 
@@ -134,20 +141,18 @@ export class StreamingController {
   }
 
   @Get('cep/matches')
-  async getCEPMatches(
-    @Query('limit') limit?: string
-  ) {
+  getCEPMatches(@Query('limit') limit?: string) {
     return this.cepEngine.getMatchHistory(limit ? parseInt(limit) : 100);
   }
 
   @Get('cep/stats')
-  async getCEPStats() {
+  getCEPStats() {
     return this.cepEngine.getStats();
   }
 
   // Topic Management
   @Get('topics')
-  async getTopics() {
+  getTopics() {
     // In production, list Kafka topics
     return [
       { name: 'events', partitions: 12, replicationFactor: 3 },
@@ -159,7 +164,7 @@ export class StreamingController {
 
   // Stream Templates
   @Get('templates')
-  async getStreamTemplates() {
+  getStreamTemplates() {
     return [
       {
         id: 'user-activity',
@@ -167,7 +172,9 @@ export class StreamingController {
         description: 'Track user clicks, page views, and interactions',
         config: {
           topics: ['user-events'],
-          filters: [{ field: 'eventType', operator: 'neq', value: 'heartbeat' }],
+          filters: [
+            { field: 'eventType', operator: 'neq', value: 'heartbeat' },
+          ],
           aggregations: [
             {
               windowType: 'tumbling',

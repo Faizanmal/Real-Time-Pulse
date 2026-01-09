@@ -37,6 +37,7 @@ export interface Achievement {
     name: string;
     description: string;
     points: number;
+    category?: string;
 }
 
 export interface UserAchievement {
@@ -49,12 +50,13 @@ export interface UserAchievement {
 
 export const gamificationApi = {
     getProfile: async (): Promise<GamificationProfile> => {
-        const response = await apiClient.get('/gamification/profile');
+        const response = await apiClient.get<GamificationProfile>('/gamification/profile');
         return response.data;
     },
 
     getLeaderboard: async (): Promise<GamificationProfile[]> => {
-        const response = await apiClient.get('/gamification/leaderboard');
+        const response = await apiClient.get<GamificationProfile[]>('/gamification/leaderboard');
         return response.data;
     },
 };
+

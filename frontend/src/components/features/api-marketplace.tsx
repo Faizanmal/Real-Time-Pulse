@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { apiMarketplaceApi } from '@/lib/advanced-api';
 import type { APIConnector } from '@/types/advanced-features';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,14 +27,14 @@ export default function APIMarketplace() {
       const data = response.data;
       if (Array.isArray(data)) {
         setConnectors(data);
-      } else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as any).data)) {
+      } else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as { data: unknown[] }).data)) {
         // Handle paginated response { data: [], total: ... }
-        setConnectors((data as any).data);
+        setConnectors((data as { data: APIConnector[] }).data);
       } else {
         console.warn('Unexpected API response format for connectors:', data);
         setConnectors([]);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to load connectors:', error);
       toast.error('Failed to load connectors');
       setConnectors([]);
@@ -47,7 +48,7 @@ export default function APIMarketplace() {
       await apiMarketplaceApi.installConnector(connector.id, {}, {});
       toast.success(`${connector.name} installed successfully`);
       loadConnectors();
-    } catch (error: any) {
+    } catch {
       toast.error('Failed to install connector');
     }
   };
@@ -165,9 +166,11 @@ export default function APIMarketplace() {
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3">
                     {connector.iconUrl && (
-                      <img
+                      <Image
                         src={connector.iconUrl}
                         alt={connector.name}
+                        width={40}
+                        height={40}
                         className="w-10 h-10 rounded"
                       />
                     )}

@@ -1,17 +1,32 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Activity, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
+
+interface RateLimitMetric {
+  integrationId: string;
+  requestCount: number;
+  remainingQuota: number;
+  resetAt: string;
+}
+
+interface QueueStats {
+  waiting: number;
+  active: number;
+  completed: number;
+  failed: number;
+  delayed: number;
+}
 
 interface RateLimitMonitorProps {
   integrationId?: string;
 }
 
 export function RateLimitMonitor({ integrationId }: RateLimitMonitorProps) {
-  const [metrics, setMetrics] = useState<any[]>([]);
-  const [queueStats, setQueueStats] = useState<any>(null);
+  const [metrics, setMetrics] = useState<RateLimitMetric[]>([]);
+  const [queueStats, setQueueStats] = useState<QueueStats | null>(null);
 
-  const loadMetrics = async () => {
+  const loadMetrics = useCallback(async () => {
     try {
       const url = integrationId
         ? `/api/rate-limit/monitoring?integrationId=${integrationId}`
@@ -23,7 +38,7 @@ export function RateLimitMonitor({ integrationId }: RateLimitMonitorProps) {
     } catch (error) {
       console.error('Failed to load metrics', error);
     }
-  };
+  }, [integrationId]);
 
   const loadQueueStats = async () => {
     try {
@@ -45,7 +60,7 @@ export function RateLimitMonitor({ integrationId }: RateLimitMonitorProps) {
     }, 5000); // Refresh every 5 seconds
 
     return () => clearInterval(interval);
-  }, [integrationId]);
+  }, [loadMetrics]);
 
   const getStatusColor = (remaining: number, total: number) => {
     const percentage = (remaining / total) * 100;

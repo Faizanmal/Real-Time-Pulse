@@ -21,7 +21,6 @@ export interface Surface3DChartProps {
   solidColor?: string;
   wireframe?: boolean;
   showGrid?: boolean;
-  axisLabels?: { x: string; y: string; z: string };
   enableRotation?: boolean;
   backgroundColor?: string;
   className?: string;
@@ -38,7 +37,6 @@ export function Surface3DChart({
   solidColor = '#3b82f6',
   wireframe = false,
   showGrid = true,
-  axisLabels = { x: 'X', y: 'Y', z: 'Z' },
   enableRotation = true,
   backgroundColor = '#0f172a',
   className = '',
@@ -106,6 +104,7 @@ export function Surface3DChart({
   // Initialize scene
   useEffect(() => {
     if (!containerRef.current) return;
+    const container = containerRef.current;
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -121,7 +120,7 @@ export function Surface3DChart({
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
-    containerRef.current.appendChild(renderer.domElement);
+    container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     // Controls
@@ -162,7 +161,9 @@ export function Surface3DChart({
     // Cleanup
     return () => {
       renderer.dispose();
-      containerRef.current?.removeChild(renderer.domElement);
+      if (container && container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
     };
   }, [width, height, backgroundColor, showGrid, enableRotation]);
 
@@ -256,4 +257,6 @@ export function Surface3DChart({
   );
 }
 
-export default Surface3DChart;
+const surface3DChart = { Surface3DChart };
+
+export default surface3DChart;

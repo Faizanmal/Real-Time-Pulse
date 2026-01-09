@@ -7,7 +7,6 @@ import {
   Patch,
   Delete,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import { ClientReportService } from './client-report.service';
 import { ReportGeneratorService } from './report-generator.service';

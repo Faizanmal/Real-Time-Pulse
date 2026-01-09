@@ -6,18 +6,9 @@ import { StreamingController } from './streaming.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-  imports: [
-    PrismaModule,
-    EventEmitterModule.forRoot(),
-  ],
+  imports: [PrismaModule, EventEmitterModule.forRoot()],
   controllers: [StreamingController],
-  providers: [
-    StreamProcessingService,
-    CEPEngineService,
-  ],
-  exports: [
-    StreamProcessingService,
-    CEPEngineService,
-  ],
+  providers: [StreamProcessingService, CEPEngineService],
+  exports: [StreamProcessingService, CEPEngineService],
 })
 export class StreamingModule {}

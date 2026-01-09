@@ -11,12 +11,7 @@
  * - Suspicious activity detection
  */
 
-import {
-  Injectable,
-  Logger,
-  UnauthorizedException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../cache/redis.service';
@@ -486,7 +481,7 @@ export class AdvancedSecurityService {
 
       await this.redis.setJSON(key, reputation, 86400 * 7); // 7 days
       return reputation;
-    } catch (error) {
+    } catch {
       return {
         score: 50,
         failedAttempts: 0,
@@ -503,7 +498,7 @@ export class AdvancedSecurityService {
   async updateIpReputation(
     ip: string,
     success: boolean,
-    activity?: string,
+    _activity?: string,
   ): Promise<IpReputation> {
     const key = `${this.IP_REPUTATION_PREFIX}${ip}`;
     const reputation = await this.getIpReputation(ip);
@@ -637,7 +632,7 @@ export class AdvancedSecurityService {
       const client = this.redis.getClient();
       const activities = await client.lrange(key, 0, limit - 1);
       return activities.map((a) => JSON.parse(a));
-    } catch (error) {
+    } catch {
       return [];
     }
   }

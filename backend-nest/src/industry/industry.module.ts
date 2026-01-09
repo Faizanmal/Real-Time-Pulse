@@ -8,10 +8,7 @@ import { RetailSolutionService } from './retail/retail-solution.service';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-  imports: [
-    PrismaModule,
-    EventEmitterModule.forRoot(),
-  ],
+  imports: [PrismaModule, EventEmitterModule.forRoot()],
   controllers: [IndustryController],
   providers: [
     HealthcareSolutionService,

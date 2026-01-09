@@ -18,7 +18,9 @@ export class MongoDBAtlasService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  private getHeaders(integration: MongoDBAtlasIntegration): Record<string, string> {
+  private getHeaders(
+    integration: MongoDBAtlasIntegration,
+  ): Record<string, string> {
     const credentials = Buffer.from(
       `${integration.accessToken}:${integration.refreshToken}`,
     ).toString('base64');

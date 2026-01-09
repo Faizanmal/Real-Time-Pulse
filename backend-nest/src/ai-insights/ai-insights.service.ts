@@ -399,7 +399,7 @@ export class AIInsightsService {
         source: 'openai',
         timestamp: new Date().toISOString(),
       };
-    } catch (error) {
+    } catch {
       // Fallback to basic query if OpenAI fails
       return this.processBasicQuery(workspaceId, query);
     }

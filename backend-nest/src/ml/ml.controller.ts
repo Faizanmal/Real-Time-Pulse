@@ -6,7 +6,6 @@ import {
   Delete,
   Body,
   Param,
-  Query,
 } from '@nestjs/common';
 import { MLModelService } from './ml-model.service';
 import { CausalInferenceService } from './causal-inference.service';
@@ -31,13 +30,20 @@ export class MLController {
 
   @Post('models')
   async createModel(
-    @Body() body: {
+    @Body()
+    body: {
       name: string;
-      type: 'classification' | 'regression' | 'clustering' | 'timeseries' | 'anomaly' | 'nlp';
+      type:
+        | 'classification'
+        | 'regression'
+        | 'clustering'
+        | 'timeseries'
+        | 'anomaly'
+        | 'nlp';
       framework: 'sklearn' | 'tensorflow' | 'pytorch' | 'xgboost' | 'custom';
       features: string[];
       target?: string;
-    }
+    },
   ) {
     return this.mlService.createModel(body);
   }
@@ -51,7 +57,8 @@ export class MLController {
   @Post('models/:id/train')
   async trainModel(
     @Param('id') id: string,
-    @Body() body: {
+    @Body()
+    body: {
       data: any[];
       config: {
         algorithm: string;
@@ -59,7 +66,7 @@ export class MLController {
         validationSplit?: number;
         automl?: boolean;
       };
-    }
+    },
   ) {
     return this.mlService.trainModel(id, body.data, body.config);
   }
@@ -67,13 +74,14 @@ export class MLController {
   @Post('models/:id/predict')
   async predict(
     @Param('id') id: string,
-    @Body() body: {
+    @Body()
+    body: {
       features: Record<string, any>;
       options?: {
         explain?: boolean;
         threshold?: number;
       };
-    }
+    },
   ) {
     return this.mlService.predict({
       modelId: id,
@@ -85,20 +93,16 @@ export class MLController {
   @Post('models/:id/batch-predict')
   async batchPredict(
     @Param('id') id: string,
-    @Body() body: {
+    @Body()
+    body: {
       data: Record<string, any>[];
-    }
+    },
   ) {
     return this.mlService.batchPredict(id, body.data);
   }
 
   @Post('features/analyze')
-  async analyzeFeatures(
-    @Body() body: {
-      data: any[];
-      targetColumn: string;
-    }
-  ) {
+  async analyzeFeatures(@Body() body: { data: any[]; targetColumn: string }) {
     return this.mlService.analyzeFeatures(body.data, body.targetColumn);
   }
 
@@ -115,20 +119,13 @@ export class MLController {
 
   @Post('causal/graphs')
   async createCausalGraph(
-    @Body() body: {
-      name: string;
-      variables: any[];
-      edges: any[];
-    }
+    @Body() body: { name: string; variables: any[]; edges: any[] },
   ) {
     return this.causalService.createCausalGraph(body);
   }
 
   @Put('causal/graphs/:id')
-  async updateCausalGraph(
-    @Param('id') id: string,
-    @Body() updates: any
-  ) {
+  async updateCausalGraph(@Param('id') id: string, @Body() updates: any) {
     return this.causalService.updateCausalGraph(id, updates);
   }
 
@@ -140,7 +137,8 @@ export class MLController {
 
   @Post('causal/estimate')
   async estimateCausalEffect(
-    @Body() body: {
+    @Body()
+    body: {
       graphId: string;
       data: any[];
       treatment: string;
@@ -148,7 +146,7 @@ export class MLController {
       estimand?: 'ate' | 'att' | 'atc' | 'cate';
       method?: string;
       confounders?: string[];
-    }
+    },
   ) {
     return this.causalService.estimateCausalEffect(body.data, {
       graphId: body.graphId,
@@ -162,13 +160,14 @@ export class MLController {
 
   @Post('causal/counterfactual')
   async computeCounterfactual(
-    @Body() body: {
+    @Body()
+    body: {
       graphId: string;
       data: any[];
       observation: Record<string, any>;
       intervention: Record<string, any>;
       outcomeVariable: string;
-    }
+    },
   ) {
     return this.causalService.computeCounterfactual(body.data, {
       graphId: body.graphId,
@@ -180,27 +179,29 @@ export class MLController {
 
   @Post('causal/ab-test')
   async analyzeABTest(
-    @Body() body: {
+    @Body()
+    body: {
       testId: string;
       treatmentData: any[];
       controlData: any[];
       metric: string;
       alpha?: number;
       method?: 'ttest' | 'bayesian' | 'cuped';
-    }
+    },
   ) {
     return this.causalService.analyzeABTest(body);
   }
 
   @Post('causal/sensitivity')
   async performSensitivityAnalysis(
-    @Body() body: {
+    @Body()
+    body: {
       graphId: string;
       data: any[];
       treatment: string;
       outcome: string;
       unmeasuredConfoundingStrength: number[];
-    }
+    },
   ) {
     return this.causalService.performSensitivityAnalysis(body.data, {
       graphId: body.graphId,
@@ -212,12 +213,13 @@ export class MLController {
 
   @Post('causal/mediation')
   async performMediationAnalysis(
-    @Body() body: {
+    @Body()
+    body: {
       data: any[];
       treatment: string;
       mediator: string;
       outcome: string;
-    }
+    },
   ) {
     return this.causalService.performMediationAnalysis(body.data, {
       treatment: body.treatment,

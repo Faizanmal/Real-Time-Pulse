@@ -6,18 +6,9 @@ import { MLController } from './ml.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-  imports: [
-    PrismaModule,
-    EventEmitterModule.forRoot(),
-  ],
+  imports: [PrismaModule, EventEmitterModule.forRoot()],
   controllers: [MLController],
-  providers: [
-    MLModelService,
-    CausalInferenceService,
-  ],
-  exports: [
-    MLModelService,
-    CausalInferenceService,
-  ],
+  providers: [MLModelService, CausalInferenceService],
+  exports: [MLModelService, CausalInferenceService],
 })
 export class MLModule {}

@@ -14,7 +14,6 @@ interface ProactiveInsight {
 }
 
 interface AIProactiveInsightsProps {
-  workspaceId: string;
   className?: string;
   maxInsights?: number;
   autoRefresh?: boolean;
@@ -42,7 +41,6 @@ const typeColors = {
 };
 
 export function AIProactiveInsights({
-  workspaceId,
   className,
   maxInsights = 5,
   autoRefresh = true,

@@ -22,11 +22,16 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
+  const generateId = () => {
+    const rnd = (globalThis as { crypto?: { randomUUID?: () => string } })?.crypto?.randomUUID?.();
+    if (typeof rnd === 'string') return rnd;
+    return Math.random().toString(36).substring(2, 9);
+  };
+
   const addNotification = (notification: Omit<Notification, 'id' | 'timestamp'>) => {
     const newNotification: Notification = {
       ...notification,
-      // eslint-disable-next-line react-hooks/purity
-      id: Math.random().toString(36).substr(2, 9),
+      id: generateId(),
       timestamp: new Date(),
     };
     setNotifications(prev => [...prev, newNotification]);

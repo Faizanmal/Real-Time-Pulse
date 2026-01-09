@@ -3,6 +3,8 @@ export interface User {
   email: string;
   firstName: string | null;
   lastName: string | null;
+  name?: string; // Computed or provided name
+  avatar?: string; // Avatar URL
   workspaceId: string;
   role: string;
 }

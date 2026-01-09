@@ -5,9 +5,21 @@ import { useVoiceControl } from '@/hooks/useVoiceControl';
 import { Mic, MicOff, Volume2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+interface CommandResult {
+  success: boolean;
+  action: string;
+  data?: {
+    dashboard?: { id: string };
+    project?: { id: string };
+    route?: string;
+    [key: string]: unknown;
+  };
+  message: string;
+}
+
 interface VoiceControlPanelProps {
   workspaceId: string;
-  onCommand?: (command: any) => void;
+  onCommand?: (command: CommandResult) => void;
 }
 
 export function VoiceControlPanel({ workspaceId, onCommand }: VoiceControlPanelProps) {
@@ -36,47 +48,7 @@ export function VoiceControlPanel({ workspaceId, onCommand }: VoiceControlPanelP
       setIsProcessing(true);
       setFeedback('Processing command...');
 
-      try {
-        // Send command to backend
-        const response = await fetch('/api/voice/command', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text: voiceCommand.text,
-            workspaceId,
-          }),
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-          setFeedback(result.message);
-          setCommandHistory(prev => [voiceCommand.text, ...prev.slice(0, 4)]);
-
-          // Execute the command action
-          await executeCommand(result);
-
-          // Speak the response
-          speakResponse(result.message);
-
-          // Call external handler if provided
-          if (onCommand) {
-            onCommand(result);
-          }
-        } else {
-          setFeedback(result.message || 'Command failed');
-          speakResponse(result.message);
-        }
-      } catch (err: any) {
-        setFeedback('Failed to process command');
-        console.error('Voice command error:', err);
-      } finally {
-        setIsProcessing(false);
-      }
-    });
-  }, [workspaceId, onCommand, setOnVoiceCommand]);
-
-  const executeCommand = async (result: any) => {
+        const executeCommand = async (result: CommandResult) => {
     switch (result.action) {
       case 'show_dashboard':
         if (result.data?.dashboard?.id) {
@@ -110,7 +82,7 @@ export function VoiceControlPanel({ workspaceId, onCommand }: VoiceControlPanelP
         break;
 
       case 'navigate':
-        if (result.data?.route) {
+        if (result.data?.route && typeof result.data.route === 'string') {
           router.push(result.data.route);
         }
         break;
@@ -130,6 +102,47 @@ export function VoiceControlPanel({ workspaceId, onCommand }: VoiceControlPanelP
         break;
     }
   };
+
+
+      try {
+        // Send command to backend
+        const response = await fetch('/api/voice/command', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: voiceCommand.text,
+            workspaceId,
+          }),
+        });
+
+        const result: CommandResult = await response.json();
+
+        if (result.success) {
+          setFeedback(result.message);
+          setCommandHistory(prev => [voiceCommand.text, ...prev.slice(0, 4)]);
+
+          // Execute the command action
+          await executeCommand(result);
+
+          // Speak the response
+          speakResponse(result.message);
+
+          // Call external handler if provided
+          if (onCommand) {
+            onCommand(result);
+          }
+        } else {
+          setFeedback(result.message || 'Command failed');
+          speakResponse(result.message);
+        }
+      } catch (err) {
+        setFeedback('Failed to process command');
+        console.error('Voice command error:', err);
+      } finally {
+        setIsProcessing(false);
+      }
+    });
+  }, [workspaceId, onCommand, setOnVoiceCommand, router]);
 
   const speakResponse = (text: string) => {
     if ('speechSynthesis' in window) {

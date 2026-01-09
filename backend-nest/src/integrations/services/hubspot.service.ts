@@ -177,7 +177,7 @@ export class HubSpotService {
 
   private async fetchAnalytics(
     headers: any,
-    params?: unknown,
+    _params?: unknown,
   ): Promise<unknown> {
     try {
       // Aggregate analytics from various sources

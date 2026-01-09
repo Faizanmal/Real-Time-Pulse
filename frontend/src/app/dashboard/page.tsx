@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
@@ -8,9 +8,13 @@ import Link from 'next/link';
 import { useAuthStore } from '@/store/auth';
 import { portalApi, workspaceApi, integrationApi } from '@/lib/api-client';
 import { useNotifications } from '@/hooks/useNotifications';
+import { toast } from 'sonner';
 import { StatsCard, PortalCard } from '@/components/ui/feature-cards';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import type { Portal, Workspace, WorkspaceStats } from '@/types';
 import {
   LayoutDashboard,
@@ -34,13 +38,21 @@ import {
   ArrowRight,
   Moon,
   Sun,
+  X,
 } from 'lucide-react';
+
+interface PortalFilters {
+  showPublic: boolean;
+  showPrivate: boolean;
+  sortBy: 'name' | 'created' | 'updated' | 'accessed';
+  sortOrder: 'asc' | 'desc';
+}
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated, clearAuth, isHydrated } = useAuthStore();
   const { notifications, isConnected, unreadCount } = useNotifications();
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   const [portals, setPortals] = useState<Portal[]>([]);
@@ -49,31 +61,20 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [integrationCount, setIntegrationCount] = useState(0);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState<PortalFilters>({
+    showPublic: true,
+    showPrivate: true,
+    sortBy: 'updated',
+    sortOrder: 'desc',
+  });
 
   // Handle mounting for theme
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (!isHydrated) return;
-
-    if (!isAuthenticated) {
-      router.push('/auth/login');
-      return;
-    }
-
-    loadData();
-
-    // Listen for real-time updates
-    window.addEventListener('portal:updated', handlePortalUpdate);
-    return () => {
-      window.removeEventListener('portal:updated', handlePortalUpdate);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, isHydrated, router]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [portalsData, workspaceData, integrationsData] = await Promise.all([
         portalApi.getAll(),
@@ -99,11 +100,28 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.workspaceId]);
 
-  const handlePortalUpdate = () => {
+  const handlePortalUpdate = useCallback(() => {
     loadData();
-  };
+  }, [loadData]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    if (!isAuthenticated) {
+      router.push('/auth/login');
+      return;
+    }
+
+    loadData();
+
+    // Listen for real-time updates
+    window.addEventListener('portal:updated', handlePortalUpdate);
+    return () => {
+      window.removeEventListener('portal:updated', handlePortalUpdate);
+    };
+  }, [isAuthenticated, isHydrated, router, handlePortalUpdate, loadData]);
 
   const handleLogout = () => {
     clearAuth();
@@ -116,20 +134,70 @@ export default function DashboardPage() {
     try {
       await portalApi.delete(portalId);
       setPortals(portals.filter((p) => p.id !== portalId));
+      toast.success('Portal deleted successfully');
     } catch (error) {
       console.error('Failed to delete portal:', error);
-      alert('Failed to delete portal');
+      toast.error('Failed to delete portal');
     }
   };
 
-  const filteredPortals = (portals || []).filter((portal) =>
-    portal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    portal.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredPortals = useMemo(() => {
+    let result = (portals || []).filter((portal) => {
+      // Text search
+      const matchesSearch = portal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        portal.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // Visibility filter
+      const matchesVisibility = (filters.showPublic && portal.isPublic) || 
+        (filters.showPrivate && !portal.isPublic);
+      
+      return matchesSearch && matchesVisibility;
+    });
+
+    // Sorting
+    result = result.sort((a, b) => {
+      let comparison = 0;
+      switch (filters.sortBy) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'created':
+          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          break;
+        case 'updated':
+          comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+          break;
+        case 'accessed':
+          const aAccess = a.lastAccessedAt ? new Date(a.lastAccessedAt).getTime() : 0;
+          const bAccess = b.lastAccessedAt ? new Date(b.lastAccessedAt).getTime() : 0;
+          comparison = aAccess - bAccess;
+          break;
+      }
+      return filters.sortOrder === 'desc' ? -comparison : comparison;
+    });
+
+    return result;
+  }, [portals, searchQuery, filters]);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (!filters.showPublic || !filters.showPrivate) count++;
+    if (filters.sortBy !== 'updated' || filters.sortOrder !== 'desc') count++;
+    return count;
+  }, [filters]);
+
+  const resetFilters = () => {
+    setFilters({
+      showPublic: true,
+      showPrivate: true,
+      sortBy: 'updated',
+      sortOrder: 'desc',
+    });
+  };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-purple-50 to-slate-100 dark:from-slate-950 dark:via-purple-950 dark:to-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-slate-100 via-purple-50 to-slate-100 dark:from-slate-950 dark:via-purple-950 dark:to-slate-950 flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -143,7 +211,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-purple-50 to-slate-100 dark:from-slate-950 dark:via-purple-950 dark:to-slate-950">
+    <div className="min-h-screen bg-linear-to-br from-slate-100 via-purple-50 to-slate-100 dark:from-slate-950 dark:via-purple-950 dark:to-slate-950">
       {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 dark:bg-slate-900/30 border-b border-slate-200 dark:border-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -152,7 +220,7 @@ export default function DashboardPage() {
               <motion.div
                 whileHover={{ rotate: 360 }}
                 transition={{ duration: 0.5 }}
-                className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl"
+                className="p-2 bg-linear-to-br from-purple-500 to-pink-500 rounded-xl"
               >
                 <LayoutDashboard className="h-6 w-6 text-white" />
               </motion.div>
@@ -284,7 +352,7 @@ export default function DashboardPage() {
             <motion.div
               whileHover={{ scale: 1.05, y: -5 }}
               whileTap={{ scale: 0.95 }}
-              className="p-4 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-500/20 dark:to-blue-600/20 border border-blue-300 dark:border-blue-500/30 backdrop-blur-sm hover:border-blue-400 dark:hover:border-blue-500/50 transition-all cursor-pointer"
+              className="p-4 rounded-xl bg-linear-to-br from-blue-100 to-blue-200 dark:from-blue-500/20 dark:to-blue-600/20 border border-blue-300 dark:border-blue-500/30 backdrop-blur-sm hover:border-blue-400 dark:hover:border-blue-500/50 transition-all cursor-pointer"
             >
               <Plus className="h-6 w-6 text-blue-600 dark:text-blue-400 mb-2" />
               <h3 className="font-semibold text-slate-900 dark:text-white">New Portal</h3>
@@ -296,7 +364,7 @@ export default function DashboardPage() {
             <motion.div
               whileHover={{ scale: 1.05, y: -5 }}
               whileTap={{ scale: 0.95 }}
-              className="p-4 rounded-xl bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-500/20 dark:to-purple-600/20 border border-purple-300 dark:border-purple-500/30 backdrop-blur-sm hover:border-purple-400 dark:hover:border-purple-500/50 transition-all cursor-pointer"
+              className="p-4 rounded-xl bg-linear-to-br from-purple-100 to-purple-200 dark:from-purple-500/20 dark:to-purple-600/20 border border-purple-300 dark:border-purple-500/30 backdrop-blur-sm hover:border-purple-400 dark:hover:border-purple-500/50 transition-all cursor-pointer"
             >
               <LayoutDashboard className="h-6 w-6 text-purple-600 dark:text-purple-400 mb-2" />
               <h3 className="font-semibold text-slate-900 dark:text-white">Portals</h3>
@@ -308,7 +376,7 @@ export default function DashboardPage() {
             <motion.div
               whileHover={{ scale: 1.05, y: -5 }}
               whileTap={{ scale: 0.95 }}
-              className="p-4 rounded-xl bg-gradient-to-br from-green-100 to-green-200 dark:from-green-500/20 dark:to-green-600/20 border border-green-300 dark:border-green-500/30 backdrop-blur-sm hover:border-green-400 dark:hover:border-green-500/50 transition-all cursor-pointer"
+              className="p-4 rounded-xl bg-linear-to-br from-green-100 to-green-200 dark:from-green-500/20 dark:to-green-600/20 border border-green-300 dark:border-green-500/30 backdrop-blur-sm hover:border-green-400 dark:hover:border-green-500/50 transition-all cursor-pointer"
             >
               <Zap className="h-6 w-6 text-green-600 dark:text-green-400 mb-2" />
               <h3 className="font-semibold text-slate-900 dark:text-white">Integrations</h3>
@@ -320,7 +388,7 @@ export default function DashboardPage() {
             <motion.div
               whileHover={{ scale: 1.05, y: -5 }}
               whileTap={{ scale: 0.95 }}
-              className="p-4 rounded-xl bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-500/20 dark:to-orange-600/20 border border-orange-300 dark:border-orange-500/30 backdrop-blur-sm hover:border-orange-400 dark:hover:border-orange-500/50 transition-all cursor-pointer"
+              className="p-4 rounded-xl bg-linear-to-br from-orange-100 to-orange-200 dark:from-orange-500/20 dark:to-orange-600/20 border border-orange-300 dark:border-orange-500/30 backdrop-blur-sm hover:border-orange-400 dark:hover:border-orange-500/50 transition-all cursor-pointer"
             >
               <Settings className="h-6 w-6 text-orange-600 dark:text-orange-400 mb-2" />
               <h3 className="font-semibold text-slate-900 dark:text-white">Settings</h3>
@@ -528,14 +596,110 @@ export default function DashboardPage() {
                   className="pl-10 pr-4 py-2 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 />
               </div>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-700/50 border border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-gray-300 transition-colors"
-                title="Filter options (coming soon)"
-              >
-                <Filter className="h-5 w-5" />
-              </motion.button>
+              <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                <PopoverTrigger asChild>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="relative p-2 rounded-lg bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-700/50 border border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-gray-300 transition-colors"
+                    title="Filter options"
+                  >
+                    <Filter className="h-5 w-5" />
+                    {activeFilterCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-purple-600 text-white text-[10px] rounded-full flex items-center justify-center">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </motion.button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-4" align="end">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-sm">Filter Portals</h4>
+                      {activeFilterCount > 0 && (
+                        <Button variant="ghost" size="sm" onClick={resetFilters} className="h-7 px-2 text-xs">
+                          <X className="h-3 w-3 mr-1" />
+                          Reset
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <Label className="text-xs text-muted-foreground uppercase tracking-wide">Visibility</Label>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="showPublic"
+                            checked={filters.showPublic}
+                            onCheckedChange={(checked) => 
+                              setFilters(f => ({ ...f, showPublic: checked as boolean }))
+                            }
+                          />
+                          <Label htmlFor="showPublic" className="text-sm font-normal cursor-pointer">
+                            Public portals
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="showPrivate"
+                            checked={filters.showPrivate}
+                            onCheckedChange={(checked) => 
+                              setFilters(f => ({ ...f, showPrivate: checked as boolean }))
+                            }
+                          />
+                          <Label htmlFor="showPrivate" className="text-sm font-normal cursor-pointer">
+                            Private portals
+                          </Label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label className="text-xs text-muted-foreground uppercase tracking-wide">Sort By</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { value: 'name', label: 'Name' },
+                          { value: 'created', label: 'Created' },
+                          { value: 'updated', label: 'Updated' },
+                          { value: 'accessed', label: 'Accessed' },
+                        ].map((option) => (
+                          <Button
+                            key={option.value}
+                            variant={filters.sortBy === option.value ? 'default' : 'outline'}
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={() => setFilters(f => ({ ...f, sortBy: option.value as PortalFilters['sortBy'] }))}
+                          >
+                            {option.label}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label className="text-xs text-muted-foreground uppercase tracking-wide">Order</Label>
+                      <div className="flex gap-2">
+                        <Button
+                          variant={filters.sortOrder === 'asc' ? 'default' : 'outline'}
+                          size="sm"
+                          className="flex-1 h-8 text-xs"
+                          onClick={() => setFilters(f => ({ ...f, sortOrder: 'asc' }))}
+                        >
+                          Ascending
+                        </Button>
+                        <Button
+                          variant={filters.sortOrder === 'desc' ? 'default' : 'outline'}
+                          size="sm"
+                          className="flex-1 h-8 text-xs"
+                          onClick={() => setFilters(f => ({ ...f, sortOrder: 'desc' }))}
+                        >
+                          Descending
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 

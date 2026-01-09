@@ -18,7 +18,7 @@ interface StatsCardProps {
 
 const variantStyles = {
   default: "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700",
-  gradient: "bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-blue-500/10 backdrop-blur-sm border border-purple-500/20",
+  gradient: "bg-linear-to-br from-purple-500/10 via-pink-500/10 to-blue-500/10 backdrop-blur-sm border border-purple-500/20",
   glass: "bg-white/10 dark:bg-gray-900/10 backdrop-blur-md border border-white/20 dark:border-gray-700/20",
 };
 
@@ -57,7 +57,7 @@ export function StatsCard({
       )}
     >
       {/* Background Gradient */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-transparent rounded-full blur-2xl" />
+      <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-purple-500/10 to-transparent rounded-full blur-2xl" />
 
       <div className="relative space-y-3">
         {/* Header */}

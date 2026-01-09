@@ -4,11 +4,14 @@ import {
   Get,
   Body,
   Query,
-  Param,
   UseGuards,
   Req,
 } from '@nestjs/common';
-import { ConversationalAIService, ConversationContext, ConversationMessage } from './conversational-ai.service';
+import {
+  ConversationalAIService,
+  ConversationContext,
+  ConversationMessage,
+} from './conversational-ai.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 interface QueryRequestDto {
@@ -45,8 +48,13 @@ export class ConversationalAIController {
       workspaceId: req.user.workspaceId,
       userId: req.user.id,
       portalId: dto.portalId,
-      recentMessages: await this.getRecentMessages(req.user.workspaceId, req.user.id),
-      availableDataSources: await this.getAvailableDataSources(req.user.workspaceId),
+      recentMessages: await this.getRecentMessages(
+        req.user.workspaceId,
+        req.user.id,
+      ),
+      availableDataSources: await this.getAvailableDataSources(
+        req.user.workspaceId,
+      ),
       activeFilters: dto.context?.activeFilters,
     };
 
@@ -68,10 +76,7 @@ export class ConversationalAIController {
    * Get conversation history
    */
   @Get('history')
-  async getConversationHistory(
-    @Query('limit') limit: string,
-    @Req() req: any,
-  ) {
+  async getConversationHistory(@Query('limit') limit: string, @Req() req: any) {
     const limitNum = parseInt(limit, 10) || 20;
     return this.conversationalAIService.getConversationHistory(
       req.user.workspaceId,
@@ -117,10 +122,7 @@ export class ConversationalAIController {
    * Get suggested questions based on current context
    */
   @Get('suggestions')
-  async getSuggestions(
-    @Query('portalId') portalId: string,
-    @Req() req: any,
-  ) {
+  async getSuggestions(@Query('portalId') _portalId: string, @Req() _req: any) {
     const suggestions = [
       'Show me the top performing metrics this week',
       'What are the main trends in my data?',
@@ -128,7 +130,7 @@ export class ConversationalAIController {
       'Which areas need attention?',
       'What is driving the change in revenue?',
       'Show anomalies in recent data',
-      'Forecast next week\'s performance',
+      "Forecast next week's performance",
       'What are the correlations between my metrics?',
     ];
 
@@ -147,7 +149,9 @@ export class ConversationalAIController {
     );
   }
 
-  private async getAvailableDataSources(workspaceId: string): Promise<string[]> {
+  private async getAvailableDataSources(
+    _workspaceId: string,
+  ): Promise<string[]> {
     // This would typically query the database for active integrations
     return [
       'GOOGLE_ANALYTICS',

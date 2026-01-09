@@ -14,13 +14,8 @@ import {
   CheckCircle2,
   Activity,
   Thermometer,
-  Zap,
   Timer,
-  TrendingUp,
-  Settings,
-  BarChart3,
   Play,
-  Pause,
 } from 'lucide-react';
 
 interface Equipment {

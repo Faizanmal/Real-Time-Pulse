@@ -56,14 +56,14 @@ export class TemplatesService {
    */
   async findWidgetTemplates(
     workspaceId: string,
-    options?: {
+    _options?: {
       category?: TemplateCategory;
       widgetType?: string;
       search?: string;
       publicOnly?: boolean;
     },
   ) {
-    const { category, widgetType, search, publicOnly } = options || {};
+    const { category, widgetType, search, publicOnly } = _options || {};
 
     return this.prisma.widgetTemplate.findMany({
       where: {
@@ -224,13 +224,13 @@ export class TemplatesService {
    */
   async findPortalTemplates(
     workspaceId: string,
-    options?: {
+    _options?: {
       category?: TemplateCategory;
       search?: string;
       publicOnly?: boolean;
     },
   ) {
-    const { category, search, publicOnly } = options || {};
+    const { category, search, publicOnly } = _options || {};
 
     return this.prisma.portalTemplate.findMany({
       where: {

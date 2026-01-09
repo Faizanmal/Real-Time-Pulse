@@ -18,7 +18,6 @@ import {
   ChevronDown,
   Copy,
   CheckCircle,
-  X,
   MessageSquare,
   Wifi,
   WifiOff
@@ -300,7 +299,7 @@ ${errorDetails.componentStack || 'Not available'}
     };
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-linear-to-br from-slate-950 via-purple-950 to-slate-950 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -435,7 +434,7 @@ ${errorDetails.componentStack || 'Not available'}
                 <Button
                   onClick={this.handleRetry}
                   disabled={isRecovering}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white"
+                  className="w-full bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white"
                 >
                   {isRecovering ? (
                     <>

@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { workflowApi } from '@/lib/advanced-api';
-import type { Workflow, WorkflowTrigger, WorkflowAction, WorkflowCondition } from '@/types/advanced-features';
+import type { Workflow, WorkflowTrigger, WorkflowAction, WorkflowCondition, WorkflowEdge } from '@/types/advanced-features';
 import { Plus, Save, Play, Trash2, GitBranch, Zap, Filter, ArrowRight } from 'lucide-react';
 
 interface WorkflowNode {
@@ -22,7 +22,7 @@ interface WorkflowNode {
 
 export default function WorkflowBuilder({ workflow }: { workflow?: Workflow }) {
   const [nodes, setNodes] = useState<WorkflowNode[]>([]);
-  const [edges, setEdges] = useState<any[]>([]);
+  const [edges] = useState<WorkflowEdge[]>([]);
   const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(null);
   const [workflowName, setWorkflowName] = useState(workflow?.name || '');
   const [workflowDescription, setWorkflowDescription] = useState(workflow?.description || '');
@@ -61,7 +61,7 @@ export default function WorkflowBuilder({ workflow }: { workflow?: Workflow }) {
   const saveWorkflow = async () => {
     try {
       const trigger = nodes.find(n => n.type === 'trigger')?.data as WorkflowTrigger;
-      const actions = nodes.filter(n => n.type === 'action').map(n => n.data as WorkflowAction);
+      const actions = Object.fromEntries(nodes.filter(n => n.type === 'action').map(n => [n.id, n.data]));
       const conditions = nodes.filter(n => n.type === 'condition').map(n => n.data as WorkflowCondition);
 
       if (!trigger) {
@@ -73,7 +73,7 @@ export default function WorkflowBuilder({ workflow }: { workflow?: Workflow }) {
         return;
       }
 
-      if (actions.length === 0) {
+      if (Object.keys(actions).length === 0) {
         toast({
           title: 'Error',
           description: 'Workflow must have at least one action',
@@ -88,24 +88,40 @@ export default function WorkflowBuilder({ workflow }: { workflow?: Workflow }) {
         trigger,
         actions,
         conditions: conditions.length > 0 ? conditions : undefined,
-        nodes,
-        edges,
+        nodes: Object.fromEntries(nodes.map(n => [n.id, n])),
+        edges: Object.fromEntries(edges.map(e => [e.id, e])),
       };
 
       if (workflow) {
-        await workflowApi.updateWorkflow(workflow.id, workflowData);
+        await workflowApi.updateWorkflow(workflow.id, workflowData as {
+          name: string;
+          description: string;
+          trigger: Record<string, unknown>;
+          actions: Record<string, unknown>;
+          conditions?: Record<string, unknown>;
+          nodes: Record<string, unknown>;
+          edges: Record<string, unknown>;
+        });
         toast({
           title: 'Success',
           description: 'Workflow updated successfully',
         });
       } else {
-        await workflowApi.createWorkflow(workflowData);
+        await workflowApi.createWorkflow(workflowData as {
+          name: string;
+          description: string;
+          trigger: Record<string, unknown>;
+          actions: Record<string, unknown>;
+          conditions?: Record<string, unknown>;
+          nodes: Record<string, unknown>;
+          edges: Record<string, unknown>;
+        });
         toast({
           title: 'Success',
           description: 'Workflow created successfully',
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to save workflow',
@@ -130,7 +146,7 @@ export default function WorkflowBuilder({ workflow }: { workflow?: Workflow }) {
         title: 'Success',
         description: 'Workflow executed successfully',
       });
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'Workflow execution failed',
@@ -276,7 +292,7 @@ export default function WorkflowBuilder({ workflow }: { workflow?: Workflow }) {
 }
 
 function NodeConfig({ node, onUpdate }: { node: WorkflowNode; onUpdate: (id: string, data: Partial<WorkflowNode>) => void }) {
-  const [config, setConfig] = useState(node.data.config || {});
+  const [config, setConfig] = useState<Record<string, unknown>>((node.data.config as Record<string, unknown>) || {});
   const [type, setType] = useState(node.data.type || '');
 
   const handleSave = () => {
@@ -328,7 +344,7 @@ function NodeConfig({ node, onUpdate }: { node: WorkflowNode; onUpdate: (id: str
         <div>
           <Label>Webhook URL</Label>
           <Input
-            value={config.url || ''}
+            value={(config.url as string) || ''}
             onChange={(e) => setConfig({ ...config, url: e.target.value })}
             placeholder="https://api.example.com/webhook"
           />
@@ -339,7 +355,7 @@ function NodeConfig({ node, onUpdate }: { node: WorkflowNode; onUpdate: (id: str
         <div>
           <Label>Cron Expression</Label>
           <Input
-            value={config.cron || ''}
+            value={(config.cron as string) || ''}
             onChange={(e) => setConfig({ ...config, cron: e.target.value })}
             placeholder="0 9 * * *"
           />
@@ -351,7 +367,7 @@ function NodeConfig({ node, onUpdate }: { node: WorkflowNode; onUpdate: (id: str
           <div>
             <Label>URL</Label>
             <Input
-              value={config.url || ''}
+              value={(config.url as string) || ''}
               onChange={(e) => setConfig({ ...config, url: e.target.value })}
               placeholder="https://api.example.com/endpoint"
             />
@@ -359,7 +375,7 @@ function NodeConfig({ node, onUpdate }: { node: WorkflowNode; onUpdate: (id: str
           <div>
             <Label>Method</Label>
             <Select
-              value={config.method || 'GET'}
+              value={(config.method as string) || 'GET'}
               onValueChange={(v) => setConfig({ ...config, method: v })}
             >
               <SelectTrigger>
@@ -381,7 +397,7 @@ function NodeConfig({ node, onUpdate }: { node: WorkflowNode; onUpdate: (id: str
           <div>
             <Label>To</Label>
             <Input
-              value={config.to || ''}
+              value={(config.to as string) || ''}
               onChange={(e) => setConfig({ ...config, to: e.target.value })}
               placeholder="user@example.com"
             />
@@ -389,7 +405,7 @@ function NodeConfig({ node, onUpdate }: { node: WorkflowNode; onUpdate: (id: str
           <div>
             <Label>Subject</Label>
             <Input
-              value={config.subject || ''}
+              value={(config.subject as string) || ''}
               onChange={(e) => setConfig({ ...config, subject: e.target.value })}
               placeholder="Alert: Workflow triggered"
             />
@@ -405,23 +421,26 @@ function NodeConfig({ node, onUpdate }: { node: WorkflowNode; onUpdate: (id: str
 }
 
 function getNodeDescription(node: WorkflowNode): string {
-  const config = node.data.config || {};
+  const config = (node.data.config || {}) as Record<string, unknown>;
 
   if (node.type === 'trigger') {
-    if (node.data.type === 'webhook') return `Webhook: ${config.url || 'Not configured'}`;
-    if (node.data.type === 'schedule') return `Schedule: ${config.cron || 'Not configured'}`;
-    if (node.data.type === 'data_change') return `When data changes in ${config.table || 'table'}`;
+    const triggerData = node.data as WorkflowTrigger;
+    if (triggerData.type === 'webhook') return `Webhook: ${(config.url as string) || 'Not configured'}`;
+    if (triggerData.type === 'schedule') return `Schedule: ${(config.cron as string) || 'Not configured'}`;
+    if (triggerData.type === 'data_change') return `When data changes in ${(config.table as string) || 'table'}`;
   }
 
   if (node.type === 'action') {
-    if (node.data.type === 'http_request') return `Request to ${config.url || 'endpoint'}`;
-    if (node.data.type === 'email') return `Email to ${config.to || 'recipient'}`;
-    if (node.data.type === 'slack') return `Slack message to ${config.channel || 'channel'}`;
+    const actionData = node.data as WorkflowAction;
+    if (actionData.type === 'http_request') return `Request to ${(config.url as string) || 'endpoint'}`;
+    if (actionData.type === 'email') return `Email to ${(config.to as string) || 'recipient'}`;
+    if (actionData.type === 'slack') return `Slack message to ${(config.channel as string) || 'channel'}`;
   }
 
   if (node.type === 'condition') {
-    if (node.data.type === 'compare') return `If ${config.field || 'field'} ${config.operator || '='} ${config.value || 'value'}`;
+    const conditionData = node.data as WorkflowCondition;
+    if (conditionData.type === 'compare') return `If ${(config.field as string) || 'field'} ${(config.operator as string) || '='} ${(config.value as string) || 'value'}`;
   }
 
   return 'Click to configure';
-}
+} 

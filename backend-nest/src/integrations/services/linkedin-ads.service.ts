@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
-interface LinkedInAdsIntegration {
+export interface LinkedInAdsIntegration {
   accessToken: string;
   settings: {
     accountId: string;
@@ -17,7 +17,9 @@ export class LinkedInAdsService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  private getHeaders(integration: LinkedInAdsIntegration): Record<string, string> {
+  private getHeaders(
+    integration: LinkedInAdsIntegration,
+  ): Record<string, string> {
     return {
       Authorization: `Bearer ${integration.accessToken}`,
       'Content-Type': 'application/json',
@@ -188,7 +190,8 @@ export class LinkedInAdsService {
             'dateRange.end.year': dateRange.end.year,
             timeGranularity: granularity,
             'accounts[0]': `urn:li:sponsoredAccount:${accountId}`,
-            fields: 'impressions,clicks,costInLocalCurrency,conversionValueInLocalCurrency,externalWebsiteConversions,leads,shares,follows,comments,likes',
+            fields:
+              'impressions,clicks,costInLocalCurrency,conversionValueInLocalCurrency,externalWebsiteConversions,leads,shares,follows,comments,likes',
           },
         }),
       );
@@ -210,9 +213,11 @@ export class LinkedInAdsService {
         totalLeads += element.leads || 0;
       });
 
-      const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+      const ctr =
+        totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
       const cpc = totalClicks > 0 ? totalCost / totalClicks : 0;
-      const cpm = totalImpressions > 0 ? (totalCost / totalImpressions) * 1000 : 0;
+      const cpm =
+        totalImpressions > 0 ? (totalCost / totalImpressions) * 1000 : 0;
 
       return {
         summary: {
@@ -236,7 +241,7 @@ export class LinkedInAdsService {
 
   private async fetchConversions(
     integration: LinkedInAdsIntegration,
-    params?: Record<string, unknown>,
+    _params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
       const accountId = integration.settings.accountId;

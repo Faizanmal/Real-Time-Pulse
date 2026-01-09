@@ -3,12 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { apiResources } from '@/lib/api-client';
 import { Shield, CheckCircle, XCircle, FileText, Search, Download, RefreshCw, Box } from 'lucide-react';
-import { formatDate } from '@/lib/utils'; // Assuming this exists, otherwise I'll mock it locally or use date-fns
 
 export default function ComplianceCenterPage() {
     const [integrityIds, setIntegrityIds] = useState<{ isValid: boolean; blocksVerified: number; entriesVerified: number; verifiedAt: string } | null>(null);
     const [verificationEntryId, setVerificationEntryId] = useState('');
-    const [verificationResult, setVerificationResult] = useState<any>(null);
+    const [verificationResult, setVerificationResult] = useState<{ valid?: boolean; error?: boolean; entry?: { timestamp: string; hash: string }; block?: { id: string } } | null>(null);
     const [isVerifying, setIsVerifying] = useState(false);
     const [isLoadingIntegrity, setIsLoadingIntegrity] = useState(false);
 
@@ -50,7 +49,7 @@ export default function ComplianceCenterPage() {
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
+                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
                         Compliance Center
                     </h1>
                     <p className="text-slate-600 dark:text-slate-400 mt-2">
@@ -68,7 +67,7 @@ export default function ComplianceCenterPage() {
 
             {/* Hero Status Card */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-2 p-6 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-xl relative overflow-hidden">
+                <div className="md:col-span-2 p-6 rounded-2xl bg-linear-to-br from-indigo-500 to-purple-600 text-white shadow-xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-8 opacity-10">
                         <Shield className="w-48 h-48" />
                     </div>
@@ -182,9 +181,9 @@ export default function ComplianceCenterPage() {
                                         <CheckCircle className="w-5 h-5" /> Authenticity Verified
                                     </div>
                                     <div className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
-                                        <p>Timestamp: {new Date(verificationResult.entry.timestamp).toLocaleString()}</p>
-                                        <p>Block ID: <span className="font-mono text-xs">{verificationResult.block.id}</span></p>
-                                        <p>Hash: <span className="font-mono text-xs break-all">{verificationResult.entry.hash}</span></p>
+                                        <p>Timestamp: {verificationResult.entry?.timestamp ? new Date(verificationResult.entry.timestamp).toLocaleString() : 'N/A'}</p>
+                                        <p>Block ID: <span className="font-mono text-xs">{verificationResult.block?.id || 'N/A'}</span></p>
+                                        <p>Hash: <span className="font-mono text-xs break-all">{verificationResult.entry?.hash || 'N/A'}</span></p>
                                     </div>
                                 </div>
                             ) : verificationResult.error ? (

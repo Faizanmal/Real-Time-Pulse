@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { Kafka, Consumer, Producer, Admin, KafkaMessage, EachMessagePayload } from 'kafkajs';
+import { Kafka, Consumer, Producer, Admin, EachMessagePayload } from 'kafkajs';
 
-interface KafkaIntegration {
+export interface KafkaIntegration {
   accessToken?: string; // For SASL authentication
   refreshToken?: string; // SASL password
   settings: {
@@ -69,7 +69,10 @@ export class KafkaService implements OnModuleDestroy {
         kafkaConfig.ssl = true;
       }
 
-      if (integration.settings.sasl || (integration.accessToken && integration.refreshToken)) {
+      if (
+        integration.settings.sasl ||
+        (integration.accessToken && integration.refreshToken)
+      ) {
         kafkaConfig.sasl = integration.settings.sasl || {
           mechanism: 'plain',
           username: integration.accessToken,
@@ -222,7 +225,9 @@ export class KafkaService implements OnModuleDestroy {
     }
   }
 
-  private async fetchConsumerGroups(integration: KafkaIntegration): Promise<unknown> {
+  private async fetchConsumerGroups(
+    integration: KafkaIntegration,
+  ): Promise<unknown> {
     try {
       const admin = await this.getAdmin(integration);
       const groups = await admin.listGroups();
@@ -278,10 +283,14 @@ export class KafkaService implements OnModuleDestroy {
       const lagInfo = await Promise.all(
         offsets.map(async (topicOffset) => {
           try {
-            const highWatermarks = await admin.fetchTopicOffsets(topicOffset.topic);
+            const highWatermarks = await admin.fetchTopicOffsets(
+              topicOffset.topic,
+            );
 
             const partitions = topicOffset.partitions.map((p) => {
-              const hw = highWatermarks.find((h) => h.partition === p.partition);
+              const hw = highWatermarks.find(
+                (h) => h.partition === p.partition,
+              );
               const currentOffset = parseInt(p.offset) || 0;
               const highWatermark = parseInt(hw?.high || '0');
 
@@ -320,7 +329,7 @@ export class KafkaService implements OnModuleDestroy {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     const topic = params?.topic as string;
-    const partition = (params?.partition as number) ?? 0;
+    const _partition = (params?.partition as number) ?? 0;
     const limit = (params?.limit as number) || 10;
     const fromBeginning = (params?.fromBeginning as boolean) ?? false;
 
@@ -342,14 +351,17 @@ export class KafkaService implements OnModuleDestroy {
       await consumer.subscribe({ topic, fromBeginning });
 
       return new Promise((resolve, reject) => {
-        const timeout = setTimeout(async () => {
-          await consumer.disconnect();
-          resolve(messages);
+        const timeout = setTimeout(() => {
+          void consumer.disconnect().then(() => resolve(messages));
         }, 10000); // 10 second timeout
 
-        consumer
+        void consumer
           .run({
-            eachMessage: async ({ topic, partition, message }: EachMessagePayload) => {
+            eachMessage: async ({
+              topic,
+              partition,
+              message,
+            }: EachMessagePayload) => {
               if (messageCount < limit) {
                 messages.push({
                   topic,
@@ -373,7 +385,7 @@ export class KafkaService implements OnModuleDestroy {
           .catch(async (err) => {
             clearTimeout(timeout);
             await consumer.disconnect();
-            reject(err);
+            reject(err instanceof Error ? err : new Error(String(err)));
           });
       });
     } catch (error) {
@@ -382,7 +394,9 @@ export class KafkaService implements OnModuleDestroy {
     }
   }
 
-  private async fetchClusterInfo(integration: KafkaIntegration): Promise<unknown> {
+  private async fetchClusterInfo(
+    integration: KafkaIntegration,
+  ): Promise<unknown> {
     try {
       const admin = await this.getAdmin(integration);
       const cluster = await admin.describeCluster();
@@ -394,7 +408,7 @@ export class KafkaService implements OnModuleDestroy {
           nodeId: b.nodeId,
           host: b.host,
           port: b.port,
-          rack: b.rack,
+          rack: (b as any).rack,
         })),
       };
     } catch (error) {
@@ -405,7 +419,7 @@ export class KafkaService implements OnModuleDestroy {
 
   private async fetchAnalytics(
     integration: KafkaIntegration,
-    params?: Record<string, unknown>,
+    _params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
       const [topics, consumerGroups, clusterInfo] = await Promise.all([
@@ -460,7 +474,11 @@ export class KafkaService implements OnModuleDestroy {
     integration: KafkaIntegration,
     data: {
       topic: string;
-      messages: { key?: string; value: string; headers?: Record<string, string> }[];
+      messages: {
+        key?: string;
+        value: string;
+        headers?: Record<string, string>;
+      }[];
       acks?: -1 | 0 | 1;
     },
   ): Promise<unknown> {

@@ -674,7 +674,7 @@ export class AuthService {
   /**
    * Get active sessions for a user
    */
-  async getActiveSessions(userId: string): Promise<Session[]> {
+  async getActiveSessions(_userId: string): Promise<Session[]> {
     // In production, return actual session data from cache
     return [];
   }

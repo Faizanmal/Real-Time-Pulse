@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import WorkflowBuilder from '@/components/features/workflow-builder';
 import { workflowApi } from '@/lib/advanced-api';
 import type { Workflow } from '@/types/advanced-features';
@@ -11,7 +11,6 @@ import Link from 'next/link';
 
 export default function WorkflowBuilderPage() {
   const params = useParams();
-  const router = useRouter();
   const [workflow, setWorkflow] = useState<Workflow | undefined>();
   const [loading, setLoading] = useState(true);
 

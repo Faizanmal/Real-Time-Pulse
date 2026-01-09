@@ -18,7 +18,9 @@ export class StripeConnectService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  private getHeaders(integration: StripeConnectIntegration): Record<string, string> {
+  private getHeaders(
+    integration: StripeConnectIntegration,
+  ): Record<string, string> {
     const headers: Record<string, string> = {
       Authorization: `Bearer ${integration.accessToken}`,
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -31,7 +33,9 @@ export class StripeConnectService {
     return headers;
   }
 
-  async testConnection(integration: StripeConnectIntegration): Promise<boolean> {
+  async testConnection(
+    integration: StripeConnectIntegration,
+  ): Promise<boolean> {
     try {
       const response = await firstValueFrom(
         this.httpService.get(`${this.baseUrl}/account`, {
@@ -78,7 +82,9 @@ export class StripeConnectService {
     }
   }
 
-  private async fetchAccount(integration: StripeConnectIntegration): Promise<unknown> {
+  private async fetchAccount(
+    integration: StripeConnectIntegration,
+  ): Promise<unknown> {
     try {
       const response = await firstValueFrom(
         this.httpService.get(`${this.baseUrl}/account`, {
@@ -103,7 +109,9 @@ export class StripeConnectService {
     }
   }
 
-  private async fetchBalance(integration: StripeConnectIntegration): Promise<unknown> {
+  private async fetchBalance(
+    integration: StripeConnectIntegration,
+  ): Promise<unknown> {
     try {
       const response = await firstValueFrom(
         this.httpService.get(`${this.baseUrl}/balance`, {
@@ -136,9 +144,12 @@ export class StripeConnectService {
       if (created?.lte) queryParams.set('created[lte]', created.lte.toString());
 
       const response = await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/charges?${queryParams.toString()}`, {
-          headers: this.getHeaders(integration),
-        }),
+        this.httpService.get(
+          `${this.baseUrl}/charges?${queryParams.toString()}`,
+          {
+            headers: this.getHeaders(integration),
+          },
+        ),
       );
 
       return {
@@ -206,9 +217,12 @@ export class StripeConnectService {
       if (email) queryParams.set('email', email);
 
       const response = await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/customers?${queryParams.toString()}`, {
-          headers: this.getHeaders(integration),
-        }),
+        this.httpService.get(
+          `${this.baseUrl}/customers?${queryParams.toString()}`,
+          {
+            headers: this.getHeaders(integration),
+          },
+        ),
       );
 
       return {
@@ -243,9 +257,12 @@ export class StripeConnectService {
       if (status) queryParams.set('status', status);
 
       const response = await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/subscriptions?${queryParams.toString()}`, {
-          headers: this.getHeaders(integration),
-        }),
+        this.httpService.get(
+          `${this.baseUrl}/subscriptions?${queryParams.toString()}`,
+          {
+            headers: this.getHeaders(integration),
+          },
+        ),
       );
 
       return {
@@ -253,8 +270,12 @@ export class StripeConnectService {
           id: sub.id,
           customer: sub.customer,
           status: sub.status,
-          currentPeriodStart: new Date(sub.current_period_start * 1000).toISOString(),
-          currentPeriodEnd: new Date(sub.current_period_end * 1000).toISOString(),
+          currentPeriodStart: new Date(
+            sub.current_period_start * 1000,
+          ).toISOString(),
+          currentPeriodEnd: new Date(
+            sub.current_period_end * 1000,
+          ).toISOString(),
           cancelAtPeriodEnd: sub.cancel_at_period_end,
           items: sub.items.data.map((item: any) => ({
             id: item.id,
@@ -283,9 +304,12 @@ export class StripeConnectService {
       if (status) queryParams.set('status', status);
 
       const response = await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/invoices?${queryParams.toString()}`, {
-          headers: this.getHeaders(integration),
-        }),
+        this.httpService.get(
+          `${this.baseUrl}/invoices?${queryParams.toString()}`,
+          {
+            headers: this.getHeaders(integration),
+          },
+        ),
       );
 
       return {
@@ -297,7 +321,9 @@ export class StripeConnectService {
           amountPaid: inv.amount_paid,
           amountRemaining: inv.amount_remaining,
           currency: inv.currency,
-          dueDate: inv.due_date ? new Date(inv.due_date * 1000).toISOString() : null,
+          dueDate: inv.due_date
+            ? new Date(inv.due_date * 1000).toISOString()
+            : null,
           created: new Date(inv.created * 1000).toISOString(),
           hostedInvoiceUrl: inv.hosted_invoice_url,
         })),
@@ -385,7 +411,9 @@ export class StripeConnectService {
       delete headers['Stripe-Account'];
 
       const response = await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/accounts?limit=${limit}`, { headers }),
+        this.httpService.get(`${this.baseUrl}/accounts?limit=${limit}`, {
+          headers,
+        }),
       );
 
       return {
@@ -409,19 +437,23 @@ export class StripeConnectService {
 
   private async fetchAnalytics(
     integration: StripeConnectIntegration,
-    params?: Record<string, unknown>,
+    _params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
       const thirtyDaysAgo = Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60;
 
-      const [balance, charges, subscriptions, invoices, payouts, disputes] = await Promise.all([
-        this.fetchBalance(integration),
-        this.fetchCharges(integration, { limit: 100, created: { gte: thirtyDaysAgo } }),
-        this.fetchSubscriptions(integration, { limit: 100 }),
-        this.fetchInvoices(integration, { limit: 100 }),
-        this.fetchPayouts(integration, { limit: 50 }),
-        this.fetchDisputes(integration, { limit: 50 }),
-      ]);
+      const [balance, charges, subscriptions, invoices, payouts, disputes] =
+        await Promise.all([
+          this.fetchBalance(integration),
+          this.fetchCharges(integration, {
+            limit: 100,
+            created: { gte: thirtyDaysAgo },
+          }),
+          this.fetchSubscriptions(integration, { limit: 100 }),
+          this.fetchInvoices(integration, { limit: 100 }),
+          this.fetchPayouts(integration, { limit: 50 }),
+          this.fetchDisputes(integration, { limit: 50 }),
+        ]);
 
       const chargesArray = (charges as any).charges || [];
       const subscriptionsArray = (subscriptions as any).subscriptions || [];
@@ -452,18 +484,25 @@ export class StripeConnectService {
       ).length;
 
       // Invoice metrics
-      const openInvoices = invoicesArray.filter((i: any) => i.status === 'open').length;
-      const paidInvoices = invoicesArray.filter((i: any) => i.status === 'paid').length;
+      const openInvoices = invoicesArray.filter(
+        (i: any) => i.status === 'open',
+      ).length;
+      const paidInvoices = invoicesArray.filter(
+        (i: any) => i.status === 'paid',
+      ).length;
 
       // Payout metrics
-      const pendingPayouts = payoutsArray.filter((p: any) => p.status === 'pending').length;
+      const pendingPayouts = payoutsArray.filter(
+        (p: any) => p.status === 'pending',
+      ).length;
       const totalPayoutAmount = payoutsArray
         .filter((p: any) => p.status === 'paid')
         .reduce((sum: number, p: any) => sum + p.amount, 0);
 
       // Dispute metrics
       const openDisputes = disputesArray.filter(
-        (d: any) => d.status === 'needs_response' || d.status === 'under_review',
+        (d: any) =>
+          d.status === 'needs_response' || d.status === 'under_review',
       ).length;
 
       return {
@@ -473,7 +512,10 @@ export class StripeConnectService {
           failedCharges,
           chargeSuccessRate:
             successfulCharges + failedCharges > 0
-              ? ((successfulCharges / (successfulCharges + failedCharges)) * 100).toFixed(2)
+              ? (
+                  (successfulCharges / (successfulCharges + failedCharges)) *
+                  100
+                ).toFixed(2)
               : '0',
           activeSubscriptions,
           cancelingSubscriptions,
@@ -514,12 +556,17 @@ export class StripeConnectService {
       if (data.country) formData.set('country', data.country);
       if (data.capabilities) {
         Object.entries(data.capabilities).forEach(([key, value]) => {
-          formData.set(`capabilities[${key}][requested]`, value.requested.toString());
+          formData.set(
+            `capabilities[${key}][requested]`,
+            value.requested.toString(),
+          );
         });
       }
 
       const response = await firstValueFrom(
-        this.httpService.post(`${this.baseUrl}/accounts`, formData.toString(), { headers }),
+        this.httpService.post(`${this.baseUrl}/accounts`, formData.toString(), {
+          headers,
+        }),
       );
 
       return response.data;
@@ -550,7 +597,11 @@ export class StripeConnectService {
       if (data.description) formData.set('description', data.description);
 
       const response = await firstValueFrom(
-        this.httpService.post(`${this.baseUrl}/transfers`, formData.toString(), { headers }),
+        this.httpService.post(
+          `${this.baseUrl}/transfers`,
+          formData.toString(),
+          { headers },
+        ),
       );
 
       return response.data;

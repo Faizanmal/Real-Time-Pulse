@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
-interface AWSCloudWatchIntegration {
+export interface AWSCloudWatchIntegration {
   accessToken: string; // AWS Access Key ID
   refreshToken: string; // AWS Secret Access Key
   settings: {
@@ -17,7 +17,10 @@ export class AWSCloudWatchService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  private getEndpoint(integration: AWSCloudWatchIntegration, service: string): string {
+  private getEndpoint(
+    integration: AWSCloudWatchIntegration,
+    service: string,
+  ): string {
     return `https://${service}.${integration.settings.region}.amazonaws.com`;
   }
 
@@ -32,7 +35,6 @@ export class AWSCloudWatchService {
     // AWS Signature V4 signing - simplified implementation
     // In production, use @aws-sdk/signature-v4 or aws-sdk
     const timestamp = new Date().toISOString().replace(/[:-]|\.\d{3}/g, '');
-    const date = timestamp.slice(0, 8);
 
     const signedHeaders: Record<string, string> = {
       ...headers,
@@ -48,7 +50,9 @@ export class AWSCloudWatchService {
     return signedHeaders;
   }
 
-  async testConnection(integration: AWSCloudWatchIntegration): Promise<boolean> {
+  async testConnection(
+    integration: AWSCloudWatchIntegration,
+  ): Promise<boolean> {
     try {
       // Use AWS SDK or make a simple API call to verify credentials
       const endpoint = this.getEndpoint(integration, 'monitoring');
@@ -108,9 +112,16 @@ export class AWSCloudWatchService {
       const metricName = params?.metricName as string;
       const dimensions = params?.dimensions as Record<string, string>;
       const period = (params?.period as number) || 300;
-      const startTime = (params?.startTime as string) || new Date(Date.now() - 3600000).toISOString();
+      const startTime =
+        (params?.startTime as string) ||
+        new Date(Date.now() - 3600000).toISOString();
       const endTime = (params?.endTime as string) || new Date().toISOString();
-      const statistics = (params?.statistics as string[]) || ['Average', 'Sum', 'Maximum', 'Minimum'];
+      const statistics = (params?.statistics as string[]) || [
+        'Average',
+        'Sum',
+        'Maximum',
+        'Minimum',
+      ];
 
       const queryParams: Record<string, unknown> = {
         Action: 'GetMetricStatistics',
@@ -333,8 +344,12 @@ export class AWSCloudWatchService {
       const dashboardsData = dashboards as any;
 
       // Parse alarms
-      const alarmList = alarmsData?.DescribeAlarmsResponse?.DescribeAlarmsResult?.MetricAlarms || [];
-      const dashboardList = dashboardsData?.ListDashboardsResponse?.ListDashboardsResult?.DashboardEntries || [];
+      const alarmList =
+        alarmsData?.DescribeAlarmsResponse?.DescribeAlarmsResult
+          ?.MetricAlarms || [];
+      const dashboardList =
+        dashboardsData?.ListDashboardsResponse?.ListDashboardsResult
+          ?.DashboardEntries || [];
 
       const alarmsByState: Record<string, number> = {};
       alarmList.forEach((alarm: any) => {

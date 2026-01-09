@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import localforage from 'localforage';
 
 // Configure localforage for offline storage
@@ -39,11 +39,7 @@ export function useOfflineStorage<T>(
     storeName === 'widgets' ? widgetStore :
     alertStore;
 
-  useEffect(() => {
-    loadData();
-  }, [key]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const stored = await store.getItem<T>(key);
@@ -54,7 +50,11 @@ export function useOfflineStorage<T>(
     } finally {
       setLoading(false);
     }
-  };
+  }, [store, key]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const save = async (newData: T) => {
     try {
@@ -118,7 +118,7 @@ export async function mergeConflicts<T>(
 
 // Batch operations
 export async function saveMultiple(
-  items: Array<{ key: string; data: any; store: 'dashboards' | 'widgets' | 'alerts' }>,
+  items: Array<{ key: string; data: unknown; store: 'dashboards' | 'widgets' | 'alerts' }>,
 ): Promise<void> {
   const operations = items.map(({ key, data, store: storeName }) => {
     const store = 

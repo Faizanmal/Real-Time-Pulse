@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -29,6 +29,32 @@ export default function IntegrationsPage() {
   const [syncingIds, setSyncingIds] = useState<Set<string>>(new Set());
   const [testingIds, setTestingIds] = useState<Set<string>>(new Set());
 
+  const loadIntegrations = useCallback(async () => {
+    if (!user?.workspaceId) return;
+
+    try {
+      const data = await integrationApi.getAllByWorkspace(user.workspaceId);
+      setIntegrations(data);
+    } catch (error) {
+      console.error('Failed to load integrations:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.workspaceId]);
+
+  const handleIntegrationSync = useCallback((event: Event) => {
+    const customEvent = event as CustomEvent<{ integrationId?: string }>;
+    const { integrationId } = customEvent.detail || {};
+    if (integrationId) {
+      loadIntegrations();
+      setSyncingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(integrationId);
+        return next;
+      });
+    }
+  }, [loadIntegrations]);
+
   useEffect(() => {
     if (!isHydrated) return;
 
@@ -44,34 +70,7 @@ export default function IntegrationsPage() {
     return () => {
       window.removeEventListener('integration:synced', handleIntegrationSync);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, isHydrated, router]);
-
-  const loadIntegrations = async () => {
-    if (!user?.workspaceId) return;
-
-    try {
-      const data = await integrationApi.getAllByWorkspace(user.workspaceId);
-      setIntegrations(data);
-    } catch (error) {
-      console.error('Failed to load integrations:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleIntegrationSync = (event: Event) => {
-    const customEvent = event as CustomEvent<{ integrationId?: string }>;
-    const { integrationId } = customEvent.detail || {};
-    if (integrationId) {
-      loadIntegrations();
-      setSyncingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(integrationId);
-        return next;
-      });
-    }
-  };
+  }, [isAuthenticated, isHydrated, router, handleIntegrationSync, loadIntegrations]);
 
   const handleSync = async (id: string) => {
     setSyncingIds((prev) => new Set(prev).add(id));
@@ -140,7 +139,7 @@ export default function IntegrationsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-slate-950 via-purple-950 to-slate-950 flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -154,7 +153,7 @@ export default function IntegrationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950">
+    <div className="min-h-screen bg-linear-to-br from-slate-950 via-purple-950 to-slate-950">
       {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-slate-900/30 border-b border-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">

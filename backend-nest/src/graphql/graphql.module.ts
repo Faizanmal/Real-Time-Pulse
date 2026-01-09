@@ -40,7 +40,7 @@ import { DataLoaderService } from './dataloader.service';
           'graphql-ws': {
             path: '/graphql/ws',
             onConnect: (context: any) => {
-              const { connectionParams, extra } = context;
+              const { connectionParams } = context;
               // Authenticate subscription connections
               if (connectionParams?.authorization) {
                 return { authorization: connectionParams.authorization };

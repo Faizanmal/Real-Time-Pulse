@@ -415,7 +415,6 @@ export function useOptimisticBatch<TItem extends { id: string }>(
     addOperation,
     commitBatch,
     rollbackBatch,
-    // eslint-disable-next-line react-hooks/refs
     pendingOperations: operationsRef.current.length,
   };
 }

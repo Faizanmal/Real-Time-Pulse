@@ -2,6 +2,8 @@
 
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
+import { advancedAiApi } from "@/lib/advanced-api";
+import { toast } from "sonner";
 import {
     // Collaboration
     PresenceIndicator,
@@ -16,7 +18,6 @@ import {
     type QuickInsight,
     // Gamification
     XPProgressBar,
-    BadgeDisplay,
     BadgeCollection,
     StreakDisplay,
     Leaderboard,
@@ -31,7 +32,7 @@ import {
 } from "@/components/ui";
 import {
     Users, Sparkles, Trophy, Star, Medal, Crown, Flame, Target,
-    Zap, Award, Shield, Rocket, MessageSquare, Brain,
+    Zap, Award, Shield, Rocket, Brain,
 } from "lucide-react";
 
 // ============================================================================
@@ -57,10 +58,10 @@ const demoBadges: Badge[] = [
 ];
 
 const demoAchievements: Achievement[] = [
-    { id: "a1", name: "First Steps", description: "Complete the onboarding", icon: <Rocket className="h-5 w-5" />, points: 50, progress: 100, maxProgress: 100, category: "Getting Started", unlockedAt: new Date() },
-    { id: "a2", name: "Data Wizard", description: "Create 10 custom widgets", icon: <Sparkles className="h-5 w-5" />, points: 100, progress: 7, maxProgress: 10, category: "Widgets" },
-    { id: "a3", name: "Streak Champion", description: "Maintain a 7-day streak", icon: <Flame className="h-5 w-5" />, points: 200, progress: 5, maxProgress: 7, category: "Engagement" },
-    { id: "a4", name: "Secret Achievement", description: "???", icon: <Shield className="h-5 w-5" />, points: 500, progress: 0, maxProgress: 1, category: "Special", secret: true },
+    { id: "a1", name: "First Steps", description: "Complete the onboarding", icon: <Rocket className="h-5 w-5" />, points: 50, progress: 100, maxProgress: 100, category: "achievement", unlockedAt: new Date() },
+    { id: "a2", name: "Data Wizard", description: "Create 10 custom widgets", icon: <Sparkles className="h-5 w-5" />, points: 100, progress: 7, maxProgress: 10, category: "skill" },
+    { id: "a3", name: "Streak Champion", description: "Maintain a 7-day streak", icon: <Flame className="h-5 w-5" />, points: 200, progress: 5, maxProgress: 7, category: "social" },
+    { id: "a4", name: "Secret Achievement", description: "???", icon: <Shield className="h-5 w-5" />, points: 500, progress: 0, maxProgress: 1, category: "special", secret: true },
 ];
 
 const demoStreak: Streak = {
@@ -162,65 +163,80 @@ export default function CollaborationPage() {
     const [currentUserId] = useState("1");
     const typingUsers = demoCollaborators.filter((c) => c.isTyping);
 
-    // Mock AI query handler
+    // Real AI query handler using backend API
     const handleAIQuery = useCallback(async (query: string): Promise<QueryResult[]> => {
-        await new Promise((r) => setTimeout(r, 1500)); // Simulate API call
-
-        // Mock results based on query
-        const lowerQuery = query.toLowerCase();
-
-        if (lowerQuery.includes("revenue")) {
+        try {
+            const response = await advancedAiApi.processQuery(query);
+            const aiQuery = response.data;
+            
+            // Transform API response to QueryResult format
+            const results: QueryResult[] = [];
+            
+            if (aiQuery.response && typeof aiQuery.response === 'object') {
+                const resultData = aiQuery.response as Record<string, unknown>;
+                
+                // Handle metrics if present
+                if (resultData.metrics && Array.isArray(resultData.metrics)) {
+                    (resultData.metrics as Array<{ name: string; value: number; change?: number; description?: string }>).forEach((metric, i) => {
+                        results.push({
+                            id: `metric-${i}`,
+                            type: 'metric',
+                            title: metric.name || 'Metric',
+                            value: metric.value || 0,
+                            change: metric.change,
+                            description: metric.description,
+                        });
+                    });
+                }
+                
+                // Handle insights if present
+                if (resultData.insights && Array.isArray(resultData.insights)) {
+                    (resultData.insights as Array<{ title: string; description: string }>).forEach((insight, i) => {
+                        results.push({
+                            id: `insight-${i}`,
+                            type: 'insight',
+                            title: insight.title || 'Insight',
+                            description: insight.description,
+                        });
+                    });
+                }
+                
+                // Handle SQL result if present
+                if (aiQuery.sqlGenerated || resultData.data) {
+                    results.push({
+                        id: 'sql-result',
+                        type: 'insight',
+                        title: 'Query Result',
+                        description: aiQuery.sqlGenerated ? `SQL: ${aiQuery.sqlGenerated}` : JSON.stringify(resultData.data),
+                    });
+                }
+            }
+            
+            // If no structured results, show the raw response as insight
+            if (results.length === 0) {
+                results.push({
+                    id: 'response',
+                    type: 'insight',
+                    title: 'Analysis Complete',
+                    description: aiQuery.response ? String(aiQuery.response) : `Query processed: "${query}"`,
+                });
+            }
+            
+            return results;
+        } catch (error) {
+            console.error('AI Query error:', error);
+            toast.error('Failed to process query');
+            
+            // Fallback to basic response
             return [
                 {
-                    id: "r1",
-                    type: "metric",
-                    title: "Total Revenue",
-                    value: 125000,
-                    change: 15.3,
-                    description: "Revenue for the current month",
-                    actions: [
-                        { label: "View Details", action: () => console.log("View revenue details") },
-                        { label: "Export", action: () => console.log("Export") },
-                    ],
-                },
-                {
-                    id: "r2",
-                    type: "insight",
-                    title: "Revenue Trend",
-                    description: "Revenue has been increasing steadily over the past 3 months with a 15% average growth rate.",
+                    id: 'error',
+                    type: 'insight',
+                    title: 'Query Processing',
+                    description: `I analyzed your query "${query}". Please ensure the AI service is configured and try again.`,
                 },
             ];
         }
-
-        if (lowerQuery.includes("user") || lowerQuery.includes("activity")) {
-            return [
-                {
-                    id: "r3",
-                    type: "metric",
-                    title: "Active Users",
-                    value: 2847,
-                    change: 8.2,
-                    description: "Users active in the last 24 hours",
-                },
-                {
-                    id: "r4",
-                    type: "metric",
-                    title: "New Signups",
-                    value: 156,
-                    change: -3.1,
-                    description: "New users this week",
-                },
-            ];
-        }
-
-        return [
-            {
-                id: "r5",
-                type: "insight",
-                title: "Analysis Complete",
-                description: `I analyzed your query "${query}" but couldn't find specific data. Try asking about revenue, users, or activity.`,
-            },
-        ];
     }, []);
 
     return (
@@ -233,7 +249,7 @@ export default function CollaborationPage() {
                         animate={{ opacity: 1, y: 0 }}
                         className="text-center"
                     >
-                        <h1 className="bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 bg-clip-text text-4xl font-bold text-transparent">
+                        <h1 className="bg-linear-to-r from-blue-600 via-purple-500 to-pink-500 bg-clip-text text-4xl font-bold text-transparent">
                             Phase 2: Advanced Features
                         </h1>
                         <p className="mt-2 text-gray-600 dark:text-gray-400">

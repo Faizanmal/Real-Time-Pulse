@@ -7,7 +7,6 @@ import {
   Patch,
   Delete,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import { DataValidationService } from './data-validation.service';
 import { ValidationEngineService } from './validation-engine.service';

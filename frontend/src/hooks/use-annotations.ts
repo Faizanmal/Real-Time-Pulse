@@ -8,10 +8,14 @@ const mapToComponentAnnotation = (a: ApiAnnotation): Annotation => ({
     id: a.id,
     type: a.type.toLowerCase() as AnnotationType,
     content: a.content,
-    author: {
-        id: a.author.id,
-        name: a.author.firstName ? `${a.author.firstName} ${a.author.lastName}` : "Unknown User",
-        avatar: a.author.avatar
+    author: a.author ? {
+        id: a.author?.id || '',
+        name: a.author?.firstName ? `${a.author.firstName} ${a.author.lastName}` : "Unknown User",
+        avatar: a.author?.avatar
+    } : {
+        id: 'unknown',
+        name: 'Unknown User',
+        avatar: undefined
     },
     position: { x: a.positionX, y: a.positionY },
     timestamp: new Date(a.createdAt),
@@ -20,14 +24,18 @@ const mapToComponentAnnotation = (a: ApiAnnotation): Annotation => ({
     replies: a.replies?.map(r => ({
         id: r.id,
         content: r.content,
-        author: {
-            id: r.author.id,
-            name: r.author.firstName ? `${r.author.firstName} ${r.author.lastName}` : "Unknown User",
-            avatar: r.author.avatar
+        author: r.author ? {
+            id: r.author?.id || '',
+            name: r.author?.firstName ? `${r.author.firstName} ${r.author.lastName}` : "Unknown User",
+            avatar: r.author?.avatar
+        } : {
+            id: 'unknown',
+            name: 'Unknown User',
+            avatar: undefined
         },
         timestamp: new Date(r.createdAt)
     })) || [],
-    dataPoint: a.dataPoint // Assuming structure matches or is passed through
+    dataPoint: a.dataPoint as { label: string; value: string | number; date?: Date | undefined }
 });
 
 export function useAnnotations(portalId: string) {
@@ -64,7 +72,7 @@ export function useAnnotations(portalId: string) {
         setAnnotations(prev => prev.filter(a => a.id !== data.id));
     });
 
-    useSocketEvent('annotation:reply_added', (data: any) => {
+    useSocketEvent('annotation:reply_added', (data: { parentId: string; reply: ApiAnnotation }) => {
         // Backend payload: { parentId, reply }
         const { parentId, reply: replyData } = data;
         if (replyData && replyData.portalId === portalId && parentId) {
@@ -97,7 +105,7 @@ export function useAnnotations(portalId: string) {
         fetchAnnotations();
     }, [fetchAnnotations]);
 
-    const addAnnotation = async (data: { x: number; y: number; type: AnnotationType; content: string; dataPoint?: any }) => {
+    const addAnnotation = async (data: { x: number; y: number; type: AnnotationType; content: string; dataPoint?: unknown }) => {
         try {
             const apiType = data.type.toUpperCase() as ApiAnnotationType;
             const newAnnotation = await annotationsApi.create({
@@ -106,7 +114,7 @@ export function useAnnotations(portalId: string) {
                 positionY: data.y,
                 type: apiType,
                 content: data.content,
-                dataPoint: data.dataPoint
+                dataPoint: data.dataPoint as { label: string; value: string | number; date?: Date | undefined }
             });
             const mapped = mapToComponentAnnotation(newAnnotation);
             setAnnotations(prev => [...prev, mapped]);
@@ -159,10 +167,14 @@ export function useAnnotations(portalId: string) {
             const mappedReply = {
                 id: reply.id,
                 content: reply.content,
-                author: {
-                    id: reply.author.id,
-                    name: reply.author.firstName ? `${reply.author.firstName} ${reply.author.lastName}` : "Unknown",
-                    avatar: reply.author.avatar
+                author: reply.author ? {
+                    id: reply.author?.id || '',
+                    name: reply.author?.firstName ? `${reply.author.firstName} ${reply.author.lastName}` : "Unknown",
+                    avatar: reply.author?.avatar
+                } : {
+                    id: 'unknown',
+                    name: 'Unknown User',
+                    avatar: undefined
                 },
                 timestamp: new Date(reply.createdAt)
             };

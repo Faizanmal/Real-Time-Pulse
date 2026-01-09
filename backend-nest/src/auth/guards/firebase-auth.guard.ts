@@ -30,7 +30,7 @@ export class FirebaseAuthGuard implements CanActivate {
         await this.firebaseAuthService.createOrUpdateUser(decodedToken);
       request.user = user;
       return true;
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Invalid Firebase token');
     }
   }

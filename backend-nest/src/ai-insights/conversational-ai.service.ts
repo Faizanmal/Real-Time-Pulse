@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { IntegrationStatus } from '@prisma/client';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 
@@ -17,7 +18,16 @@ export interface ConversationMessage {
 }
 
 export interface ChartSuggestion {
-  type: 'bar' | 'line' | 'pie' | 'scatter' | 'area' | 'radar' | '3d-scatter' | '3d-bar' | 'globe';
+  type:
+    | 'bar'
+    | 'line'
+    | 'pie'
+    | 'scatter'
+    | 'area'
+    | 'radar'
+    | '3d-scatter'
+    | '3d-bar'
+    | 'globe';
   title: string;
   dataQuery: string;
   config: Record<string, any>;
@@ -82,14 +92,22 @@ export class ConversationalAIService {
       const dataContext = await this.buildDataContext(context);
 
       // Generate response based on intent
-      const response = await this.generateResponse(query, intent, dataContext, context);
+      const response = await this.generateResponse(
+        query,
+        intent,
+        dataContext,
+        context,
+      );
 
       // Log conversation for future reference
       await this.logConversation(query, response, context);
 
       return response;
     } catch (error) {
-      this.logger.error(`Error processing query: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error processing query: ${error.message}`,
+        error.stack,
+      );
       return {
         success: false,
         interpretation: 'I encountered an error processing your request.',
@@ -105,7 +123,14 @@ export class ConversationalAIService {
     query: string,
     context: ConversationContext,
   ): Promise<{
-    type: 'data_query' | 'comparison' | 'trend' | 'forecast' | 'explanation' | 'action' | 'general';
+    type:
+      | 'data_query'
+      | 'comparison'
+      | 'trend'
+      | 'forecast'
+      | 'explanation'
+      | 'action'
+      | 'general';
     entities: string[];
     timeRange?: { start: Date; end: Date };
     metrics?: string[];
@@ -146,18 +171,18 @@ Respond in JSON format only.`;
     const integrations = await this.prisma.integration.findMany({
       where: {
         workspaceId: context.workspaceId,
-        enabled: true,
+        status: IntegrationStatus.ACTIVE,
       },
       select: {
         id: true,
-        name: true,
+        accountName: true,
         provider: true,
-        lastSyncAt: true,
+        lastSyncedAt: true,
       },
     });
 
     // Get portal if specified
-    let portalData = null;
+    let portalData: any = null;
     if (context.portalId) {
       portalData = await this.prisma.portal.findUnique({
         where: { id: context.portalId },
@@ -176,8 +201,8 @@ Respond in JSON format only.`;
     for (const integration of integrations) {
       schema[integration.provider] = {
         id: integration.id,
-        name: integration.name,
-        lastSync: integration.lastSyncAt,
+        name: integration.accountName,
+        lastSync: integration.lastSyncedAt,
         // Add known schema for common providers
         fields: this.getProviderSchema(integration.provider),
       };
@@ -188,7 +213,9 @@ Respond in JSON format only.`;
       recentData: {},
       summaries: {
         integrationCount: `${integrations.length} active integrations`,
-        widgetCount: portalData ? `${portalData.widgets.length} widgets configured` : 'No portal selected',
+        widgetCount: portalData
+          ? `${portalData.widgets.length} widgets configured`
+          : 'No portal selected',
       },
     };
   }
@@ -198,7 +225,13 @@ Respond in JSON format only.`;
    */
   private getProviderSchema(provider: string): string[] {
     const schemas: Record<string, string[]> = {
-      GOOGLE_ANALYTICS: ['pageViews', 'sessions', 'users', 'bounceRate', 'avgSessionDuration'],
+      GOOGLE_ANALYTICS: [
+        'pageViews',
+        'sessions',
+        'users',
+        'bounceRate',
+        'avgSessionDuration',
+      ],
       HUBSPOT: ['contacts', 'deals', 'companies', 'emails', 'revenue'],
       SALESFORCE: ['leads', 'opportunities', 'accounts', 'contacts', 'revenue'],
       SHOPIFY: ['orders', 'products', 'customers', 'revenue', 'inventory'],
@@ -222,7 +255,7 @@ Respond in JSON format only.`;
   ): Promise<NLQueryResult> {
     const recentContext = context.recentMessages
       .slice(-5)
-      .map(m => `${m.role}: ${m.content}`)
+      .map((m) => `${m.role}: ${m.content}`)
       .join('\n');
 
     const systemPrompt = `You are an intelligent data analytics assistant for a business intelligence platform.
@@ -286,7 +319,10 @@ Respond in this JSON format:
   /**
    * Call the preferred LLM (OpenAI or Anthropic)
    */
-  private async callLLM(systemPrompt: string, userMessage: string): Promise<string> {
+  private async callLLM(
+    systemPrompt: string,
+    userMessage: string,
+  ): Promise<string> {
     if (this.preferredModel === 'anthropic' && this.anthropic) {
       const response = await this.anthropic.messages.create({
         model: 'claude-sonnet-4-20250514',
@@ -295,7 +331,7 @@ Respond in this JSON format:
         messages: [{ role: 'user', content: userMessage }],
       });
 
-      const textBlock = response.content.find(block => block.type === 'text');
+      const textBlock = response.content.find((block) => block.type === 'text');
       return textBlock ? textBlock.text : '';
     }
 
@@ -346,7 +382,7 @@ Respond in this JSON format:
    */
   async getProactiveInsights(
     workspaceId: string,
-    userId: string,
+    _userId: string,
   ): Promise<{
     insights: Array<{
       type: 'anomaly' | 'trend' | 'opportunity' | 'warning';
@@ -371,26 +407,33 @@ Respond in this JSON format:
     });
 
     // Transform to proactive insight format
-    const insights = recentInsights.map(insight => ({
+    const insights = recentInsights.map((insight) => ({
       type: this.mapInsightType(insight.type),
       title: insight.title,
       description: insight.description,
       severity: this.mapSeverity(insight.severity),
       actionable: true,
-      suggestedAction: (insight.recommendations as any)?.actions?.[0] || undefined,
+      suggestedAction:
+        (insight.recommendations as any)?.actions?.[0] || undefined,
     }));
 
     // Add generated insights if we have AI capabilities
     if (this.openai || this.anthropic) {
-      const generatedInsights = await this.generateProactiveInsights(workspaceId);
+      const generatedInsights =
+        await this.generateProactiveInsights(workspaceId);
       insights.push(...generatedInsights);
     }
 
     return { insights: insights.slice(0, 5) };
   }
 
-  private mapInsightType(type: string): 'anomaly' | 'trend' | 'opportunity' | 'warning' {
-    const mapping: Record<string, 'anomaly' | 'trend' | 'opportunity' | 'warning'> = {
+  private mapInsightType(
+    type: string,
+  ): 'anomaly' | 'trend' | 'opportunity' | 'warning' {
+    const mapping: Record<
+      string,
+      'anomaly' | 'trend' | 'opportunity' | 'warning'
+    > = {
       ANOMALY: 'anomaly',
       TREND: 'trend',
       PATTERN: 'trend',
@@ -410,19 +453,19 @@ Respond in this JSON format:
     return mapping[severity] || 'medium';
   }
 
-  private async generateProactiveInsights(
-    workspaceId: string,
-  ): Promise<Array<{
-    type: 'anomaly' | 'trend' | 'opportunity' | 'warning';
-    title: string;
-    description: string;
-    severity: 'low' | 'medium' | 'high';
-    actionable: boolean;
-    suggestedAction?: string;
-  }>> {
+  private async generateProactiveInsights(workspaceId: string): Promise<
+    Array<{
+      type: 'anomaly' | 'trend' | 'opportunity' | 'warning';
+      title: string;
+      description: string;
+      severity: 'low' | 'medium' | 'high';
+      actionable: boolean;
+      suggestedAction: string;
+    }>
+  > {
     // Get workspace data summary
     const integrations = await this.prisma.integration.findMany({
-      where: { workspaceId, enabled: true },
+      where: { workspaceId, status: IntegrationStatus.ACTIVE },
       take: 10,
     });
 
@@ -430,15 +473,23 @@ Respond in this JSON format:
       return [];
     }
 
-    const prompt = `Based on a business analytics workspace with these integrations: ${integrations.map(i => i.provider).join(', ')}, 
-suggest 2 proactive insights that would be valuable. Return JSON array with objects containing: type (anomaly/trend/opportunity/warning), title, description, severity (low/medium/high), actionable (boolean), suggestedAction.`;
+    const prompt = `Based on a business analytics workspace with these integrations: ${integrations.map((i) => i.provider).join(', ')}, 
+suggest 2 proactive insights that would be valuable. Return JSON array with objects containing: type (anomaly/trend/opportunity/warning), title, description, severity (low/medium/high), actionable (boolean), suggestedAction (string, can be empty if none).`;
 
     try {
       const response = await this.callLLM(
         'You are a business analytics expert. Provide realistic proactive insights.',
         prompt,
       );
-      return JSON.parse(response);
+      const parsed = JSON.parse(response) as Array<{
+        type: 'anomaly' | 'trend' | 'opportunity' | 'warning';
+        title: string;
+        description: string;
+        severity: 'low' | 'medium' | 'high';
+        actionable: boolean;
+        suggestedAction: string;
+      }>;
+      return parsed;
     } catch {
       return [];
     }
@@ -468,7 +519,7 @@ suggest 2 proactive insights that would be valuable. Return JSON array with obje
         content: conv.query,
         timestamp: conv.createdAt,
       });
-      
+
       try {
         const response = JSON.parse(conv.response as string);
         messages.push({
@@ -506,9 +557,9 @@ suggest 2 proactive insights that would be valuable. Return JSON array with obje
     recommendations: string[];
   }> {
     const metricsDescription = metrics
-      .map(m => {
+      .map((m) => {
         const change = m.previousValue
-          ? ` (${((m.value - m.previousValue) / m.previousValue * 100).toFixed(1)}% change)`
+          ? ` (${(((m.value - m.previousValue) / m.previousValue) * 100).toFixed(1)}% change)`
           : '';
         return `${m.name}: ${m.value}${change}`;
       })
@@ -540,10 +591,10 @@ Return JSON with: story (narrative paragraph), highlights (array of positive poi
   async askAboutData(
     question: string,
     data: any,
-    context: ConversationContext,
+    _context: ConversationContext,
   ): Promise<string> {
     const dataPreview = JSON.stringify(data).substring(0, 2000);
-    
+
     const prompt = `The user is asking about this data:
 ${dataPreview}
 

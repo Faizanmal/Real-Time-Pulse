@@ -40,7 +40,7 @@ export class RateLimitService {
     @InjectQueue('api-requests') private requestQueue: Queue,
     private prisma: PrismaService,
   ) {
-    this.initializeRateLimits();
+    void this.initializeRateLimits();
     this.startPredictiveAnalysis();
   }
 

@@ -399,7 +399,7 @@ export const KEYBOARD_SHORTCUTS = {
   },
 } as const;
 
-export default {
+const configConstants = {
   APP_CONFIG,
   API_CONFIG,
   AUTH_CONFIG,
@@ -417,3 +417,5 @@ export default {
   RATE_LIMITS,
   KEYBOARD_SHORTCUTS,
 };
+
+export default configConstants;

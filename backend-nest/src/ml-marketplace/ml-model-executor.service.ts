@@ -41,7 +41,7 @@ export class MLModelExecutorService {
   private async executeForecast(
     model: MLModel,
     input: Record<string, any>,
-    config: Record<string, any>,
+    _config: Record<string, any>,
   ): Promise<any> {
     const { data, periods = 7, frequency = 'daily' } = input;
 
@@ -103,9 +103,9 @@ export class MLModelExecutorService {
   private async executeAnomalyDetection(
     model: MLModel,
     input: Record<string, any>,
-    config: Record<string, any>,
+    _config: Record<string, any>,
   ): Promise<any> {
-    const { data, sensitivity = 0.95, windowSize = 30 } = input;
+    const { data, sensitivity = 0.95, windowSize: _windowSize = 30 } = input;
 
     if (!Array.isArray(data) || data.length === 0) {
       throw new Error('Data array is required');
@@ -160,9 +160,9 @@ export class MLModelExecutorService {
   private async executeClassification(
     model: MLModel,
     input: Record<string, any>,
-    config: Record<string, any>,
+    _config: Record<string, any>,
   ): Promise<any> {
-    const { customerData, features } = input;
+    const { customerData, features: _features } = input;
 
     // Simplified churn prediction (in production, use real ML model)
     let churnScore = 0.3; // Base score
@@ -205,7 +205,7 @@ export class MLModelExecutorService {
   private async executeClustering(
     model: MLModel,
     input: Record<string, any>,
-    config: Record<string, any>,
+    _config: Record<string, any>,
   ): Promise<any> {
     const { data, features, numClusters = 5 } = input;
 
@@ -274,9 +274,9 @@ export class MLModelExecutorService {
   private async executeNLP(
     model: MLModel,
     input: Record<string, any>,
-    config: Record<string, any>,
+    _config: Record<string, any>,
   ): Promise<any> {
-    const { text, language = 'en' } = input;
+    const { text, language: _language = 'en' } = input;
 
     if (!text) {
       throw new Error('Text is required');
@@ -356,7 +356,7 @@ export class MLModelExecutorService {
   private async executeRecommendation(
     model: MLModel,
     input: Record<string, any>,
-    config: Record<string, any>,
+    _config: Record<string, any>,
   ): Promise<any> {
     const {
       userId,

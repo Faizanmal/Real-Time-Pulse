@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuthStore } from '@/store/auth';
 import { workspaceApi } from '@/lib/api-client';
+import { securityApi } from '@/lib/enterprise-api';
 import type { Workspace, WorkspaceMember } from '@/types';
 import {
   Settings,
@@ -20,8 +21,11 @@ import {
   Shield,
   Save,
   X,
+  CheckCircle,
+  Key,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { TwoFactorSetup, APIKeyManager } from '@/components/security';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -38,19 +42,13 @@ export default function SettingsPage() {
   const [inviteRole, setInviteRole] = useState('member');
   const [logoFile, setLogoFile] = useState<File | null>(null);
 
-  useEffect(() => {
-    if (!isHydrated) return;
+  // Security states
+  const [show2FASetup, setShow2FASetup] = useState(false);
+  const [showAPIKeys, setShowAPIKeys] = useState(false);
+  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+  const [isLoading2FA, setIsLoading2FA] = useState(true);
 
-    if (!isAuthenticated) {
-      router.push('/auth/login');
-      return;
-    }
-
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, isHydrated, router]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user?.workspaceId) return;
 
     try {
@@ -67,6 +65,30 @@ export default function SettingsPage() {
       console.error('Failed to load settings:', error);
     } finally {
       setIsLoading(false);
+    }
+  }, [user?.workspaceId]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    if (!isAuthenticated) {
+      router.push('/auth/login');
+      return;
+    }
+
+    loadData();
+    load2FAStatus();
+  }, [isAuthenticated, isHydrated, router, loadData]);
+
+  const load2FAStatus = async () => {
+    try {
+      setIsLoading2FA(true);
+      const status = await securityApi.get2FAStatus();
+      setIs2FAEnabled(status.enabled);
+    } catch (error) {
+      console.error('Failed to load 2FA status:', error);
+    } finally {
+      setIsLoading2FA(false);
     }
   };
 
@@ -179,7 +201,7 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-slate-950 via-purple-950 to-slate-950 flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -200,7 +222,7 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950">
+    <div className="min-h-screen bg-linear-to-br from-slate-950 via-purple-950 to-slate-950">
       {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-slate-900/30 border-b border-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -358,7 +380,7 @@ export default function SettingsPage() {
                         className="p-4 bg-slate-800/30 rounded-xl border border-slate-700/50 flex items-center justify-between"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold">
+                          <div className="w-10 h-10 rounded-full bg-linear-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold">
                             {member.firstName?.[0] || member.email[0].toUpperCase()}
                           </div>
                           <div>
@@ -515,16 +537,30 @@ export default function SettingsPage() {
                         <Shield className="h-6 w-6 text-green-400" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-white mb-2">Two-Factor Authentication</h3>
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-lg font-semibold text-white">Two-Factor Authentication</h3>
+                          {is2FAEnabled && (
+                            <span className="flex items-center gap-1 text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full">
+                              <CheckCircle className="h-3 w-3" />
+                              Enabled
+                            </span>
+                          )}
+                        </div>
                         <p className="text-sm text-gray-400 mb-4">
-                          Add an extra layer of security to your workspace by requiring 2FA for all members.
+                          Add an extra layer of security to your account by requiring 2FA.
                         </p>
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
-                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm"
+                          onClick={() => setShow2FASetup(true)}
+                          disabled={isLoading2FA}
+                          className={`px-4 py-2 rounded-lg transition-colors text-sm ${
+                            is2FAEnabled
+                              ? 'bg-slate-700 hover:bg-slate-600 text-gray-300'
+                              : 'bg-green-600 hover:bg-green-700 text-white'
+                          }`}
                         >
-                          Enable 2FA (Coming Soon)
+                          {isLoading2FA ? 'Loading...' : is2FAEnabled ? 'Manage 2FA' : 'Enable 2FA'}
                         </motion.button>
                       </div>
                     </div>
@@ -556,7 +592,7 @@ export default function SettingsPage() {
                   <div className="p-6 bg-slate-800/30 rounded-xl border border-slate-700/50">
                     <div className="flex items-start gap-4">
                       <div className="p-3 bg-purple-500/20 rounded-lg">
-                        <Shield className="h-6 w-6 text-purple-400" />
+                        <Key className="h-6 w-6 text-purple-400" />
                       </div>
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-white mb-2">API Keys</h3>
@@ -566,15 +602,30 @@ export default function SettingsPage() {
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
+                          onClick={() => setShowAPIKeys(true)}
                           className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm"
                         >
-                          Manage API Keys (Coming Soon)
+                          Manage API Keys
                         </motion.button>
                       </div>
                     </div>
                   </div>
                 </div>
               )}
+
+              {/* Security Dialogs */}
+              <TwoFactorSetup
+                open={show2FASetup}
+                onOpenChange={setShow2FASetup}
+                onComplete={() => {
+                  setIs2FAEnabled(true);
+                  load2FAStatus();
+                }}
+              />
+              <APIKeyManager
+                open={showAPIKeys}
+                onOpenChange={setShowAPIKeys}
+              />
             </div>
           </motion.div>
         </div>

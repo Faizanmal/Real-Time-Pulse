@@ -32,7 +32,7 @@ export default function ARSceneViewerPage() {
             } else {
                 setError('Scene not found');
             }
-        } catch (err: any) {
+        } catch (err) {
             console.error('Failed to load scene:', err);
             setError('Failed to load scene details');
         } finally {
@@ -71,7 +71,7 @@ export default function ARSceneViewerPage() {
     return (
         <div className="min-h-screen bg-slate-950 text-white relative overflow-hidden">
             {/* Overlay UI */}
-            <div className="absolute top-0 left-0 right-0 p-4 z-10 flex justify-between items-start bg-gradient-to-b from-black/50 to-transparent">
+            <div className="absolute top-0 left-0 right-0 p-4 z-10 flex justify-between items-start bg-linear-to-b from-black/50 to-transparent">
                 <div className="flex items-center gap-3">
                     <Link href="/dashboard/enterprise">
                         <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
@@ -91,16 +91,19 @@ export default function ARSceneViewerPage() {
             {/* AR Content Placeholder - In a real app, this would be <a-scene> */}
             <div className="flex flex-col items-center justify-center h-screen">
                 <div className="relative w-full max-w-3xl aspect-video bg-slate-900 rounded-xl border border-slate-800 flex flex-col items-center justify-center p-8 text-center shadow-2xl">
-                    <div className="absolute inset-0 bg-grid-white/[0.05] bg-[length:32px_32px]" />
+                    <div className="absolute inset-0 bg-grid-white/[0.05] bg-size-[32px_32px]" />
                     <div className="relative z-10">
                         <Box className="h-24 w-24 mx-auto mb-6 text-indigo-500 animate-pulse" />
-                        <h2 className="text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">
+                        <h2 className="text-3xl font-bold mb-4 bg-clip-text text-transparent bg-linear-to-r from-indigo-400 to-cyan-400">
                             AR View Mode
                         </h2>
                         <p className="text-lg text-slate-400 max-w-lg mx-auto mb-8">
                             This is a simulation of the Augmented Reality view.
                             On a compatible device, this would activate the camera and overlay the
-                            <strong> {scene.config?.visualizationType || '3D Model'}</strong> data.
+                            <strong> {(() => {
+                                const cfg = scene.config as unknown as Record<string, unknown> | undefined;
+                                return typeof cfg?.visualizationType === 'string' ? cfg.visualizationType : '3D Model';
+                            })()}</strong> data.
                         </p>
 
                         <div className="flex gap-4 justify-center">

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, Send, Calendar, Sparkles, Download, Eye } from 'lucide-react';
+import { FileText, Sparkles, Eye } from 'lucide-react';
 
 interface ClientReport {
   id: string;
@@ -16,14 +16,22 @@ interface ClientReport {
   scheduledFor: string;
   sentAt: string;
   executiveSummary: string;
-  keyInsights: any[];
-  metrics: any;
-  recommendations: any[];
+  keyInsights: unknown[];
+  metrics: Record<string, unknown>;
+  recommendations: unknown[];
+}
+
+interface StatsData {
+  total: number;
+  sent: number;
+  scheduled: number;
+  aiGenerated: number;
+  aiGeneratedPercent: number;
 }
 
 export default function ClientReportingDashboard() {
   const [reports, setReports] = useState<ClientReport[]>([]);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

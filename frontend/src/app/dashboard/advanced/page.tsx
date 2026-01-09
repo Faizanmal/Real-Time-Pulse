@@ -13,12 +13,10 @@ import {
     // Context Menus & Gestures
     ContextMenuTrigger,
     buildQuickActions,
-    GestureHandler,
     SwipeableCard,
     ZoomPanContainer,
     // Onboarding
     OnboardingProvider,
-    useOnboarding,
     TourLauncher,
     FeatureAnnouncement,
     type OnboardingTour,
@@ -29,8 +27,8 @@ import {
 } from "@/components/ui";
 import { useAnnotations } from "@/hooks/use-annotations";
 import {
-    Clock, Mouse, Layers, Sparkles, TrendingUp, Calendar,
-    BarChart3, Target, Zap, Gift, Play, Flag, MessageSquare,
+     Mouse, Layers, Sparkles,
+     Target, Zap, MessageSquare,
 } from "lucide-react";
 
 // ============================================================================
@@ -194,7 +192,7 @@ function SwipeableCardDemo() {
 // ============================================================================
 
 function Phase3DemoContent() {
-    const { startTour } = useOnboarding();
+    // const { startTour } = useOnboarding();
     const [timeIndex, setTimeIndex] = useState(demoTimePoints.length - 1);
     const [isPlaying, setIsPlaying] = useState(false);
     const [playbackSpeed, setPlaybackSpeed] = useState(1);
@@ -253,7 +251,7 @@ function Phase3DemoContent() {
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                     >
-                        <h1 className="bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 bg-clip-text text-4xl font-bold text-transparent">
+                        <h1 className="bg-linear-to-r from-cyan-500 via-purple-500 to-pink-500 bg-clip-text text-4xl font-bold text-transparent">
                             Phase 3: Advanced Interactions
                         </h1>
                         <p className="mt-2 text-gray-600 dark:text-gray-400">
@@ -380,7 +378,7 @@ function Phase3DemoContent() {
                         <p className="mb-4 text-sm text-gray-500">
                             Use the controls or scroll (Ctrl+scroll) to zoom:
                         </p>
-                        <ZoomPanContainer className="h-64 rounded-xl bg-gradient-to-br from-purple-100 via-pink-100 to-blue-100 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-blue-900/20">
+                        <ZoomPanContainer className="h-64 rounded-xl bg-linear-to-br from-purple-100 via-pink-100 to-blue-100 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-blue-900/20">
                             <div className="flex h-full items-center justify-center">
                                 <div className="text-center">
                                     <div className="text-6xl">📊</div>
@@ -406,7 +404,7 @@ function Phase3DemoContent() {
                     <p className="mb-4 text-sm text-gray-500">
                         Click annotation icons to view details. Use the toolbar to add new annotations:
                     </p>
-                    <div className="relative h-80 rounded-xl bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 dark:from-blue-900/20 dark:via-purple-900/20 dark:to-pink-900/20">
+                    <div className="relative h-80 rounded-xl bg-linear-to-r from-blue-50 via-purple-50 to-pink-50 dark:from-blue-900/20 dark:via-purple-900/20 dark:to-pink-900/20">
                         {/* Fake chart background */}
                         <svg className="h-full w-full" viewBox="0 0 100 50" preserveAspectRatio="none">
                             <path

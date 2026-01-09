@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
-interface SalesforceIntegration {
+export interface SalesforceIntegration {
   accessToken: string;
   refreshToken?: string;
   settings: {
@@ -22,7 +22,9 @@ export class SalesforceService {
     return `${integration.settings.instanceUrl}/services/data/${version}`;
   }
 
-  private getHeaders(integration: SalesforceIntegration): Record<string, string> {
+  private getHeaders(
+    integration: SalesforceIntegration,
+  ): Record<string, string> {
     return {
       Authorization: `Bearer ${integration.accessToken}`,
       'Content-Type': 'application/json',
@@ -263,7 +265,8 @@ export class SalesforceService {
         return response.data;
       } else {
         // List all reports
-        const query = 'SELECT Id, Name, Description, FolderName, Format FROM Report LIMIT 50';
+        const query =
+          'SELECT Id, Name, Description, FolderName, Format FROM Report LIMIT 50';
         return this.executeSOQL(integration, query);
       }
     } catch (error) {
@@ -288,7 +291,8 @@ export class SalesforceService {
         );
         return response.data;
       } else {
-        const query = 'SELECT Id, Title, Description, FolderName FROM Dashboard LIMIT 50';
+        const query =
+          'SELECT Id, Title, Description, FolderName FROM Dashboard LIMIT 50';
         return this.executeSOQL(integration, query);
       }
     } catch (error) {

@@ -54,7 +54,7 @@ export class IndustrySolutionsService {
     portalId: string,
     customizations?: any,
   ) {
-    const template = await this.getTemplate(templateId);
+    await this.getTemplate(templateId);
 
     // Increment usage count
     await this.prisma.industryTemplate.update({

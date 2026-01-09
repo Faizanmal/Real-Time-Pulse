@@ -9,7 +9,6 @@ import {
   Resolver,
   Query,
   Mutation,
-  Subscription,
   Args,
   ID,
   ResolveField,
@@ -17,7 +16,7 @@ import {
   Int,
   Context,
 } from '@nestjs/graphql';
-import { UseGuards, Inject } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
 import { PubSub } from 'graphql-subscriptions';
 import { GqlAuthGuard } from '../../auth/guards/gql-auth.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
@@ -189,7 +188,7 @@ export class PortalResolver {
     });
 
     // Publish event for subscriptions
-    pubSub.publish('portalCreated', {
+    void pubSub.publish('portalCreated', {
       portalCreated: portal,
       workspaceId: user.workspaceId,
     });
@@ -225,7 +224,7 @@ export class PortalResolver {
     });
 
     // Publish event for subscriptions
-    pubSub.publish('portalUpdated', {
+    void pubSub.publish('portalUpdated', {
       portalUpdated: portal,
       workspaceId: user.workspaceId,
     });
@@ -251,7 +250,7 @@ export class PortalResolver {
     await this.prisma.portal.delete({ where: { id } });
 
     // Publish event for subscriptions
-    pubSub.publish('portalDeleted', {
+    void pubSub.publish('portalDeleted', {
       portalDeleted: id,
       workspaceId: user.workspaceId,
     });
@@ -346,7 +345,7 @@ export class PortalResolver {
   @ResolveField('widgets', () => [WidgetType])
   async widgets(
     @Parent() portal: any,
-    @Context() context: any,
+    @Context() _context: any,
   ): Promise<any[]> {
     return this.dataLoader.getWidgetsByPortalId(portal.id);
   }
@@ -354,7 +353,7 @@ export class PortalResolver {
   @ResolveField('createdBy')
   async createdBy(
     @Parent() portal: any,
-    @Context() context: any,
+    @Context() _context: any,
   ): Promise<any> {
     return this.dataLoader.getUserById(portal.createdById);
   }
@@ -362,7 +361,7 @@ export class PortalResolver {
   @ResolveField('workspace')
   async workspace(
     @Parent() portal: any,
-    @Context() context: any,
+    @Context() _context: any,
   ): Promise<any> {
     return this.dataLoader.getWorkspaceById(portal.workspaceId);
   }

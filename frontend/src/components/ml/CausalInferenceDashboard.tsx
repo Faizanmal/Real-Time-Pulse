@@ -12,13 +12,10 @@ import {
   GitBranch,
   Target,
   FlaskConical,
-  TrendingUp,
   ArrowRight,
   Plus,
-  Trash2,
   Play,
   BarChart3,
-  LineChart,
   AlertTriangle,
   CheckCircle2,
   HelpCircle,
@@ -95,7 +92,7 @@ export default function CausalInferenceDashboard() {
     },
   ]);
 
-  const [abTests, setABTests] = useState<ABTest[]>([
+  const [abTests] = useState<ABTest[]>([
     {
       id: 'test-1',
       name: 'New Checkout Flow',
@@ -269,7 +266,7 @@ export default function CausalInferenceDashboard() {
                     {/* Simple Graph Visualization */}
                     <div className="h-64 bg-gray-800/30 rounded-lg border border-gray-700 p-4 flex items-center justify-center">
                       <div className="flex items-center gap-8">
-                        {selectedGraph.variables.map((v, i) => (
+                        {selectedGraph.variables.map((v) => (
                           <div key={v.name} className="flex flex-col items-center">
                             <div className={`w-20 h-20 rounded-full border-2 flex items-center justify-center ${
                               v.type === 'treatment' ? 'border-blue-500 bg-blue-500/10' :
@@ -322,7 +319,7 @@ export default function CausalInferenceDashboard() {
                         />
                         <Select
                           value={newVariable.type}
-                          onValueChange={v => setNewVariable(prev => ({ ...prev, type: v as any }))}
+                          onValueChange={v => setNewVariable(prev => ({ ...prev, type: v as 'treatment' | 'outcome' | 'confounder' | 'mediator' | 'instrument' }))}
                         >
                           <SelectTrigger className="w-40 bg-gray-800 border-gray-700">
                             <SelectValue />

@@ -318,7 +318,7 @@ export class ValidationEngineService {
     return null;
   }
 
-  private async validateCrossSource(rule: any, value: any, fullData: any) {
+  private async validateCrossSource(rule: any, value: any, _fullData: any) {
     const { compareIntegrationId, compareFieldPath, tolerance } = rule.config;
 
     if (!compareIntegrationId || !compareFieldPath) return null;

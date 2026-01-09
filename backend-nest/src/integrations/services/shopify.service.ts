@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
-interface ShopifyIntegration {
+export interface ShopifyIntegration {
   accessToken: string;
   settings: {
     shopDomain: string;
@@ -198,7 +198,7 @@ export class ShopifyService {
   ): Promise<unknown> {
     try {
       const locationId = params?.locationId as string;
-      
+
       // First get inventory levels
       const response = await firstValueFrom(
         this.httpService.get(`${baseUrl}/inventory_levels.json`, {
@@ -244,7 +244,8 @@ export class ShopifyService {
         0,
       );
       const totalOrders = orders.length;
-      const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+      const averageOrderValue =
+        totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
       const paidOrders = orders.filter(
         (order) => order.financial_status === 'paid',

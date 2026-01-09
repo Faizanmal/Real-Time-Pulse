@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import {
     Search, Mic, MicOff, Sparkles, TrendingUp, Calendar, Users,
     DollarSign, BarChart3, Clock, ArrowRight, X, Loader2,
-    History, Star, Zap, Filter, MessageSquare, ChevronRight,
+    History, Zap, Filter, MessageSquare, ChevronRight,
 } from "lucide-react";
 
 // ============================================================================
@@ -336,7 +336,7 @@ export function QueryResults({
     results,
     query,
     isLoading,
-    onResultAction,
+    onResultAction: _onResultAction,
 }: QueryResultsProps) {
     if (isLoading) {
         return (

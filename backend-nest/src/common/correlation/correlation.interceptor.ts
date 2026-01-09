@@ -38,7 +38,7 @@ export class CorrelationInterceptor implements NestInterceptor {
 
     // Run the handler within correlation context
     return new Observable((subscriber) => {
-      this.correlationService.run(
+      void this.correlationService.run(
         {
           correlationId,
           traceId,

@@ -8,7 +8,7 @@
 
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 
 // Types
@@ -418,32 +418,32 @@ export class NotificationService implements OnModuleInit {
     });
   }
 
-  private async sendWithSES(options: EmailOptions): Promise<void> {
+  private async sendWithSES(_options: EmailOptions): Promise<void> {
     // AWS SES implementation
     this.logger.log('Sending email with AWS SES');
   }
 
-  private async sendWithMailgun(options: EmailOptions): Promise<void> {
+  private async sendWithMailgun(_options: EmailOptions): Promise<void> {
     // Mailgun implementation
     this.logger.log('Sending email with Mailgun');
   }
 
-  private async sendWithSMTP(options: EmailOptions): Promise<void> {
+  private async sendWithSMTP(_options: EmailOptions): Promise<void> {
     // SMTP implementation
     this.logger.log('Sending email with SMTP');
   }
 
-  private async sendWithFCM(options: PushOptions): Promise<void> {
+  private async sendWithFCM(_options: PushOptions): Promise<void> {
     // Firebase Cloud Messaging implementation
     this.logger.log('Sending push with FCM');
   }
 
-  private async sendWithOneSignal(options: PushOptions): Promise<void> {
+  private async sendWithOneSignal(_options: PushOptions): Promise<void> {
     // OneSignal implementation
     this.logger.log('Sending push with OneSignal');
   }
 
-  private async sendWithExpo(options: PushOptions): Promise<void> {
+  private async sendWithExpo(_options: PushOptions): Promise<void> {
     // Expo push implementation
     this.logger.log('Sending push with Expo');
   }
@@ -476,12 +476,12 @@ export class NotificationService implements OnModuleInit {
     );
   }
 
-  private async sendWithNexmo(options: SMSOptions): Promise<void> {
+  private async sendWithNexmo(_options: SMSOptions): Promise<void> {
     // Nexmo/Vonage implementation
     this.logger.log('Sending SMS with Nexmo');
   }
 
-  private async sendWithSNS(options: SMSOptions): Promise<void> {
+  private async sendWithSNS(_options: SMSOptions): Promise<void> {
     // AWS SNS implementation
     this.logger.log('Sending SMS with AWS SNS');
   }

@@ -6,7 +6,7 @@ import { CacheService } from '../cache/cache.service';
 describe('BlockchainService', () => {
   let service: BlockchainService;
   let cacheService: Partial<CacheService>;
-  let merkleService: MerkleTreeService;
+  let _merkleService: MerkleTreeService;
 
   // Mock storage
   const mockStorage: Record<string, string> = {};
@@ -34,7 +34,7 @@ describe('BlockchainService', () => {
     }).compile();
 
     service = module.get<BlockchainService>(BlockchainService);
-    merkleService = module.get<MerkleTreeService>(MerkleTreeService);
+    _merkleService = module.get<MerkleTreeService>(MerkleTreeService);
   });
 
   it('should be defined', () => {

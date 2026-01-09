@@ -11,7 +11,7 @@ import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { CollaborationService } from './collaboration.service';
-import type { ActivityLog, WidgetChange } from './collaboration.service';
+import type { WidgetChange } from './collaboration.service';
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -223,7 +223,7 @@ export class CollaborationGateway
     });
 
     // Release any locks
-    const lockKey = `${portalId}:*`;
+    const _lockKey = `${portalId}:*`;
     this.editingLocks.forEach((lock, key) => {
       if (key.startsWith(`${portalId}:`) && lock.userId === client.userId) {
         this.editingLocks.delete(key);
@@ -488,7 +488,7 @@ export class CollaborationGateway
       answer: RTCSessionDescriptionInit;
     },
   ) {
-    const { portalId, targetUserId, answer } = data;
+    const { portalId, targetUserId: _targetUserId, answer } = data;
 
     this.server.to(`portal:${portalId}`).emit('webrtc:answer', {
       fromUserId: client.userId,

@@ -12,13 +12,13 @@ import type {
   AIQuery,
   AIModelType,
   AIProvider,
-  AIQueryType,
   APIConnector,
   APIConnectorInstallation,
   APIUsageLog,
   APIConnectorType,
   ARScene,
   ARSession,
+  ARMarker,
   Workflow,
   WorkflowExecution,
   WorkflowTemplate,
@@ -53,13 +53,13 @@ export const industryApi = {
     name: string;
     description?: string;
     industry: IndustryType;
-    config: any;
+    config: unknown;
     thumbnail?: string;
   }) => {
     return apiClient.post<IndustryTemplate>('/industry-solutions/templates', data);
   },
 
-  deployTemplate: (templateId: string, data: { portalId: string; customizations?: any }) => {
+  deployTemplate: (templateId: string, data: { portalId: string; customizations?: Record<string, unknown> }) => {
     return apiClient.post<IndustryDeployment>(
       `/industry-solutions/templates/${templateId}/deploy`,
       data
@@ -75,7 +75,7 @@ export const industryApi = {
     return apiClient.get<IndustryDeployment[]>('/industry-solutions/deployments');
   },
 
-  updateComplianceStatus: (deploymentId: string, complianceStatus: any) => {
+  updateComplianceStatus: (deploymentId: string, complianceStatus: string) => {
     return apiClient.patch<IndustryDeployment>(
       `/industry-solutions/deployments/${deploymentId}/compliance`,
       { complianceStatus }
@@ -91,7 +91,7 @@ export const industryApi = {
     return apiClient.get<IndustryTemplate[]>('/industry-solutions/healthcare/templates');
   },
 
-  createHealthcareDashboard: (portalData: any) => {
+  createHealthcareDashboard: (portalData: Record<string, unknown>) => {
     return apiClient.post('/industry-solutions/healthcare/dashboard', portalData);
   },
 };
@@ -116,7 +116,7 @@ export const advancedAiApi = {
     modelType: AIModelType;
     provider: AIProvider;
     modelId: string;
-    config: any;
+    config: Record<string, unknown>;
   }) => {
     return apiClient.post<AIModel>('/advanced-ai/models', data);
   },
@@ -128,7 +128,7 @@ export const advancedAiApi = {
   // Predictions
   createPrediction: (data: {
     modelId: string;
-    inputData: any;
+    inputData: unknown;
     widgetId?: string;
     portalId?: string;
   }) => {
@@ -196,7 +196,7 @@ export const apiMarketplaceApi = {
     connectorType: APIConnectorType;
     category: string;
     authType: string;
-    configSchema: any;
+    configSchema: Record<string, unknown>;
     baseUrl?: string;
     iconUrl?: string;
     isPublic?: boolean;
@@ -213,7 +213,7 @@ export const apiMarketplaceApi = {
   },
 
   // Installations
-  installConnector: (connectorId: string, config: any, credentials: any) => {
+  installConnector: (connectorId: string, config: Record<string, unknown>, credentials: Record<string, unknown>) => {
     return apiClient.post<APIConnectorInstallation>('/api-marketplace/installations', {
       connectorId,
       config,
@@ -231,7 +231,7 @@ export const apiMarketplaceApi = {
 
   updateInstallation: (
     id: string,
-    data: { config?: any; credentials?: any; isActive?: boolean }
+    data: { config?: Record<string, unknown>; credentials?: Record<string, unknown>; isActive?: boolean }
   ) => {
     return apiClient.patch<APIConnectorInstallation>(
       `/api-marketplace/installations/${id}`,
@@ -281,8 +281,8 @@ export const arVisualizationApi = {
     name: string;
     description?: string;
     portalId?: string;
-    sceneData: any;
-    modelUrls: any;
+    sceneData: Record<string, unknown>;
+    modelUrls: string[];
   }) => {
     return apiClient.post<ARScene>('/ar-visualization/scenes', data);
   },
@@ -310,8 +310,45 @@ export const arVisualizationApi = {
     return apiClient.post<ARSession>(`/ar-visualization/scenes/${sceneId}/sessions`, { deviceType });
   },
 
-  endSession: (sessionId: string, data?: { duration: number; interactions?: any }) => {
+  endSession: (sessionId: string, data?: { duration: number; interactions?: Record<string, unknown> }) => {
     return apiClient.patch(`/ar-visualization/sessions/${sessionId}/end`, data || {});
+  },
+
+  // Markers
+  getMarkers: (sceneId?: string) => {
+    const url = sceneId ? `/ar/markers?sceneId=${sceneId}` : '/ar/markers';
+    return apiClient.get<ARMarker[]>(url);
+  },
+
+  createMarker: (sceneId: string, data: {
+    type: 'qr' | 'image' | 'location';
+    location?: { lat: number; lng: number; radius: number };
+  }) => {
+    return apiClient.post<ARMarker>(`/ar/scenes/${sceneId}/markers`, data);
+  },
+
+  deleteMarker: (markerId: string) => {
+    return apiClient.delete(`/ar/markers/${markerId}`);
+  },
+
+  // QR Code generation
+  getSceneQRCode: (sceneId: string, baseUrl?: string) => {
+    const params = baseUrl ? `?baseUrl=${encodeURIComponent(baseUrl)}` : '';
+    return apiClient.get<{ qrCode: string }>(`/ar/scenes/${sceneId}/qr${params}`);
+  },
+
+  // 3D Conversion
+  convertTo3D: (widgetType: string, widgetData: unknown) => {
+    return apiClient.post('/ar/convert', { widgetType, widgetData });
+  },
+
+  // Scene export
+  exportToAFrame: (sceneDefinition: unknown) => {
+    return apiClient.post<{ html: string }>('/ar/export/aframe', { sceneDefinition });
+  },
+
+  exportToThreeJS: (sceneDefinition: unknown) => {
+    return apiClient.post('/ar/export/threejs', { sceneDefinition });
   },
 };
 
@@ -332,11 +369,11 @@ export const workflowApi = {
   createWorkflow: (data: {
     name: string;
     description?: string;
-    trigger: any;
-    actions: any;
-    conditions?: any;
-    nodes: any;
-    edges: any;
+    trigger: Record<string, unknown>;
+    actions: Record<string, unknown>;
+    conditions?: Record<string, unknown>;
+    nodes: Record<string, unknown>;
+    edges: Record<string, unknown>;
   }) => {
     return apiClient.post<Workflow>('/workflow-automation/workflows', data);
   },
@@ -354,7 +391,7 @@ export const workflowApi = {
   },
 
   // Execution
-  executeWorkflow: (id: string, triggerData: any) => {
+  executeWorkflow: (id: string, triggerData: Record<string, unknown>) => {
     return apiClient.post<WorkflowExecution>(`/workflow-automation/workflows/${id}/execute`, {
       triggerData,
     });
@@ -385,7 +422,7 @@ export const workflowApi = {
     return apiClient.get<WorkflowTemplate>(`/workflow-automation/templates/${id}`);
   },
 
-  createFromTemplate: (templateId: string, customizations?: any) => {
+  createFromTemplate: (templateId: string, customizations?: Record<string, unknown>) => {
     return apiClient.post<Workflow>(`/workflow-automation/templates/${templateId}/create`, {
       customizations,
     });
@@ -409,8 +446,8 @@ export const complianceApi = {
   createFramework: (data: {
     name: string;
     description?: string;
-    requirements: any;
-    controls: any;
+    requirements: Record<string, unknown>;
+    controls: Record<string, unknown>;
     auditSchedule?: string;
   }) => {
     return apiClient.post<ComplianceFramework>('/enhanced-compliance/frameworks', data);
@@ -433,7 +470,7 @@ export const complianceApi = {
     return apiClient.get<ComplianceAssessment>(`/enhanced-compliance/assessments/${id}`);
   },
 
-  updateRemediationPlan: (id: string, remediationPlan: any, remediationStatus: string) => {
+  updateRemediationPlan: (id: string, remediationPlan: Record<string, unknown>, remediationStatus: string) => {
     return apiClient.patch<ComplianceAssessment>(
       `/enhanced-compliance/assessments/${id}/remediation`,
       { remediationPlan, remediationStatus }
@@ -444,7 +481,7 @@ export const complianceApi = {
   createDataMapping: (data: {
     dataType: string;
     location: string;
-    fields: any;
+    fields: Record<string, unknown>;
     sensitivity: DataSensitivity;
     category: string;
     processingPurpose: string;
@@ -478,8 +515,8 @@ export const complianceApi = {
     description: string;
     severity: IncidentSeverity;
     category: IncidentCategory;
-    affectedSystems?: any;
-    affectedUsers?: any;
+    affectedSystems?: string[];
+    affectedUsers?: string[];
     assignedTo?: string;
   }) => {
     return apiClient.post<SecurityIncident>('/enhanced-compliance/incidents', data);

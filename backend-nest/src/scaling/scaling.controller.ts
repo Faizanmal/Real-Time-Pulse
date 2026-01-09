@@ -30,10 +30,7 @@ export class ScalingController {
   }
 
   @Put('regions/:id')
-  async updateRegion(
-    @Param('id') id: string,
-    @Body() updates: any
-  ) {
+  async updateRegion(@Param('id') id: string, @Body() updates: any) {
     return this.multiRegion.updateRegion(id, updates);
   }
 
@@ -48,10 +45,7 @@ export class ScalingController {
   }
 
   @Put('routing-rules/:id')
-  async updateRoutingRule(
-    @Param('id') id: string,
-    @Body() updates: any
-  ) {
+  async updateRoutingRule(@Param('id') id: string, @Body() updates: any) {
     return this.multiRegion.updateRoutingRule(id, updates);
   }
 
@@ -76,7 +70,7 @@ export class ScalingController {
 
   @Post('failover')
   async triggerFailover(
-    @Body() body: { fromRegion: string; toRegion: string }
+    @Body() body: { fromRegion: string; toRegion: string },
   ) {
     await this.multiRegion.triggerFailover(body.fromRegion, body.toRegion);
     return { success: true };
@@ -100,10 +94,7 @@ export class ScalingController {
   }
 
   @Put('policies/:id')
-  async updatePolicy(
-    @Param('id') id: string,
-    @Body() updates: any
-  ) {
+  async updatePolicy(@Param('id') id: string, @Body() updates: any) {
     return this.scaling.updatePolicy(id, updates);
   }
 

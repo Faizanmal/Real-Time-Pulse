@@ -3,10 +3,11 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 import {
     MessageSquare, Pin, Flag, AlertTriangle, CheckCircle2, Info,
-    X, ChevronDown, Send, Edit2, Trash2, MoreHorizontal, Clock,
-    ThumbsUp, Reply, AtSign, Link2, Bookmark, Calendar, TrendingUp,
+    X, Send, Edit2, Trash2, MoreHorizontal,
+    ThumbsUp, Reply, Link2, Calendar, TrendingUp,
 } from "lucide-react";
 
 // ============================================================================
@@ -193,7 +194,7 @@ export function AnnotationTooltip({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             className={cn(
-                "fixed z-[9999] w-80 rounded-xl bg-white shadow-2xl dark:bg-gray-800",
+                "fixed z-9999 w-80 rounded-xl bg-white shadow-2xl dark:bg-gray-800",
                 className
             )}
             style={{
@@ -296,9 +297,11 @@ export function AnnotationTooltip({
                 {/* Author */}
                 <div className="mb-2 flex items-center gap-2">
                     {annotation.author.avatar ? (
-                        <img
+                        <Image
                             src={annotation.author.avatar}
                             alt=""
+                            width={24}
+                            height={24}
                             className="h-6 w-6 rounded-full"
                         />
                     ) : (
@@ -454,8 +457,19 @@ export function AnnotationLayer({
     const [isAdding, setIsAdding] = useState(false);
     const [addType, setAddType] = useState<AnnotationType>("comment");
     const layerRef = useRef<HTMLDivElement>(null);
+    const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
     const selectedAnnotation = annotations.find((a) => a.id === selectedId);
+
+    useEffect(() => {
+        if (selectedAnnotation && layerRef.current) {
+            const rect = layerRef.current.getBoundingClientRect();
+            setTooltipPosition({
+                x: (selectedAnnotation.position.x / 100) * rect.width,
+                y: (selectedAnnotation.position.y / 100) * rect.height,
+            });
+        }
+    }, [selectedAnnotation]);
 
     const handleLayerClick = useCallback((e: React.MouseEvent) => {
         if (readOnly || !isAdding || !layerRef.current) return;
@@ -525,10 +539,7 @@ export function AnnotationLayer({
                 {selectedAnnotation && (
                     <AnnotationTooltip
                         annotation={selectedAnnotation}
-                        position={{
-                            x: (selectedAnnotation.position.x / 100) * (layerRef.current?.clientWidth || 0),
-                            y: (selectedAnnotation.position.y / 100) * (layerRef.current?.clientHeight || 0),
-                        }}
+                        position={tooltipPosition}
                         onClose={() => setSelectedId(null)}
                         onReply={(content) => onReplyToAnnotation?.(selectedAnnotation.id, content)}
                         onResolve={() => onUpdateAnnotation?.(selectedAnnotation.id, { resolved: true })}

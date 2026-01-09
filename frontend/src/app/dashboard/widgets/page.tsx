@@ -58,31 +58,7 @@ function WidgetsPageContent() {
   const [refreshingIds, setRefreshingIds] = useState<Set<string>>(new Set());
   const [filterType, setFilterType] = useState<string>('all');
 
-  useEffect(() => {
-    if (!isHydrated) return;
-
-    if (!isAuthenticated) {
-      router.push('/auth/login');
-      return;
-    }
-
-    loadData();
-
-    // Listen for real-time widget updates
-    window.addEventListener('widget:refreshed', handleWidgetRefresh);
-    return () => {
-      window.removeEventListener('widget:refreshed', handleWidgetRefresh);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, isHydrated, router]);
-
-  useEffect(() => {
-    if (selectedPortalId) {
-      loadWidgets(selectedPortalId);
-    }
-  }, [selectedPortalId]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const portalsData = await portalApi.getAll();
       setPortals(portalsData.portals);
@@ -96,7 +72,7 @@ function WidgetsPageContent() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedPortalId]);
 
   const loadWidgets = async (portalId: string) => {
     try {
@@ -123,6 +99,23 @@ function WidgetsPageContent() {
       }
     }
   }, [selectedPortalId]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    if (!isAuthenticated) {
+      router.push('/auth/login');
+      return;
+    }
+
+    loadData();
+
+    // Listen for real-time widget updates
+    window.addEventListener('widget:refreshed', handleWidgetRefresh);
+    return () => {
+      window.removeEventListener('widget:refreshed', handleWidgetRefresh);
+    };
+  }, [isAuthenticated, isHydrated, router, loadData, handleWidgetRefresh]);
 
   const handleRefresh = async (widgetId: string) => {
     setRefreshingIds((prev) => new Set(prev).add(widgetId));
@@ -166,7 +159,7 @@ function WidgetsPageContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-slate-950 via-purple-950 to-slate-950 flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -180,7 +173,7 @@ function WidgetsPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950">
+    <div className="min-h-screen bg-linear-to-br from-slate-950 via-purple-950 to-slate-950">
       {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-slate-900/30 border-b border-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">

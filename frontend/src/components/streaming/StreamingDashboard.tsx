@@ -6,22 +6,16 @@ import {
   Play,
   Pause,
   Settings,
-  Plus,
-  Trash2,
   RefreshCw,
   AlertTriangle,
-  CheckCircle,
-  XCircle,
   Zap,
   Radio,
-  BarChart3,
   Clock,
-  TrendingUp,
-  Filter,
   Database,
-  Webhook,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { apiClient } from '@/lib/api';
+import { toast } from 'sonner';
 
 interface Stream {
   id: string;
@@ -41,7 +35,7 @@ interface StreamEvent {
   id: string;
   type: string;
   timestamp: Date;
-  data: any;
+  data: Record<string, unknown>;
   streamId: string;
 }
 
@@ -53,63 +47,23 @@ export function StreamingDashboard({ className }: StreamingDashboardProps) {
   const [streams, setStreams] = useState<Stream[]>([]);
   const [selectedStream, setSelectedStream] = useState<Stream | null>(null);
   const [events, setEvents] = useState<StreamEvent[]>([]);
-  const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
-  const eventsContainerRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [_isCreating, _setIsCreating] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
+  const eventsContainerRef = useRef<HTMLDivElement>(null);
 
   // Fetch streams
   useEffect(() => {
     const fetchStreams = async () => {
       try {
-        const response = await fetch('/api/streaming/streams');
-        const data = await response.json();
-        setStreams(data);
+        const response = await apiClient.get('/streaming/streams');
+        const data = response.data;
+        setStreams(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Failed to fetch streams:', error);
-        // Mock data
-        setStreams([
-          {
-            id: 'stream-1',
-            name: 'User Events',
-            topics: ['user-events'],
-            status: 'running',
-            metrics: {
-              messagesProcessed: 125430,
-              bytesProcessed: 52000000,
-              errorsCount: 3,
-              latencyMs: [12, 15, 8, 22, 11, 14],
-              lastMessageTime: new Date(),
-            },
-          },
-          {
-            id: 'stream-2',
-            name: 'Metrics Pipeline',
-            topics: ['metrics'],
-            status: 'running',
-            metrics: {
-              messagesProcessed: 892100,
-              bytesProcessed: 234000000,
-              errorsCount: 0,
-              latencyMs: [5, 7, 4, 6, 5],
-              lastMessageTime: new Date(),
-            },
-          },
-          {
-            id: 'stream-3',
-            name: 'Error Logs',
-            topics: ['logs'],
-            status: 'paused',
-            metrics: {
-              messagesProcessed: 45230,
-              bytesProcessed: 18000000,
-              errorsCount: 12,
-              latencyMs: [25, 30, 22, 28],
-              lastMessageTime: new Date(Date.now() - 300000),
-            },
-          },
-        ]);
+        // Keep existing streams on error
+        setStreams(prev => prev);
       } finally {
         setLoading(false);
       }
@@ -183,13 +137,11 @@ export function StreamingDashboard({ className }: StreamingDashboardProps) {
     const newStatus = stream.status === 'running' ? 'paused' : 'running';
     
     try {
-      await fetch(`/api/streaming/streams/${streamId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      });
+      await apiClient.put(`/streaming/streams/${streamId}`, { status: newStatus });
+      toast.success(`Stream ${newStatus === 'running' ? 'started' : 'paused'}`);
     } catch (error) {
       console.error('Failed to toggle stream:', error);
+      toast.error('Failed to update stream status');
     }
 
     setStreams(s => s.map(stream => 
@@ -226,12 +178,6 @@ export function StreamingDashboard({ className }: StreamingDashboardProps) {
         <div className="w-80 border-r border-slate-700 flex flex-col">
           <div className="p-4 border-b border-slate-700 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-white">Streams</h2>
-            <button
-              onClick={() => setIsCreating(true)}
-              className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-3 space-y-2">

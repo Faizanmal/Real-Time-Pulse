@@ -369,7 +369,7 @@ export class EnhancedComplianceService {
     };
   }
 
-  private calculateNextAssessment(auditSchedule?: string): Date {
+  private calculateNextAssessment(_auditSchedule?: string): Date {
     // Default to quarterly assessments
     const monthsToAdd = 3;
     const nextDate = new Date();

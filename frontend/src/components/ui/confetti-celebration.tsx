@@ -257,6 +257,20 @@ export function AchievementToast({
     const rarity = achievement?.rarity || "common";
     const colors = rarityColors[rarity];
 
+    const [sparkleParticles, setSparkleParticles] = useState<{ id: number; x: number; y: number; left: string; top: string }[] | null>(null);
+
+    useEffect(() => {
+        if (!sparkleParticles) {
+            setSparkleParticles([...Array(6)].map((_, i) => ({
+                id: i,
+                x: (Math.random() - 0.5) * 100,
+                y: (Math.random() - 0.5) * 50,
+                left: `${20 + Math.random() * 60}%`,
+                top: `${20 + Math.random() * 60}%`,
+            })));
+        }
+    }, [sparkleParticles]);
+
     useEffect(() => {
         if (achievement) {
             setIsVisible(true);
@@ -288,7 +302,7 @@ export function AchievementToast({
                     >
                         <div
                             className={cn(
-                                "relative overflow-hidden rounded-2xl border-2 bg-gradient-to-r backdrop-blur-xl",
+                                "relative overflow-hidden rounded-2xl border-2 bg-linear-to-r backdrop-blur-xl",
                                 "px-6 py-4 shadow-2xl",
                                 colors.bg,
                                 colors.border,
@@ -316,7 +330,7 @@ export function AchievementToast({
                                     transition={{ delay: 0.2, type: "spring" }}
                                     className={cn(
                                         "flex h-14 w-14 items-center justify-center rounded-xl",
-                                        "bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg"
+                                        "bg-linear-to-br from-amber-400 to-orange-500 text-white shadow-lg"
                                     )}
                                 >
                                     {achievement.icon || achievementIcons[achievement.type]}
@@ -390,27 +404,27 @@ export function AchievementToast({
                             </div>
 
                             {/* Sparkle particles */}
-                            {rarity !== "common" && (
+                            {rarity !== "common" && sparkleParticles && (
                                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                                    {[...Array(6)].map((_, i) => (
+                                    {sparkleParticles.map((particle) => (
                                         <motion.div
-                                            key={i}
+                                            key={particle.id}
                                             className="absolute h-1 w-1 rounded-full bg-white"
                                             initial={{ opacity: 0, scale: 0 }}
                                             animate={{
                                                 opacity: [0, 1, 0],
                                                 scale: [0, 1, 0],
-                                                x: [0, (Math.random() - 0.5) * 100],
-                                                y: [0, (Math.random() - 0.5) * 50],
+                                                x: [0, particle.x],
+                                                y: [0, particle.y],
                                             }}
                                             transition={{
                                                 duration: 2,
-                                                delay: i * 0.3,
+                                                delay: particle.id * 0.3,
                                                 repeat: Infinity,
                                             }}
                                             style={{
-                                                left: `${20 + Math.random() * 60}%`,
-                                                top: `${20 + Math.random() * 60}%`,
+                                                left: particle.left,
+                                                top: particle.top,
                                             }}
                                         />
                                     ))}

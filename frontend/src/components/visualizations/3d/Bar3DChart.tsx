@@ -43,7 +43,6 @@ export function Bar3DChart({
   colorMode = 'value',
   solidColor = '#3b82f6',
   showGrid = true,
-  showLabels = true,
   enableRotation = true,
   onBarClick,
   backgroundColor = '#0f172a',
@@ -78,7 +77,7 @@ export function Bar3DChart({
   }, [data, maxHeight]);
 
   // Get bar color
-  const getBarColor = useCallback((bar: Bar3DData, index: number) => {
+  const getBarColor = useCallback((bar: Bar3DData) => {
     if (bar.color) return new THREE.Color(bar.color);
 
     if (colorMode === 'solid') {
@@ -97,7 +96,8 @@ export function Bar3DChart({
 
   // Initialize scene
   useEffect(() => {
-    if (!containerRef.current) return;
+    const container = containerRef.current;
+    if (!container) return;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(backgroundColor);
@@ -111,7 +111,7 @@ export function Bar3DChart({
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
-    containerRef.current.appendChild(renderer.domElement);
+    container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -162,7 +162,9 @@ export function Bar3DChart({
 
     return () => {
       renderer.dispose();
-      containerRef.current?.removeChild(renderer.domElement);
+      if (container && container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
     };
   }, [width, height, backgroundColor, showGrid, enableRotation]);
 
@@ -182,12 +184,12 @@ export function Bar3DChart({
     const zCount = processedData.zLabels.length || 1;
     const spacing = 0.6;
 
-    processedData.bars.forEach((bar, index) => {
+    processedData.bars.forEach((bar) => {
       const height = bar.normalizedHeight;
       const geometry = new THREE.BoxGeometry(barWidth, height, barDepth);
       
       const material = new THREE.MeshStandardMaterial({
-        color: getBarColor(bar, index),
+        color: getBarColor(bar),
         metalness: 0.3,
         roughness: 0.7,
       });

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
-interface PatientRecord {
+export interface PatientRecord {
   id: string;
   mrn: string; // Medical Record Number
   demographics: {
@@ -20,7 +20,7 @@ interface PatientRecord {
   consents: ConsentRecord[];
 }
 
-interface EncounterRecord {
+export interface EncounterRecord {
   id: string;
   type: 'inpatient' | 'outpatient' | 'emergency' | 'virtual';
   date: string;
@@ -83,7 +83,7 @@ interface ConsentRecord {
   scope: string[];
 }
 
-interface HL7Message {
+export interface HL7Message {
   type: 'ADT' | 'ORM' | 'ORU' | 'SIU' | 'MDM' | 'RDE';
   version: '2.3' | '2.4' | '2.5' | '2.5.1';
   segments: Record<string, any>[];
@@ -96,13 +96,7 @@ interface FHIRResource {
   [key: string]: any;
 }
 
-interface HIPAACompliance {
-  accessLog: AccessLogEntry[];
-  breachNotifications: BreachNotification[];
-  riskAssessments: RiskAssessment[];
-}
-
-interface AccessLogEntry {
+export interface AccessLogEntry {
   id: string;
   timestamp: string;
   userId: string;
@@ -125,7 +119,7 @@ interface BreachNotification {
   status: 'investigating' | 'reported' | 'resolved';
 }
 
-interface RiskAssessment {
+export interface RiskAssessment {
   id: string;
   date: string;
   category: string;
@@ -144,7 +138,18 @@ export class HealthcareSolutionService {
   constructor(private readonly eventEmitter: EventEmitter2) {}
 
   // Patient Management
-  async createPatient(data: Omit<PatientRecord, 'id' | 'encounters' | 'conditions' | 'medications' | 'vitals' | 'labResults' | 'consents'>): Promise<PatientRecord> {
+  async createPatient(
+    data: Omit<
+      PatientRecord,
+      | 'id'
+      | 'encounters'
+      | 'conditions'
+      | 'medications'
+      | 'vitals'
+      | 'labResults'
+      | 'consents'
+    >,
+  ): Promise<PatientRecord> {
     const id = `patient-${Date.now()}`;
     const patient: PatientRecord = {
       ...data,
@@ -159,14 +164,18 @@ export class HealthcareSolutionService {
 
     this.patients.set(id, patient);
     this.logger.log(`Created patient record: ${patient.mrn}`);
-    
+
     this.eventEmitter.emit('healthcare.patient.created', { patientId: id });
     return patient;
   }
 
-  async getPatient(id: string, userId: string, accessReason: string): Promise<PatientRecord | undefined> {
+  async getPatient(
+    id: string,
+    userId: string,
+    accessReason: string,
+  ): Promise<PatientRecord | undefined> {
     const patient = this.patients.get(id);
-    
+
     // Log access for HIPAA compliance
     this.logAccess({
       userId,
@@ -194,13 +203,17 @@ export class HealthcareSolutionService {
         continue;
       }
       if (query.name) {
-        const fullName = `${patient.demographics.firstName} ${patient.demographics.lastName}`.toLowerCase();
+        const fullName =
+          `${patient.demographics.firstName} ${patient.demographics.lastName}`.toLowerCase();
         if (fullName.includes(query.name.toLowerCase())) {
           results.push(patient);
           continue;
         }
       }
-      if (query.dateOfBirth && patient.demographics.dateOfBirth === query.dateOfBirth) {
+      if (
+        query.dateOfBirth &&
+        patient.demographics.dateOfBirth === query.dateOfBirth
+      ) {
         results.push(patient);
       }
     }
@@ -209,7 +222,10 @@ export class HealthcareSolutionService {
   }
 
   // Clinical Data
-  async addEncounter(patientId: string, encounter: Omit<EncounterRecord, 'id'>): Promise<EncounterRecord> {
+  async addEncounter(
+    patientId: string,
+    encounter: Omit<EncounterRecord, 'id'>,
+  ): Promise<EncounterRecord> {
     const patient = this.patients.get(patientId);
     if (!patient) throw new Error(`Patient ${patientId} not found`);
 
@@ -219,7 +235,10 @@ export class HealthcareSolutionService {
     };
 
     patient.encounters.push(record);
-    this.eventEmitter.emit('healthcare.encounter.created', { patientId, encounterId: record.id });
+    this.eventEmitter.emit('healthcare.encounter.created', {
+      patientId,
+      encounterId: record.id,
+    });
 
     return record;
   }
@@ -248,7 +267,10 @@ export class HealthcareSolutionService {
     }
   }
 
-  async addLabResult(patientId: string, result: Omit<LabResult, 'id'>): Promise<LabResult> {
+  async addLabResult(
+    patientId: string,
+    result: Omit<LabResult, 'id'>,
+  ): Promise<LabResult> {
     const patient = this.patients.get(patientId);
     if (!patient) throw new Error(`Patient ${patientId} not found`);
 
@@ -272,7 +294,7 @@ export class HealthcareSolutionService {
 
   // HL7 Integration
   async parseHL7Message(rawMessage: string): Promise<HL7Message> {
-    const lines = rawMessage.split('\r').filter(l => l.length > 0);
+    const lines = rawMessage.split('\r').filter((l) => l.length > 0);
     const segments: Record<string, any>[] = [];
 
     for (const line of lines) {
@@ -285,7 +307,7 @@ export class HealthcareSolutionService {
       });
     }
 
-    const mshSegment = segments.find(s => s.type === 'MSH');
+    const mshSegment = segments.find((s) => s.type === 'MSH');
     const messageType = mshSegment?.fields[7]?.split('^')[0] || 'ADT';
     const version = mshSegment?.fields[10] || '2.5';
 
@@ -315,31 +337,31 @@ export class HealthcareSolutionService {
   }
 
   private async processADT(message: HL7Message): Promise<void> {
-    const pidSegment = message.segments.find(s => s.type === 'PID');
+    const pidSegment = message.segments.find((s) => s.type === 'PID');
     if (!pidSegment) return;
 
     // Extract patient demographics from PID segment
     const fields = pidSegment.fields;
     const mrn = fields[2] || '';
-    const name = fields[4]?.split('^') || [];
+    const _name = fields[4]?.split('^') || [];
 
     this.logger.log(`Processed ADT for patient: ${mrn}`);
   }
 
   private async processORU(message: HL7Message): Promise<void> {
-    const obxSegments = message.segments.filter(s => s.type === 'OBX');
-    
+    const obxSegments = message.segments.filter((s) => s.type === 'OBX');
+
     for (const obx of obxSegments) {
       const fields = obx.fields;
       const testCode = fields[2]?.split('^')[0];
       const value = fields[4];
-      
+
       this.logger.log(`Processed lab result: ${testCode} = ${value}`);
     }
   }
 
   private async processORM(message: HL7Message): Promise<void> {
-    const orcSegment = message.segments.find(s => s.type === 'ORC');
+    const orcSegment = message.segments.find((s) => s.type === 'ORC');
     if (!orcSegment) return;
 
     const orderControl = orcSegment.fields[0];
@@ -393,7 +415,9 @@ export class HealthcareSolutionService {
   }
 
   // HIPAA Compliance
-  private logAccess(entry: Omit<AccessLogEntry, 'id' | 'timestamp' | 'ipAddress'>): void {
+  private logAccess(
+    entry: Omit<AccessLogEntry, 'id' | 'timestamp' | 'ipAddress'>,
+  ): void {
     const logEntry: AccessLogEntry = {
       ...entry,
       id: `access-${Date.now()}`,
@@ -416,8 +440,9 @@ export class HealthcareSolutionService {
     endDate?: string;
     action?: AccessLogEntry['action'];
   }): Promise<AccessLogEntry[]> {
-    return this.accessLog.filter(log => {
-      if (filters.patientId && log.patientId !== filters.patientId) return false;
+    return this.accessLog.filter((log) => {
+      if (filters.patientId && log.patientId !== filters.patientId)
+        return false;
       if (filters.userId && log.userId !== filters.userId) return false;
       if (filters.action && log.action !== filters.action) return false;
       if (filters.startDate && log.timestamp < filters.startDate) return false;
@@ -426,7 +451,9 @@ export class HealthcareSolutionService {
     });
   }
 
-  async reportBreach(notification: Omit<BreachNotification, 'id' | 'reportDate'>): Promise<BreachNotification> {
+  async reportBreach(
+    notification: Omit<BreachNotification, 'id' | 'reportDate'>,
+  ): Promise<BreachNotification> {
     const breach: BreachNotification = {
       ...notification,
       id: `breach-${Date.now()}`,
@@ -434,7 +461,7 @@ export class HealthcareSolutionService {
     };
 
     this.breachNotifications.push(breach);
-    
+
     this.logger.error(`HIPAA breach reported: ${breach.description}`);
     this.eventEmitter.emit('healthcare.breach.reported', breach);
 
@@ -448,7 +475,9 @@ export class HealthcareSolutionService {
 
     // Check for various risk factors
     const recentBreaches = this.breachNotifications.filter(
-      b => new Date(b.reportDate) > new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+      (b) =>
+        new Date(b.reportDate) >
+        new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
     );
 
     if (recentBreaches.length > 0) {
@@ -459,8 +488,10 @@ export class HealthcareSolutionService {
 
     // Check access patterns
     const bulkExports = this.accessLog.filter(
-      log => log.action === 'export' && 
-      new Date(log.timestamp) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      (log) =>
+        log.action === 'export' &&
+        new Date(log.timestamp) >
+          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     );
 
     if (bulkExports.length > 100) {
@@ -489,18 +520,20 @@ export class HealthcareSolutionService {
     averageEncountersPerPatient: number;
   }> {
     const patients = Array.from(this.patients.values());
-    
+
     const encountersByType: Record<string, number> = {};
     const conditionsByStatus: Record<string, number> = {};
     let totalEncounters = 0;
 
     for (const patient of patients) {
       for (const encounter of patient.encounters) {
-        encountersByType[encounter.type] = (encountersByType[encounter.type] || 0) + 1;
+        encountersByType[encounter.type] =
+          (encountersByType[encounter.type] || 0) + 1;
         totalEncounters++;
       }
       for (const condition of patient.conditions) {
-        conditionsByStatus[condition.status] = (conditionsByStatus[condition.status] || 0) + 1;
+        conditionsByStatus[condition.status] =
+          (conditionsByStatus[condition.status] || 0) + 1;
       }
     }
 
@@ -508,7 +541,8 @@ export class HealthcareSolutionService {
       totalPatients: patients.length,
       encountersByType,
       conditionsByStatus,
-      averageEncountersPerPatient: patients.length > 0 ? totalEncounters / patients.length : 0,
+      averageEncountersPerPatient:
+        patients.length > 0 ? totalEncounters / patients.length : 0,
     };
   }
 }

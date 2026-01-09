@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+
 /**
  * ============================================================================
  * VIRTUALIZED LIST COMPONENT
@@ -377,10 +379,11 @@ export function OptimizedImage({
     >
       {/* Blur placeholder */}
       {placeholder === 'blur' && blurDataURL && !loaded && (
-        <img
+        <Image
           src={blurDataURL}
           alt=""
-          className="absolute inset-0 w-full h-full object-cover filter blur-lg scale-110"
+          fill
+          className="object-cover filter blur-lg scale-110"
           aria-hidden="true"
         />
       )}
@@ -542,7 +545,7 @@ export function useCachedData<T>(
   return { data, isLoading, error, refetch };
 }
 
-export default {
+const virtualizedListUtils = {
   VirtualizedList,
   LazyLoad,
   OptimizedImage,
@@ -550,3 +553,5 @@ export default {
   useCachedData,
   dataCache,
 };
+
+export default virtualizedListUtils;

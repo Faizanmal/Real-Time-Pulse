@@ -229,7 +229,7 @@ export function getMotionProps(reducedMotion: boolean) {
 export function useLiveAnnounce() {
   const [announcement, setAnnouncement] = useState('');
 
-  const announce = useCallback((message: string, priority: 'polite' | 'assertive' = 'polite') => {
+  const announce = useCallback((message: string) => {
     // Clear first to ensure re-announcement of same message
     setAnnouncement('');
     requestAnimationFrame(() => {
@@ -329,8 +329,7 @@ export function useKeyboardShortcuts(shortcuts: ShortcutConfig[], deps: React.De
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [deps,shortcuts]);
 }
 
 /**
@@ -488,7 +487,7 @@ export function meetsContrastRequirements(
   return textSize === 'large' ? ratio >= 3 : ratio >= 4.5;
 }
 
-export default {
+const accessibilityUtils = {
   useFocusTrap,
   useRovingTabIndex,
   useReducedMotion,
@@ -501,3 +500,5 @@ export default {
   getContrastRatio,
   meetsContrastRequirements,
 };
+
+export default accessibilityUtils;

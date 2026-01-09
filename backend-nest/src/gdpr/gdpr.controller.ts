@@ -6,7 +6,6 @@ import {
   Param,
   Patch,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import { GdprService } from './gdpr.service';
 import { ComplianceService } from './compliance.service';

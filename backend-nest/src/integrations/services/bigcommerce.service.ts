@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
-interface BigCommerceIntegration {
+export interface BigCommerceIntegration {
   accessToken: string;
   settings: {
     storeHash: string;
@@ -25,13 +25,16 @@ export class BigCommerceService {
   async testConnection(integration: BigCommerceIntegration): Promise<boolean> {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`${this.getStoreUrl(integration)}/catalog/summary`, {
-          headers: {
-            'X-Auth-Token': integration.accessToken,
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
+        this.httpService.get(
+          `${this.getStoreUrl(integration)}/catalog/summary`,
+          {
+            headers: {
+              'X-Auth-Token': integration.accessToken,
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
           },
-        }),
+        ),
       );
       return response.status === 200;
     } catch (error) {
@@ -169,11 +172,13 @@ export class BigCommerceService {
       const orders = ordersResponse.data || [];
 
       const totalRevenue = orders.reduce(
-        (sum: number, order: any) => sum + parseFloat(order.total_inc_tax || '0'),
+        (sum: number, order: any) =>
+          sum + parseFloat(order.total_inc_tax || '0'),
         0,
       );
       const totalOrders = orders.length;
-      const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+      const averageOrderValue =
+        totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
       const statusBreakdown: Record<string, number> = {};
       orders.forEach((order: any) => {

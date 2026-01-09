@@ -60,7 +60,7 @@ export class WorkflowAutomationService {
   }
 
   async updateWorkflow(id: string, workspaceId: string, data: any) {
-    const workflow = await this.getWorkflow(id, workspaceId);
+    // const workflow = await this.getWorkflow(id, workspaceId);
 
     return this.prisma.workflow.update({
       where: { id },
@@ -131,7 +131,7 @@ export class WorkflowAutomationService {
     try {
       // Evaluate conditions
       if (workflow.conditions) {
-        const conditionsMet = await this.evaluateConditions(
+        const conditionsMet = this.evaluateConditions(
           workflow.conditions,
           triggerData,
         );
@@ -226,10 +226,7 @@ export class WorkflowAutomationService {
     }
   }
 
-  private async evaluateConditions(
-    conditions: any,
-    data: any,
-  ): Promise<boolean> {
+  private evaluateConditions(conditions: any, data: any): boolean {
     // Simple condition evaluation
     // In production, use a proper rules engine
 
@@ -300,26 +297,26 @@ export class WorkflowAutomationService {
     }
   }
 
-  private async sendEmail(config: any, data: any): Promise<any> {
+  private sendEmail(config: any, triggerData: any): Promise<any> {
     // Simulate email sending
-    console.log('Sending email:', config.to, config.subject);
-    return { sent: true, to: config.to };
+    console.log('Sending email:', config.to, config.subject, triggerData);
+    return Promise.resolve({ sent: true, to: config.to });
   }
 
-  private async sendNotification(
+  private sendNotification(
     config: any,
-    workspaceId: string,
+    // workspaceId: string,
   ): Promise<any> {
     // Create notification in database
-    return { sent: true, message: config.message };
+    return Promise.resolve({ sent: true, message: config.message });
   }
 
-  private async createAlert(config: any, workspaceId: string): Promise<any> {
+  private createAlert(config: any): Promise<any> {
     // Create alert
-    return { created: true, alert: config.name };
+    return Promise.resolve({ created: true, alert: config.name });
   }
 
-  private async updateWidget(config: any, workspaceId: string): Promise<any> {
+  private updateWidget(config: any): any {
     // Update widget
     return { updated: true, widgetId: config.widgetId };
   }
@@ -341,10 +338,15 @@ export class WorkflowAutomationService {
     };
   }
 
-  private async sendSlackMessage(config: any, data: any): Promise<any> {
+  private sendSlackMessage(config: any, triggerData: any): Promise<any> {
     // Send Slack message
-    console.log('Sending Slack message:', config.channel, config.message);
-    return { sent: true, channel: config.channel };
+    console.log(
+      'Sending Slack message:',
+      config.channel,
+      config.message,
+      triggerData,
+    );
+    return Promise.resolve({ sent: true, channel: config.channel });
   }
 
   // Executions

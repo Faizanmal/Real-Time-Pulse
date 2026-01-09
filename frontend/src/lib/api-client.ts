@@ -307,7 +307,7 @@ export const dataHealthApi = {
     return response.data;
   },
 
-  updateSettings: async (healthId: string, settings: any) => {
+  updateSettings: async (healthId: string, settings: Record<string, unknown>) => {
     const response = await apiClient.patch(`/data-health/${healthId}/settings`, settings);
     return response.data;
   },
@@ -328,7 +328,7 @@ export const dataHealthApi = {
 // ========================================
 
 export const dataValidationApi = {
-  createRule: async (data: any) => {
+  createRule: async (data: Record<string, unknown>) => {
     const response = await apiClient.post('/data-validation/rules', data);
     return response.data;
   },
@@ -345,7 +345,7 @@ export const dataValidationApi = {
     return response.data;
   },
 
-  updateRule: async (ruleId: string, data: any) => {
+  updateRule: async (ruleId: string, data: Record<string, unknown>) => {
     const response = await apiClient.patch(`/data-validation/rules/${ruleId}`, data);
     return response.data;
   },
@@ -355,7 +355,7 @@ export const dataValidationApi = {
     return response.data;
   },
 
-  getViolations: async (workspaceId: string, filters?: any) => {
+  getViolations: async (workspaceId: string, filters?: Record<string, unknown>) => {
     const response = await apiClient.get(`/data-validation/violations/workspace/${workspaceId}`, {
       params: filters,
     });
@@ -377,7 +377,7 @@ export const dataValidationApi = {
     return response.data;
   },
 
-  validateOnDemand: async (workspaceId: string, data: any, fieldPath: string) => {
+  validateOnDemand: async (workspaceId: string, data: unknown, fieldPath: string) => {
     const response = await apiClient.post('/data-validation/validate-on-demand', {
       workspaceId,
       data,
@@ -392,7 +392,7 @@ export const dataValidationApi = {
 // ========================================
 
 export const profitabilityApi = {
-  createProject: async (data: any) => {
+  createProject: async (data: Record<string, unknown>) => {
     const response = await apiClient.post('/profitability/projects', data);
     return response.data;
   },
@@ -409,7 +409,7 @@ export const profitabilityApi = {
     return response.data;
   },
 
-  updateProject: async (projectId: string, data: any) => {
+  updateProject: async (projectId: string, data: Record<string, unknown>) => {
     const response = await apiClient.patch(`/profitability/projects/${projectId}`, data);
     return response.data;
   },
@@ -419,12 +419,12 @@ export const profitabilityApi = {
     return response.data;
   },
 
-  addTimeEntry: async (projectId: string, data: any) => {
+  addTimeEntry: async (projectId: string, data: Record<string, unknown>) => {
     const response = await apiClient.post(`/profitability/projects/${projectId}/time-entries`, data);
     return response.data;
   },
 
-  updateTimeEntry: async (entryId: string, data: any) => {
+  updateTimeEntry: async (entryId: string, data: Record<string, unknown>) => {
     const response = await apiClient.patch(`/profitability/time-entries/${entryId}`, data);
     return response.data;
   },
@@ -434,12 +434,12 @@ export const profitabilityApi = {
     return response.data;
   },
 
-  addExpense: async (projectId: string, data: any) => {
+  addExpense: async (projectId: string, data: Record<string, unknown>) => {
     const response = await apiClient.post(`/profitability/projects/${projectId}/expenses`, data);
     return response.data;
   },
 
-  updateExpense: async (expenseId: string, data: any) => {
+  updateExpense: async (expenseId: string, data: Record<string, unknown>) => {
     const response = await apiClient.patch(`/profitability/expenses/${expenseId}`, data);
     return response.data;
   },
@@ -563,12 +563,12 @@ export const aiInsightsApi = {
 // ========================================
 
 export const clientReportApi = {
-  createReport: async (data: any) => {
+  createReport: async (data: Record<string, unknown>) => {
     const response = await apiClient.post('/client-reports', data);
     return response.data;
   },
 
-  getReports: async (workspaceId: string, filters?: any) => {
+  getReports: async (workspaceId: string, filters?: Record<string, unknown>) => {
     const response = await apiClient.get(`/client-reports/workspace/${workspaceId}`, {
       params: filters,
     });
@@ -580,7 +580,7 @@ export const clientReportApi = {
     return response.data;
   },
 
-  updateReport: async (reportId: string, data: any) => {
+  updateReport: async (reportId: string, data: Record<string, unknown>) => {
     const response = await apiClient.patch(`/client-reports/${reportId}`, data);
     return response.data;
   },
@@ -606,12 +606,12 @@ export const clientReportApi = {
 // ========================================
 
 export const gdprApi = {
-  recordConsent: async (data: any) => {
+  recordConsent: async (data: Record<string, unknown>) => {
     const response = await apiClient.post('/gdpr/consents', data);
     return response.data;
   },
 
-  getConsents: async (workspaceId: string, filters?: any) => {
+  getConsents: async (workspaceId: string, filters?: Record<string, unknown>) => {
     const response = await apiClient.get(`/gdpr/consents/workspace/${workspaceId}`, {
       params: filters,
     });
@@ -628,12 +628,12 @@ export const gdprApi = {
     return response.data;
   },
 
-  createDataRequest: async (data: any) => {
+  createDataRequest: async (data: Record<string, unknown>) => {
     const response = await apiClient.post('/gdpr/data-requests', data);
     return response.data;
   },
 
-  getDataRequests: async (workspaceId: string, filters?: any) => {
+  getDataRequests: async (workspaceId: string, filters?: Record<string, unknown>) => {
     const response = await apiClient.get(`/gdpr/data-requests/workspace/${workspaceId}`, {
       params: filters,
     });
@@ -704,7 +704,7 @@ export const blockchainApi = {
     entityType: string;
     entityId: string;
     action: string;
-    data: Record<string, any>;
+    data: Record<string, unknown>;
   }) => {
     const response = await apiClient.post('/blockchain/audit', data);
     return response.data;

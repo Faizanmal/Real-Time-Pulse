@@ -1,10 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
-interface Equipment {
+export interface Equipment {
   id: string;
   name: string;
-  type: 'cnc' | 'press' | 'conveyor' | 'robot' | 'assembly' | 'packaging' | 'quality';
+  type:
+    | 'cnc'
+    | 'press'
+    | 'conveyor'
+    | 'robot'
+    | 'assembly'
+    | 'packaging'
+    | 'quality';
   location: string;
   status: 'running' | 'idle' | 'maintenance' | 'fault' | 'offline';
   metrics: EquipmentMetrics;
@@ -25,7 +32,7 @@ interface EquipmentMetrics {
   pressure?: number;
 }
 
-interface MaintenanceRecord {
+export interface MaintenanceRecord {
   id: string;
   type: 'preventive' | 'corrective' | 'predictive';
   scheduledDate: string;
@@ -47,7 +54,7 @@ interface EquipmentAlert {
   resolvedAt?: string;
 }
 
-interface ProductionOrder {
+export interface ProductionOrder {
   id: string;
   productId: string;
   productName: string;
@@ -74,7 +81,7 @@ interface QualityMetrics {
   firstPassYield: number;
 }
 
-interface PredictiveMaintenanceResult {
+export interface PredictiveMaintenanceResult {
   equipmentId: string;
   predictedFailureDate: string;
   confidence: number;
@@ -154,9 +161,9 @@ export class ManufacturingSolutionService {
 
   private generateMetrics(): EquipmentMetrics {
     const availability = 0.85 + Math.random() * 0.12;
-    const performance = 0.80 + Math.random() * 0.15;
+    const performance = 0.8 + Math.random() * 0.15;
     const quality = 0.92 + Math.random() * 0.07;
-    
+
     return {
       timestamp: new Date().toISOString(),
       availability,
@@ -181,7 +188,10 @@ export class ManufacturingSolutionService {
     return Array.from(this.equipment.values());
   }
 
-  async updateEquipmentStatus(id: string, status: Equipment['status']): Promise<Equipment> {
+  async updateEquipmentStatus(
+    id: string,
+    status: Equipment['status'],
+  ): Promise<Equipment> {
     const eq = this.equipment.get(id);
     if (!eq) throw new Error(`Equipment ${id} not found`);
 
@@ -199,14 +209,22 @@ export class ManufacturingSolutionService {
     return eq;
   }
 
-  async updateEquipmentMetrics(id: string, metrics: Partial<EquipmentMetrics>): Promise<Equipment> {
+  async updateEquipmentMetrics(
+    id: string,
+    metrics: Partial<EquipmentMetrics>,
+  ): Promise<Equipment> {
     const eq = this.equipment.get(id);
     if (!eq) throw new Error(`Equipment ${id} not found`);
 
-    eq.metrics = { ...eq.metrics, ...metrics, timestamp: new Date().toISOString() };
+    eq.metrics = {
+      ...eq.metrics,
+      ...metrics,
+      timestamp: new Date().toISOString(),
+    };
 
     // Recalculate OEE
-    eq.metrics.oee = eq.metrics.availability * eq.metrics.performance * eq.metrics.quality;
+    eq.metrics.oee =
+      eq.metrics.availability * eq.metrics.performance * eq.metrics.quality;
 
     // Check for alerts
     await this.checkEquipmentAlerts(eq);
@@ -247,7 +265,7 @@ export class ManufacturingSolutionService {
 
   private async createEquipmentAlert(
     equipmentId: string,
-    alert: Pick<EquipmentAlert, 'severity' | 'type' | 'message'>
+    alert: Pick<EquipmentAlert, 'severity' | 'type' | 'message'>,
   ): Promise<EquipmentAlert> {
     const eq = this.equipment.get(equipmentId);
     if (!eq) throw new Error(`Equipment ${equipmentId} not found`);
@@ -275,7 +293,10 @@ export class ManufacturingSolutionService {
   }
 
   // OEE Calculations
-  async calculateOEE(equipmentId: string, timeRange: { start: string; end: string }): Promise<{
+  async calculateOEE(
+    equipmentId: string,
+    timeRange: { start: string; end: string },
+  ): Promise<{
     overall: number;
     availability: number;
     performance: number;
@@ -316,11 +337,13 @@ export class ManufacturingSolutionService {
     worldClassGap: number;
   }> {
     const equipmentList = Array.from(this.equipment.values());
-    const avgOEE = equipmentList.reduce((sum, eq) => sum + eq.metrics.oee, 0) / equipmentList.length;
+    const avgOEE =
+      equipmentList.reduce((sum, eq) => sum + eq.metrics.oee, 0) /
+      equipmentList.length;
 
     return {
       overallOEE: avgOEE,
-      byEquipment: equipmentList.map(eq => ({
+      byEquipment: equipmentList.map((eq) => ({
         id: eq.id,
         name: eq.name,
         oee: eq.metrics.oee,
@@ -328,16 +351,21 @@ export class ManufacturingSolutionService {
       byLine: {
         'Line A': 0.78 + Math.random() * 0.1,
         'Line B': 0.75 + Math.random() * 0.1,
-        'Line C': 0.80 + Math.random() * 0.1,
+        'Line C': 0.8 + Math.random() * 0.1,
       },
       worldClassGap: 0.85 - avgOEE,
     };
   }
 
   // Production Orders
-  async createProductionOrder(data: Omit<ProductionOrder, 'id' | 'completedQuantity' | 'defectQuantity' | 'status'>): Promise<ProductionOrder> {
+  async createProductionOrder(
+    data: Omit<
+      ProductionOrder,
+      'id' | 'completedQuantity' | 'defectQuantity' | 'status'
+    >,
+  ): Promise<ProductionOrder> {
     const id = `po-${Date.now()}`;
-    
+
     const order: ProductionOrder = {
       ...data,
       id,
@@ -347,12 +375,18 @@ export class ManufacturingSolutionService {
     };
 
     this.productionOrders.set(id, order);
-    this.logger.log(`Created production order: ${order.productName} x ${order.quantity}`);
+    this.logger.log(
+      `Created production order: ${order.productName} x ${order.quantity}`,
+    );
 
     return order;
   }
 
-  async updateProductionProgress(orderId: string, completed: number, defects: number): Promise<ProductionOrder> {
+  async updateProductionProgress(
+    orderId: string,
+    completed: number,
+    defects: number,
+  ): Promise<ProductionOrder> {
     const order = this.productionOrders.get(orderId);
     if (!order) throw new Error(`Order ${orderId} not found`);
 
@@ -372,13 +406,17 @@ export class ManufacturingSolutionService {
     return order;
   }
 
-  async getProductionOrders(status?: ProductionOrder['status']): Promise<ProductionOrder[]> {
+  async getProductionOrders(
+    status?: ProductionOrder['status'],
+  ): Promise<ProductionOrder[]> {
     const orders = Array.from(this.productionOrders.values());
-    return status ? orders.filter(o => o.status === status) : orders;
+    return status ? orders.filter((o) => o.status === status) : orders;
   }
 
   // Predictive Maintenance
-  async runPredictiveMaintenance(equipmentId: string): Promise<PredictiveMaintenanceResult> {
+  async runPredictiveMaintenance(
+    equipmentId: string,
+  ): Promise<PredictiveMaintenanceResult> {
     const eq = this.equipment.get(equipmentId);
     if (!eq) throw new Error(`Equipment ${equipmentId} not found`);
 
@@ -417,7 +455,9 @@ export class ManufacturingSolutionService {
 
     // Calculate predicted failure date
     const daysToFailure = Math.max(1, Math.round((1 - riskScore) * 60));
-    const predictedFailureDate = new Date(Date.now() + daysToFailure * 24 * 60 * 60 * 1000).toISOString();
+    const predictedFailureDate = new Date(
+      Date.now() + daysToFailure * 24 * 60 * 60 * 1000,
+    ).toISOString();
 
     return {
       equipmentId,
@@ -431,11 +471,14 @@ export class ManufacturingSolutionService {
     };
   }
 
-  async schedulePreventiveMaintenance(equipmentId: string, data: {
-    scheduledDate: string;
-    description: string;
-    technician: string;
-  }): Promise<MaintenanceRecord> {
+  async schedulePreventiveMaintenance(
+    equipmentId: string,
+    data: {
+      scheduledDate: string;
+      description: string;
+      technician: string;
+    },
+  ): Promise<MaintenanceRecord> {
     const eq = this.equipment.get(equipmentId);
     if (!eq) throw new Error(`Equipment ${equipmentId} not found`);
 
@@ -451,7 +494,7 @@ export class ManufacturingSolutionService {
     };
 
     eq.maintenanceHistory.push(record);
-    
+
     this.eventEmitter.emit('manufacturing.maintenance.scheduled', {
       equipmentId,
       maintenance: record,
@@ -461,7 +504,9 @@ export class ManufacturingSolutionService {
   }
 
   // Quality Management
-  async recordQualityData(data: Omit<QualityMetrics, 'timestamp' | 'firstPassYield'>): Promise<QualityMetrics> {
+  async recordQualityData(
+    data: Omit<QualityMetrics, 'timestamp' | 'firstPassYield'>,
+  ): Promise<QualityMetrics> {
     const firstPassYield = data.passedInspection / data.totalProduced;
 
     const metrics: QualityMetrics = {
@@ -490,8 +535,8 @@ export class ManufacturingSolutionService {
     defectsByType: Record<string, number>;
     trend: { timestamp: string; yield: number }[];
   }> {
-    const data = lineId 
-      ? this.qualityData.filter(d => d.lineId === lineId)
+    const data = lineId
+      ? this.qualityData.filter((d) => d.lineId === lineId)
       : this.qualityData;
 
     if (data.length === 0) {
@@ -518,7 +563,7 @@ export class ManufacturingSolutionService {
       overallYield,
       defectRate: 1 - overallYield,
       defectsByType,
-      trend: data.slice(-24).map(d => ({
+      trend: data.slice(-24).map((d) => ({
         timestamp: d.timestamp,
         yield: d.firstPassYield,
       })),
@@ -526,7 +571,9 @@ export class ManufacturingSolutionService {
   }
 
   // Energy Monitoring
-  async recordEnergyConsumption(data: Omit<EnergyConsumption, 'timestamp'>): Promise<EnergyConsumption> {
+  async recordEnergyConsumption(
+    data: Omit<EnergyConsumption, 'timestamp'>,
+  ): Promise<EnergyConsumption> {
     const record: EnergyConsumption = {
       ...data,
       timestamp: new Date().toISOString(),
@@ -544,7 +591,7 @@ export class ManufacturingSolutionService {
     savingsOpportunity: number;
   }> {
     const data = this.energyData;
-    
+
     let totalEnergy = 0;
     let totalCost = 0;
     const byEquipment: Record<string, { energy: number; cost: number }> = {};
@@ -560,9 +607,10 @@ export class ManufacturingSolutionService {
       byEquipment[d.equipmentId].cost += d.cost;
     }
 
-    const avgEfficiency = data.length > 0
-      ? data.reduce((sum, d) => sum + d.efficiency, 0) / data.length
-      : 0.85;
+    const avgEfficiency =
+      data.length > 0
+        ? data.reduce((sum, d) => sum + d.efficiency, 0) / data.length
+        : 0.85;
 
     return {
       totalConsumption: totalEnergy,

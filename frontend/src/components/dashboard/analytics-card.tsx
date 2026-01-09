@@ -38,7 +38,6 @@ interface AnalyticsCardProps {
   icon?: React.ReactNode;
   sparklineData?: number[];
   badge?: string;
-  badgeVariant?: "default" | "success" | "warning" | "destructive";
   loading?: boolean;
   error?: string;
   onRefresh?: () => void;
@@ -178,7 +177,6 @@ export const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
   icon,
   sparklineData,
   badge,
-  badgeVariant = "default",
   loading = false,
   error,
   onRefresh,
@@ -349,17 +347,7 @@ export const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
             </div>
           </div>
           {badge && (
-            <CardBadge
-              variant={
-                badgeVariant === "success"
-                  ? "success"
-                  : badgeVariant === "warning"
-                  ? "warning"
-                  : badgeVariant === "destructive"
-                  ? "destructive"
-                  : "default"
-              }
-            >
+            <CardBadge>
               {badge}
             </CardBadge>
           )}

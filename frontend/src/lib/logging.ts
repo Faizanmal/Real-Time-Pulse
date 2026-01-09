@@ -459,9 +459,11 @@ if (typeof window !== 'undefined') {
   }, 0);
 }
 
-export default {
+const loggingUtils = {
   logger,
   createLogger,
   performanceMonitor,
   usePerformanceTracking,
 };
+
+export default loggingUtils;

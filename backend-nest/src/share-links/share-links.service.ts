@@ -232,7 +232,7 @@ export class ShareLinksService {
     }
 
     const newToken = uuidv4();
-    const updated = await this.prisma.shareLink.update({
+    await this.prisma.shareLink.update({
       where: { id },
       data: {
         token: newToken,
@@ -414,6 +414,7 @@ export class ShareLinksService {
     const shareUrl = this.generateShareUrl(link.token);
 
     if (options?.format === 'svg') {
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
       const svg = await QRCode.toString(shareUrl, {
         type: 'svg',
         width: options?.width || 256,

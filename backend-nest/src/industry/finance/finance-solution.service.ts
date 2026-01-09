@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
-interface FinancialTransaction {
+export interface FinancialTransaction {
   id: string;
   timestamp: string;
   type: 'trade' | 'payment' | 'transfer' | 'deposit' | 'withdrawal';
@@ -14,7 +14,7 @@ interface FinancialTransaction {
   riskScore?: number;
 }
 
-interface TradingOrder {
+export interface TradingOrder {
   id: string;
   symbol: string;
   side: 'buy' | 'sell';
@@ -29,7 +29,7 @@ interface TradingOrder {
   updatedAt: string;
 }
 
-interface Portfolio {
+export interface Portfolio {
   id: string;
   accountId: string;
   positions: Position[];
@@ -49,7 +49,7 @@ interface Position {
   percentChange: number;
 }
 
-interface RiskMetrics {
+export interface RiskMetrics {
   portfolioId: string;
   var95: number; // Value at Risk 95%
   var99: number;
@@ -64,9 +64,13 @@ interface RiskMetrics {
   };
 }
 
-interface SOXControl {
+export interface SOXControl {
   id: string;
-  category: 'access' | 'change_management' | 'operations' | 'financial_reporting';
+  category:
+    | 'access'
+    | 'change_management'
+    | 'operations'
+    | 'financial_reporting';
   name: string;
   description: string;
   frequency: 'continuous' | 'daily' | 'weekly' | 'monthly' | 'quarterly';
@@ -75,7 +79,7 @@ interface SOXControl {
   evidence: string[];
 }
 
-interface AuditTrail {
+export interface AuditTrail {
   id: string;
   timestamp: string;
   userId: string;
@@ -89,7 +93,7 @@ interface AuditTrail {
   approvedBy?: string;
 }
 
-interface FraudAlert {
+export interface FraudAlert {
   id: string;
   transactionId: string;
   timestamp: string;
@@ -160,9 +164,11 @@ export class FinanceSolutionService {
   }
 
   // Transaction Processing
-  async processTransaction(data: Omit<FinancialTransaction, 'id' | 'timestamp' | 'riskScore'>): Promise<FinancialTransaction> {
+  async processTransaction(
+    data: Omit<FinancialTransaction, 'id' | 'timestamp' | 'riskScore'>,
+  ): Promise<FinancialTransaction> {
     const id = `txn-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // Calculate risk score
     const riskScore = await this.calculateTransactionRisk(data);
 
@@ -179,7 +185,7 @@ export class FinanceSolutionService {
     }
 
     this.transactions.set(id, transaction);
-    
+
     // Log for audit
     this.logAuditTrail({
       action: 'transaction_processed',
@@ -192,7 +198,9 @@ export class FinanceSolutionService {
     return transaction;
   }
 
-  private async calculateTransactionRisk(data: Partial<FinancialTransaction>): Promise<number> {
+  private async calculateTransactionRisk(
+    data: Partial<FinancialTransaction>,
+  ): Promise<number> {
     let riskScore = 0;
 
     // High value transactions
@@ -219,9 +227,11 @@ export class FinanceSolutionService {
     return Math.min(riskScore, 1);
   }
 
-  private async createFraudAlert(transaction: FinancialTransaction): Promise<FraudAlert> {
+  private async createFraudAlert(
+    transaction: FinancialTransaction,
+  ): Promise<FraudAlert> {
     const indicators: string[] = [];
-    
+
     if (transaction.amount > 100000) {
       indicators.push('High value transaction');
     }
@@ -245,9 +255,14 @@ export class FinanceSolutionService {
   }
 
   // Trading Operations
-  async placeOrder(data: Omit<TradingOrder, 'id' | 'status' | 'filledQuantity' | 'createdAt' | 'updatedAt'>): Promise<TradingOrder> {
+  async placeOrder(
+    data: Omit<
+      TradingOrder,
+      'id' | 'status' | 'filledQuantity' | 'createdAt' | 'updatedAt'
+    >,
+  ): Promise<TradingOrder> {
     const id = `order-${Date.now()}`;
-    
+
     const order: TradingOrder = {
       ...data,
       id,
@@ -258,7 +273,7 @@ export class FinanceSolutionService {
     };
 
     this.orders.set(id, order);
-    
+
     // Simulate order execution
     await this.executeOrder(id);
 
@@ -270,17 +285,17 @@ export class FinanceSolutionService {
     if (!order) return;
 
     // Simulate market execution
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const fillPrice = order.price || (100 + Math.random() * 50);
-    
+    const fillPrice = order.price || 100 + Math.random() * 50;
+
     order.status = 'filled';
     order.filledQuantity = order.quantity;
     order.avgFillPrice = fillPrice;
     order.updatedAt = new Date().toISOString();
 
     this.orders.set(orderId, order);
-    
+
     this.eventEmitter.emit('finance.order.filled', order);
   }
 
@@ -301,8 +316,10 @@ export class FinanceSolutionService {
 
   // Portfolio Management
   async getPortfolio(accountId: string): Promise<Portfolio> {
-    let portfolio = Array.from(this.portfolios.values()).find(p => p.accountId === accountId);
-    
+    let portfolio = Array.from(this.portfolios.values()).find(
+      (p) => p.accountId === accountId,
+    );
+
     if (!portfolio) {
       portfolio = {
         id: `portfolio-${Date.now()}`,
@@ -330,8 +347,10 @@ export class FinanceSolutionService {
       // Simulate price update
       position.currentPrice = position.avgCost * (0.9 + Math.random() * 0.2);
       position.marketValue = position.quantity * position.currentPrice;
-      position.unrealizedPnL = position.marketValue - (position.quantity * position.avgCost);
-      position.percentChange = ((position.currentPrice - position.avgCost) / position.avgCost) * 100;
+      position.unrealizedPnL =
+        position.marketValue - position.quantity * position.avgCost;
+      position.percentChange =
+        ((position.currentPrice - position.avgCost) / position.avgCost) * 100;
 
       totalMarketValue += position.marketValue;
       totalUnrealizedPnL += position.unrealizedPnL;
@@ -388,7 +407,10 @@ export class FinanceSolutionService {
     return Array.from(this.soxControls.values());
   }
 
-  async testSOXControl(controlId: string, evidence: string[]): Promise<SOXControl> {
+  async testSOXControl(
+    controlId: string,
+    evidence: string[],
+  ): Promise<SOXControl> {
     const control = this.soxControls.get(controlId);
     if (!control) throw new Error(`Control ${controlId} not found`);
 
@@ -426,12 +448,19 @@ export class FinanceSolutionService {
     overallStatus: 'compliant' | 'attention_needed' | 'non_compliant';
   }> {
     const controls = Array.from(this.soxControls.values());
-    
-    const effectiveControls = controls.filter(c => c.status === 'effective').length;
-    const deficientControls = controls.filter(c => c.status === 'deficient').length;
-    const materialWeaknesses = controls.filter(c => c.status === 'material_weakness').length;
 
-    let overallStatus: 'compliant' | 'attention_needed' | 'non_compliant' = 'compliant';
+    const effectiveControls = controls.filter(
+      (c) => c.status === 'effective',
+    ).length;
+    const deficientControls = controls.filter(
+      (c) => c.status === 'deficient',
+    ).length;
+    const materialWeaknesses = controls.filter(
+      (c) => c.status === 'material_weakness',
+    ).length;
+
+    let overallStatus: 'compliant' | 'attention_needed' | 'non_compliant' =
+      'compliant';
     if (materialWeaknesses > 0) {
       overallStatus = 'non_compliant';
     } else if (deficientControls > 0) {
@@ -449,7 +478,12 @@ export class FinanceSolutionService {
   }
 
   // Audit Trail
-  private logAuditTrail(entry: Omit<AuditTrail, 'id' | 'timestamp' | 'userId' | 'ipAddress' | 'approved'>): void {
+  private logAuditTrail(
+    entry: Omit<
+      AuditTrail,
+      'id' | 'timestamp' | 'userId' | 'ipAddress' | 'approved'
+    >,
+  ): void {
     const auditEntry: AuditTrail = {
       ...entry,
       id: `audit-${Date.now()}`,
@@ -473,10 +507,12 @@ export class FinanceSolutionService {
     startDate?: string;
     endDate?: string;
   }): Promise<AuditTrail[]> {
-    return this.auditTrail.filter(entry => {
-      if (filters.entityType && entry.entityType !== filters.entityType) return false;
+    return this.auditTrail.filter((entry) => {
+      if (filters.entityType && entry.entityType !== filters.entityType)
+        return false;
       if (filters.entityId && entry.entityId !== filters.entityId) return false;
-      if (filters.startDate && entry.timestamp < filters.startDate) return false;
+      if (filters.startDate && entry.timestamp < filters.startDate)
+        return false;
       if (filters.endDate && entry.timestamp > filters.endDate) return false;
       return true;
     });
@@ -485,10 +521,13 @@ export class FinanceSolutionService {
   // Fraud Management
   async getFraudAlerts(status?: FraudAlert['status']): Promise<FraudAlert[]> {
     const alerts = Array.from(this.fraudAlerts.values());
-    return status ? alerts.filter(a => a.status === status) : alerts;
+    return status ? alerts.filter((a) => a.status === status) : alerts;
   }
 
-  async updateFraudAlert(alertId: string, update: { status: FraudAlert['status']; assignedTo?: string }): Promise<FraudAlert> {
+  async updateFraudAlert(
+    alertId: string,
+    update: { status: FraudAlert['status']; assignedTo?: string },
+  ): Promise<FraudAlert> {
     const alert = this.fraudAlerts.get(alertId);
     if (!alert) throw new Error(`Alert ${alertId} not found`);
 
@@ -507,7 +546,7 @@ export class FinanceSolutionService {
     ordersByType: Record<string, number>;
   }> {
     const orders = Array.from(this.orders.values());
-    const filledOrders = orders.filter(o => o.status === 'filled');
+    const filledOrders = orders.filter((o) => o.status === 'filled');
 
     const ordersByType: Record<string, number> = {};
     let totalVolume = 0;

@@ -7,6 +7,7 @@ interface AuthState {
   accessToken: string | null;
   setAuth: (user: User, accessToken: string) => void;
   clearAuth: () => void;
+  logout: () => void;
   isAuthenticated: boolean;
   isHydrated: boolean;
   setHydrated: (state: boolean) => void;
@@ -29,6 +30,14 @@ export const useAuthStore = create<AuthState>()(
         localStorage.removeItem('access_token');
         localStorage.removeItem('user');
         set({ user: null, accessToken: null, isAuthenticated: false });
+      },
+      logout: () => {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        set({ user: null, accessToken: null, isAuthenticated: false });
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth/login';
+        }
       },
     }),
     {

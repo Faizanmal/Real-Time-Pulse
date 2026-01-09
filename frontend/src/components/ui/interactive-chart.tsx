@@ -8,8 +8,8 @@ import {
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 import {
-    ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Calendar, Filter,
-    Download, Maximize2, RefreshCw, TrendingUp, TrendingDown, Minus,
+    ZoomIn, ZoomOut, ChevronLeft, ChevronRight,
+    Download, Maximize2, RefreshCw, Minus,
     ArrowUpRight, ArrowDownRight, Eye, EyeOff, Layers,
 } from "lucide-react";
 
@@ -50,7 +50,7 @@ interface InteractiveChartProps {
 const defaultColors = ["#8b5cf6", "#ec4899", "#3b82f6", "#10b981", "#f59e0b", "#ef4444"];
 
 // Custom Tooltip
-function CustomTooltip({ active, payload, label, colors }: any) {
+function CustomTooltip({ active, payload, label, colors: _colors }: { active?: boolean; payload?: unknown[]; label?: string; colors?: unknown }) {
     if (!active || !payload?.length) return null;
 
     return (
@@ -61,7 +61,7 @@ function CustomTooltip({ active, payload, label, colors }: any) {
         >
             <p className="mb-2 font-semibold text-gray-900 dark:text-gray-100">{label}</p>
             <div className="space-y-1">
-                {payload.map((entry: any, i: number) => (
+                {(payload as { color: string; name: string; value: number | string }[]).map((entry, i: number) => (
                     <div key={i} className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-2">
                             <div className="h-3 w-3 rounded-full" style={{ backgroundColor: entry.color }} />
@@ -71,7 +71,7 @@ function CustomTooltip({ active, payload, label, colors }: any) {
                             {typeof entry.value === "number" ? new Intl.NumberFormat().format(entry.value) : entry.value}
                         </span>
                     </div>
-                ))}
+                ))} 
             </div>
         </motion.div>
     );
@@ -101,7 +101,7 @@ export function InteractiveChart({
     title,
     subtitle,
     enableDrillDown = false,
-    drillDownLevels,
+    drillDownLevels: _drillDownLevels,
     onDrillDown,
     enableZoom = true,
     enableCompare = false,
@@ -258,7 +258,8 @@ export function InteractiveChart({
                                 stroke={colors[i % colors.length]}
                                 strokeWidth={2}
                                 dot={{ fill: colors[i % colors.length], r: 4, className: "cursor-pointer" }}
-                                activeDot={{ r: 6, onClick: (e: any) => handlePointClick(e.payload) }}
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                 activeDot={{ r: 6, onClick: ((data: unknown, _index: number, _event: React.MouseEvent) => handlePointClick(data as ChartDataPoint)) as any }}
                             />
                         ))}
                     </LineChart>

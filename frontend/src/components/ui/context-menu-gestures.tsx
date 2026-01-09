@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, createContext, useContext } from "react";
-import { motion, AnimatePresence, PanInfo, useMotionValue, useTransform, useAnimation } from "framer-motion";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { motion, AnimatePresence, PanInfo, useMotionValue, useTransform } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
-    Copy, Trash2, Edit3, Download, Share2, Pin, Eye, EyeOff,
-    MoreHorizontal, ChevronRight, Bookmark, Flag, Archive,
-    RefreshCw, Maximize2, Minimize2, Lock, Unlock, Star, Link,
-    MessageSquare, Bell, Settings, Filter, SortAsc, SortDesc,
-    ZoomIn, ZoomOut, RotateCw, Hand, Move, MousePointer,
+    Copy, Trash2, Edit3, Download, Share2, Pin,
+    ChevronRight, Bookmark, Archive,
+    RefreshCw, Maximize2, Lock,
+    ZoomIn, ZoomOut, RotateCw, Hand,
 } from "lucide-react";
 
 // ============================================================================
@@ -441,8 +440,8 @@ export function SwipeableCard({
     rightAction = { label: "Delete", color: "bg-red-500" },
     className,
 }: SwipeableCardProps) {
+    const [_isDragging, setIsDragging] = useState(false);
     const x = useMotionValue(0);
-    const [isDragging, setIsDragging] = useState(false);
 
     const leftOpacity = useTransform(x, [-100, 0], [1, 0]);
     const rightOpacity = useTransform(x, [0, 100], [0, 1]);

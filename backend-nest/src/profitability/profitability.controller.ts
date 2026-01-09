@@ -7,7 +7,6 @@ import {
   Patch,
   Delete,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import { ProfitabilityService } from './profitability.service';
 import { ProjectService } from './project.service';

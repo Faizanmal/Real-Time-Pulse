@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
-    Play, Pause, SkipBack, SkipForward, Calendar, Clock,
-    ChevronLeft, ChevronRight, Rewind, FastForward,
-    RotateCcw, Camera, Download, ZoomIn, ZoomOut,
+    Play, Pause, SkipBack, SkipForward, Clock,
+    ChevronRight, Rewind, FastForward,
+    RotateCcw, Camera,
 } from "lucide-react";
 
 // ============================================================================
@@ -50,7 +50,7 @@ export function TimeTravelSlider({
     className,
 }: TimeTravelSliderProps) {
     const sliderRef = useRef<HTMLDivElement>(null);
-    const [isDragging, setIsDragging] = useState(false);
+    const [_isDragging, _setIsDragging] = useState(false);
     const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
     const currentPoint = timePoints[currentIndex];
@@ -146,7 +146,7 @@ export function TimeTravelSlider({
                 >
                     {/* Progress fill */}
                     <motion.div
-                        className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
+                        className="absolute left-0 top-0 h-full rounded-full bg-linear-to-r from-purple-500 to-pink-500"
                         style={{ width: `${progress}%` }}
                         layoutId="progress"
                     />
@@ -470,7 +470,7 @@ export function PredictiveInsights({
     className,
 }: PredictiveInsightsProps) {
     return (
-        <div className={cn("rounded-2xl bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 p-4", className)}>
+        <div className={cn("rounded-2xl bg-linear-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 p-4", className)}>
             <h3 className="mb-4 flex items-center gap-2 font-bold text-gray-900 dark:text-gray-100">
                 <motion.div
                     animate={{ rotate: [0, 360] }}

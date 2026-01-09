@@ -29,7 +29,7 @@ import { TikTokAdsService } from './services/tiktok-ads.service';
 // CRM integrations
 import { SalesforceService } from './services/salesforce.service';
 import { PipedriveService } from './services/pipedrive.service';
-import { ZohoCrmService } from './services/zoho-crm.service';
+import { ZohoCRMService } from './services/zoho-crm.service';
 
 // Support integrations
 import { ZendeskService } from './services/zendesk.service';
@@ -38,10 +38,10 @@ import { FreshdeskService } from './services/freshdesk.service';
 import { HelpScoutService } from './services/helpscout.service';
 
 // Database integrations
-import { MongoDbAtlasService } from './services/mongodb-atlas.service';
+import { MongoDBAtlasService } from './services/mongodb-atlas.service';
 
 // Cloud & DevOps integrations
-import { AwsCloudWatchService } from './services/aws-cloudwatch.service';
+import { AWSCloudWatchService } from './services/aws-cloudwatch.service';
 import { DatadogService } from './services/datadog.service';
 import { SentryService } from './services/sentry.service';
 import { PagerDutyService } from './services/pagerduty.service';
@@ -88,16 +88,16 @@ import { StripeConnectService } from './services/stripe-connect.service';
     // CRM
     SalesforceService,
     PipedriveService,
-    ZohoCrmService,
+    ZohoCRMService,
     // Support
     ZendeskService,
     IntercomService,
     FreshdeskService,
     HelpScoutService,
     // Database
-    MongoDbAtlasService,
+    MongoDBAtlasService,
     // Cloud & DevOps
-    AwsCloudWatchService,
+    AWSCloudWatchService,
     DatadogService,
     SentryService,
     PagerDutyService,

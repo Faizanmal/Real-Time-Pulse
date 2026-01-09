@@ -10,7 +10,7 @@ import { Injectable, Logger, Inject } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventStore } from './event-store';
-import { AggregateRoot, DomainEvent } from './event-sourcing.service';
+import { AggregateRoot } from './event-sourcing.service';
 
 // Snapshot Configuration
 export interface SnapshotConfig {
@@ -114,7 +114,7 @@ export class SnapshotService {
   // Check if snapshot is needed
   async shouldSnapshot(
     aggregateId: string,
-    aggregateType: string,
+    _aggregateType: string,
   ): Promise<boolean> {
     const snapshot = await this.eventStore.getSnapshot(aggregateId);
 

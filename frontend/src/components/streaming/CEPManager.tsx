@@ -6,13 +6,10 @@ import {
   Bell,
   Plus,
   Trash2,
-  Edit,
-  Eye,
   Clock,
   Zap,
   GitBranch,
   TrendingUp,
-  TrendingDown,
   Hash,
   Link2,
   Webhook,
@@ -20,8 +17,6 @@ import {
   CheckCircle,
   XCircle,
   RefreshCw,
-  ChevronDown,
-  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -31,12 +26,12 @@ interface CEPRule {
   description?: string;
   pattern: {
     type: 'sequence' | 'absence' | 'frequency' | 'correlation' | 'threshold' | 'trend';
-    conditions: any[];
+    conditions: unknown[];
   };
   timeWindow: number;
   action: {
     type: 'alert' | 'email' | 'webhook' | 'aggregate' | 'trigger_flow' | 'emit';
-    config: any;
+    config: Record<string, unknown>;
   };
   enabled: boolean;
   priority: number;
@@ -45,9 +40,9 @@ interface CEPRule {
 interface PatternMatch {
   ruleId: string;
   ruleName: string;
-  matchedEvents: any[];
+  matchedEvents: unknown[];
   matchTime: Date;
-  pattern: any;
+  pattern: Record<string, unknown>;
 }
 
 interface CEPManagerProps {
@@ -65,9 +60,9 @@ export function CEPManager({ className }: CEPManagerProps) {
     partialMatches: 0,
   });
   const [selectedRule, setSelectedRule] = useState<CEPRule | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'rules' | 'matches'>('rules');
+  const [_isEditing, _setIsEditing] = useState(false);
 
   // Fetch data
   useEffect(() => {
@@ -287,7 +282,6 @@ export function CEPManager({ className }: CEPManagerProps) {
             <div className="w-1/2 border-r border-slate-700 overflow-y-auto">
               <div className="p-4">
                 <button
-                  onClick={() => setIsEditing(true)}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors mb-4"
                 >
                   <Plus className="w-4 h-4" />
@@ -376,12 +370,6 @@ export function CEPManager({ className }: CEPManagerProps) {
                     <h3 className="text-lg font-semibold text-white">{selectedRule.name}</h3>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => setIsEditing(true)}
-                        className="p-2 bg-slate-700 hover:bg-slate-600 text-white rounded transition-colors"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
                         onClick={() => deleteRule(selectedRule.id)}
                         className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
                       >
@@ -468,7 +456,7 @@ export function CEPManager({ className }: CEPManagerProps) {
                       </span>
                     </div>
                     <p className="text-sm text-slate-400 capitalize">
-                      Pattern: {match.pattern.type}
+                      Pattern: {(match.pattern.type as string)}
                     </p>
                   </div>
                 ))}

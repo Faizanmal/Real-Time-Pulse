@@ -2,13 +2,20 @@
 
 import React, { useState } from 'react';
 import { Database, Download, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
-interface BackupManagerProps {
-  workspaceId: string;
+interface Backup {
+  id: string;
+  name: string;
+  createdAt: string;
+  size: number;
+  status: string;
+  type: string;
+  timestamp: string;
 }
 
-export function BackupManager({ workspaceId }: BackupManagerProps) {
-  const [backups, setBackups] = useState<any[]>([]);
+export function BackupManager() {
+  const [backups, setBackups] = useState<Backup[]>([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
 
@@ -52,10 +59,10 @@ export function BackupManager({ workspaceId }: BackupManagerProps) {
       await fetch(`/api/backups/${backupId}/restore`, {
         method: 'POST',
       });
-      alert('Backup restored successfully');
+      toast.success('Backup restored successfully');
     } catch (error) {
       console.error('Failed to restore backup', error);
-      alert('Failed to restore backup');
+      toast.error('Failed to restore backup');
     }
   };
 

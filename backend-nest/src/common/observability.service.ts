@@ -8,7 +8,6 @@
 
 import {
   Injectable,
-  Logger,
   NestInterceptor,
   ExecutionContext,
   CallHandler,
@@ -24,7 +23,7 @@ export class StructuredLogger {
   private version: string;
   private environment: string;
 
-  constructor(context?: string) {
+  constructor(_context?: string) {
     this.serviceName = process.env.SERVICE_NAME || 'real-time-pulse';
     this.version = process.env.APP_VERSION || '2.0.0';
     this.environment = process.env.NODE_ENV || 'development';

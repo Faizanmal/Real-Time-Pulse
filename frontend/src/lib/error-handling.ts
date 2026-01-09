@@ -376,7 +376,7 @@ export function safeParseErrorResponse(response: AxiosResponse | undefined): Rec
   }
 }
 
-export default {
+const errorHandlingUtils = {
   parseApiError,
   withRetry,
   offlineQueue,
@@ -384,3 +384,5 @@ export default {
   formatValidationErrors,
   isApiError,
 };
+
+export default errorHandlingUtils;

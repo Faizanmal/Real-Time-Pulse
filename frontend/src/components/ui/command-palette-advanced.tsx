@@ -21,11 +21,9 @@ import { cn } from '@/lib/utils';
 import {
   Search,
   Command as CommandIcon,
-  ArrowRight,
   Clock,
   Star,
   Hash,
-  FileText,
   Users,
   Settings,
   Bell,
@@ -38,12 +36,9 @@ import {
   HelpCircle,
   Keyboard,
   Moon,
-  Sun,
   ChevronRight,
   X,
   Sparkles,
-  History,
-  TrendingUp,
   Folder,
   ExternalLink,
 } from 'lucide-react';
@@ -357,6 +352,28 @@ export function CommandPalette({
     [filteredGroups]
   );
 
+  // Execute command
+  const executeCommand = useCallback((command: CommandItem) => {
+    // Add to recent
+    setState(prev => ({
+      ...prev,
+      recentCommands: [command.id, ...prev.recentCommands.filter(id => id !== command.id)].slice(0, 10),
+      isOpen: false,
+      query: '',
+    }));
+    
+    saveState();
+    
+    // Execute action
+    if (command.action) {
+      command.action();
+    } else if (command.href) {
+      window.location.href = command.href;
+    }
+    
+    onCommand?.(command);
+  }, [onCommand, saveState]);
+
   // Navigate with keyboard
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     switch (e.key) {
@@ -385,29 +402,7 @@ export function CommandPalette({
         // Cycle through categories
         break;
     }
-  }, [flatItems, state.selectedIndex]);
-
-  // Execute command
-  const executeCommand = useCallback((command: CommandItem) => {
-    // Add to recent
-    setState(prev => ({
-      ...prev,
-      recentCommands: [command.id, ...prev.recentCommands.filter(id => id !== command.id)].slice(0, 10),
-      isOpen: false,
-      query: '',
-    }));
-    
-    saveState();
-    
-    // Execute action
-    if (command.action) {
-      command.action();
-    } else if (command.href) {
-      window.location.href = command.href;
-    }
-    
-    onCommand?.(command);
-  }, [onCommand, saveState]);
+  }, [flatItems, state.selectedIndex, executeCommand]);
 
   // Toggle favorite
   const toggleFavorite = useCallback((commandId: string, e: React.MouseEvent) => {

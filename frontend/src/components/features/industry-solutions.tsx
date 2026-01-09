@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { industryApi } from '@/lib/advanced-api';
 import type { IndustryTemplate, IndustryType } from '@/types/advanced-features';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,31 +32,31 @@ export default function IndustrySolutionsComponent({ onSelectTemplate }: Props) 
   const [selectedIndustry, setSelectedIndustry] = useState<IndustryType | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadTemplates();
-  }, [selectedIndustry]);
-
-  const loadTemplates = async () => {
+  const loadTemplates = useCallback(async () => {
     try {
       setLoading(true);
       const response = await industryApi.getTemplates(selectedIndustry || undefined);
-      const data = response.data;
+      const data = (response as { data: unknown }).data;
       if (Array.isArray(data)) {
         setTemplates(data);
-      } else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as any).data)) {
-        setTemplates((data as any).data);
+      } else if (data && typeof data === 'object' && 'data' in data && Array.isArray(data.data)) {
+        setTemplates(data.data as IndustryTemplate[]);
       } else {
         console.warn('Unexpected API response format for templates:', data);
         setTemplates([]);
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error('Failed to load templates', {
-        description: error.response?.data?.message || error.message,
+        description: (error as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (error as { message?: string })?.message,
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedIndustry]);
+
+  useEffect(() => {
+    loadTemplates();
+  }, [loadTemplates]);
 
   const handleDeploy = async (template: IndustryTemplate) => {
     if (onSelectTemplate) {
@@ -70,9 +71,9 @@ export default function IndustrySolutionsComponent({ onSelectTemplate }: Props) 
       await industryApi.rateTemplate(templateId, rating);
       toast.success('Thank you for your rating!');
       loadTemplates();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error('Failed to rate template', {
-        description: error.response?.data?.message || error.message,
+        description: (error as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (error as { message?: string })?.message,
       });
     }
   };
@@ -154,9 +155,11 @@ export default function IndustrySolutionsComponent({ onSelectTemplate }: Props) 
                 {/* Thumbnail */}
                 {template.thumbnail && (
                   <div className="aspect-video bg-muted rounded-lg overflow-hidden">
-                    <img
+                    <Image
                       src={template.thumbnail}
                       alt={template.name}
+                      width={400}
+                      height={225}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -176,13 +179,13 @@ export default function IndustrySolutionsComponent({ onSelectTemplate }: Props) 
 
                 {/* Features */}
                 <div className="flex flex-wrap gap-2">
-                  {template.config?.security && (
+                  {!!template.config?.security && (
                     <Badge variant="outline" className="text-xs">
                       <Shield className="h-3 w-3 mr-1" />
                       Secure
                     </Badge>
                   )}
-                  {template.config?.compliance && (
+                  {!!template.config?.compliance && (
                     <Badge variant="outline" className="text-xs">
                       <CheckCircle className="h-3 w-3 mr-1" />
                       Compliant

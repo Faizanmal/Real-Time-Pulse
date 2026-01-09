@@ -114,7 +114,10 @@ export class PipelineConnectorService {
   /**
    * Get sample data for dry run
    */
-  getSampleData(connectorType: ConnectorType, config: ConnectorConfig): any[] {
+  getSampleData(
+    _connectorType: ConnectorType,
+    _config: ConnectorConfig,
+  ): any[] {
     // Return sample data based on connector type
     return [
       { id: 1, name: 'Sample 1', value: 100 },
@@ -344,7 +347,7 @@ export class PipelineConnectorService {
 
   private async fetchFromDatabase(
     connectorType: 'postgresql' | 'mysql',
-    config: ConnectorConfig,
+    _config: ConnectorConfig,
   ): Promise<any[]> {
     // In production, use actual database connection
     // For now, return mock data
@@ -354,7 +357,7 @@ export class PipelineConnectorService {
     return [];
   }
 
-  private async fetchFromS3(config: ConnectorConfig): Promise<any[]> {
+  private async fetchFromS3(_config: ConnectorConfig): Promise<any[]> {
     // In production, use AWS SDK
     this.logger.warn('S3 connector not fully implemented');
     return [];
@@ -442,8 +445,8 @@ export class PipelineConnectorService {
 
   private async writeToDatabase(
     connectorType: 'postgresql' | 'mysql',
-    config: ConnectorConfig,
-    data: any[],
+    _config: ConnectorConfig,
+    _data: any[],
   ): Promise<void> {
     // In production, use actual database connection
     this.logger.warn(
@@ -451,7 +454,10 @@ export class PipelineConnectorService {
     );
   }
 
-  private async writeToS3(config: ConnectorConfig, data: any[]): Promise<void> {
+  private async writeToS3(
+    _config: ConnectorConfig,
+    _data: any[],
+  ): Promise<void> {
     // In production, use AWS SDK
     this.logger.warn('S3 write not fully implemented');
   }

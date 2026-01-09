@@ -1,13 +1,14 @@
 'use client';
 
 import { createContext, useContext, ReactNode } from 'react';
+import type { User } from '@/types';
 import { useAuthStore } from '@/store/auth';
 
 interface AuthContextType {
-  user: any;
+  user: User | null;
   accessToken: string | null;
   isAuthenticated: boolean;
-  setAuth: (user: any, accessToken: string) => void;
+  setAuth: (user: User, accessToken: string) => void;
   clearAuth: () => void;
 }
 

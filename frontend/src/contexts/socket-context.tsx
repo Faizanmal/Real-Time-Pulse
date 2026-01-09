@@ -8,64 +8,65 @@
  */
 
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import type { Annotation as ApiAnnotation } from '@/lib/api/annotations';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '@/store/auth';
 
 // Socket event types
 export interface SocketEvents {
   // Portal events
-  'portal:created': (data: any) => void;
-  'portal:updated': (data: any) => void;
+  'portal:created': (data: unknown) => void;
+  'portal:updated': (data: unknown) => void;
   'portal:deleted': (data: { portalId: string }) => void;
   'portal:viewer:joined': (data: { userId: string; portalId: string }) => void;
   'portal:viewer:left': (data: { userId: string; portalId: string }) => void;
-  'portal:viewers': (data: { portalId: string; viewers: any[] }) => void;
+  'portal:viewers': (data: { portalId: string; viewers: unknown[] }) => void;
 
   // Widget events
-  'widget:created': (data: any) => void;
-  'widget:updated': (data: any) => void;
+  'widget:created': (data: unknown) => void;
+  'widget:updated': (data: unknown) => void;
   'widget:deleted': (data: { widgetId: string }) => void;
-  'widget:data:updated': (data: { widgetId: string; data: any }) => void;
+  'widget:data:updated': (data: { widgetId: string; data: unknown }) => void;
 
   // Alert events
-  'alert:triggered': (data: any) => void;
+  'alert:triggered': (data: unknown) => void;
   'alert:resolved': (data: { alertId: string }) => void;
   'alert:new': (data: { type: string; message: string }) => void;
 
   // Metrics events
-  'metrics:update': (data: Partial<any>) => void;
+  'metrics:update': (data: Partial<unknown>) => void;
 
   // Insight events
-  'insight:generated': (data: any) => void;
+  'insight:generated': (data: unknown) => void;
 
   // Notification events
-  'notification:new': (data: any) => void;
+  'notification:new': (data: unknown) => void;
 
   // Comment events
-  'comment:added': (data: any) => void;
-  'comment:updated': (data: any) => void;
+  'comment:added': (data: unknown) => void;
+  'comment:updated': (data: unknown) => void;
   'comment:deleted': (data: { commentId: string }) => void;
-  'comment:user:typing': (data: any) => void;
-  'comment:user:stopped-typing': (data: any) => void;
+  'comment:user:typing': (data: unknown) => void;
+  'comment:user:stopped-typing': (data: unknown) => void;
 
   // Presence events
-  'presence:updated': (data: any) => void;
+  'presence:updated': (data: unknown) => void;
   'user:joined': (data: { userId: string }) => void;
   'user:left': (data: { userId: string }) => void;
 
   // Cursor events
-  'cursor:moved': (data: any) => void;
+  'cursor:moved': (data: unknown) => void;
 
   // Gamification events
   'xp_gained': (data: { userId: string; amount: number; totalXp: number; level: number }) => void;
   'level_up': (data: { userId: string; level: number }) => void;
-  'badge_earned': (data: { userId: string; badge: any }) => void;
+  'badge_earned': (data: { userId: string; badge: unknown }) => void;
 
   // Annotation events
-  'annotation:created': (data: any) => void;
-  'annotation:updated': (data: any) => void;
+  'annotation:created': (data: ApiAnnotation) => void;
+  'annotation:updated': (data: ApiAnnotation) => void;
   'annotation:deleted': (data: { id: string }) => void;
-  'annotation:reply_added': (data: any) => void;
+  'annotation:reply_added': (data: { parentId: string; reply: ApiAnnotation }) => void;
 
   // Connection events
   'connect': () => void;
@@ -130,8 +131,8 @@ export function SocketProvider({ children }: SocketProviderProps) {
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-    // Connect to the notifications namespace
-    const newSocket = io(`${apiUrl}/notifications`, {
+    // Connect to the realtime namespace
+    const newSocket = io(`${apiUrl}/realtime`, {
       auth: { token: accessToken },
       transports: ['websocket', 'polling'],
       reconnection: true,
@@ -185,7 +186,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
       setIsConnected(false);
       setConnectionState('disconnected');
     };
-  }, [isAuthenticated, accessToken]);
+  }, [isAuthenticated, accessToken, socket]);
 
   // Event subscription
   const on = useCallback(<K extends keyof SocketEvents>(
@@ -193,7 +194,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
     handler: SocketEvents[K],
   ) => {
     if (socket) {
-      socket.on(event as string, handler as any);
+      socket.on(event as string, handler);
     }
   }, [socket]);
 
@@ -202,7 +203,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
     handler: SocketEvents[K],
   ) => {
     if (socket) {
-      socket.off(event as string, handler as any);
+      socket.off(event as string, handler);
     }
   }, [socket]);
 
@@ -307,11 +308,11 @@ export function useSocketEvent<K extends keyof SocketEvents>(
 // Hook for portal room subscription
 export function usePortalRoom(portalId: string | null) {
   const { joinPortal, leavePortal, isConnected } = useSocket();
-  const [viewers, setViewers] = useState<any[]>([]);
+  const [viewers, setViewers] = useState<{ userId: string }[]>([]);
 
   useSocketEvent('portal:viewers', (data) => {
     if (data.portalId === portalId) {
-      setViewers(data.viewers);
+      setViewers(data.viewers as { userId: string }[]);
     }
   });
 

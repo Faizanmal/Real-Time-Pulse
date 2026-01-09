@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Play,
   Pause,
   RotateCcw,
   CheckCircle,
@@ -13,7 +12,6 @@ import {
   BarChart3,
   FileText,
   Download,
-  Filter,
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
@@ -46,7 +44,6 @@ export function ETLExecutionMonitor({ pipelineId, className }: ETLExecutionMonit
   const [selectedExecution, setSelectedExecution] = useState<ETLExecution | null>(null);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   // Fetch executions
   useEffect(() => {

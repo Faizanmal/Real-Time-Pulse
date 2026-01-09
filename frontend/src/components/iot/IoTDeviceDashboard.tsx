@@ -13,7 +13,6 @@ import {
   ChevronRight,
   Search,
   Filter,
-  MoreVertical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -23,8 +22,20 @@ interface IoTDevice {
   deviceType: string;
   status: 'online' | 'offline' | 'warning' | 'error';
   lastSeen: string;
-  metadata: Record<string, any>;
-  telemetry: Record<string, any>;
+  metadata: {
+    firmwareVersion?: string;
+    hardwareVersion?: string;
+    manufacturer?: string;
+    model?: string;
+    serialNumber?: string;
+  };
+  telemetry: {
+    temperature?: number;
+    humidity?: number;
+    batteryLevel?: number;
+    signalStrength?: number;
+    uptime?: number;
+  };
   location?: {
     lat: number;
     lng: number;
@@ -79,7 +90,7 @@ const deviceTypeIcons: Record<string, string> = {
   default: '📱',
 };
 
-export function IoTDeviceDashboard({ workspaceId, className }: IoTDeviceDashboardProps) {
+export function IoTDeviceDashboard({ workspaceId: _workspaceId, className }: IoTDeviceDashboardProps) {
   const [devices, setDevices] = useState<IoTDevice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDevice, setSelectedDevice] = useState<IoTDevice | null>(null);
@@ -135,7 +146,7 @@ export function IoTDeviceDashboard({ workspaceId, className }: IoTDeviceDashboar
   const deviceTypes = [...new Set(devices.map(d => d.deviceType))];
 
   // Send command
-  const sendCommand = async (deviceId: string, command: string, payload: Record<string, any> = {}) => {
+  const sendCommand = async (deviceId: string, command: string, payload: Record<string, unknown> = {}) => {
     try {
       await fetch(`/api/iot/devices/${deviceId}/command`, {
         method: 'POST',
@@ -246,7 +257,6 @@ export function IoTDeviceDashboard({ workspaceId, className }: IoTDeviceDashboar
         ) : (
           filteredDevices.map(device => {
             const status = statusConfig[device.status];
-            const StatusIcon = status.icon;
             const deviceIcon = deviceTypeIcons[device.deviceType] || deviceTypeIcons.default;
 
             return (

@@ -32,9 +32,12 @@ export class DatadogService {
   async testConnection(integration: DatadogIntegration): Promise<boolean> {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`${this.getBaseUrl(integration)}/api/v1/validate`, {
-          headers: this.getHeaders(integration),
-        }),
+        this.httpService.get(
+          `${this.getBaseUrl(integration)}/api/v1/validate`,
+          {
+            headers: this.getHeaders(integration),
+          },
+        ),
       );
       return response.data.valid === true;
     } catch (error) {
@@ -76,16 +79,20 @@ export class DatadogService {
   ): Promise<unknown> {
     try {
       const query = params?.query as string;
-      const from = (params?.from as number) || Math.floor((Date.now() - 3600000) / 1000);
+      const from =
+        (params?.from as number) || Math.floor((Date.now() - 3600000) / 1000);
       const to = (params?.to as number) || Math.floor(Date.now() / 1000);
 
       if (!query) {
         // List available metrics
         const response = await firstValueFrom(
-          this.httpService.get(`${this.getBaseUrl(integration)}/api/v1/metrics`, {
-            headers: this.getHeaders(integration),
-            params: { from: from - 3600 },
-          }),
+          this.httpService.get(
+            `${this.getBaseUrl(integration)}/api/v1/metrics`,
+            {
+              headers: this.getHeaders(integration),
+              params: { from: from - 3600 },
+            },
+          ),
         );
         return response.data.metrics || [];
       }
@@ -137,7 +144,8 @@ export class DatadogService {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const start = (params?.start as number) || Math.floor((Date.now() - 86400000) / 1000);
+      const start =
+        (params?.start as number) || Math.floor((Date.now() - 86400000) / 1000);
       const end = (params?.end as number) || Math.floor(Date.now() / 1000);
       const priority = params?.priority as string;
       const sources = params?.sources as string;
@@ -169,9 +177,12 @@ export class DatadogService {
   ): Promise<unknown> {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`${this.getBaseUrl(integration)}/api/v1/dashboard`, {
-          headers: this.getHeaders(integration),
-        }),
+        this.httpService.get(
+          `${this.getBaseUrl(integration)}/api/v1/dashboard`,
+          {
+            headers: this.getHeaders(integration),
+          },
+        ),
       );
 
       return response.data.dashboards || [];
@@ -214,7 +225,9 @@ export class DatadogService {
   ): Promise<unknown> {
     try {
       const query = (params?.query as string) || '*';
-      const from = (params?.from as string) || new Date(Date.now() - 3600000).toISOString();
+      const from =
+        (params?.from as string) ||
+        new Date(Date.now() - 3600000).toISOString();
       const to = (params?.to as string) || new Date().toISOString();
       const limit = (params?.limit as number) || 50;
 
@@ -251,13 +264,16 @@ export class DatadogService {
       const service = params?.service as string;
 
       const response = await firstValueFrom(
-        this.httpService.get(`${this.getBaseUrl(integration)}/api/v1/service_dependencies`, {
-          headers: this.getHeaders(integration),
-          params: {
-            env,
-            ...(service && { service }),
+        this.httpService.get(
+          `${this.getBaseUrl(integration)}/api/v1/service_dependencies`,
+          {
+            headers: this.getHeaders(integration),
+            params: {
+              env,
+              ...(service && { service }),
+            },
           },
-        }),
+        ),
       );
 
       return response.data;
@@ -298,7 +314,9 @@ export class DatadogService {
           okMonitors: monitorsByStatus['OK'] || 0,
           warnMonitors: monitorsByStatus['Warn'] || 0,
           totalHosts: hostsData.total_matching || 0,
-          upHosts: hostsData.host_list?.filter((h: any) => h.is_muted === false).length || 0,
+          upHosts:
+            hostsData.host_list?.filter((h: any) => h.is_muted === false)
+              .length || 0,
           totalDashboards: dashboardsArray.length,
           recentEvents: eventsArray.length,
         },

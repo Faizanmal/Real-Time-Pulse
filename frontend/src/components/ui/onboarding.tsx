@@ -30,14 +30,11 @@ import {
   Sparkles,
   ArrowRight,
   Play,
-  Pause,
-  SkipForward,
   Info,
   Book,
   Rocket,
   LayoutDashboard,
   Bell,
-  Settings,
   Users,
   BarChart3,
   Zap
@@ -377,7 +374,7 @@ function TourOverlay({ tour, currentStep, onNext, onPrev, onSkip, onComplete }: 
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[9999]">
+      <div className="fixed inset-0 z-9999">
         {/* Backdrop with spotlight */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -406,7 +403,7 @@ function TourOverlay({ tour, currentStep, onNext, onPrev, onSkip, onComplete }: 
           {/* Progress bar */}
           <div className="h-1 bg-gray-200 dark:bg-slate-700">
             <motion.div
-              className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+              className="h-full bg-linear-to-r from-purple-500 to-pink-500"
               initial={{ width: 0 }}
               animate={{ width: `${((currentStep + 1) / tour.length) * 100}%` }}
             />
@@ -439,7 +436,7 @@ function TourOverlay({ tour, currentStep, onNext, onPrev, onSkip, onComplete }: 
             {step.action && (
               <Button
                 onClick={step.action.onClick}
-                className="w-full mb-4 bg-gradient-to-r from-purple-500 to-pink-500"
+                className="w-full mb-4 bg-linear-to-r from-purple-500 to-pink-500"
               >
                 {step.action.label}
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -463,7 +460,7 @@ function TourOverlay({ tour, currentStep, onNext, onPrev, onSkip, onComplete }: 
                 <Button
                   onClick={onComplete}
                   size="sm"
-                  className="bg-gradient-to-r from-green-500 to-emerald-500"
+                  className="bg-linear-to-r from-green-500 to-emerald-500"
                 >
                   <Check className="h-4 w-4 mr-1" />
                   Complete
@@ -472,7 +469,7 @@ function TourOverlay({ tour, currentStep, onNext, onPrev, onSkip, onComplete }: 
                 <Button
                   onClick={onNext}
                   size="sm"
-                  className="bg-gradient-to-r from-purple-500 to-pink-500"
+                  className="bg-linear-to-r from-purple-500 to-pink-500"
                 >
                   Next
                   <ChevronRight className="h-4 w-4 ml-1" />
@@ -728,7 +725,7 @@ export function QuickStartWizard({ isOpen, onClose, completedSteps = [] }: Quick
           exit={{ opacity: 0, x: 20 }}
           className="fixed right-4 top-20 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-2xl z-40 overflow-hidden"
         >
-          <div className="p-4 bg-gradient-to-r from-purple-500 to-pink-500">
+          <div className="p-4 bg-linear-to-r from-purple-500 to-pink-500">
             <div className="flex items-center justify-between text-white">
               <div className="flex items-center gap-2">
                 <Rocket className="h-5 w-5" />
@@ -902,7 +899,7 @@ export function HelpButton() {
   );
 }
 
-export default {
+const Onboarding = {
   OnboardingProvider,
   useOnboarding,
   Hint,
@@ -910,3 +907,5 @@ export default {
   QuickStartWizard,
   HelpButton,
 };
+
+export default Onboarding;

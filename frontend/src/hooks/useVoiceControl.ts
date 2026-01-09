@@ -12,22 +12,38 @@ interface VoiceCommand {
   confidence: number;
 }
 
+// Minimal local typing for the parts of the Web Speech API we use
+type SpeechRecognitionResultItem = { transcript?: string; confidence?: number };
+type SpeechRecognitionResultLike = { isFinal?: boolean; 0?: SpeechRecognitionResultItem };
+type SpeechRecognitionEventLike = { results: ArrayLike<SpeechRecognitionResultLike> };
+
+interface SpeechRecognitionLike {
+  lang?: string;
+  continuous?: boolean;
+  interimResults?: boolean;
+  onstart?: () => void;
+  onend?: () => void;
+  onresult?: (e: SpeechRecognitionEventLike) => void;
+  onerror?: (e: { error?: string } & Record<string, unknown>) => void;
+  start: () => void;
+  stop: () => void;
+}
+
 export function useVoiceControl(options: VoiceControlOptions = {}) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [isSupported, setIsSupported] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const onCommandRef = useRef<((command: VoiceCommand) => void) | null>(null);
 
   useEffect(() => {
     // Check if browser supports Web Speech API
-    const SpeechRecognition = 
-      (window as any).SpeechRecognition || 
-      (window as any).webkitSpeechRecognition;
+    const win = window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown };
+    const impl: unknown = win.SpeechRecognition ?? win.webkitSpeechRecognition;
 
-    if (!SpeechRecognition) {
+    if (!impl) {
       setIsSupported(false);
       setError('Voice recognition not supported in this browser');
       return;
@@ -36,7 +52,8 @@ export function useVoiceControl(options: VoiceControlOptions = {}) {
     setIsSupported(true);
 
     // Initialize speech recognition
-    const recognition = new SpeechRecognition();
+    const RecognitionCtor = impl as unknown as new () => SpeechRecognitionLike;
+    const recognition = new RecognitionCtor();
     recognition.lang = options.language || 'en-US';
     recognition.continuous = options.continuous ?? false;
     recognition.interimResults = options.interimResults ?? true;
@@ -50,15 +67,16 @@ export function useVoiceControl(options: VoiceControlOptions = {}) {
       setIsListening(false);
     };
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionEventLike) => {
       const results = event.results;
       const lastResult = results[results.length - 1];
       
-      if (lastResult.isFinal) {
+      if (lastResult && lastResult.isFinal) {
+        const item = lastResult[0] || {};
         const command: VoiceCommand = {
-          text: lastResult[0].transcript,
+          text: item.transcript || '',
           timestamp: new Date(),
-          confidence: lastResult[0].confidence,
+          confidence: item.confidence ?? 0,
         };
 
         setTranscript(command.text);
@@ -67,14 +85,14 @@ export function useVoiceControl(options: VoiceControlOptions = {}) {
         if (onCommandRef.current) {
           onCommandRef.current(command);
         }
-      } else {
+      } else if (lastResult) {
         // Interim results
-        setTranscript(lastResult[0].transcript);
+        setTranscript(lastResult[0]?.transcript || '');
       }
     };
 
-    recognition.onerror = (event: any) => {
-      setError(`Voice recognition error: ${event.error}`);
+    recognition.onerror = (event) => {
+      setError(`Voice recognition error: ${event?.error ?? 'unknown'}`);
       setIsListening(false);
     };
 
@@ -96,18 +114,24 @@ export function useVoiceControl(options: VoiceControlOptions = {}) {
     try {
       setTranscript('');
       recognitionRef.current.start();
-    } catch (err: any) {
-      if (err.message.includes('already started')) {
+    } catch (err: unknown) {
+      const maybeMessage = (err as Record<string, unknown>).message;
+      const msg = typeof maybeMessage === 'string' ? maybeMessage : String(err);
+      if (msg.includes('already started')) {
         // Already listening, ignore
         return;
       }
-      setError(err.message);
+      setError(msg);
     }
   }, [isSupported]);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        // ignore
+      }
     }
   }, []);
 

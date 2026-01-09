@@ -17,12 +17,13 @@ import {
   WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, UseGuards, Injectable } from '@nestjs/common';
+import { Logger, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 
-// Connection metadata
+// --- Types & Interfaces ---
+
 interface SocketMetadata {
   userId: string;
   workspaceId: string;
@@ -32,15 +33,11 @@ interface SocketMetadata {
   ipAddress?: string;
 }
 
-// Room types
-type RoomType = 'workspace' | 'portal' | 'widget' | 'user' | 'broadcast';
-
-// Presence info
 interface PresenceInfo {
   userId: string;
   userName: string;
   avatar?: string;
-  status: 'online' | 'away' | 'busy';
+  status: 'online' | 'away' | 'busy' | 'offline';
   currentPortal?: string;
   lastSeen: Date;
 }
@@ -63,9 +60,17 @@ export class RealtimeGateway
   server: Server;
 
   private readonly logger = new Logger(RealtimeGateway.name);
+
+  // State Management (Local Memory)
   private readonly connections = new Map<string, SocketMetadata>();
   private readonly presence = new Map<string, Map<string, PresenceInfo>>(); // workspaceId -> userId -> presence
   private readonly userSockets = new Map<string, Set<string>>(); // userId -> socketIds
+  private readonly ipConnectionCounts = new Map<string, number>();
+
+  private readonly MAX_CONNECTIONS_PER_IP = parseInt(
+    process.env.WS_MAX_CONNECTIONS_PER_IP || '50',
+    10,
+  );
 
   constructor(
     private readonly jwtService: JwtService,
@@ -73,23 +78,37 @@ export class RealtimeGateway
     private readonly prisma: PrismaService,
   ) {}
 
-  afterInit(server: Server): void {
+  // ============================================
+  // LIFECYCLE HOOKS
+  // ============================================
+
+  afterInit(_server: Server): void {
     this.logger.log('WebSocket Gateway initialized');
-
-    // Set up adapter for horizontal scaling (Redis)
-    // this.setupRedisAdapter(server);
-
-    // Periodic cleanup of stale connections
+    // Periodic cleanup of stale connections every minute
     setInterval(() => this.cleanupStaleConnections(), 60000);
   }
 
   async handleConnection(client: Socket): Promise<void> {
     try {
-      // Authenticate the connection
       const token = this.extractToken(client);
       if (!token) {
-        throw new WsException('Authentication required');
+        this.logger.warn(`Client ${client.id} rejected: No token provided`);
+        client.disconnect();
+        return;
       }
+
+      // IP Throttling to prevent DOS
+      const ip = client.handshake.address || 'unknown';
+      const count = this.ipConnectionCounts.get(ip) || 0;
+      if (count >= this.MAX_CONNECTIONS_PER_IP) {
+        this.logger.warn(
+          `Client ${client.id} rejected: Too many connections from IP ${ip}`,
+        );
+        client.emit('error', { message: 'Too many connections from your IP' });
+        client.disconnect();
+        return;
+      }
+      this.ipConnectionCounts.set(ip, count + 1);
 
       const payload = await this.verifyToken(token);
       const { userId, workspaceId } = payload;
@@ -101,16 +120,16 @@ export class RealtimeGateway
         connectedAt: new Date(),
         lastActivity: new Date(),
         device: client.handshake.headers['user-agent'],
-        ipAddress: client.handshake.address,
+        ipAddress: ip,
       });
 
-      // Track user's sockets
+      // Track user's multi-device sockets
       if (!this.userSockets.has(userId)) {
         this.userSockets.set(userId, new Set());
       }
       this.userSockets.get(userId)?.add(client.id);
 
-      // Join workspace room
+      // Join standard rooms
       await client.join(`workspace:${workspaceId}`);
       await client.join(`user:${userId}`);
 
@@ -132,6 +151,10 @@ export class RealtimeGateway
   }
 
   async handleDisconnect(client: Socket): Promise<void> {
+    const ip = client.handshake.address || 'unknown';
+    const count = this.ipConnectionCounts.get(ip) || 0;
+    if (count > 0) this.ipConnectionCounts.set(ip, count - 1);
+
     const metadata = this.connections.get(client.id);
     if (metadata) {
       const { userId, workspaceId } = metadata;
@@ -139,12 +162,14 @@ export class RealtimeGateway
       // Remove from user's socket set
       this.userSockets.get(userId)?.delete(client.id);
 
-      // If user has no more connections, mark as offline
-      if (this.userSockets.get(userId)?.size === 0) {
+      // If user has no more active connections/tabs, mark as offline
+      if (
+        !this.userSockets.get(userId) ||
+        this.userSockets.get(userId)?.size === 0
+      ) {
         this.userSockets.delete(userId);
         await this.updatePresence(workspaceId, userId, 'offline');
 
-        // Notify others in workspace
         this.server.to(`workspace:${workspaceId}`).emit('user:left', {
           userId,
           timestamp: new Date(),
@@ -168,12 +193,8 @@ export class RealtimeGateway
     const metadata = this.connections.get(client.id);
     if (!metadata) return;
 
-    // Verify access to portal
     const portal = await this.prisma.portal.findFirst({
-      where: {
-        id: data.portalId,
-        workspaceId: metadata.workspaceId,
-      },
+      where: { id: data.portalId, workspaceId: metadata.workspaceId },
     });
 
     if (!portal) {
@@ -183,7 +204,6 @@ export class RealtimeGateway
 
     await client.join(`portal:${data.portalId}`);
 
-    // Update presence with current portal
     await this.updatePresence(
       metadata.workspaceId,
       metadata.userId,
@@ -191,14 +211,12 @@ export class RealtimeGateway
       data.portalId,
     );
 
-    // Notify portal viewers
     client.to(`portal:${data.portalId}`).emit('portal:viewer:joined', {
       userId: metadata.userId,
       portalId: data.portalId,
       timestamp: new Date(),
     });
 
-    // Send current viewers
     const viewers = await this.getPortalViewers(data.portalId);
     client.emit('portal:viewers', { portalId: data.portalId, viewers });
   }
@@ -212,8 +230,6 @@ export class RealtimeGateway
     if (!metadata) return;
 
     await client.leave(`portal:${data.portalId}`);
-
-    // Update presence to remove current portal
     await this.updatePresence(metadata.workspaceId, metadata.userId, 'online');
 
     client.to(`portal:${data.portalId}`).emit('portal:viewer:left', {
@@ -249,7 +265,7 @@ export class RealtimeGateway
   }
 
   // ============================================
-  // CURSOR & COLLABORATION
+  // COLLABORATION (CURSOR/TYPING)
   // ============================================
 
   @SubscribeMessage('cursor:move')
@@ -259,6 +275,7 @@ export class RealtimeGateway
   ): Promise<void> {
     const metadata = this.connections.get(client.id);
     if (!metadata) return;
+    metadata.lastActivity = new Date(); // Keep connection alive
 
     client.to(`portal:${data.portalId}`).emit('cursor:moved', {
       userId: metadata.userId,
@@ -284,10 +301,6 @@ export class RealtimeGateway
       timestamp: Date.now(),
     });
   }
-
-  // ============================================
-  // COMMENTS & CHAT
-  // ============================================
 
   @SubscribeMessage('comment:typing')
   async handleTyping(
@@ -326,53 +339,41 @@ export class RealtimeGateway
   }
 
   // ============================================
-  // BROADCAST METHODS (called from services)
+  // BROADCAST METHODS (Service-facing)
   // ============================================
 
   broadcastToWorkspace(workspaceId: string, event: string, data: any): void {
-    this.server.to(`workspace:${workspaceId}`).emit(event, {
-      ...data,
-      timestamp: new Date(),
-    });
+    this.server
+      .to(`workspace:${workspaceId}`)
+      .emit(event, { ...data, timestamp: new Date() });
   }
 
   broadcastToPortal(portalId: string, event: string, data: any): void {
-    this.server.to(`portal:${portalId}`).emit(event, {
-      ...data,
-      timestamp: new Date(),
-    });
+    this.server
+      .to(`portal:${portalId}`)
+      .emit(event, { ...data, timestamp: new Date() });
   }
 
   broadcastToWidget(widgetId: string, event: string, data: any): void {
-    this.server.to(`widget:${widgetId}`).emit(event, {
-      ...data,
-      timestamp: new Date(),
-    });
+    this.server
+      .to(`widget:${widgetId}`)
+      .emit(event, { ...data, timestamp: new Date() });
   }
 
   broadcastToUser(userId: string, event: string, data: any): void {
-    this.server.to(`user:${userId}`).emit(event, {
-      ...data,
-      timestamp: new Date(),
-    });
+    this.server
+      .to(`user:${userId}`)
+      .emit(event, { ...data, timestamp: new Date() });
   }
 
   broadcastToAll(event: string, data: any): void {
-    this.server.emit(event, {
-      ...data,
-      timestamp: new Date(),
-    });
+    this.server.emit(event, { ...data, timestamp: new Date() });
   }
 
-  // Widget data update broadcast
   emitWidgetUpdate(widgetId: string, data: any): void {
-    this.broadcastToWidget(widgetId, 'widget:data:updated', {
-      widgetId,
-      data,
-    });
+    this.broadcastToWidget(widgetId, 'widget:data:updated', { widgetId, data });
   }
 
-  // Portal layout update broadcast
   emitPortalLayoutUpdate(portalId: string, layout: any): void {
     this.broadcastToPortal(portalId, 'portal:layout:updated', {
       portalId,
@@ -380,24 +381,22 @@ export class RealtimeGateway
     });
   }
 
-  // Alert notification broadcast
   emitAlert(workspaceId: string, alert: any): void {
     this.broadcastToWorkspace(workspaceId, 'alert:triggered', alert);
   }
 
-  // AI Insight broadcast
   emitInsight(workspaceId: string, insight: any): void {
     this.broadcastToWorkspace(workspaceId, 'insight:generated', insight);
   }
 
   // ============================================
-  // PRESENCE MANAGEMENT
+  // INTERNAL UTILITIES
   // ============================================
 
   private async updatePresence(
     workspaceId: string,
     userId: string,
-    status: 'online' | 'away' | 'busy' | 'offline',
+    status: PresenceInfo['status'],
     currentPortal?: string,
   ): Promise<void> {
     if (!this.presence.has(workspaceId)) {
@@ -424,7 +423,6 @@ export class RealtimeGateway
       });
     }
 
-    // Broadcast presence update
     this.broadcastToWorkspace(workspaceId, 'presence:updated', {
       userId,
       status,
@@ -444,39 +442,21 @@ export class RealtimeGateway
     for (const socketId of room) {
       const metadata = this.connections.get(socketId);
       if (metadata) {
-        const workspacePresence = this.presence.get(metadata.workspaceId);
-        const presence = workspacePresence?.get(metadata.userId);
-        if (presence) {
-          viewers.push(presence);
-        }
+        const presence = this.presence
+          .get(metadata.workspaceId)
+          ?.get(metadata.userId);
+        if (presence) viewers.push(presence);
       }
     }
     return viewers;
   }
 
-  // ============================================
-  // UTILITIES
-  // ============================================
-
   private extractToken(client: Socket): string | null {
-    // Try auth header first
     const authHeader = client.handshake.headers.authorization;
-    if (authHeader?.startsWith('Bearer ')) {
-      return authHeader.slice(7);
-    }
-
-    // Try query params
-    const token = client.handshake.query.token;
-    if (typeof token === 'string') {
-      return token;
-    }
-
-    // Try auth object
-    if (client.handshake.auth?.token) {
-      return client.handshake.auth.token;
-    }
-
-    return null;
+    if (authHeader?.startsWith('Bearer ')) return authHeader.slice(7);
+    const queryToken = client.handshake.query.token;
+    if (typeof queryToken === 'string') return queryToken;
+    return client.handshake.auth?.token || null;
   }
 
   private async verifyToken(
@@ -494,32 +474,23 @@ export class RealtimeGateway
 
   private cleanupStaleConnections(): void {
     const now = Date.now();
-    const staleThreshold = 5 * 60 * 1000; // 5 minutes
+    const staleThreshold = 5 * 60 * 1000;
 
     for (const [socketId, metadata] of this.connections) {
       if (now - metadata.lastActivity.getTime() > staleThreshold) {
         const socket = this.server.sockets.sockets.get(socketId);
-        if (socket) {
-          socket.disconnect(true);
-        }
+        if (socket) socket.disconnect(true);
         this.connections.delete(socketId);
       }
     }
   }
 
-  // Get connection statistics
-  getStats(): {
-    totalConnections: number;
-    uniqueUsers: number;
-    connectionsByWorkspace: Record<string, number>;
-  } {
+  getStats() {
     const connectionsByWorkspace: Record<string, number> = {};
-
     for (const metadata of this.connections.values()) {
       connectionsByWorkspace[metadata.workspaceId] =
         (connectionsByWorkspace[metadata.workspaceId] || 0) + 1;
     }
-
     return {
       totalConnections: this.connections.size,
       uniqueUsers: this.userSockets.size,

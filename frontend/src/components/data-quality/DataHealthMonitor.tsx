@@ -4,9 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Activity, AlertTriangle, CheckCircle, XCircle, Clock, TrendingUp } from 'lucide-react';
-import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 interface HealthStatus {
   id: string;
@@ -47,7 +46,6 @@ export default function DataHealthMonitor() {
   const [healthData, setHealthData] = useState<HealthStatus[]>([]);
   const [metrics, setMetrics] = useState<HealthMetrics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedSource, setSelectedSource] = useState<string | null>(null);
 
   useEffect(() => {
     fetchHealthData();
@@ -223,7 +221,7 @@ export default function DataHealthMonitor() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : '0'}%`}
+                  label={({ name, percent }) => `${name} ${((percent as number ?? 0) * 100).toFixed(0)}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
@@ -276,8 +274,7 @@ export default function DataHealthMonitor() {
             {healthData.map((source) => (
               <div
                 key={source.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent cursor-pointer"
-                onClick={() => setSelectedSource(source.id)}
+                className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent"
               >
                 <div className="flex items-center space-x-4 flex-1">
                   <div className="flex items-center justify-center w-10 h-10 rounded-full bg-accent">

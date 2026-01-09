@@ -20,7 +20,6 @@ export interface Scatter3DChartProps {
   height?: number;
   pointSize?: number;
   colorScale?: 'category' | 'value' | 'gradient';
-  axisLabels?: { x: string; y: string; z: string };
   showGrid?: boolean;
   showAxes?: boolean;
   enableRotation?: boolean;
@@ -41,7 +40,6 @@ export function Scatter3DChart({
   height = 400,
   pointSize = 0.1,
   colorScale = 'category',
-  axisLabels = { x: 'X', y: 'Y', z: 'Z' },
   showGrid = true,
   showAxes = true,
   enableRotation = true,
@@ -117,6 +115,7 @@ export function Scatter3DChart({
   // Initialize scene
   useEffect(() => {
     if (!containerRef.current) return;
+    const container = containerRef.current;
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -132,7 +131,7 @@ export function Scatter3DChart({
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
-    containerRef.current.appendChild(renderer.domElement);
+    container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     // Controls
@@ -177,7 +176,9 @@ export function Scatter3DChart({
     // Cleanup
     return () => {
       renderer.dispose();
-      containerRef.current?.removeChild(renderer.domElement);
+      if (container && container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
     };
   }, [width, height, backgroundColor, showGrid, showAxes, enableRotation]);
 
@@ -258,4 +259,6 @@ export function Scatter3DChart({
   );
 }
 
-export default Scatter3DChart;
+const scatter3DChart = { Scatter3DChart };
+
+export default scatter3DChart;

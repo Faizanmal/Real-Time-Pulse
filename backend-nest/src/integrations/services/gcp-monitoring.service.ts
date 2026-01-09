@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
-interface GcpMonitoringIntegration {
+export interface GcpMonitoringIntegration {
   accessToken: string; // OAuth2 access token
   refreshToken?: string;
   settings: {
@@ -17,14 +17,18 @@ export class GcpMonitoringService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  private getHeaders(integration: GcpMonitoringIntegration): Record<string, string> {
+  private getHeaders(
+    integration: GcpMonitoringIntegration,
+  ): Record<string, string> {
     return {
       Authorization: `Bearer ${integration.accessToken}`,
       'Content-Type': 'application/json',
     };
   }
 
-  async testConnection(integration: GcpMonitoringIntegration): Promise<boolean> {
+  async testConnection(
+    integration: GcpMonitoringIntegration,
+  ): Promise<boolean> {
     try {
       const response = await firstValueFrom(
         this.httpService.get(
@@ -73,7 +77,10 @@ export class GcpMonitoringService {
   ): Promise<unknown> {
     try {
       const filter = params?.filter as string;
-      const interval = params?.interval as { startTime: string; endTime: string };
+      const interval = params?.interval as {
+        startTime: string;
+        endTime: string;
+      };
       const aggregation = params?.aggregation as {
         alignmentPeriod: string;
         perSeriesAligner: string;
@@ -96,10 +103,13 @@ export class GcpMonitoringService {
       };
 
       if (aggregation) {
-        queryParams['aggregation.alignmentPeriod'] = aggregation.alignmentPeriod;
-        queryParams['aggregation.perSeriesAligner'] = aggregation.perSeriesAligner;
+        queryParams['aggregation.alignmentPeriod'] =
+          aggregation.alignmentPeriod;
+        queryParams['aggregation.perSeriesAligner'] =
+          aggregation.perSeriesAligner;
         if (aggregation.crossSeriesReducer) {
-          queryParams['aggregation.crossSeriesReducer'] = aggregation.crossSeriesReducer;
+          queryParams['aggregation.crossSeriesReducer'] =
+            aggregation.crossSeriesReducer;
         }
         if (aggregation.groupByFields) {
           aggregation.groupByFields.forEach((field, i) => {
@@ -321,7 +331,7 @@ export class GcpMonitoringService {
 
   private async fetchAnalytics(
     integration: GcpMonitoringIntegration,
-    params?: Record<string, unknown>,
+    _params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
       const [alertPolicies, channels, uptimeChecks] = await Promise.all([
@@ -338,7 +348,8 @@ export class GcpMonitoringService {
       let cpuMetrics: any = null;
       try {
         cpuMetrics = await this.fetchTimeSeries(integration, {
-          filter: 'metric.type="compute.googleapis.com/instance/cpu/utilization"',
+          filter:
+            'metric.type="compute.googleapis.com/instance/cpu/utilization"',
           aggregation: {
             alignmentPeriod: '300s',
             perSeriesAligner: 'ALIGN_MEAN',
@@ -350,7 +361,9 @@ export class GcpMonitoringService {
       }
 
       const enabledPolicies = policies.filter((p: any) => p.enabled).length;
-      const enabledChannels = channelsArray.filter((c: any) => c.enabled).length;
+      const enabledChannels = channelsArray.filter(
+        (c: any) => c.enabled,
+      ).length;
 
       return {
         summary: {
@@ -371,7 +384,8 @@ export class GcpMonitoringService {
           period: c.period,
           resource: c.monitoredResource?.type,
         })),
-        recentCpuMetrics: cpuMetrics?.timeSeries?.[0]?.points?.slice(0, 12) || [],
+        recentCpuMetrics:
+          cpuMetrics?.timeSeries?.[0]?.points?.slice(0, 12) || [],
       };
     } catch (error) {
       this.logger.error('Failed to fetch GCP Monitoring analytics', error);

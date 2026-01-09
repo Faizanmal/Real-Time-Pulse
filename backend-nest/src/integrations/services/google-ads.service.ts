@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
-interface GoogleAdsIntegration {
+export interface GoogleAdsIntegration {
   accessToken: string;
   refreshToken?: string;
   settings: {
@@ -19,7 +19,9 @@ export class GoogleAdsService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  private getHeaders(integration: GoogleAdsIntegration): Record<string, string> {
+  private getHeaders(
+    integration: GoogleAdsIntegration,
+  ): Record<string, string> {
     return {
       Authorization: `Bearer ${integration.accessToken}`,
       'developer-token': integration.settings.developerToken,
@@ -37,7 +39,8 @@ export class GoogleAdsService {
         this.httpService.post(
           `${this.baseUrl}/customers/${customerId}/googleAds:searchStream`,
           {
-            query: 'SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1',
+            query:
+              'SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1',
           },
           { headers: this.getHeaders(integration) },
         ),
@@ -146,9 +149,7 @@ export class GoogleAdsService {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     const campaignId = params?.campaignId as string;
-    const campaignFilter = campaignId
-      ? `AND campaign.id = ${campaignId}`
-      : '';
+    const campaignFilter = campaignId ? `AND campaign.id = ${campaignId}` : '';
 
     const query = `
       SELECT
@@ -178,9 +179,7 @@ export class GoogleAdsService {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     const adGroupId = params?.adGroupId as string;
-    const adGroupFilter = adGroupId
-      ? `AND ad_group.id = ${adGroupId}`
-      : '';
+    const adGroupFilter = adGroupId ? `AND ad_group.id = ${adGroupId}` : '';
 
     const query = `
       SELECT
@@ -211,9 +210,7 @@ export class GoogleAdsService {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     const adGroupId = params?.adGroupId as string;
-    const adGroupFilter = adGroupId
-      ? `AND ad_group.id = ${adGroupId}`
-      : '';
+    const adGroupFilter = adGroupId ? `AND ad_group.id = ${adGroupId}` : '';
 
     const query = `
       SELECT
@@ -328,10 +325,13 @@ export class GoogleAdsService {
     });
 
     const totalSpend = totalCostMicros / 1000000;
-    const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+    const ctr =
+      totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
     const avgCpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
-    const avgCpm = totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
-    const costPerConversion = totalConversions > 0 ? totalSpend / totalConversions : 0;
+    const avgCpm =
+      totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
+    const costPerConversion =
+      totalConversions > 0 ? totalSpend / totalConversions : 0;
 
     return {
       summary: {

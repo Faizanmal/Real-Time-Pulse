@@ -184,7 +184,7 @@ export function TemplatesMarketplace({
         <TabsContent value="browse">
           {/* Search and Filters */}
           <div className="flex flex-wrap gap-4 mb-6">
-            <div className="flex-1 min-w-[200px]">
+            <div className="flex-1 min-w-50">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
@@ -196,7 +196,7 @@ export function TemplatesMarketplace({
               </div>
             </div>
             <Select value={selectedType} onValueChange={setSelectedType}>
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger className="w-37.5">
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
@@ -206,7 +206,7 @@ export function TemplatesMarketplace({
               </SelectContent>
             </Select>
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-45">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
@@ -336,7 +336,7 @@ function TemplateCard({
       onClick={() => onView(template)}
     >
       {/* Thumbnail */}
-      <div className="h-32 bg-gradient-to-br from-gray-100 to-gray-200 relative">
+      <div className="h-32 bg-linear-to-br from-gray-100 to-gray-200 relative">
         {template.thumbnail ? (
           <Image
             src={template.thumbnail}
@@ -498,7 +498,7 @@ function TemplatePreview({ template, onUse, onClose }: TemplatePreviewProps) {
       </DialogHeader>
 
       {/* Preview Image */}
-      <div className="h-48 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden">
+      <div className="h-48 bg-linear-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden">
         {template.thumbnail ? (
           <Image
             src={template.thumbnail}

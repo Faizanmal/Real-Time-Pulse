@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
-    Bell, Check, X, Clock, Eye, MessageSquare, AlertTriangle, Info,
-    CheckCircle2, Trash2, MoreHorizontal, Archive, Pin, Reply,
+    Bell, X, Clock, Eye, MessageSquare, AlertTriangle, Info,
+    CheckCircle2, Pin, Reply,
     ThumbsUp, ThumbsDown, Share2, Bookmark,
 } from "lucide-react";
 
@@ -48,6 +48,16 @@ const priorityColors = {
     urgent: "border-l-red-500",
 };
 
+// Utility function
+const formatTimeAgo = (timestamp: Date | string) => {
+    const date = new Date(timestamp);
+    const diffMins = Math.floor((Date.now() - date.getTime()) / 60000);
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m`;
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h`;
+    return `${Math.floor(diffMins / 1440)}d`;
+};
+
 // Notification Card
 interface NotificationCardProps {
     notification: InteractiveNotification;
@@ -64,15 +74,6 @@ export function InteractiveNotificationCard({
     const [showReply, setShowReply] = useState(false);
     const [replyText, setReplyText] = useState("");
     const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
-
-    const formatTimeAgo = (timestamp: Date | string) => {
-        const date = new Date(timestamp);
-        const diffMins = Math.floor((Date.now() - date.getTime()) / 60000);
-        if (diffMins < 1) return "Just now";
-        if (diffMins < 60) return `${diffMins}m`;
-        if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h`;
-        return `${Math.floor(diffMins / 1440)}d`;
-    };
 
     return (
         <motion.div

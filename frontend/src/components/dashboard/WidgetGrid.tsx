@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { motion, AnimatePresence, Reorder } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   DndContext,
   closestCenter,
@@ -25,19 +25,14 @@ import { cn } from "@/lib/utils";
 import {
   Plus,
   Grip,
-  Settings,
   Trash2,
   Copy,
-  Maximize2,
-  Minimize2,
   Lock,
   Unlock,
   Eye,
   EyeOff,
   MoreVertical,
-  RefreshCw,
   Edit3,
-  ChevronDown,
 } from "lucide-react";
 
 // ============================================================================
@@ -291,7 +286,6 @@ interface SortableWidgetProps {
 const SortableWidget: React.FC<SortableWidgetProps> = ({
   widget,
   editable,
-  isEditing,
   children,
   onEdit,
   onDelete,
@@ -360,7 +354,7 @@ const SortableWidget: React.FC<SortableWidgetProps> = ({
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-3 py-2 bg-gradient-to-b from-black/50 to-transparent"
+            className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-3 py-2 bg-linear-to-b from-black/50 to-transparent"
           >
             {/* Drag Handle */}
             <button

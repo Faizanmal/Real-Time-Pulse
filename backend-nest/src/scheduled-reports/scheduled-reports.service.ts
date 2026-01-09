@@ -260,8 +260,8 @@ export class ScheduledReportsService {
     try {
       // Generate report based on format
       let reportBuffer: Buffer | Uint8Array;
-      let contentType: string;
-      let extension: string;
+      let _contentType: string;
+      let _extension: string;
 
       switch (report.format) {
         case 'PDF':
@@ -269,25 +269,25 @@ export class ScheduledReportsService {
             report.portalId,
             report.workspaceId,
           );
-          contentType = 'application/pdf';
-          extension = 'pdf';
+          _contentType = 'application/pdf';
+          _extension = 'pdf';
           break;
         case 'CSV':
           reportBuffer = await this.exportService.exportPortalToCSV(
             report.portalId,
             report.workspaceId,
           );
-          contentType = 'text/csv';
-          extension = 'csv';
+          _contentType = 'text/csv';
+          _extension = 'csv';
           break;
         case 'EXCEL':
           reportBuffer = await this.exportService.exportPortalToExcel(
             report.portalId,
             report.workspaceId,
           );
-          contentType =
+          _contentType =
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-          extension = 'xlsx';
+          _extension = 'xlsx';
           break;
         default:
           throw new Error(`Unsupported format: ${report.format}`);
@@ -375,7 +375,7 @@ export class ScheduledReportsService {
   /**
    * Calculate the next run time based on cron expression
    */
-  private calculateNextRun(cronExpression: string, timezone: string): Date {
+  private calculateNextRun(cronExpression: string, _timezone: string): Date {
     // Simple cron parser for common patterns
     // In production, use a library like 'cron-parser'
     const parts = cronExpression.split(' ');
@@ -390,7 +390,7 @@ export class ScheduledReportsService {
     // For now, return next occurrence (simplified)
     // Use cron-parser for accurate calculation
     const now = new Date();
-    const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
+    const [minute, hour, _dayOfMonth, _month, _dayOfWeek] = parts;
 
     const next = new Date(now);
     next.setSeconds(0, 0);

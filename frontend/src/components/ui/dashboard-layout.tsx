@@ -16,7 +16,7 @@ import React, {
   useEffect,
   ReactNode,
 } from 'react';
-import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from './button';
 import {
@@ -35,7 +35,6 @@ import {
   EyeOff,
   Lock,
   Unlock,
-  Palette,
   ChevronDown,
   Check,
 } from 'lucide-react';
@@ -134,7 +133,7 @@ const DEFAULT_LAYOUTS: DashboardLayout[] = [
 const DashboardContext = createContext<DashboardContextValue | null>(null);
 const STORAGE_KEY = 'pulse_dashboard_layouts';
 
-export function DashboardLayoutProvider({ children }: { children: ReactNode }) {
+function DashboardLayoutProvider({ children }: { children: ReactNode }) {
   const [layouts, setLayouts] = useState<DashboardLayout[]>(DEFAULT_LAYOUTS);
   const [currentLayoutId, setCurrentLayoutId] = useState('default');
   const [isEditing, setIsEditing] = useState(false);
@@ -280,7 +279,7 @@ export function DashboardLayoutProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useDashboardLayout() {
+function useDashboardLayout() {
   const context = useContext(DashboardContext);
   if (!context) {
     throw new Error('useDashboardLayout must be used within DashboardLayoutProvider');
@@ -296,7 +295,7 @@ interface DraggableWidgetProps {
   className?: string;
 }
 
-export function DraggableWidget({ config, children, className }: DraggableWidgetProps) {
+function DraggableWidget({ config, children, className }: DraggableWidgetProps) {
   const { isEditing, updateWidget, removeWidget } = useDashboardLayout();
   const dragControls = useDragControls();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -421,8 +420,8 @@ interface DashboardGridProps {
   className?: string;
 }
 
-export function DashboardGrid({ children, className }: DashboardGridProps) {
-  const { layout, reorderWidgets } = useDashboardLayout();
+function DashboardGrid({ children, className }: DashboardGridProps) {
+  const { layout } = useDashboardLayout();
 
   const gridClasses: Record<LayoutMode, string> = {
     grid: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
@@ -447,7 +446,7 @@ export function DashboardGrid({ children, className }: DashboardGridProps) {
 
 // ==================== LAYOUT TOOLBAR ====================
 
-export function LayoutToolbar() {
+function LayoutToolbar() {
   const {
     layout,
     layouts,
@@ -602,7 +601,7 @@ export function LayoutToolbar() {
             <Button
               size="sm"
               onClick={saveLayout}
-              className="bg-gradient-to-r from-purple-500 to-pink-500"
+              className="bg-linear-to-r from-purple-500 to-pink-500"
             >
               <Save className="h-4 w-4 mr-1" />
               Save Layout
@@ -647,7 +646,7 @@ interface WidgetPaletteProps {
   onClose: () => void;
 }
 
-export function WidgetPalette({ isOpen, onClose }: WidgetPaletteProps) {
+function WidgetPalette({ isOpen, onClose }: WidgetPaletteProps) {
   const { addWidget, layout } = useDashboardLayout();
 
   const existingWidgetTypes = layout.widgets.map(w => w.type);
@@ -747,7 +746,7 @@ interface QuickActionsBarProps {
   className?: string;
 }
 
-export function QuickActionsBar({ actions, className }: QuickActionsBarProps) {
+function QuickActionsBar({ actions, className }: QuickActionsBarProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -766,7 +765,7 @@ export function QuickActionsBar({ actions, className }: QuickActionsBarProps) {
             onClick={action.onClick}
             className={cn(
               'gap-2',
-              action.variant === 'primary' && 'bg-gradient-to-r from-purple-500 to-pink-500',
+              action.variant === 'primary' && 'bg-linear-to-r from-purple-500 to-pink-500',
               action.variant === 'danger' && 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
             )}
           >
@@ -784,7 +783,7 @@ export function QuickActionsBar({ actions, className }: QuickActionsBarProps) {
   );
 }
 
-export default {
+export {
   DashboardLayoutProvider,
   useDashboardLayout,
   DashboardGrid,

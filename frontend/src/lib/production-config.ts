@@ -501,7 +501,7 @@ if (typeof process !== 'undefined' && process.on) {
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 }
 
-export default {
+const productionConfigUtils = {
   validateEnvironment,
   getProductionConfig,
   isFeatureEnabled,
@@ -510,3 +510,5 @@ export default {
   registerShutdownHandler,
   gracefulShutdown,
 };
+
+export default productionConfigUtils;

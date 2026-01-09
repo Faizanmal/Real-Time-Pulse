@@ -222,7 +222,8 @@ export class IntercomService {
         }
       });
 
-      const avgResponseTime = responseCount > 0 ? totalResponseTime / responseCount / 60 : 0;
+      const avgResponseTime =
+        responseCount > 0 ? totalResponseTime / responseCount / 60 : 0;
 
       return {
         summary: {

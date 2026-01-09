@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
-interface FreshdeskIntegration {
+export interface FreshdeskIntegration {
   accessToken: string; // API key
   settings: {
     domain: string; // e.g., 'yourcompany' for yourcompany.freshdesk.com
@@ -19,8 +19,12 @@ export class FreshdeskService {
     return `https://${integration.settings.domain}.freshdesk.com/api/v2`;
   }
 
-  private getHeaders(integration: FreshdeskIntegration): Record<string, string> {
-    const credentials = Buffer.from(`${integration.accessToken}:X`).toString('base64');
+  private getHeaders(
+    integration: FreshdeskIntegration,
+  ): Record<string, string> {
+    const credentials = Buffer.from(`${integration.accessToken}:X`).toString(
+      'base64',
+    );
     return {
       Authorization: `Basic ${credentials}`,
       'Content-Type': 'application/json',
@@ -193,15 +197,21 @@ export class FreshdeskService {
       }
 
       const response = await firstValueFrom(
-        this.httpService.get(`${this.getBaseUrl(integration)}/surveys/satisfaction_ratings`, {
-          headers: this.getHeaders(integration),
-          params: queryParams,
-        }),
+        this.httpService.get(
+          `${this.getBaseUrl(integration)}/surveys/satisfaction_ratings`,
+          {
+            headers: this.getHeaders(integration),
+            params: queryParams,
+          },
+        ),
       );
 
       return response.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Freshdesk satisfaction ratings', error);
+      this.logger.error(
+        'Failed to fetch Freshdesk satisfaction ratings',
+        error,
+      );
       throw error;
     }
   }
@@ -214,7 +224,9 @@ export class FreshdeskService {
       const days = (params?.days as number) || 30;
 
       // Fetch all tickets
-      const tickets = (await this.fetchTickets(integration, { limit: 100 })) as any[];
+      const tickets = (await this.fetchTickets(integration, {
+        limit: 100,
+      })) as any[];
 
       // Freshdesk status mapping
       const statusMap: Record<number, string> = {
@@ -245,7 +257,11 @@ export class FreshdeskService {
         const priority = priorityMap[ticket.priority] || 'normal';
         priorityBreakdown[priority] = (priorityBreakdown[priority] || 0) + 1;
 
-        if (ticket.fr_escalated === false && ticket.created_at && ticket.updated_at) {
+        if (
+          ticket.fr_escalated === false &&
+          ticket.created_at &&
+          ticket.updated_at
+        ) {
           const created = new Date(ticket.created_at).getTime();
           const updated = new Date(ticket.updated_at).getTime();
           totalResponseTime += (updated - created) / 1000 / 60;
@@ -253,7 +269,8 @@ export class FreshdeskService {
         }
       });
 
-      const avgResponseTime = responseCount > 0 ? totalResponseTime / responseCount : 0;
+      const avgResponseTime =
+        responseCount > 0 ? totalResponseTime / responseCount : 0;
 
       return {
         summary: {

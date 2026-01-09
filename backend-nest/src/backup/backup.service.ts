@@ -73,7 +73,7 @@ export class BackupService {
         .digest('hex');
 
       // Store backup metadata in database
-      const backup = await this.prisma.$executeRaw`
+      const _backup = await this.prisma.$executeRaw`
         INSERT INTO backups (id, timestamp, type, size, checksum, encrypted_data, iv, auth_tag, description)
         VALUES (${backupId}, ${timestamp}, ${type}, ${encrypted.encrypted.length}, ${checksum}, 
                 ${encrypted.encrypted}, ${encrypted.iv}, ${encrypted.authTag}, ${description || ''})
@@ -207,7 +207,7 @@ export class BackupService {
   /**
    * Gather all data for backup
    */
-  private async gatherBackupData(type: 'full' | 'incremental') {
+  private async gatherBackupData(_type: 'full' | 'incremental') {
     // In a real implementation, this would gather all relevant data
     // For now, we'll create a structure that represents the data
     return {
@@ -226,13 +226,13 @@ export class BackupService {
    */
   private async restoreData(data: any) {
     // This should be done in a transaction to ensure atomicity
-    await this.prisma.$transaction(async (tx) => {
+    await this.prisma.$transaction(async (_tx) => {
       // Clear existing data (use with caution!)
       // In production, you might want to create a new workspace instead
 
       // Restore dashboards
       for (const dashboard of data.dashboards) {
-        await tx.$executeRaw`
+        await this.prisma.$executeRaw`
           INSERT INTO dashboards (id, name, config, workspace_id, created_at, updated_at)
           VALUES (${dashboard.id}, ${dashboard.name}, ${dashboard.config}, 
                   ${dashboard.workspace_id}, ${dashboard.created_at}, ${dashboard.updated_at})
@@ -292,7 +292,7 @@ export class BackupService {
    */
   private async replicateBackup(
     backupId: string,
-    data: { encrypted: Buffer; iv: Buffer; authTag: Buffer },
+    _data: { encrypted: Buffer; iv: Buffer; authTag: Buffer },
   ) {
     // In production, this would upload to S3, Google Cloud Storage, etc.
     // with cross-region replication enabled

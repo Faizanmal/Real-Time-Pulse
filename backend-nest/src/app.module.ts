@@ -65,6 +65,7 @@ import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { VoiceControlModule } from './voice-control/voice-control.module';
 import { GamificationModule } from './gamification/gamification.module';
 import { AnnotationsModule } from './annotations/annotations.module';
+import { ApiKeysModule } from './api-keys/api-keys.module';
 
 // ML/AI & Industry Solutions (Phase 3)
 import { MLModule } from './ml/ml.module';
@@ -187,6 +188,7 @@ import firebaseConfig from './config/firebase.config';
     EnhancedComplianceModule,
     GamificationModule,
     AnnotationsModule,
+    ApiKeysModule,
     // ML/AI & Industry Solutions (Phase 3)
     MLModule,
     IndustryModule,

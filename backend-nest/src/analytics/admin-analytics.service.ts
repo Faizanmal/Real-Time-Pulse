@@ -357,8 +357,8 @@ export class AdminAnalyticsService {
           : 0,
       byPlan: Object.entries(byPlan).map(([plan, data]) => ({
         plan,
-        count: data.count,
-        revenue: data.revenue,
+        count: (data as { count: number; revenue: number }).count,
+        revenue: (data as { count: number; revenue: number }).revenue,
       })),
       growth,
     };
@@ -377,7 +377,7 @@ export class AdminAnalyticsService {
   async getSystemHealth(userId: string): Promise<SystemHealth> {
     await this.checkAdminAccess(userId);
 
-    const startTime = Date.now();
+    const _startTime = Date.now();
 
     // Database health check
     let dbStatus = 'healthy';
@@ -433,9 +433,9 @@ export class AdminAnalyticsService {
     const failingIntegrations = integrations.filter(
       (i) => i.status === 'ERROR',
     );
-    const failingProviders = [
-      ...new Set(failingIntegrations.map((i) => i.provider)),
-    ];
+    const failingProviders = failingIntegrations.map(
+      (i) => i.provider,
+    ) as string[];
 
     // Alert status
     const [criticalAlerts, unresolvedAlerts] = await Promise.all([

@@ -3,7 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import * as crypto from 'crypto';
 
-interface AwsIotIntegration {
+export interface AwsIotIntegration {
   accessToken: string; // AWS Access Key ID
   refreshToken: string; // AWS Secret Access Key
   settings: {
@@ -71,9 +71,18 @@ export class AwsIotService {
       .update(date)
       .digest();
     const kRegion = crypto.createHmac('sha256', kDate).update(region).digest();
-    const kService = crypto.createHmac('sha256', kRegion).update(service).digest();
-    const kSigning = crypto.createHmac('sha256', kService).update('aws4_request').digest();
-    const signature = crypto.createHmac('sha256', kSigning).update(stringToSign).digest('hex');
+    const kService = crypto
+      .createHmac('sha256', kRegion)
+      .update(service)
+      .digest();
+    const kSigning = crypto
+      .createHmac('sha256', kService)
+      .update('aws4_request')
+      .digest();
+    const signature = crypto
+      .createHmac('sha256', kSigning)
+      .update(stringToSign)
+      .digest('hex');
 
     const authorization = [
       `AWS4-HMAC-SHA256 Credential=${integration.accessToken}/${credentialScope}`,
@@ -91,7 +100,7 @@ export class AwsIotService {
 
   async testConnection(integration: AwsIotIntegration): Promise<boolean> {
     try {
-      const result = await this.fetchThings(integration, { maxResults: 1 });
+      await this.fetchThings(integration, { maxResults: 1 });
       return true;
     } catch (error) {
       this.logger.error('AWS IoT connection test failed', error);
@@ -137,11 +146,19 @@ export class AwsIotService {
       const maxResults = (params?.maxResults as number) || 50;
       const nextToken = params?.nextToken as string;
 
-      const queryParams = new URLSearchParams({ maxResults: maxResults.toString() });
+      const queryParams = new URLSearchParams({
+        maxResults: maxResults.toString(),
+      });
       if (nextToken) queryParams.set('nextToken', nextToken);
 
       const fullUrl = `${url}?${queryParams.toString()}`;
-      const headers = await this.signRequest(integration, 'GET', fullUrl, '', 'iot');
+      const headers = await this.signRequest(
+        integration,
+        'GET',
+        fullUrl,
+        '',
+        'iot',
+      );
 
       const response = await firstValueFrom(
         this.httpService.get(fullUrl, { headers }),
@@ -166,7 +183,13 @@ export class AwsIotService {
       const maxResults = (params?.maxResults as number) || 50;
 
       const fullUrl = `${url}?maxResults=${maxResults}`;
-      const headers = await this.signRequest(integration, 'GET', fullUrl, '', 'iot');
+      const headers = await this.signRequest(
+        integration,
+        'GET',
+        fullUrl,
+        '',
+        'iot',
+      );
 
       const response = await firstValueFrom(
         this.httpService.get(fullUrl, { headers }),
@@ -191,7 +214,13 @@ export class AwsIotService {
       const maxResults = (params?.maxResults as number) || 50;
 
       const fullUrl = `${url}?maxResults=${maxResults}`;
-      const headers = await this.signRequest(integration, 'GET', fullUrl, '', 'iot');
+      const headers = await this.signRequest(
+        integration,
+        'GET',
+        fullUrl,
+        '',
+        'iot',
+      );
 
       const response = await firstValueFrom(
         this.httpService.get(fullUrl, { headers }),
@@ -223,7 +252,13 @@ export class AwsIotService {
         url = `${this.getIotDataUrl(integration)}/things/${thingName}/shadow?name=${shadowName}`;
       }
 
-      const headers = await this.signRequest(integration, 'GET', url, '', 'iotdata');
+      const headers = await this.signRequest(
+        integration,
+        'GET',
+        url,
+        '',
+        'iotdata',
+      );
 
       const response = await firstValueFrom(
         this.httpService.get(url, { headers }),
@@ -245,7 +280,13 @@ export class AwsIotService {
       const maxResults = (params?.maxResults as number) || 50;
 
       const fullUrl = `${url}?pageSize=${maxResults}`;
-      const headers = await this.signRequest(integration, 'GET', fullUrl, '', 'iot');
+      const headers = await this.signRequest(
+        integration,
+        'GET',
+        fullUrl,
+        '',
+        'iot',
+      );
 
       const response = await firstValueFrom(
         this.httpService.get(fullUrl, { headers }),
@@ -270,7 +311,13 @@ export class AwsIotService {
       const maxResults = (params?.maxResults as number) || 50;
 
       const fullUrl = `${url}?pageSize=${maxResults}`;
-      const headers = await this.signRequest(integration, 'GET', fullUrl, '', 'iot');
+      const headers = await this.signRequest(
+        integration,
+        'GET',
+        fullUrl,
+        '',
+        'iot',
+      );
 
       const response = await firstValueFrom(
         this.httpService.get(fullUrl, { headers }),
@@ -298,7 +345,13 @@ export class AwsIotService {
       let fullUrl = `${url}?maxResults=${maxResults}`;
       if (status) fullUrl += `&status=${status}`;
 
-      const headers = await this.signRequest(integration, 'GET', fullUrl, '', 'iot');
+      const headers = await this.signRequest(
+        integration,
+        'GET',
+        fullUrl,
+        '',
+        'iot',
+      );
 
       const response = await firstValueFrom(
         this.httpService.get(fullUrl, { headers }),
@@ -323,7 +376,13 @@ export class AwsIotService {
       const maxResults = (params?.maxResults as number) || 50;
 
       const fullUrl = `${url}?maxResults=${maxResults}`;
-      const headers = await this.signRequest(integration, 'GET', fullUrl, '', 'iot');
+      const headers = await this.signRequest(
+        integration,
+        'GET',
+        fullUrl,
+        '',
+        'iot',
+      );
 
       const response = await firstValueFrom(
         this.httpService.get(fullUrl, { headers }),
@@ -341,19 +400,26 @@ export class AwsIotService {
 
   private async fetchAnalytics(
     integration: AwsIotIntegration,
-    params?: Record<string, unknown>,
+    _params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const [things, thingTypes, thingGroups, policies, certificates, jobs, rules] =
-        await Promise.all([
-          this.fetchThings(integration, { maxResults: 100 }),
-          this.fetchThingTypes(integration, { maxResults: 100 }),
-          this.fetchThingGroups(integration, { maxResults: 100 }),
-          this.fetchPolicies(integration, { maxResults: 100 }),
-          this.fetchCertificates(integration, { maxResults: 100 }),
-          this.fetchJobs(integration, { maxResults: 100 }),
-          this.fetchTopicRules(integration, { maxResults: 100 }),
-        ]);
+      const [
+        things,
+        thingTypes,
+        thingGroups,
+        policies,
+        certificates,
+        jobs,
+        rules,
+      ] = await Promise.all([
+        this.fetchThings(integration, { maxResults: 100 }),
+        this.fetchThingTypes(integration, { maxResults: 100 }),
+        this.fetchThingGroups(integration, { maxResults: 100 }),
+        this.fetchPolicies(integration, { maxResults: 100 }),
+        this.fetchCertificates(integration, { maxResults: 100 }),
+        this.fetchJobs(integration, { maxResults: 100 }),
+        this.fetchTopicRules(integration, { maxResults: 100 }),
+      ]);
 
       const thingsArray = (things as any).things || [];
       const thingTypesArray = (thingTypes as any).thingTypes || [];
@@ -421,10 +487,17 @@ export class AwsIotService {
 
       const body: Record<string, unknown> = {};
       if (data.thingTypeName) body.thingTypeName = data.thingTypeName;
-      if (data.attributes) body.attributePayload = { attributes: data.attributes };
+      if (data.attributes)
+        body.attributePayload = { attributes: data.attributes };
 
       const bodyStr = JSON.stringify(body);
-      const headers = await this.signRequest(integration, 'POST', url, bodyStr, 'iot');
+      const headers = await this.signRequest(
+        integration,
+        'POST',
+        url,
+        bodyStr,
+        'iot',
+      );
 
       const response = await firstValueFrom(
         this.httpService.post(url, body, { headers }),
@@ -457,7 +530,13 @@ export class AwsIotService {
 
       const body = { state: data.state };
       const bodyStr = JSON.stringify(body);
-      const headers = await this.signRequest(integration, 'POST', url, bodyStr, 'iotdata');
+      const headers = await this.signRequest(
+        integration,
+        'POST',
+        url,
+        bodyStr,
+        'iotdata',
+      );
 
       const response = await firstValueFrom(
         this.httpService.post(url, body, { headers }),
@@ -483,13 +562,19 @@ export class AwsIotService {
       const url = `${this.getIotDataUrl(integration)}/topics/${encodeURIComponent(data.topic)}?qos=${data.qos || 0}`;
 
       const payload =
-        typeof data.payload === 'string' ? data.payload : JSON.stringify(data.payload);
-      const headers = await this.signRequest(integration, 'POST', url, payload, 'iotdata');
+        typeof data.payload === 'string'
+          ? data.payload
+          : JSON.stringify(data.payload);
+      const headers = await this.signRequest(
+        integration,
+        'POST',
+        url,
+        payload,
+        'iotdata',
+      );
       headers['Content-Type'] = 'application/json';
 
-      const response = await firstValueFrom(
-        this.httpService.post(url, payload, { headers }),
-      );
+      await firstValueFrom(this.httpService.post(url, payload, { headers }));
 
       return { success: true, topic: data.topic };
     } catch (error) {

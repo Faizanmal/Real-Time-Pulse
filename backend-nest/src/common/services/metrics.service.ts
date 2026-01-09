@@ -277,7 +277,7 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
     );
 
     // Persist current metrics to cache
-    this.persistMetrics();
+    void this.persistMetrics();
   }
 
   private async persistMetrics(): Promise<void> {

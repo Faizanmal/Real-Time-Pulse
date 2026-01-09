@@ -9,7 +9,6 @@ import {
   Search,
   Play,
   Download,
-  Upload,
   Clock,
   HardDrive,
   BarChart3,
@@ -17,10 +16,7 @@ import {
   ChevronRight,
   ChevronDown,
   Plus,
-  MoreVertical,
   Eye,
-  Edit,
-  Trash2,
   Copy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -48,7 +44,7 @@ interface ColumnInfo {
 
 interface QueryResult {
   columns: string[];
-  rows: any[][];
+  rows: unknown[][];
   rowCount: number;
   executionTime: number;
 }
@@ -60,7 +56,6 @@ interface DataWarehouseExplorerProps {
 
 export function DataWarehouseExplorer({ connectionId, className }: DataWarehouseExplorerProps) {
   const [schemas, setSchemas] = useState<Schema[]>([]);
-  const [selectedSchema, setSelectedSchema] = useState<string | null>(null);
   const [selectedTable, setSelectedTable] = useState<TableInfo | null>(null);
   const [expandedSchemas, setExpandedSchemas] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState('');

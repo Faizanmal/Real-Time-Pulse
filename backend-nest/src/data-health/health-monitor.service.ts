@@ -242,7 +242,7 @@ export class HealthMonitorService {
     }
   }
 
-  private async genericHealthCheck(integration: any) {
+  private async genericHealthCheck(_integration: any) {
     // Generic health check - just verify token is valid
     return {
       success: true,

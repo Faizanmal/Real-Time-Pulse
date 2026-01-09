@@ -16,7 +16,9 @@ export class HelpScoutService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  private getHeaders(integration: HelpScoutIntegration): Record<string, string> {
+  private getHeaders(
+    integration: HelpScoutIntegration,
+  ): Record<string, string> {
     return {
       Authorization: `Bearer ${integration.accessToken}`,
       'Content-Type': 'application/json',
@@ -69,7 +71,8 @@ export class HelpScoutService {
     try {
       const pageSize = (params?.limit as number) || 50;
       const status = params?.status as string;
-      const mailboxId = (params?.mailboxId as string) || integration.settings.mailboxId;
+      const mailboxId =
+        (params?.mailboxId as string) || integration.settings.mailboxId;
 
       const queryParams: Record<string, unknown> = {
         pageSize,
@@ -177,13 +180,16 @@ export class HelpScoutService {
       const reportType = (params?.type as string) || 'conversations';
       const start = params?.start as string;
       const end = params?.end as string;
-      const mailboxId = (params?.mailboxId as string) || integration.settings.mailboxId;
+      const mailboxId =
+        (params?.mailboxId as string) || integration.settings.mailboxId;
 
       // Default to last 30 days if no dates provided
       const endDate = end || new Date().toISOString().split('T')[0];
       const startDate =
         start ||
-        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split('T')[0];
 
       const queryParams: Record<string, unknown> = {
         start: startDate,
@@ -211,7 +217,8 @@ export class HelpScoutService {
   ): Promise<unknown> {
     try {
       const days = (params?.days as number) || 30;
-      const mailboxId = (params?.mailboxId as string) || integration.settings.mailboxId;
+      const mailboxId =
+        (params?.mailboxId as string) || integration.settings.mailboxId;
 
       const endDate = new Date();
       const startDate = new Date();
@@ -249,7 +256,10 @@ export class HelpScoutService {
                   ((convData.current?.count - convData.previous?.count) /
                     (convData.previous?.count || 1)) *
                   100,
-                direction: convData.current?.count > convData.previous?.count ? 'up' : 'down',
+                direction:
+                  convData.current?.count > convData.previous?.count
+                    ? 'up'
+                    : 'down',
               }
             : null,
         },
@@ -274,7 +284,10 @@ export class HelpScoutService {
       );
       return response.data;
     } catch (error) {
-      this.logger.error(`Failed to fetch Help Scout ${reportType} report`, error);
+      this.logger.error(
+        `Failed to fetch Help Scout ${reportType} report`,
+        error,
+      );
       return {};
     }
   }

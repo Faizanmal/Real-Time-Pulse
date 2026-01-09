@@ -7,7 +7,6 @@
  */
 
 import { Module, Global, DynamicModule } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EventSourcingService } from './event-sourcing.service';
 import { CommandBus } from './command-bus';
 import { QueryBus } from './query-bus';

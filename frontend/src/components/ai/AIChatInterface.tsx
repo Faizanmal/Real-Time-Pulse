@@ -8,7 +8,43 @@ import React, {
   KeyboardEvent,
 } from 'react';
 import { Send, Mic, MicOff, Sparkles, X, Maximize2, Minimize2 } from 'lucide-react';
+
+// Speech Recognition types
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionResultList {
+  readonly length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionResult {
+  readonly length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onend: (() => void) | null;
+  onerror: ((event: Event) => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface Message {
   id: string;
@@ -26,18 +62,17 @@ interface ChartSuggestion {
   type: string;
   title: string;
   dataQuery: string;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
 }
 
 interface AIChatInterfaceProps {
-  workspaceId: string;
+
   portalId?: string;
   onChartCreate?: (chart: ChartSuggestion) => void;
   className?: string;
 }
 
 export function AIChatInterface({
-  workspaceId,
   portalId,
   onChartCreate,
   className,
@@ -56,7 +91,7 @@ export function AIChatInterface({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -66,15 +101,16 @@ export function AIChatInterface({
   // Initialize speech recognition
   useEffect(() => {
     if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
+      const SpeechRecognitionConstructor = (window as { webkitSpeechRecognition?: new () => SpeechRecognition }).webkitSpeechRecognition;
+      if (SpeechRecognitionConstructor) {
+        recognitionRef.current = new SpeechRecognitionConstructor();
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = true;
       recognitionRef.current.lang = 'en-US';
 
-      recognitionRef.current.onresult = (event: any) => {
+      recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
         const transcript = Array.from(event.results)
-          .map((result: any) => result[0].transcript)
+          .map((result) => result[0].transcript)
           .join('');
         setInput(transcript);
       };
@@ -87,6 +123,7 @@ export function AIChatInterface({
         setIsListening(false);
       };
     }
+    }
 
     return () => {
       if (recognitionRef.current) {
@@ -98,7 +135,7 @@ export function AIChatInterface({
   // Toggle voice input
   const toggleVoice = useCallback(() => {
     if (!recognitionRef.current) {
-      alert('Speech recognition is not supported in your browser.');
+      toast.error('Speech recognition is not supported in your browser.');
       return;
     }
 
@@ -162,7 +199,7 @@ export function AIChatInterface({
         const utterance = new SpeechSynthesisUtterance(assistantMessage.content);
         window.speechSynthesis.speak(utterance);
       }
-    } catch (error) {
+    } catch {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',

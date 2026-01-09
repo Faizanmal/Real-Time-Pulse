@@ -92,6 +92,7 @@ export function Timeline3DChart({
   // Initialize scene
   useEffect(() => {
     if (!containerRef.current) return;
+    const container = containerRef.current;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(backgroundColor);
@@ -106,7 +107,7 @@ export function Timeline3DChart({
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
-    containerRef.current.appendChild(renderer.domElement);
+    container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -158,7 +159,9 @@ export function Timeline3DChart({
 
     return () => {
       renderer.dispose();
-      containerRef.current?.removeChild(renderer.domElement);
+      if (container && container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
     };
   }, [width, height, backgroundColor, timelineLength]);
 
@@ -201,7 +204,7 @@ export function Timeline3DChart({
     });
 
     // Create event markers
-    processedData.events.forEach((event, index) => {
+    processedData.events.forEach((event) => {
       const x = event.normalizedTime * timelineLength;
       const z = (event.categoryIndex - (processedData.categories.length - 1) / 2) * categorySpacing;
       const height = 0.2 + event.normalizedValue * 0.8;
@@ -331,4 +334,6 @@ export function Timeline3DChart({
   );
 }
 
-export default Timeline3DChart;
+const timeline3DChart = { Timeline3DChart };
+
+export default timeline3DChart;

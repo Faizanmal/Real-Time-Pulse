@@ -166,13 +166,6 @@ export default function DataValidationDashboard() {
     }
   };
 
-  const SEVERITY_COLORS = {
-    CRITICAL: '#dc2626',
-    ERROR: '#ea580c',
-    WARNING: '#ca8a04',
-    INFO: '#2563eb'
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -373,7 +366,7 @@ export default function DataValidationDashboard() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : '0'}%`}
+                  label={({ name, percent }) => `${name} ${((percent as number ?? 0) * 100).toFixed(0)}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"

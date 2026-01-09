@@ -32,12 +32,8 @@ import {
   Monitor,
   Tablet,
   Globe,
-  Clock,
   AlertTriangle,
   CheckCircle,
-  XCircle,
-  Eye,
-  EyeOff,
   LogOut,
   RefreshCw,
   Download,
@@ -46,15 +42,8 @@ import {
   Info,
   Fingerprint,
   MapPin,
-  Wifi,
-  WifiOff,
-  UserX,
   Activity,
-  TrendingUp,
-  TrendingDown,
   AlertCircle,
-  Check,
-  X,
   Copy,
   QrCode,
 } from 'lucide-react';
@@ -213,7 +202,7 @@ const SAMPLE_SECURITY_SCORE: SecurityScore = {
 export function SecurityProvider({ children }: { children: ReactNode }) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [events, setEvents] = useState<SecurityEvent[]>([]);
-  const [securityScore, setSecurityScore] = useState<SecurityScore>(SAMPLE_SECURITY_SCORE);
+  const [securityScore, _setSecurityScore] = useState<SecurityScore>(SAMPLE_SECURITY_SCORE);
   const [isLoading, setIsLoading] = useState(false);
   const [twoFactorSettings, setTwoFactorSettings] = useState<TwoFactorSettings>({
     enabled: true,
@@ -444,7 +433,7 @@ export function SecurityScoreCard({ className }: { className?: string }) {
             </div>
             <div className="h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
               <motion.div
-                className={cn('h-full rounded-full bg-gradient-to-r', getGradient(factor.score))}
+                className={cn('h-full rounded-full bg-linear-to-r', getGradient(factor.score))}
                 initial={{ width: 0 }}
                 animate={{ width: `${factor.score}%` }}
                 transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -1007,7 +996,7 @@ export function SecurityDashboard() {
   );
 }
 
-export default {
+const securityDashboardComponents = {
   SecurityProvider,
   useSecurity,
   SecurityScoreCard,
@@ -1016,3 +1005,5 @@ export default {
   SecurityLogCard,
   SecurityDashboard,
 };
+
+export default securityDashboardComponents;

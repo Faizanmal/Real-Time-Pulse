@@ -31,6 +31,11 @@ export class NotificationsGateway
 
   private readonly logger = new Logger(NotificationsGateway.name);
   private userSockets: Map<string, Set<string>> = new Map(); // userId -> Set of socket IDs
+  private ipConnectionCounts: Map<string, number> = new Map();
+  private MAX_CONNECTIONS_PER_IP = parseInt(
+    process.env.WS_MAX_CONNECTIONS_PER_IP || '50',
+    10,
+  );
 
   constructor(private readonly jwtService: JwtService) {}
 
@@ -48,9 +53,23 @@ export class NotificationsGateway
         this.logger.warn(
           `Client ${client.id} connection rejected: No token provided`,
         );
+        client.emit('error', { message: 'Authentication required' });
         client.disconnect();
         return;
       }
+
+      // Throttle by IP to avoid connection storms
+      const ip = client.handshake.address || 'unknown';
+      const count = this.ipConnectionCounts.get(ip) || 0;
+      if (count >= this.MAX_CONNECTIONS_PER_IP) {
+        this.logger.warn(
+          `Client ${client.id} connection rejected: Too many connections from IP ${ip}`,
+        );
+        client.emit('error', { message: 'Too many connections from your IP' });
+        client.disconnect();
+        return;
+      }
+      this.ipConnectionCounts.set(ip, count + 1);
 
       const payload = await this.jwtService.verifyAsync(token);
       const userId = payload.sub as string;
@@ -94,6 +113,11 @@ export class NotificationsGateway
         }
       }
     }
+
+    // Decrement IP connection count
+    const ip = client.handshake.address || 'unknown';
+    const count = this.ipConnectionCounts.get(ip) || 0;
+    if (count > 0) this.ipConnectionCounts.set(ip, count - 1);
 
     this.logger.log(`Client disconnected: ${client.id}`);
   }
