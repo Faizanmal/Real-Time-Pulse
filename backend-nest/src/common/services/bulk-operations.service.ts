@@ -410,7 +410,7 @@ export class BulkOperationsService {
             slug: `${config.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
             description: (config.config.description as string) || null,
             isPublic: (config.config.isPublic as boolean) ?? true,
-            layout: config.config.layout || [],
+            layout: (config.config.layout as any) || [],
             cacheRefreshInterval:
               (config.config.cacheRefreshInterval as number) || 30,
             createdById: userId,

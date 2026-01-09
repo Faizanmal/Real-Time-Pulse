@@ -25,7 +25,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 import { ScheduledReportsModule } from './scheduled-reports/scheduled-reports.module';
 import { ShareLinksModule } from './share-links/share-links.module';
 import { CommentsModule } from './comments/comments.module';
-import { TemplatesModule } from './templates/templates.module';
+// import { TemplatesModule } from './templates/templates.module';
 import { BillingModule } from './billing/billing.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { SecurityModule } from './security/security.module';
@@ -166,7 +166,7 @@ import firebaseConfig from './config/firebase.config';
     ApiMarketplaceModule,
     ShareLinksModule,
     CommentsModule,
-    TemplatesModule,
+    // TemplatesModule,
     BillingModule,
     AnalyticsModule,
     SecurityModule,

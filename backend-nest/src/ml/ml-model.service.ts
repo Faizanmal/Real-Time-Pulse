@@ -275,7 +275,7 @@ export class MLModelService {
       .map((f) => ({
         feature: f,
         importance: Math.random(),
-        direction: Math.random() > 0.5 ? 'positive' : 'negative',
+        direction: (Math.random() > 0.5 ? 'positive' : 'negative') as 'positive' | 'negative',
       }))
       .sort((a, b) => b.importance - a.importance);
 
@@ -430,7 +430,7 @@ export class MLModelService {
       .map((feature) => ({
         feature,
         importance: Math.random(),
-        direction: Math.random() > 0.5 ? 'positive' : 'negative',
+        direction: (Math.random() > 0.5 ? 'positive' : 'negative') as 'positive' | 'negative',
       }))
       .sort((a, b) => b.importance - a.importance);
   }

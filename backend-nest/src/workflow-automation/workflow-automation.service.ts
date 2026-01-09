@@ -278,13 +278,13 @@ export class WorkflowAutomationService {
         return this.sendEmail(action.config, triggerData);
 
       case 'send_notification':
-        return this.sendNotification(action.config, workspaceId);
+        return this.sendNotification(action.config);
 
       case 'create_alert':
-        return this.createAlert(action.config, workspaceId);
+        return this.createAlert(action.config);
 
       case 'update_widget':
-        return this.updateWidget(action.config, workspaceId);
+        return this.updateWidget(action.config);
 
       case 'webhook':
         return this.callWebhook(action.config, triggerData);

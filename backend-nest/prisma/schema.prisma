@@ -71,6 +71,18 @@ model User {
   aiConversations    AIConversation[]
   pushTokens         PushToken[]
   gamificationProfile GamificationProfile?
+  templates          Template[]
+  templateInstallations TemplateInstallation[]
+  templatePurchases  TemplatePurchase[]
+  authorEarnings     AuthorEarning[]
+  templateReviews    TemplateReview[]
+  dataExportRequests DataExportRequest[]
+  pointsTransactions PointsTransaction[]
+  challengeParticipants ChallengeParticipant[]
+  annotations       Annotation[]
+  commentReactions   CommentReaction[]
+  sentWorkspaceInvites WorkspaceInvite[] @relation("WorkspaceInviteInvitedBy")
+  operationLogs        OperationLog[]
 
   @@index([workspaceId])
   @@index([email])
@@ -158,6 +170,18 @@ model Workspace {
   iotDevices            IoTDevice[]
   edgeNodes             EdgeNode[]
   etlPipelines          ETLPipeline[]
+  whiteLabelConfig      WhiteLabelConfig?
+  customDomainRequests  CustomDomainRequest[]
+  challenges            Challenge[]
+  leaderboardArchives   LeaderboardArchive[]
+  usageRecords          UsageRecord[]
+  invoices              Invoice[]
+  usageAlerts           UsageAlert[]
+  usageTotals           UsageTotal[]
+  operationLogs         OperationLog[]
+  workspaceInvites      WorkspaceInvite[]
+  organizationId        String?
+  organization          Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 
   @@map("workspaces")
 }
@@ -280,6 +304,7 @@ enum IntegrationProvider {
   JIRA
   HUBSPOT
   SLACK
+  TEAMS
   MONDAY
   NOTION
   STRIPE
@@ -424,6 +449,7 @@ model Portal {
   aiPredictions    AIPrediction[]
   aiQueries        AIQuery[]
   arScenes         ARScene[]
+  templateInstallations TemplateInstallation[]
 
   @@unique([workspaceId, slug])
   @@index([workspaceId])
@@ -817,6 +843,9 @@ enum NotificationType {
   INTEGRATION_FAILED
   ALERT_TRIGGERED
   REPORT_GENERATED
+  ACHIEVEMENT
+  LEVEL_UP
+  USAGE_ALERT
 }
 
 // ========================================
@@ -1164,6 +1193,9 @@ model Comment {
   parentId String?
   parent   Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
   replies  Comment[] @relation("CommentThread")
+  
+  // Reactions
+  reactions CommentReaction[]
   
   // Status
   isEdited  Boolean   @default(false)
@@ -3317,3 +3349,486 @@ model RateLimitMetric {
   @@map("rate_limit_metrics")
 }
 
+// ========================================
+// TEMPLATES (Marketplace)
+// ========================================
+
+model Template {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  category    String?
+  tags        String[]
+  data        Json     // Template configuration
+  previewImage String?
+  price       Float    @default(0)
+  downloads   Int      @default(0)
+  rating      Float    @default(0)
+  status      String   @default("draft") // draft, published, archived
+  isPublic    Boolean  @default(false)
+
+  // Author
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  installations TemplateInstallation[]
+  purchases     TemplatePurchase[]
+  reviews       TemplateReview[]
+  earnings      AuthorEarning[]
+
+  @@index([authorId])
+  @@index([status])
+  @@index([isPublic])
+  @@map("templates")
+}
+
+model TemplateInstallation {
+  id String @id @default(uuid())
+
+  templateId String
+  template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  portalId String?
+  portal   Portal? @relation(fields: [portalId], references: [id], onDelete: SetNull)
+
+  installedAt DateTime @default(now())
+
+  @@unique([templateId, userId])
+  @@index([userId])
+  @@map("template_installations")
+}
+
+model TemplatePurchase {
+  id String @id @default(uuid())
+
+  templateId String
+  template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  buyerId String
+  buyer   User @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  amount    Float
+  currency  String    @default("USD")
+  purchasedAt DateTime @default(now())
+
+  @@unique([templateId, buyerId])
+  @@index([buyerId])
+  @@map("template_purchases")
+}
+
+model AuthorEarning {
+  id String @id @default(uuid())
+
+  authorId String
+  author   User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  templateId String?
+  template   Template? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  amount    Float
+  currency  String    @default("USD")
+  type      String    // purchase, subscription, etc.
+  earnedAt  DateTime  @default(now())
+
+  @@index([authorId])
+  @@map("author_earnings")
+}
+
+model TemplateReview {
+  id String @id @default(uuid())
+
+  templateId String
+  template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  reviewerId String
+  reviewer   User @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  rating  Int
+  comment String?
+  createdAt DateTime @default(now())
+
+  @@unique([templateId, reviewerId])
+  @@index([templateId])
+  @@map("template_reviews")
+}
+
+// ========================================
+// WHITE LABEL CONFIGURATION
+// ========================================
+
+model WhiteLabelConfig {
+  id String @id @default(uuid())
+
+  workspaceId String @unique
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // Branding
+  logoUrl         String?
+  faviconUrl      String?
+  primaryColor    String?
+  secondaryColor  String?
+  accentColor     String?
+
+  // Custom domain
+  customDomain    String? @unique
+  domainVerified  Boolean @default(false)
+  sslCertificate  String?
+
+  // Email branding
+  emailFromName   String?
+  emailFromEmail  String?
+
+  // Portal settings
+  portalTitle     String?
+  portalSubtitle  String?
+
+  // Features
+  enabledFeatures String[] @default([])
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("white_label_configs")
+}
+
+model CustomDomainRequest {
+  id String @id @default(uuid())
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  domain      String
+  status      String @default("pending") // pending, verifying, active, rejected
+  requestedAt DateTime @default(now())
+  verifiedAt  DateTime?
+  rejectedAt  DateTime?
+  rejectReason String?
+
+  @@unique([workspaceId, domain])
+  @@index([workspaceId])
+  @@map("custom_domain_requests")
+}
+
+// ========================================
+// DATA EXPORT REQUESTS
+// ========================================
+
+model DataExportRequest {
+  id String @id @default(uuid())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status     String   @default("pending") // pending, processing, completed, failed
+  format     String   @default("json")    // json, csv
+  requestedAt DateTime @default(now())
+  completedAt DateTime?
+  downloadUrl String?
+
+  // Request details
+  includePersonalData Boolean @default(true)
+  includeAnalytics    Boolean @default(false)
+  dateRange           Json? // { start: Date, end: Date }
+
+  @@index([userId])
+  @@index([status])
+  @@map("data_export_requests")
+}
+
+// ========================================
+// GAMIFICATION EXTENSIONS
+// ========================================
+
+model PointsTransaction {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  amount    Int
+  type      String   // 'earned', 'spent', 'bonus', 'penalty'
+  reason    String
+  reference String?  // Reference to related entity (achievement, challenge, etc.)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([type])
+  @@map("points_transactions")
+}
+
+model Challenge {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  type        String   // 'daily', 'weekly', 'monthly', 'custom'
+  category    String   // 'engagement', 'productivity', 'learning', etc.
+
+  // Challenge configuration
+  targetValue   Int      @default(1)
+  pointsReward  Int      @default(10)
+  isActive      Boolean  @default(true)
+
+  // Time constraints
+  startDate DateTime?
+  endDate   DateTime?
+
+  // Relations
+  participants ChallengeParticipant[]
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([type])
+  @@index([isActive])
+  @@map("challenges")
+}
+
+model ChallengeParticipant {
+  id         String   @id @default(uuid())
+  challengeId String
+  challenge  Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  currentValue Int       @default(0)
+  completed    Boolean   @default(false)
+  completedAt  DateTime?
+
+  joinedAt DateTime @default(now())
+
+  @@unique([challengeId, userId])
+  @@index([userId])
+  @@index([completed])
+  @@map("challenge_participants")
+}
+
+model LeaderboardArchive {
+  id        String   @id @default(uuid())
+  period    String   // 'daily', 'weekly', 'monthly', 'yearly'
+  startDate DateTime
+  endDate   DateTime
+
+  // Archived rankings
+  rankings Json // Array of { userId, rank, points, achievements }
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([workspaceId])
+  @@index([period])
+  @@index([startDate])
+  @@map("leaderboard_archives")
+}
+
+// ========================================
+// ANNOTATIONS
+// ========================================
+
+model Annotation {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Target entity
+  entityType String // 'widget', 'portal', 'dashboard', etc.
+  entityId   String
+
+  // Annotation content
+  type      String   // 'note', 'highlight', 'tag', 'comment'
+  content   String
+  position  Json?    // Position data for UI rendering
+  metadata  Json?    // Additional metadata
+
+  // Visibility
+  isPrivate Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@map("annotations")
+}
+
+// ========================================
+// BILLING EXTENSIONS
+// ========================================
+
+model UsageRecord {
+  id        String   @id @default(uuid())
+  workspaceId String
+  workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  metric    String   // 'api_calls', 'storage_gb', 'users', etc.
+  value     Float
+  unit      String?  // 'count', 'gb', 'mb', etc.
+
+  recordedAt DateTime @default(now())
+  periodStart DateTime?
+  periodEnd   DateTime?
+
+  @@index([workspaceId])
+  @@index([metric])
+  @@index([recordedAt])
+  @@map("usage_records")
+}
+
+model Invoice {
+  id        String   @id @default(uuid())
+  workspaceId String
+  workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  stripeInvoiceId String? @unique
+  amount          Float
+  currency        String   @default("usd")
+  status          String   // 'draft', 'open', 'paid', 'void', 'uncollectible'
+
+  issuedAt    DateTime?
+  dueAt       DateTime?
+  paidAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([stripeInvoiceId])
+  @@map("invoices")
+}
+
+model UsageAlert {
+  id        String   @id @default(uuid())
+  workspaceId String
+  workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  metric      String   // 'api_calls', 'storage_gb', etc.
+  threshold   Float
+  currentValue Float
+  isActive    Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([metric])
+  @@map("usage_alerts")
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+
+  // Contact
+  email     String?
+  phone     String?
+
+  // Billing
+  stripeCustomerId String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  workspaces Workspace[]
+
+  @@map("organizations")
+}
+
+model UsageTotal {
+  id        String   @id @default(uuid())
+  workspaceId String
+  workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  metric    String   // 'api_calls', 'storage_gb', etc.
+  total     Float
+  period    String   // 'monthly', 'yearly', etc.
+
+  calculatedAt DateTime @default(now())
+
+  @@unique([workspaceId, metric, period])
+  @@index([workspaceId])
+  @@map("usage_totals")
+}
+
+// ========================================
+// COLLABORATION EXTENSIONS
+// ========================================
+
+model OperationLog {
+  id        String   @id @default(uuid())
+  workspaceId String
+  workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  operation String   // 'create', 'update', 'delete', etc.
+  entityType String  // 'widget', 'portal', 'comment', etc.
+  entityId   String
+
+  changes   Json?    // Before/after data
+  metadata  Json?    // Additional context
+
+  createdAt DateTime @default(now())
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@map("operation_logs")
+}
+
+model CommentReaction {
+  id        String   @id @default(uuid())
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      String   // 'like', 'dislike', 'heart', etc.
+
+  createdAt DateTime @default(now())
+
+  @@unique([commentId, userId])
+  @@index([userId])
+  @@map("comment_reactions")
+}
+
+model WorkspaceInvite {
+  id        String   @id @default(uuid())
+  workspaceId String
+  workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  email     String
+  role      WorkspaceRole @default(MEMBER)
+  token     String   @unique
+
+  invitedById String
+  invitedBy   User     @relation("WorkspaceInviteInvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime?
+  acceptedAt DateTime?
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+
+  @@index([workspaceId])
+  @@index([email])
+  @@index([token])
+  @@map("workspace_invites")
+}

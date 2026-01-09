@@ -129,7 +129,7 @@ export class VoiceService {
   /**
    * Process voice command
    */
-  processVoiceCommand(
+  async processVoiceCommand(
     workspaceId: string,
     transcript: string,
   ): Promise<{
@@ -142,14 +142,14 @@ export class VoiceService {
 
     if (!command) {
       return {
-        command: null,
+        command: null as VoiceCommand | null,
         response:
           "I didn't understand that command. Try saying 'Show sales dashboard' or 'Filter by last month'.",
       };
     }
 
     // Execute command
-    const result = this.commandService.executeCommand(workspaceId, command);
+    const result = await this.commandService.executeCommand(workspaceId, command);
 
     return {
       command,

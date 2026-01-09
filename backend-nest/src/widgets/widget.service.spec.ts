@@ -7,23 +7,23 @@ import { IntegrationService } from '../integrations/integration.service';
 describe('WidgetService', () => {
   let service: WidgetService;
   let prisma: jest.Mocked<PrismaService>;
-  // let cacheService: jest.Mocked<CacheService>;
+  let cacheService: jest.Mocked<CacheService>;
   let integrationService: jest.Mocked<IntegrationService>;
 
-  // const mockWidget = {
-  //   id: 'widget-1',
-  //   portalId: 'portal-1',
-  //   integrationId: 'integration-1',
-  //   type: 'CHART',
-  //   title: 'Test Widget',
-  //   config: { chartType: 'line' },
-  //   position: { x: 0, y: 0, w: 4, h: 3 },
-  //   isActive: true,
-  //   createdAt: new Date(),
-  //   updatedAt: new Date(),
-  //   cachedData: null,
-  //   dataCachedAt: null,
-  // };
+  const mockWidget = {
+    id: 'widget-1',
+    portalId: 'portal-1',
+    integrationId: 'integration-1',
+    type: 'CHART',
+    title: 'Test Widget',
+    config: { chartType: 'line' },
+    position: { x: 0, y: 0, w: 4, h: 3 },
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    cachedData: null,
+    dataCachedAt: null,
+  };
 
   const _mockIntegration = {
     id: 'integration-1',
