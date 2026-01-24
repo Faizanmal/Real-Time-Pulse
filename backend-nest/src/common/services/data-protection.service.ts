@@ -43,13 +43,7 @@ export class DataProtectionService {
     }
 
     // Derive a proper key using PBKDF2
-    return crypto.pbkdf2Sync(
-      key,
-      'data-protection-salt',
-      100000,
-      this.KEY_LENGTH,
-      'sha256',
-    );
+    return crypto.pbkdf2Sync(key, 'data-protection-salt', 100000, this.KEY_LENGTH, 'sha256');
   }
 
   /**
@@ -91,11 +85,7 @@ export class DataProtectionService {
       const decoded = Buffer.from(encoded, 'base64').toString('utf8');
       const { iv, tag, data }: FieldEncryption = JSON.parse(decoded);
 
-      const decipher = crypto.createDecipheriv(
-        this.ALGORITHM,
-        key,
-        Buffer.from(iv, 'hex'),
-      );
+      const decipher = crypto.createDecipheriv(this.ALGORITHM, key, Buffer.from(iv, 'hex'));
       decipher.setAuthTag(Buffer.from(tag, 'hex'));
 
       let decrypted = decipher.update(data, 'hex', 'utf8');
@@ -126,11 +116,7 @@ export class DataProtectionService {
     for (const [key, value] of Object.entries(result)) {
       if (typeof value === 'string' && this.isSensitiveField(key)) {
         (result as any)[key] = this.encrypt(value);
-      } else if (
-        typeof value === 'object' &&
-        value !== null &&
-        !Array.isArray(value)
-      ) {
+      } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
         (result as any)[key] = this.encryptObject(value);
       }
     }
@@ -147,11 +133,7 @@ export class DataProtectionService {
     for (const [key, value] of Object.entries(result)) {
       if (typeof value === 'string' && value.startsWith('encrypted:')) {
         (result as any)[key] = this.decrypt(value);
-      } else if (
-        typeof value === 'object' &&
-        value !== null &&
-        !Array.isArray(value)
-      ) {
+      } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
         (result as any)[key] = this.decryptObject(value);
       }
     }
@@ -163,24 +145,20 @@ export class DataProtectionService {
    * Hash sensitive data for logging/comparison
    */
   hashForLog(value: string): string {
-    return crypto
-      .createHash('sha256')
-      .update(value)
-      .digest('hex')
-      .substring(0, 16);
+    return crypto.createHash('sha256').update(value).digest('hex').substring(0, 16);
   }
 
   /**
    * Generate a secure random token
    */
-  generateSecureToken(length: number = 32): string {
+  generateSecureToken(length = 32): string {
     return crypto.randomBytes(length).toString('hex');
   }
 
   /**
    * Generate a secure API key
    */
-  generateApiKey(prefix: string = 'rtp'): string {
+  generateApiKey(prefix = 'rtp'): string {
     const random = crypto.randomBytes(24).toString('base64url');
     return `${prefix}_${random}`;
   }
@@ -198,16 +176,13 @@ export class DataProtectionService {
    */
   verifyHmac(data: string, signature: string): boolean {
     const computed = this.createHmac(data);
-    return crypto.timingSafeEqual(
-      Buffer.from(computed),
-      Buffer.from(signature),
-    );
+    return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(signature));
   }
 
   /**
    * Mask sensitive data for display
    */
-  mask(value: string, showLast: number = 4): string {
+  mask(value: string, showLast = 4): string {
     if (!value || value.length <= showLast) {
       return '*'.repeat(value?.length || 0);
     }
@@ -223,11 +198,7 @@ export class DataProtectionService {
     for (const [key, value] of Object.entries(result)) {
       if (this.isSensitiveField(key)) {
         (result as any)[key] = '[REDACTED]';
-      } else if (
-        typeof value === 'object' &&
-        value !== null &&
-        !Array.isArray(value)
-      ) {
+      } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
         (result as any)[key] = this.sanitizeForLog(value);
       }
     }

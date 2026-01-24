@@ -59,29 +59,17 @@ export class ProfitabilityService {
     }, 0);
 
     // Calculate expense costs
-    const expenseCosts = project.expenses.reduce(
-      (sum, expense) => sum + expense.amount,
-      0,
-    );
+    const expenseCosts = project.expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
     const totalCosts = laborCosts + expenseCosts;
     const grossProfit = totalRevenue - totalCosts;
-    const profitMargin =
-      totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+    const profitMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
     // Calculate utilization rate
-    const totalHours = project.timeEntries.reduce(
-      (sum, entry) => sum + entry.hours,
-      0,
-    );
-    const billableHours = billableEntries.reduce(
-      (sum, entry) => sum + entry.hours,
-      0,
-    );
-    const utilizationRate =
-      totalHours > 0 ? (billableHours / totalHours) * 100 : 0;
-    const billableRatio =
-      totalHours > 0 ? (billableHours / totalHours) * 100 : 0;
+    const totalHours = project.timeEntries.reduce((sum, entry) => sum + entry.hours, 0);
+    const billableHours = billableEntries.reduce((sum, entry) => sum + entry.hours, 0);
+    const utilizationRate = totalHours > 0 ? (billableHours / totalHours) * 100 : 0;
+    const billableRatio = totalHours > 0 ? (billableHours / totalHours) * 100 : 0;
 
     // Calculate profitability score (0-100)
     const profitabilityScore = this.calculateProfitabilityScore({
@@ -220,32 +208,28 @@ export class ProfitabilityService {
     }
 
     // Calculate averages
-    const clientScores = Array.from(clientMap.entries()).map(
-      ([clientName, data]) => {
-        const avgProfitMargin =
-          data.totalRevenue > 0
-            ? (data.totalProfit / data.totalRevenue) * 100
-            : 0;
+    const clientScores = Array.from(clientMap.entries()).map(([clientName, data]) => {
+      const avgProfitMargin =
+        data.totalRevenue > 0 ? (data.totalProfit / data.totalRevenue) * 100 : 0;
 
-        // Calculate client score based on total profitability
-        let clientScore = 0;
-        if (avgProfitMargin >= 30) clientScore = 100;
-        else if (avgProfitMargin >= 20) clientScore = 80;
-        else if (avgProfitMargin >= 10) clientScore = 60;
-        else if (avgProfitMargin >= 0) clientScore = 40;
-        else clientScore = 20;
+      // Calculate client score based on total profitability
+      let clientScore = 0;
+      if (avgProfitMargin >= 30) clientScore = 100;
+      else if (avgProfitMargin >= 20) clientScore = 80;
+      else if (avgProfitMargin >= 10) clientScore = 60;
+      else if (avgProfitMargin >= 0) clientScore = 40;
+      else clientScore = 20;
 
-        return {
-          clientName,
-          projectCount: data.projectCount,
-          totalRevenue: data.totalRevenue,
-          totalCosts: data.totalCosts,
-          totalProfit: data.totalProfit,
-          avgProfitMargin,
-          clientScore,
-        };
-      },
-    );
+      return {
+        clientName,
+        projectCount: data.projectCount,
+        totalRevenue: data.totalRevenue,
+        totalCosts: data.totalCosts,
+        totalProfit: data.totalProfit,
+        avgProfitMargin,
+        clientScore,
+      };
+    });
 
     return clientScores.sort((a, b) => b.clientScore - a.clientScore);
   }
@@ -294,13 +278,9 @@ export class ProfitabilityService {
       totalHours: metrics.totalHours,
       billableHours: metrics.billableHours,
       utilizationRate:
-        metrics.totalHours > 0
-          ? (metrics.billableHours / metrics.totalHours) * 100
-          : 0,
+        metrics.totalHours > 0 ? (metrics.billableHours / metrics.totalHours) * 100 : 0,
       efficiency:
-        metrics.billableHours > 0
-          ? Math.min(100, (metrics.billableHours / 160) * 100)
-          : 0, // 160 hours = 4 weeks
+        metrics.billableHours > 0 ? Math.min(100, (metrics.billableHours / 160) * 100) : 0, // 160 hours = 4 weeks
     }));
   }
 
@@ -332,21 +312,11 @@ export class ProfitabilityService {
       },
     });
 
-    const totalRevenue = projects.reduce(
-      (sum, p) => sum + (p.profitability?.totalRevenue || 0),
-      0,
-    );
-    const totalCosts = projects.reduce(
-      (sum, p) => sum + (p.profitability?.totalCosts || 0),
-      0,
-    );
-    const totalProfit = projects.reduce(
-      (sum, p) => sum + (p.profitability?.grossProfit || 0),
-      0,
-    );
+    const totalRevenue = projects.reduce((sum, p) => sum + (p.profitability?.totalRevenue || 0), 0);
+    const totalCosts = projects.reduce((sum, p) => sum + (p.profitability?.totalCosts || 0), 0);
+    const totalProfit = projects.reduce((sum, p) => sum + (p.profitability?.grossProfit || 0), 0);
 
-    const avgProfitMargin =
-      totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+    const avgProfitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
 
     const profitableProjects = projects.filter(
       (p) => (p.profitability?.grossProfit || 0) > 0,

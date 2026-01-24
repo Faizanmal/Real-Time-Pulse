@@ -1,9 +1,4 @@
-import {
-  PipeTransform,
-  Injectable,
-  ArgumentMetadata,
-  BadRequestException,
-} from '@nestjs/common';
+import { PipeTransform, Injectable, ArgumentMetadata, BadRequestException } from '@nestjs/common';
 
 export interface FileValidationOptions {
   maxSize?: number; // in bytes
@@ -23,24 +18,17 @@ export class FileValidationPipe implements PipeTransform {
     // Log metadata for debugging
     if (metadata.type) {
       // Metadata contains information about the parameter being validated
-      console.log(
-        `Validating file from ${metadata.type}: ${metadata.data || 'unknown'}`,
-      );
+      console.log(`Validating file from ${metadata.type}: ${metadata.data || 'unknown'}`);
     }
 
     // Validate file size
     if (this.options.maxSize && value.size > this.options.maxSize) {
       const maxSizeMB = (this.options.maxSize / (1024 * 1024)).toFixed(2);
-      throw new BadRequestException(
-        `File size exceeds maximum allowed size of ${maxSizeMB}MB`,
-      );
+      throw new BadRequestException(`File size exceeds maximum allowed size of ${maxSizeMB}MB`);
     }
 
     // Validate MIME type
-    if (
-      this.options.allowedMimeTypes &&
-      this.options.allowedMimeTypes.length > 0
-    ) {
+    if (this.options.allowedMimeTypes && this.options.allowedMimeTypes.length > 0) {
       if (!this.options.allowedMimeTypes.includes(value.mimetype)) {
         throw new BadRequestException(
           `File type ${value.mimetype} is not allowed. Allowed types: ${this.options.allowedMimeTypes.join(', ')}`,
@@ -49,15 +37,9 @@ export class FileValidationPipe implements PipeTransform {
     }
 
     // Validate file extension
-    if (
-      this.options.allowedExtensions &&
-      this.options.allowedExtensions.length > 0
-    ) {
+    if (this.options.allowedExtensions && this.options.allowedExtensions.length > 0) {
       const fileExtension = value.originalname.split('.').pop()?.toLowerCase();
-      if (
-        !fileExtension ||
-        !this.options.allowedExtensions.includes(fileExtension)
-      ) {
+      if (!fileExtension || !this.options.allowedExtensions.includes(fileExtension)) {
         throw new BadRequestException(
           `File extension .${fileExtension} is not allowed. Allowed extensions: ${this.options.allowedExtensions.join(', ')}`,
         );

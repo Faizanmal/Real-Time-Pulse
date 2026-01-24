@@ -17,21 +17,29 @@ const eslintConfig = defineConfig([
   {
     rules: {
       // Relax strict rules for production codebase
-      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
-      "react/no-unescaped-entities": "off",
+      "react/no-unescaped-entities": "error",
       // Disable React Compiler/hooks strict rules for existing codebase
-      "react-hooks/set-state-in-effect": "off",
-      "react-hooks/immutability": "off", 
-      "react-hooks/use-memo": "off",
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/immutability": "error", 
+      "react-hooks/use-memo": "error",
       "react-compiler/react-compiler": "off",
+      // Additional rules for better code quality
+      "prefer-const": "error",
+      "@typescript-eslint/no-inferrable-types": "warn",
+      "react/jsx-key": "error",
+      "@typescript-eslint/explicit-function-return-type": ["off", { allowExpressions: true }],
+      "@typescript-eslint/no-magic-numbers": ["off", { ignore: [0, 1, -1] }],
+      "react/jsx-no-duplicate-props": "warn",
+      "react/jsx-no-undef": "warn",
     },
   },
-  // Disable React Compiler plugin errors entirely
+  // Disable any for test/mocks files
   {
-    files: ["**/*.tsx", "**/*.ts"],
+    files: ["src/mocks/**", "**/*.test.ts", "**/*.spec.ts"],
     rules: {
-      "react-compiler/react-compiler": "off",
+      "@typescript-eslint/no-explicit-any": "off",
     },
   },
 ]);

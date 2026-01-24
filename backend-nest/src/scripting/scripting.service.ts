@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { ScriptSandboxService } from './script-sandbox.service';
@@ -54,17 +50,11 @@ export class ScriptingService {
   /**
    * Create a new script
    */
-  async createScript(
-    workspaceId: string,
-    userId: string,
-    dto: CreateScriptDto,
-  ) {
+  async createScript(workspaceId: string, userId: string, dto: CreateScriptDto) {
     // Validate code before saving
     const validationResult = await this.validateScript(dto.code);
     if (!validationResult.valid) {
-      throw new BadRequestException(
-        `Invalid script: ${validationResult.errors.join(', ')}`,
-      );
+      throw new BadRequestException(`Invalid script: ${validationResult.errors.join(', ')}`);
     }
 
     // Store script in cache (since we don't have a Script model in Prisma yet)
@@ -96,11 +86,7 @@ export class ScriptingService {
     // Add to workspace scripts index
     const scriptsIndex = await this.getWorkspaceScriptsIndex(workspaceId);
     scriptsIndex.push(scriptId);
-    await this.cache.set(
-      `scripts:index:${workspaceId}`,
-      JSON.stringify(scriptsIndex),
-      86400 * 30,
-    );
+    await this.cache.set(`scripts:index:${workspaceId}`, JSON.stringify(scriptsIndex), 86400 * 30);
 
     // Save initial version
     await this.saveScriptVersion(workspaceId, scriptId, {
@@ -122,9 +108,7 @@ export class ScriptingService {
 
     const scripts = await Promise.all(
       scriptsIndex.map(async (scriptId) => {
-        const scriptJson = await this.cache.get(
-          `script:${workspaceId}:${scriptId}`,
-        );
+        const scriptJson = await this.cache.get(`script:${workspaceId}:${scriptId}`);
         return scriptJson ? JSON.parse(scriptJson) : null;
       }),
     );
@@ -136,9 +120,7 @@ export class ScriptingService {
    * Get a script by ID
    */
   async getScript(workspaceId: string, scriptId: string) {
-    const scriptJson = await this.cache.get(
-      `script:${workspaceId}:${scriptId}`,
-    );
+    const scriptJson = await this.cache.get(`script:${workspaceId}:${scriptId}`);
 
     if (!scriptJson) {
       throw new NotFoundException('Script not found');
@@ -150,21 +132,14 @@ export class ScriptingService {
   /**
    * Update a script
    */
-  async updateScript(
-    workspaceId: string,
-    scriptId: string,
-    userId: string,
-    dto: UpdateScriptDto,
-  ) {
+  async updateScript(workspaceId: string, scriptId: string, userId: string, dto: UpdateScriptDto) {
     const script = await this.getScript(workspaceId, scriptId);
 
     // Validate new code if provided
     if (dto.code) {
       const validationResult = await this.validateScript(dto.code);
       if (!validationResult.valid) {
-        throw new BadRequestException(
-          `Invalid script: ${validationResult.errors.join(', ')}`,
-        );
+        throw new BadRequestException(`Invalid script: ${validationResult.errors.join(', ')}`);
       }
 
       // Save new version if code changed
@@ -205,11 +180,7 @@ export class ScriptingService {
     // Remove from index
     const scriptsIndex = await this.getWorkspaceScriptsIndex(workspaceId);
     const newIndex = scriptsIndex.filter((id) => id !== scriptId);
-    await this.cache.set(
-      `scripts:index:${workspaceId}`,
-      JSON.stringify(newIndex),
-      86400 * 30,
-    );
+    await this.cache.set(`scripts:index:${workspaceId}`, JSON.stringify(newIndex), 86400 * 30);
 
     // Remove versions
     await this.cache.del(`script:versions:${workspaceId}:${scriptId}`);
@@ -220,23 +191,14 @@ export class ScriptingService {
   /**
    * Execute a script
    */
-  async executeScript(
-    workspaceId: string,
-    scriptId: string,
-    dto: ExecuteScriptDto,
-  ) {
+  async executeScript(workspaceId: string, scriptId: string, dto: ExecuteScriptDto) {
     const script = await this.getScript(workspaceId, scriptId);
 
     // Validate input against schema
     if (script.inputSchema && Object.keys(script.inputSchema).length > 0) {
-      const validation = this.sandbox.validateInput(
-        dto.input || {},
-        script.inputSchema,
-      );
+      const validation = this.sandbox.validateInput(dto.input || {}, script.inputSchema);
       if (!validation.valid) {
-        throw new BadRequestException(
-          `Invalid input: ${validation.errors.join(', ')}`,
-        );
+        throw new BadRequestException(`Invalid input: ${validation.errors.join(', ')}`);
       }
     }
 
@@ -275,9 +237,7 @@ export class ScriptingService {
     });
 
     if (!executionResult.success) {
-      throw new BadRequestException(
-        `Script execution failed: ${executionResult.error}`,
-      );
+      throw new BadRequestException(`Script execution failed: ${executionResult.error}`);
     }
 
     return {
@@ -290,9 +250,7 @@ export class ScriptingService {
   /**
    * Validate a script without executing it
    */
-  async validateScript(
-    code: string,
-  ): Promise<{ valid: boolean; errors: string[] }> {
+  async validateScript(code: string): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
 
     try {
@@ -357,25 +315,15 @@ export class ScriptingService {
   /**
    * Get script versions
    */
-  async getScriptVersions(
-    workspaceId: string,
-    scriptId: string,
-  ): Promise<ScriptVersion[]> {
-    const versionsJson = await this.cache.get(
-      `script:versions:${workspaceId}:${scriptId}`,
-    );
+  async getScriptVersions(workspaceId: string, scriptId: string): Promise<ScriptVersion[]> {
+    const versionsJson = await this.cache.get(`script:versions:${workspaceId}:${scriptId}`);
     return versionsJson ? JSON.parse(versionsJson) : [];
   }
 
   /**
    * Rollback to a specific version
    */
-  async rollbackScript(
-    workspaceId: string,
-    scriptId: string,
-    version: number,
-    userId: string,
-  ) {
+  async rollbackScript(workspaceId: string, scriptId: string, version: number, userId: string) {
     const versions = await this.getScriptVersions(workspaceId, scriptId);
     const targetVersion = versions.find((v) => v.version === version);
 
@@ -407,9 +355,7 @@ export class ScriptingService {
   /**
    * Helper: Get workspace scripts index
    */
-  private async getWorkspaceScriptsIndex(
-    workspaceId: string,
-  ): Promise<string[]> {
+  private async getWorkspaceScriptsIndex(workspaceId: string): Promise<string[]> {
     const indexJson = await this.cache.get(`scripts:index:${workspaceId}`);
     return indexJson ? JSON.parse(indexJson) : [];
   }
@@ -417,11 +363,7 @@ export class ScriptingService {
   /**
    * Helper: Save script version
    */
-  private async saveScriptVersion(
-    workspaceId: string,
-    scriptId: string,
-    version: ScriptVersion,
-  ) {
+  private async saveScriptVersion(workspaceId: string, scriptId: string, version: ScriptVersion) {
     const versions = await this.getScriptVersions(workspaceId, scriptId);
     versions.push(version);
 
@@ -443,9 +385,7 @@ export class ScriptingService {
     scriptId: string,
     data: { success: boolean; executionTime: number; error?: string },
   ) {
-    const logsJson = await this.cache.get(
-      `script:logs:${workspaceId}:${scriptId}`,
-    );
+    const logsJson = await this.cache.get(`script:logs:${workspaceId}:${scriptId}`);
     const logs = logsJson ? JSON.parse(logsJson) : [];
 
     logs.push({

@@ -47,7 +47,7 @@ export interface FeedbackPayload {
 // STREAMING AI HOOK
 // ============================================================================
 
-export function useAIStream(apiUrl: string = '/api/ai-insights/stream') {
+export function useAIStream(apiUrl = '/api/ai-insights/stream') {
   const [state, setState] = useState<StreamState>({
     isStreaming: false,
     content: '',

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { 
   CreditCard, Check, Download, Zap, Users, Database, 
   Globe, AlertTriangle, Crown, Sparkles, Calendar, Receipt
@@ -292,12 +292,7 @@ export default function BillingPage() {
       {/* Upgrade Dialog */}
       <Dialog open={upgradeDialogOpen} onOpenChange={setUpgradeDialogOpen}>
         <DialogContent>
-          <DialogHeader>
             <DialogTitle>Upgrade to {selectedPlan?.name}</DialogTitle>
-            <DialogDescription>
-              You'll be redirected to our secure payment page
-            </DialogDescription>
-          </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="rounded-lg border p-4">
               <div className="flex justify-between mb-2">

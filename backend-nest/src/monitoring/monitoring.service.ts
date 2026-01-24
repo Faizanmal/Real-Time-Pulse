@@ -26,7 +26,7 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
   private histograms: Map<string, LatencyBucket[]> = new Map();
   private gauges: Map<string, number> = new Map();
   private flushInterval: NodeJS.Timeout;
-  
+
   // APM client (DataDog, New Relic, etc.)
   private apmClient: any;
 
@@ -45,7 +45,7 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
     if (this.flushInterval) {
       clearInterval(this.flushInterval);
     }
-    this.flushMetrics();
+    void this.flushMetrics();
   }
 
   /**
@@ -127,7 +127,7 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
   /**
    * Increment a counter metric
    */
-  incrementCounter(name: string, value: number = 1, tags?: Record<string, string>) {
+  incrementCounter(name: string, value = 1, tags?: Record<string, string>) {
     const key = this.getMetricKey(name, tags);
     const current = this.counters.get(key) || 0;
     this.counters.set(key, current + value);
@@ -147,13 +147,13 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
   recordHistogram(name: string, value: number, tags?: Record<string, string>) {
     const key = this.getMetricKey(name, tags);
     const buckets = this.histograms.get(key) || this.createDefaultBuckets();
-    
+
     for (const bucket of buckets) {
       if (value <= bucket.le) {
         bucket.count++;
       }
     }
-    
+
     this.histograms.set(key, buckets);
   }
 
@@ -165,7 +165,7 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
     path: string,
     statusCode: number,
     duration: number,
-    userId?: string,
+    _userId?: string,
   ) {
     const tags = {
       method,
@@ -191,14 +191,9 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
   /**
    * Track database query metrics
    */
-  trackDatabaseQuery(
-    operation: string,
-    table: string,
-    duration: number,
-    success: boolean,
-  ) {
+  trackDatabaseQuery(operation: string, table: string, duration: number, success: boolean) {
     const tags = { operation, table, success: String(success) };
-    
+
     this.incrementCounter('database_queries_total', 1, tags);
     this.recordHistogram('database_query_duration_seconds', duration / 1000, tags);
 
@@ -221,7 +216,7 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
   trackWebSocket(event: 'connect' | 'disconnect' | 'message', namespace?: string) {
     const tags = { event, namespace: namespace || 'default' };
     this.incrementCounter('websocket_events_total', 1, tags);
-    
+
     if (event === 'connect') {
       const current = this.gauges.get('websocket_connections') || 0;
       this.setGauge('websocket_connections', current + 1);
@@ -234,11 +229,7 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
   /**
    * Track background job metrics
    */
-  trackJob(
-    jobName: string,
-    status: 'started' | 'completed' | 'failed',
-    duration?: number,
-  ) {
+  trackJob(jobName: string, status: 'started' | 'completed' | 'failed', duration?: number) {
     const tags = { job: jobName, status };
     this.incrementCounter('background_jobs_total', 1, tags);
 
@@ -250,14 +241,9 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
   /**
    * Track external API calls
    */
-  trackExternalApi(
-    service: string,
-    endpoint: string,
-    statusCode: number,
-    duration: number,
-  ) {
+  trackExternalApi(service: string, endpoint: string, statusCode: number, duration: number) {
     const tags = { service, endpoint, status: String(statusCode) };
-    
+
     this.incrementCounter('external_api_calls_total', 1, tags);
     this.recordHistogram('external_api_duration_seconds', duration / 1000, tags);
 
@@ -293,28 +279,30 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
    */
   getPrometheusMetrics(): string {
     const lines: string[] = [];
-    
+
     // Counters
     for (const [key, value] of this.counters) {
       const { name, tags } = this.parseMetricKey(key);
       const tagsStr = this.formatPrometheusTags(tags);
       lines.push(`${name}${tagsStr} ${value}`);
     }
-    
+
     // Gauges
     for (const [key, value] of this.gauges) {
       const { name, tags } = this.parseMetricKey(key);
       const tagsStr = this.formatPrometheusTags(tags);
       lines.push(`${name}${tagsStr} ${value}`);
     }
-    
+
     // Histograms
     for (const [key, buckets] of this.histograms) {
       const { name, tags } = this.parseMetricKey(key);
       const tagsStr = this.formatPrometheusTags(tags);
-      
+
       for (const bucket of buckets) {
-        const bucketTags = tagsStr ? tagsStr.slice(0, -1) + `,le="${bucket.le}"}` : `{le="${bucket.le}"}`;
+        const bucketTags = tagsStr
+          ? tagsStr.slice(0, -1) + `,le="${bucket.le}"}`
+          : `{le="${bucket.le}"}`;
         lines.push(`${name}_bucket${bucketTags} ${bucket.count}`);
       }
     }
@@ -327,9 +315,9 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
    */
   private startMetricsFlush() {
     const flushIntervalMs = this.configService.get<number>('monitoring.flushInterval') || 60000;
-    
+
     this.flushInterval = setInterval(() => {
-      this.flushMetrics();
+      void this.flushMetrics();
     }, flushIntervalMs);
   }
 
@@ -359,7 +347,7 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
     const formattedMetrics: any[] = [];
 
     for (const [key, value] of Object.entries(metrics.counters)) {
-      const { name, tags } = this.parseMetricKey(key as string);
+      const { name, tags } = this.parseMetricKey(key);
       formattedMetrics.push({
         metric: `realtimepulse.${name}`,
         type: 0, // Count
@@ -369,7 +357,7 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
     }
 
     for (const [key, value] of Object.entries(metrics.gauges)) {
-      const { name, tags } = this.parseMetricKey(key as string);
+      const { name, tags } = this.parseMetricKey(key);
       formattedMetrics.push({
         metric: `realtimepulse.${name}`,
         type: 1, // Gauge
@@ -393,17 +381,17 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
   private parseMetricKey(key: string): { name: string; tags: Record<string, string> } {
     const match = key.match(/^([^{]+)(?:\{(.+)\})?$/);
     if (!match) return { name: key, tags: {} };
-    
+
     const name = match[1];
     const tags: Record<string, string> = {};
-    
+
     if (match[2]) {
       match[2].split(',').forEach((pair) => {
         const [k, v] = pair.split('=');
         if (k && v) tags[k] = v;
       });
     }
-    
+
     return { name, tags };
   }
 

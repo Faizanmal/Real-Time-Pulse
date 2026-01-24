@@ -12,13 +12,7 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiParam,
-  ApiConsumes,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiConsumes } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { VoiceService } from './voice.service';
 import { VoiceCommandService } from './voice-command.service';
@@ -47,14 +41,8 @@ export class VoiceController {
 
   @Post('command')
   @ApiOperation({ summary: 'Process voice command' })
-  async processCommand(
-    @Request() req: { user: RequestUser },
-    @Body() dto: { transcript: string },
-  ) {
-    return this.voiceService.processVoiceCommand(
-      req.user.workspaceId,
-      dto.transcript,
-    );
+  async processCommand(@Request() req: { user: RequestUser }, @Body() dto: { transcript: string }) {
+    return this.voiceService.processVoiceCommand(req.user.workspaceId, dto.transcript);
   }
 
   @Post('synthesize')
@@ -84,20 +72,13 @@ export class VoiceController {
       timestamp?: number;
     },
   ) {
-    return this.voiceService.createAnnotation(
-      req.user.workspaceId,
-      req.user.id,
-      dto,
-    );
+    return this.voiceService.createAnnotation(req.user.workspaceId, req.user.id, dto);
   }
 
   @Get('annotations/:portalId')
   @ApiOperation({ summary: 'Get annotations for a portal' })
   @ApiParam({ name: 'portalId', description: 'Portal ID' })
-  async getAnnotations(
-    @Request() req: { user: RequestUser },
-    @Param('portalId') portalId: string,
-  ) {
+  async getAnnotations(@Request() req: { user: RequestUser }, @Param('portalId') portalId: string) {
     return this.voiceService.getAnnotations(req.user.workspaceId, portalId);
   }
 
@@ -110,11 +91,7 @@ export class VoiceController {
     @Param('portalId') portalId: string,
     @Param('annotationId') annotationId: string,
   ) {
-    await this.voiceService.deleteAnnotation(
-      req.user.workspaceId,
-      portalId,
-      annotationId,
-    );
+    await this.voiceService.deleteAnnotation(req.user.workspaceId, portalId, annotationId);
     return { success: true };
   }
 
@@ -138,9 +115,7 @@ export class VoiceController {
 
   @Post('accessibility/describe')
   @ApiOperation({ summary: 'Generate accessibility description for widget' })
-  generateDescription(
-    @Body() dto: { widgetType: string; widgetData: Record<string, unknown> },
-  ) {
+  generateDescription(@Body() dto: { widgetType: string; widgetData: Record<string, unknown> }) {
     const description = this.voiceService.generateAccessibilityDescription(
       dto.widgetType,
       dto.widgetData,

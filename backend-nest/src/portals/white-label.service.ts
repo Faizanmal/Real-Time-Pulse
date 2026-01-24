@@ -14,14 +14,14 @@ interface WhiteLabelConfig {
   id: string;
   organizationId: string;
   enabled: boolean;
-  
+
   // Branding
   branding: {
     companyName: string;
     logo: { light: string; dark: string };
     favicon: string;
     tagline?: string;
-    
+
     // Colors
     colors: {
       primary: string;
@@ -34,25 +34,25 @@ interface WhiteLabelConfig {
       surface: { light: string; dark: string };
       text: { light: string; dark: string };
     };
-    
+
     // Typography
     fonts: {
       heading: string;
       body: string;
       mono?: string;
     };
-    
+
     // Border radius
     borderRadius: 'none' | 'small' | 'medium' | 'large' | 'full';
   };
-  
+
   // Domain & URLs
   domain: {
     customDomain?: string;
     sslEnabled: boolean;
     subdomain?: string;
   };
-  
+
   // Email customization
   email: {
     fromName: string;
@@ -60,7 +60,7 @@ interface WhiteLabelConfig {
     replyTo?: string;
     templates: Record<string, { subject: string; header: string; footer: string }>;
   };
-  
+
   // Features
   features: {
     hidePoweredBy: boolean;
@@ -71,7 +71,7 @@ interface WhiteLabelConfig {
     customPrivacyUrl?: string;
     customSupportUrl?: string;
   };
-  
+
   // Advanced
   advanced: {
     customCss?: string;
@@ -121,9 +121,8 @@ export class WhiteLabelService {
     const cached = await this.cache.get(cacheKey);
     if (cached) return JSON.parse(cached);
 
-    // @ts-ignore
     const config = await this.prisma.whiteLabelConfig.findUnique({
-      where: { organizationId },
+      where: { organizationId } as any,
     });
 
     if (config) {
@@ -143,12 +142,9 @@ export class WhiteLabelService {
 
     const config = await this.prisma.whiteLabelConfig.findFirst({
       where: {
-        OR: [
-          { domain: { customDomain: domain } },
-          { domain: { subdomain: domain.split('.')[0] } },
-        ],
+        OR: [{ domain: { customDomain: domain } }, { domain: { subdomain: domain.split('.')[0] } }],
         enabled: true,
-      },
+      } as any,
     });
 
     if (config) {
@@ -166,13 +162,13 @@ export class WhiteLabelService {
     config: Partial<WhiteLabelConfig>,
   ): Promise<WhiteLabelConfig> {
     const existing = await this.prisma.whiteLabelConfig.findUnique({
-      where: { organizationId },
+      where: { organizationId } as any,
     });
 
     let result;
     if (existing) {
       result = await this.prisma.whiteLabelConfig.update({
-        where: { organizationId },
+        where: { organizationId } as any,
         data: {
           ...config,
           updatedAt: new Date(),
@@ -209,8 +205,8 @@ export class WhiteLabelService {
    */
   async setEnabled(organizationId: string, enabled: boolean): Promise<void> {
     await this.prisma.whiteLabelConfig.update({
-      where: { organizationId },
-      data: { enabled, updatedAt: new Date() },
+      where: { organizationId } as any,
+      data: { enabled, updatedAt: new Date() } as any,
     });
 
     await this.cache.del(`whitelabel:${organizationId}`);
@@ -221,10 +217,7 @@ export class WhiteLabelService {
   /**
    * Request a custom domain
    */
-  async requestCustomDomain(
-    organizationId: string,
-    domain: string,
-  ): Promise<CustomDomainStatus> {
+  async requestCustomDomain(organizationId: string, domain: string): Promise<CustomDomainStatus> {
     // Validate domain format
     if (!this.isValidDomain(domain)) {
       throw new BadRequestException('Invalid domain format');
@@ -232,10 +225,10 @@ export class WhiteLabelService {
 
     // Check if domain is already in use
     const existing = await this.prisma.whiteLabelConfig.findFirst({
-      where: { domain: { customDomain: domain } },
+      where: { domain: { customDomain: domain } } as any,
     });
 
-    if (existing && existing.organizationId !== organizationId) {
+    if (existing && (existing as any).organizationId !== organizationId) {
       throw new BadRequestException('Domain is already in use');
     }
 
@@ -258,7 +251,7 @@ export class WhiteLabelService {
 
     // Save domain request
     await this.prisma.customDomainRequest.upsert({
-      where: { organizationId },
+      where: { organizationId } as any,
       create: {
         id: uuidv4(),
         organizationId,
@@ -267,14 +260,14 @@ export class WhiteLabelService {
         verificationToken,
         dnsRecords: dnsRecords as any,
         createdAt: new Date(),
-      },
+      } as any,
       update: {
         domain,
         status: 'pending',
         verificationToken,
         dnsRecords: dnsRecords as any,
         updatedAt: new Date(),
-      },
+      } as any,
     });
 
     return {
@@ -290,7 +283,7 @@ export class WhiteLabelService {
    */
   async verifyCustomDomain(organizationId: string): Promise<CustomDomainStatus> {
     const request = await this.prisma.customDomainRequest.findUnique({
-      where: { organizationId },
+      where: { organizationId } as any,
     });
 
     if (!request) {
@@ -313,18 +306,18 @@ export class WhiteLabelService {
           sslStatus: 'issued',
           dnsRecords: dnsRecords as any,
           verifiedAt: new Date(),
-        },
+        } as any,
       });
 
       // Update white-label config
       await this.prisma.whiteLabelConfig.update({
-        where: { organizationId },
+        where: { organizationId } as any,
         data: {
           domain: {
             customDomain: request.domain,
             sslEnabled: true,
           } as any,
-        },
+        } as any,
       });
 
       await this.cache.del(`whitelabel:${organizationId}`);
@@ -344,7 +337,7 @@ export class WhiteLabelService {
    */
   async getCustomDomainStatus(organizationId: string): Promise<CustomDomainStatus | null> {
     const request = await this.prisma.customDomainRequest.findUnique({
-      where: { organizationId },
+      where: { organizationId } as any,
     });
 
     if (!request) return null;
@@ -375,7 +368,7 @@ export class WhiteLabelService {
     const updatedBranding = { ...config.branding, ...branding };
 
     await this.prisma.whiteLabelConfig.update({
-      where: { organizationId },
+      where: { organizationId } as any,
       data: { branding: updatedBranding as any, updatedAt: new Date() },
     });
 
@@ -444,7 +437,7 @@ export class WhiteLabelService {
     const updatedEmail = { ...config.email, ...email };
 
     await this.prisma.whiteLabelConfig.update({
-      where: { organizationId },
+      where: { organizationId } as any,
       data: { email: updatedEmail as any, updatedAt: new Date() },
     });
 
@@ -458,14 +451,21 @@ export class WhiteLabelService {
   async getEmailTemplate(
     organizationId: string,
     templateName: string,
-  ): Promise<{ subject: string; header: string; footer: string; fromName: string; fromEmail: string }> {
+  ): Promise<{
+    subject: string;
+    header: string;
+    footer: string;
+    fromName: string;
+    fromEmail: string;
+  }> {
     const config = await this.getConfig(organizationId);
 
     if (!config || !config.enabled) {
-      return this.getDefaultEmailTemplate(templateName);
+      return this.getDefaultEmailTemplate(templateName) as any;
     }
 
-    const template = config.email.templates[templateName] || this.getDefaultEmailTemplate(templateName);
+    const template =
+      config.email.templates[templateName] || this.getDefaultEmailTemplate(templateName);
 
     return {
       ...template,
@@ -482,8 +482,8 @@ export class WhiteLabelService {
   async uploadAsset(
     organizationId: string,
     assetType: 'logo-light' | 'logo-dark' | 'favicon',
-    file: Buffer,
-    mimeType: string,
+    _file: Buffer,
+    _mimeType: string,
   ): Promise<string> {
     // In production, upload to CDN/S3
     const filename = `${organizationId}/${assetType}-${Date.now()}`;
@@ -500,15 +500,13 @@ export class WhiteLabelService {
   /**
    * Generate preview of white-label configuration
    */
-  async generatePreview(config: Partial<WhiteLabelConfig>): Promise<{ previewUrl: string; expiresAt: Date }> {
+  async generatePreview(
+    config: Partial<WhiteLabelConfig>,
+  ): Promise<{ previewUrl: string; expiresAt: Date }> {
     const previewId = uuidv4();
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-    await this.cache.set(
-      `whitelabel:preview:${previewId}`,
-      JSON.stringify(config),
-      3600,
-    );
+    await this.cache.set(`whitelabel:preview:${previewId}`, JSON.stringify(config), 3600);
 
     return {
       previewUrl: `${this.configService.get('app.frontendUrl')}/preview?id=${previewId}`,
@@ -576,7 +574,11 @@ export class WhiteLabelService {
     };
   }
 
-  private getDefaultEmailTemplate(templateName: string): { subject: string; header: string; footer: string } {
+  private getDefaultEmailTemplate(_templateName: string): {
+    subject: string;
+    header: string;
+    footer: string;
+  } {
     return {
       subject: 'Real-Time Pulse Notification',
       header: '<img src="https://cdn.realtimepulse.com/logo.png" alt="Real-Time Pulse" />',

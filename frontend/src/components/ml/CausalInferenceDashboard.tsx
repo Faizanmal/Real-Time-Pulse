@@ -494,7 +494,7 @@ export default function CausalInferenceDashboard() {
             <CardHeader>
               <CardTitle className="text-white">Counterfactual Analysis</CardTitle>
               <CardDescription>
-                Explore "what if" scenarios by simulating alternative interventions
+                Explore &quot;what if&quot; scenarios by simulating alternative interventions
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">

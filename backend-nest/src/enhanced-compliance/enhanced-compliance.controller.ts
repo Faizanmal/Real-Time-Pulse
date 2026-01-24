@@ -22,9 +22,7 @@ import {
 @Controller('enhanced-compliance')
 @UseGuards(JwtAuthGuard)
 export class EnhancedComplianceController {
-  constructor(
-    private readonly enhancedComplianceService: EnhancedComplianceService,
-  ) {}
+  constructor(private readonly enhancedComplianceService: EnhancedComplianceService) {}
 
   // Frameworks
   @Get('frameworks')
@@ -53,10 +51,7 @@ export class EnhancedComplianceController {
 
   // Assessments
   @Post('assessments')
-  async createAssessment(
-    @Req() req: any,
-    @Body() data: { frameworkId: string },
-  ) {
+  async createAssessment(@Req() req: any, @Body() data: { frameworkId: string }) {
     return this.enhancedComplianceService.createAssessment(
       req.user.workspaceId,
       data.frameworkId,
@@ -65,22 +60,13 @@ export class EnhancedComplianceController {
   }
 
   @Get('assessments')
-  async getAssessments(
-    @Req() req: any,
-    @Query('frameworkId') frameworkId?: string,
-  ) {
-    return this.enhancedComplianceService.getAssessments(
-      req.user.workspaceId,
-      frameworkId,
-    );
+  async getAssessments(@Req() req: any, @Query('frameworkId') frameworkId?: string) {
+    return this.enhancedComplianceService.getAssessments(req.user.workspaceId, frameworkId);
   }
 
   @Get('assessments/:id')
   async getAssessment(@Param('id') id: string, @Req() req: any) {
-    return this.enhancedComplianceService.getAssessment(
-      id,
-      req.user.workspaceId,
-    );
+    return this.enhancedComplianceService.getAssessment(id, req.user.workspaceId);
   }
 
   @Patch('assessments/:id/remediation')
@@ -115,50 +101,27 @@ export class EnhancedComplianceController {
       accessControls?: any;
     },
   ) {
-    return this.enhancedComplianceService.createDataMapping(
-      req.user.workspaceId,
-      data,
-    );
+    return this.enhancedComplianceService.createDataMapping(req.user.workspaceId, data);
   }
 
   @Get('data-mappings')
-  async getDataMappings(
-    @Req() req: any,
-    @Query('sensitivity') sensitivity?: DataSensitivity,
-  ) {
-    return this.enhancedComplianceService.getDataMappings(
-      req.user.workspaceId,
-      sensitivity,
-    );
+  async getDataMappings(@Req() req: any, @Query('sensitivity') sensitivity?: DataSensitivity) {
+    return this.enhancedComplianceService.getDataMappings(req.user.workspaceId, sensitivity);
   }
 
   @Get('data-mappings/:id')
   async getDataMapping(@Param('id') id: string, @Req() req: any) {
-    return this.enhancedComplianceService.getDataMapping(
-      id,
-      req.user.workspaceId,
-    );
+    return this.enhancedComplianceService.getDataMapping(id, req.user.workspaceId);
   }
 
   @Patch('data-mappings/:id')
-  async updateDataMapping(
-    @Param('id') id: string,
-    @Req() req: any,
-    @Body() data: any,
-  ) {
-    return this.enhancedComplianceService.updateDataMapping(
-      id,
-      req.user.workspaceId,
-      data,
-    );
+  async updateDataMapping(@Param('id') id: string, @Req() req: any, @Body() data: any) {
+    return this.enhancedComplianceService.updateDataMapping(id, req.user.workspaceId, data);
   }
 
   @Delete('data-mappings/:id')
   async deleteDataMapping(@Param('id') id: string, @Req() req: any) {
-    return this.enhancedComplianceService.deleteDataMapping(
-      id,
-      req.user.workspaceId,
-    );
+    return this.enhancedComplianceService.deleteDataMapping(id, req.user.workspaceId);
   }
 
   // Security Incidents
@@ -176,10 +139,7 @@ export class EnhancedComplianceController {
       assignedTo?: string;
     },
   ) {
-    return this.enhancedComplianceService.createIncident(
-      req.user.workspaceId,
-      data,
-    );
+    return this.enhancedComplianceService.createIncident(req.user.workspaceId, data);
   }
 
   @Get('incidents')
@@ -202,23 +162,13 @@ export class EnhancedComplianceController {
   }
 
   @Patch('incidents/:id')
-  async updateIncident(
-    @Param('id') id: string,
-    @Req() req: any,
-    @Body() data: any,
-  ) {
-    return this.enhancedComplianceService.updateIncident(
-      id,
-      req.user.workspaceId,
-      data,
-    );
+  async updateIncident(@Param('id') id: string, @Req() req: any, @Body() data: any) {
+    return this.enhancedComplianceService.updateIncident(id, req.user.workspaceId, data);
   }
 
   // Dashboard
   @Get('dashboard')
   async getComplianceDashboard(@Req() req: any) {
-    return this.enhancedComplianceService.getComplianceDashboard(
-      req.user.workspaceId,
-    );
+    return this.enhancedComplianceService.getComplianceDashboard(req.user.workspaceId);
   }
 }

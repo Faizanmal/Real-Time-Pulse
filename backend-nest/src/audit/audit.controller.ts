@@ -1,10 +1,5 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AuditService } from './audit.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
@@ -45,10 +40,7 @@ export class AuditController {
   @ApiOperation({ summary: 'Get audit logs for specific entity' })
   @ApiQuery({ name: 'entity', required: true, type: String })
   @ApiQuery({ name: 'entityId', required: true, type: String })
-  async findByEntity(
-    @Query('entity') entity: string,
-    @Query('entityId') entityId: string,
-  ) {
+  async findByEntity(@Query('entity') entity: string, @Query('entityId') entityId: string) {
     return this.auditService.findByEntity(entity, entityId);
   }
 }

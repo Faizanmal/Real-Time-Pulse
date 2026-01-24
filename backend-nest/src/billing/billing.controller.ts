@@ -10,19 +10,10 @@ import {
   Headers,
 } from '@nestjs/common';
 import type { RawBodyRequest } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { BillingService } from './billing.service';
-import {
-  CreateCheckoutDto,
-  CreatePortalSessionDto,
-  ChangePlanDto,
-} from './dto/billing.dto';
+import { CreateCheckoutDto, CreatePortalSessionDto, ChangePlanDto } from './dto/billing.dto';
 import type { AuthenticatedRequest } from '../common/interfaces/auth.interface';
 
 @ApiTags('Billing')
@@ -82,10 +73,7 @@ export class BillingController {
     @Request() req: AuthenticatedRequest,
     @Body() dto: CreatePortalSessionDto,
   ) {
-    return this.billingService.createPortalSession(
-      req.user.workspaceId,
-      dto.returnUrl,
-    );
+    return this.billingService.createPortalSession(req.user.workspaceId, dto.returnUrl);
   }
 
   @Post('cancel')
@@ -97,10 +85,7 @@ export class BillingController {
     @Request() req: AuthenticatedRequest,
     @Query('atPeriodEnd') atPeriodEnd?: boolean,
   ) {
-    return this.billingService.cancelSubscription(
-      req.user.workspaceId,
-      atPeriodEnd !== false,
-    );
+    return this.billingService.cancelSubscription(req.user.workspaceId, atPeriodEnd !== false);
   }
 
   @Post('change-plan')
@@ -108,10 +93,7 @@ export class BillingController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Change subscription plan' })
   @ApiResponse({ status: 200, description: 'Plan changed' })
-  async changePlan(
-    @Request() req: AuthenticatedRequest,
-    @Body() dto: ChangePlanDto,
-  ) {
+  async changePlan(@Request() req: AuthenticatedRequest, @Body() dto: ChangePlanDto) {
     return this.billingService.changePlan(req.user.workspaceId, dto.plan);
   }
 
@@ -120,14 +102,8 @@ export class BillingController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get billing history' })
   @ApiResponse({ status: 200, description: 'Returns billing events' })
-  async getBillingHistory(
-    @Request() req: AuthenticatedRequest,
-    @Query('limit') limit?: number,
-  ) {
-    return this.billingService.getBillingHistory(
-      req.user.workspaceId,
-      limit || 20,
-    );
+  async getBillingHistory(@Request() req: AuthenticatedRequest, @Query('limit') limit?: number) {
+    return this.billingService.getBillingHistory(req.user.workspaceId, limit || 20);
   }
 
   @Get('invoices')
@@ -159,6 +135,6 @@ export class BillingController {
     @Headers('stripe-signature') signature: string,
     @Req() req: RawBodyRequest<Request>,
   ) {
-    return this.billingService.handleWebhook(signature, req.rawBody as Buffer);
+    return this.billingService.handleWebhook(signature, req.rawBody);
   }
 }

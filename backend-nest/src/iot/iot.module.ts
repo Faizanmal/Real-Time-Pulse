@@ -7,11 +7,7 @@ import { EdgeComputingService } from './edge-computing.service';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-  imports: [
-    PrismaModule,
-    ScheduleModule.forRoot(),
-    EventEmitterModule.forRoot(),
-  ],
+  imports: [PrismaModule, ScheduleModule.forRoot(), EventEmitterModule.forRoot()],
   controllers: [IoTController],
   providers: [IoTDeviceService, EdgeComputingService],
   exports: [IoTDeviceService, EdgeComputingService],

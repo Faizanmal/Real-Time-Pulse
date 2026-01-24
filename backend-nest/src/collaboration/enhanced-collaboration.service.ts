@@ -35,6 +35,7 @@ interface EditOperation {
   target: { type: 'widget' | 'element'; id: string };
   data: any;
   userId: string;
+  workspaceId: string;
   timestamp: Date;
   version: number;
 }
@@ -60,8 +61,16 @@ export class EnhancedCollaborationService {
   private sessions: Map<string, CollaborationSession> = new Map();
   private operationBuffers: Map<string, EditOperation[]> = new Map();
   private userColors: string[] = [
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-    '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
+    '#FF6B6B',
+    '#4ECDC4',
+    '#45B7D1',
+    '#96CEB4',
+    '#FFEAA7',
+    '#DDA0DD',
+    '#98D8C8',
+    '#F7DC6F',
+    '#BB8FCE',
+    '#85C1E9',
   ];
 
   constructor(
@@ -112,7 +121,8 @@ export class EnhancedCollaborationService {
 
     // Assign color
     const usedColors = session.activeUsers.map((u) => u.color);
-    const availableColor = this.userColors.find((c) => !usedColors.includes(c)) || this.userColors[0];
+    const availableColor =
+      this.userColors.find((c) => !usedColors.includes(c)) || this.userColors[0];
 
     const userPresence: UserPresence = {
       id: user.id,
@@ -240,7 +250,10 @@ export class EnhancedCollaborationService {
   /**
    * Apply an edit operation
    */
-  async applyOperation(portalId: string, operation: Omit<EditOperation, 'id' | 'timestamp' | 'version'>): Promise<EditOperation> {
+  async applyOperation(
+    portalId: string,
+    operation: Omit<EditOperation, 'id' | 'timestamp' | 'version'>,
+  ): Promise<EditOperation> {
     const buffer = this.operationBuffers.get(portalId) || [];
     const version = buffer.length + 1;
 
@@ -257,14 +270,13 @@ export class EnhancedCollaborationService {
     // Persist operation
     await this.prisma.operationLog.create({
       data: {
-        id: fullOperation.id,
-        portalId,
+        workspaceId: fullOperation.workspaceId,
         userId: fullOperation.userId,
-        operationType: fullOperation.type,
-        targetType: fullOperation.target.type,
-        targetId: fullOperation.target.id,
-        data: fullOperation.data,
-        version: fullOperation.version,
+        operation: fullOperation.type,
+        entityType: fullOperation.target.type,
+        entityId: fullOperation.target.id,
+        changes: fullOperation.data,
+        metadata: { version: fullOperation.version },
         createdAt: fullOperation.timestamp,
       },
     });
@@ -332,7 +344,10 @@ export class EnhancedCollaborationService {
   /**
    * Get comments for a portal
    */
-  async getComments(portalId: string, options?: { widgetId?: string; includeResolved?: boolean }): Promise<Comment[]> {
+  async getComments(
+    portalId: string,
+    options?: { widgetId?: string; includeResolved?: boolean },
+  ): Promise<Comment[]> {
     const where: any = { portalId, parentId: null };
 
     if (options?.widgetId) {
@@ -411,18 +426,18 @@ export class EnhancedCollaborationService {
    */
   async addReaction(commentId: string, userId: string, emoji: string): Promise<void> {
     await this.prisma.commentReaction.upsert({
-      where: { commentId_userId_emoji: { commentId, userId, emoji } },
-      create: { commentId, userId, emoji },
-      update: {},
+      where: { commentId_userId: { commentId, userId } },
+      create: { commentId, userId, type: emoji },
+      update: { type: emoji },
     });
   }
 
   /**
    * Remove reaction from comment
    */
-  async removeReaction(commentId: string, userId: string, emoji: string): Promise<void> {
+  async removeReaction(commentId: string, userId: string, _emoji: string): Promise<void> {
     await this.prisma.commentReaction.delete({
-      where: { commentId_userId_emoji: { commentId, userId, emoji } },
+      where: { commentId_userId: { commentId, userId } },
     });
   }
 
@@ -431,21 +446,24 @@ export class EnhancedCollaborationService {
   /**
    * Create team workspace
    */
-  async createTeamWorkspace(
-    name: string,
-    ownerId: string,
-    settings?: any,
-  ): Promise<any> {
-    return await this.prisma.workspace.create({
+  async createTeamWorkspace(name: string, ownerId: string, _settings?: any): Promise<any> {
+    const workspace = await this.prisma.workspace.create({
       data: {
-        id: uuidv4(),
         name,
-        ownerId,
-        settings: settings || {},
-        isTeamWorkspace: true,
-        createdAt: new Date(),
+        slug: name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
       },
     });
+
+    // Create workspace member for owner
+    await this.prisma.workspaceMember.create({
+      data: {
+        workspaceId: workspace.id,
+        userId: ownerId,
+        role: 'ADMIN',
+      },
+    });
+
+    return workspace;
   }
 
   /**
@@ -465,13 +483,18 @@ export class EnhancedCollaborationService {
       throw new BadRequestException('Workspace not found');
     }
 
+    const roleMap = {
+      admin: 'ADMIN',
+      editor: 'MEMBER',
+      viewer: 'MEMBER',
+    } as const;
+
     const invite = await this.prisma.workspaceInvite.create({
       data: {
-        id: uuidv4(),
         workspaceId,
-        inviterId,
+        invitedById: inviterId,
         email,
-        role,
+        role: roleMap[role] as any,
         token: uuidv4(),
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       },
@@ -492,13 +515,18 @@ export class EnhancedCollaborationService {
       throw new BadRequestException('Invalid or expired invitation');
     }
 
+    const memberRoleMap = {
+      OWNER: 'OWNER',
+      ADMIN: 'ADMIN',
+      MEMBER: 'EDITOR', // Default to EDITOR for MEMBER
+    } as const;
+
     await this.prisma.$transaction([
       this.prisma.workspaceMember.create({
         data: {
-          id: uuidv4(),
           workspaceId: invite.workspaceId,
           userId,
-          role: invite.role,
+          role: memberRoleMap[invite.role] as any,
           joinedAt: new Date(),
         },
       }),
@@ -517,9 +545,15 @@ export class EnhancedCollaborationService {
     memberId: string,
     role: 'admin' | 'editor' | 'viewer',
   ): Promise<void> {
+    const memberRoleMap = {
+      admin: 'ADMIN',
+      editor: 'EDITOR',
+      viewer: 'VIEWER',
+    } as const;
+
     await this.prisma.workspaceMember.update({
       where: { workspaceId_userId: { workspaceId, userId: memberId } },
-      data: { role },
+      data: { role: memberRoleMap[role] as any },
     });
   }
 

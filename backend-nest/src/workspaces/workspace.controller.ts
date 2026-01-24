@@ -37,9 +37,7 @@ export class WorkspaceController {
    * Get current user's workspace
    */
   @Get('me')
-  async getMyWorkspace(
-    @CurrentUser() user: RequestUser,
-  ): Promise<WorkspaceResponseDto> {
+  async getMyWorkspace(@CurrentUser() user: RequestUser): Promise<WorkspaceResponseDto> {
     return this.workspaceService.getWorkspace(user.workspaceId, user.id);
   }
 

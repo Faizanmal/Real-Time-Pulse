@@ -93,9 +93,7 @@ export class ARSceneService {
       root,
       lighting: {
         ambient: { color: '#ffffff', intensity: 0.5 },
-        directional: [
-          { color: '#ffffff', intensity: 0.8, direction: [1, 1, 1] },
-        ],
+        directional: [{ color: '#ffffff', intensity: 0.8, direction: [1, 1, 1] }],
       },
       environment: {
         ground: { visible: true, color: '#cccccc' },
@@ -103,11 +101,7 @@ export class ARSceneService {
     };
 
     // Cache the scene
-    await this.cache.set(
-      `ar_scene_def:${sceneId}`,
-      JSON.stringify(scene),
-      3600,
-    );
+    await this.cache.set(`ar_scene_def:${sceneId}`, JSON.stringify(scene), 3600);
 
     return scene;
   }
@@ -430,10 +424,7 @@ export class ARSceneService {
   <a-scene embedded arjs>
 `;
 
-    const renderObject = (
-      obj: SceneObject,
-      indent: string = '    ',
-    ): string => {
+    const renderObject = (obj: SceneObject, indent = '    '): string => {
       let result = '';
       const pos = obj.position.join(' ');
       const rot = obj.rotation.map((r) => (r * 180) / Math.PI).join(' ');
@@ -488,12 +479,7 @@ export class ARSceneService {
     const result: any[] = [];
 
     const threeObj: any = {
-      type:
-        obj.type === 'mesh'
-          ? 'Mesh'
-          : obj.type === 'text'
-            ? 'Text'
-            : 'Object3D',
+      type: obj.type === 'mesh' ? 'Mesh' : obj.type === 'text' ? 'Text' : 'Object3D',
       name: obj.name,
       position: obj.position,
       rotation: obj.rotation,

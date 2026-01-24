@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { RoleManagementService, Permission } from '../role-management.service';
 
@@ -19,7 +14,7 @@ export interface ResourceInfo {
  * Decorator to require permissions
  */
 export function RequirePermissions(...permissions: Permission[]) {
-  return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
+  return (target: object, propertyKey: string, descriptor: PropertyDescriptor) => {
     Reflect.defineMetadata(PERMISSIONS_KEY, permissions, descriptor.value);
     return descriptor;
   };
@@ -28,11 +23,8 @@ export function RequirePermissions(...permissions: Permission[]) {
 /**
  * Decorator to specify resource for permission check
  */
-export function ForResource(
-  type: ResourceInfo['type'],
-  idParam: string = 'id',
-) {
-  return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
+export function ForResource(type: ResourceInfo['type'], idParam = 'id') {
+  return (target: object, propertyKey: string, descriptor: PropertyDescriptor) => {
     Reflect.defineMetadata(RESOURCE_KEY, { type, idParam }, descriptor.value);
     return descriptor;
   };
@@ -64,10 +56,7 @@ export class PermissionGuard implements CanActivate {
     }
 
     // Get resource info if specified
-    const resourceInfo = this.reflector.get<ResourceInfo>(
-      RESOURCE_KEY,
-      context.getHandler(),
-    );
+    const resourceInfo = this.reflector.get<ResourceInfo>(RESOURCE_KEY, context.getHandler());
 
     let resourceId: string | undefined;
     if (resourceInfo) {
@@ -85,9 +74,7 @@ export class PermissionGuard implements CanActivate {
       );
 
       if (!hasPermission) {
-        throw new ForbiddenException(
-          `Missing required permission: ${permission}`,
-        );
+        throw new ForbiddenException(`Missing required permission: ${permission}`);
       }
     }
 

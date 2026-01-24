@@ -1,19 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AnalyticsService } from './analytics.service';
 import { UsageMetricType, PeriodType } from '@prisma/client';
@@ -35,14 +21,8 @@ export class AnalyticsController {
   @Get('portal/:portalId')
   @ApiOperation({ summary: 'Get portal analytics' })
   @ApiResponse({ status: 200, description: 'Returns portal analytics' })
-  async getPortalAnalytics(
-    @Request() req: any,
-    @Param('portalId') portalId: string,
-  ) {
-    return this.analyticsService.getPortalAnalytics(
-      req.user.workspaceId,
-      portalId,
-    );
+  async getPortalAnalytics(@Request() req: any, @Param('portalId') portalId: string) {
+    return this.analyticsService.getPortalAnalytics(req.user.workspaceId, portalId);
   }
 
   @Get('metrics')
@@ -101,17 +81,12 @@ export class AnalyticsController {
       metadata?: Record<string, any>;
     },
   ) {
-    await this.analyticsService.recordMetric(
-      req.user.workspaceId,
-      body.metricType,
-      body.value,
-      {
-        portalId: body.portalId,
-        widgetId: body.widgetId,
-        userId: req.user.id,
-        metadata: body.metadata,
-      },
-    );
+    await this.analyticsService.recordMetric(req.user.workspaceId, body.metricType, body.value, {
+      portalId: body.portalId,
+      widgetId: body.widgetId,
+      userId: req.user.id,
+      metadata: body.metadata,
+    });
     return { message: 'Metric recorded' };
   }
 }

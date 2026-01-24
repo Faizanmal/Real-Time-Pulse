@@ -6,11 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  CreatePortalDto,
-  UpdatePortalDto,
-  PortalResponseDto,
-} from './dto/portal.dto';
+import { CreatePortalDto, UpdatePortalDto, PortalResponseDto } from './dto/portal.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { Prisma, Portal, User, Subscription } from '@prisma/client';
 
@@ -61,16 +57,13 @@ export class PortalService {
     });
 
     if (existingPortal) {
-      throw new ConflictException(
-        'Portal slug already exists in this workspace',
-      );
+      throw new ConflictException('Portal slug already exists in this workspace');
     }
 
     // Check subscription limits
-    const subscription: Subscription | null =
-      await this.prisma.subscription.findUnique({
-        where: { workspaceId },
-      });
+    const subscription: Subscription | null = await this.prisma.subscription.findUnique({
+      where: { workspaceId },
+    });
 
     const portalCount: number = await this.prisma.portal.count({
       where: { workspaceId },
@@ -143,20 +136,15 @@ export class PortalService {
   /**
    * Get a single portal by ID
    */
-  async findOne(
-    portalId: string,
-    workspaceId: string,
-    userId: string,
-  ): Promise<PortalResponseDto> {
+  async findOne(portalId: string, workspaceId: string, userId: string): Promise<PortalResponseDto> {
     // Verify user belongs to workspace
     await this.verifyUserInWorkspace(userId, workspaceId);
 
     // Type the result explicitly as it can be null
-    const portal: PortalWithDetails | null =
-      await this.prisma.portal.findUnique({
-        where: { id: portalId },
-        include: portalInclude, // Use the reusable include
-      });
+    const portal: PortalWithDetails | null = await this.prisma.portal.findUnique({
+      where: { id: portalId },
+      include: portalInclude, // Use the reusable include
+    });
 
     if (!portal) {
       throw new NotFoundException('Portal not found');
@@ -175,11 +163,10 @@ export class PortalService {
   async findByShareToken(shareToken: string): Promise<PortalResponseDto> {
     // This query now uses `portalInclude` to fetch `_count`
     // instead of the unused `widgets` list, fixing a logic bug.
-    const portal: PortalWithDetails | null =
-      await this.prisma.portal.findUnique({
-        where: { shareToken },
-        include: portalInclude, // Use the reusable include
-      });
+    const portal: PortalWithDetails | null = await this.prisma.portal.findUnique({
+      where: { shareToken },
+      include: portalInclude, // Use the reusable include
+    });
 
     if (!portal) {
       throw new NotFoundException('Portal not found');
@@ -232,11 +219,7 @@ export class PortalService {
   /**
    * Delete a portal
    */
-  async remove(
-    portalId: string,
-    workspaceId: string,
-    userId: string,
-  ): Promise<void> {
+  async remove(portalId: string, workspaceId: string, userId: string): Promise<void> {
     // Verify user belongs to workspace with proper permissions
     await this.verifyUserPermission(userId, workspaceId, ['OWNER', 'ADMIN']);
 
@@ -303,10 +286,7 @@ export class PortalService {
   /**
    * Verify user belongs to workspace
    */
-  private async verifyUserInWorkspace(
-    userId: string,
-    workspaceId: string,
-  ): Promise<void> {
+  private async verifyUserInWorkspace(userId: string, workspaceId: string): Promise<void> {
     // Type the user result
     const user: User | null = await this.prisma.user.findUnique({
       where: { id: userId },

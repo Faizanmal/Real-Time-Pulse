@@ -69,10 +69,7 @@ export class KafkaService implements OnModuleDestroy {
         kafkaConfig.ssl = true;
       }
 
-      if (
-        integration.settings.sasl ||
-        (integration.accessToken && integration.refreshToken)
-      ) {
+      if (integration.settings.sasl || (integration.accessToken && integration.refreshToken)) {
         kafkaConfig.sasl = integration.settings.sasl || {
           mechanism: 'plain',
           username: integration.accessToken,
@@ -225,9 +222,7 @@ export class KafkaService implements OnModuleDestroy {
     }
   }
 
-  private async fetchConsumerGroups(
-    integration: KafkaIntegration,
-  ): Promise<unknown> {
+  private async fetchConsumerGroups(integration: KafkaIntegration): Promise<unknown> {
     try {
       const admin = await this.getAdmin(integration);
       const groups = await admin.listGroups();
@@ -283,14 +278,10 @@ export class KafkaService implements OnModuleDestroy {
       const lagInfo = await Promise.all(
         offsets.map(async (topicOffset) => {
           try {
-            const highWatermarks = await admin.fetchTopicOffsets(
-              topicOffset.topic,
-            );
+            const highWatermarks = await admin.fetchTopicOffsets(topicOffset.topic);
 
             const partitions = topicOffset.partitions.map((p) => {
-              const hw = highWatermarks.find(
-                (h) => h.partition === p.partition,
-              );
+              const hw = highWatermarks.find((h) => h.partition === p.partition);
               const currentOffset = parseInt(p.offset) || 0;
               const highWatermark = parseInt(hw?.high || '0');
 
@@ -339,8 +330,7 @@ export class KafkaService implements OnModuleDestroy {
 
     try {
       const kafka = this.getKafkaClient(integration);
-      const groupId =
-        integration.settings.groupId || `temp-consumer-${Date.now()}`;
+      const groupId = integration.settings.groupId || `temp-consumer-${Date.now()}`;
 
       const consumer = kafka.consumer({ groupId });
       await consumer.connect();
@@ -357,11 +347,7 @@ export class KafkaService implements OnModuleDestroy {
 
         void consumer
           .run({
-            eachMessage: async ({
-              topic,
-              partition,
-              message,
-            }: EachMessagePayload) => {
+            eachMessage: async ({ topic, partition, message }: EachMessagePayload) => {
               if (messageCount < limit) {
                 messages.push({
                   topic,
@@ -394,9 +380,7 @@ export class KafkaService implements OnModuleDestroy {
     }
   }
 
-  private async fetchClusterInfo(
-    integration: KafkaIntegration,
-  ): Promise<unknown> {
+  private async fetchClusterInfo(integration: KafkaIntegration): Promise<unknown> {
     try {
       const admin = await this.getAdmin(integration);
       const cluster = await admin.describeCluster();
@@ -433,10 +417,7 @@ export class KafkaService implements OnModuleDestroy {
       const cluster = clusterInfo as any;
 
       // Calculate total partitions
-      const totalPartitions = topicsArray.reduce(
-        (sum, t) => sum + (t.partitions || 0),
-        0,
-      );
+      const totalPartitions = topicsArray.reduce((sum, t) => sum + (t.partitions || 0), 0);
 
       // Count active vs inactive groups
       const activeGroups = groupsArray.filter(
@@ -538,10 +519,7 @@ export class KafkaService implements OnModuleDestroy {
   }
 
   // Delete topic
-  async deleteTopic(
-    integration: KafkaIntegration,
-    topic: string,
-  ): Promise<unknown> {
+  async deleteTopic(integration: KafkaIntegration, topic: string): Promise<unknown> {
     try {
       const admin = await this.getAdmin(integration);
       await admin.deleteTopics({ topics: [topic] });

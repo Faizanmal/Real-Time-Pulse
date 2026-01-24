@@ -10,14 +10,14 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import type { Request as ExpressRequest } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RoleManagementService, Permission } from './role-management.service';
+
+type AuthedRequest = ExpressRequest & {
+  user: { workspaceId: string; id: string; [k: string]: any };
+};
 
 @ApiTags('Role Management')
 @ApiBearerAuth()
@@ -30,7 +30,7 @@ export class RoleManagementController {
 
   @Get()
   @ApiOperation({ summary: 'Get all roles' })
-  async getRoles(@Request() req: any) {
+  async getRoles(@Request() req: AuthedRequest) {
     return this.roleService.getRoles(req.user.workspaceId);
   }
 
@@ -43,14 +43,14 @@ export class RoleManagementController {
   @Get(':roleId')
   @ApiOperation({ summary: 'Get a role by ID' })
   @ApiParam({ name: 'roleId', description: 'Role ID' })
-  async getRole(@Request() req: any, @Param('roleId') roleId: string) {
+  async getRole(@Request() req: AuthedRequest, @Param('roleId') roleId: string) {
     return this.roleService.getRole(req.user.workspaceId, roleId);
   }
 
   @Post()
   @ApiOperation({ summary: 'Create a custom role' })
   async createRole(
-    @Request() req: any,
+    @Request() req: AuthedRequest,
     @Body()
     dto: {
       name: string;
@@ -66,7 +66,7 @@ export class RoleManagementController {
   @ApiOperation({ summary: 'Update a custom role' })
   @ApiParam({ name: 'roleId', description: 'Role ID' })
   async updateRole(
-    @Request() req: any,
+    @Request() req: AuthedRequest,
     @Param('roleId') roleId: string,
     @Body()
     dto: { name?: string; description?: string; permissions?: Permission[] },
@@ -77,7 +77,7 @@ export class RoleManagementController {
   @Delete(':roleId')
   @ApiOperation({ summary: 'Delete a custom role' })
   @ApiParam({ name: 'roleId', description: 'Role ID' })
-  async deleteRole(@Request() req: any, @Param('roleId') roleId: string) {
+  async deleteRole(@Request() req: AuthedRequest, @Param('roleId') roleId: string) {
     await this.roleService.deleteRole(req.user.workspaceId, roleId);
     return { success: true };
   }
@@ -87,7 +87,7 @@ export class RoleManagementController {
   @Post('resource-permissions')
   @ApiOperation({ summary: 'Grant resource-level permissions' })
   async grantResourcePermission(
-    @Request() req: any,
+    @Request() req: AuthedRequest,
     @Body()
     dto: {
       userId: string;
@@ -97,14 +97,10 @@ export class RoleManagementController {
       expiresAt?: string;
     },
   ) {
-    return this.roleService.grantResourcePermission(
-      req.user.workspaceId,
-      req.user.id,
-      {
-        ...dto,
-        expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : undefined,
-      },
-    );
+    return this.roleService.grantResourcePermission(req.user.workspaceId, req.user.id, {
+      ...dto,
+      expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : undefined,
+    });
   }
 
   @Delete('resource-permissions/:userId/:permissionId')
@@ -112,7 +108,7 @@ export class RoleManagementController {
   @ApiParam({ name: 'userId', description: 'User ID' })
   @ApiParam({ name: 'permissionId', description: 'Permission ID' })
   async revokeResourcePermission(
-    @Request() req: any,
+    @Request() req: AuthedRequest,
     @Param('userId') userId: string,
     @Param('permissionId') permissionId: string,
   ) {
@@ -128,20 +124,14 @@ export class RoleManagementController {
   @Get('resource-permissions/:userId')
   @ApiOperation({ summary: 'Get user resource permissions' })
   @ApiParam({ name: 'userId', description: 'User ID' })
-  async getUserResourcePermissions(
-    @Request() req: any,
-    @Param('userId') userId: string,
-  ) {
-    return this.roleService.getUserResourcePermissions(
-      req.user.workspaceId,
-      userId,
-    );
+  async getUserResourcePermissions(@Request() req: AuthedRequest, @Param('userId') userId: string) {
+    return this.roleService.getUserResourcePermissions(req.user.workspaceId, userId);
   }
 
   @Post('check-permission')
   @ApiOperation({ summary: 'Check if user has permission' })
   async checkPermission(
-    @Request() req: any,
+    @Request() req: AuthedRequest,
     @Body()
     dto: {
       userId: string;
@@ -164,14 +154,14 @@ export class RoleManagementController {
 
   @Get('workflows')
   @ApiOperation({ summary: 'Get approval workflows' })
-  async getWorkflows(@Request() req: any) {
+  async getWorkflows(@Request() req: AuthedRequest) {
     return this.roleService.getApprovalWorkflows(req.user.workspaceId);
   }
 
   @Post('workflows')
   @ApiOperation({ summary: 'Create an approval workflow' })
   async createWorkflow(
-    @Request() req: any,
+    @Request() req: AuthedRequest,
     @Body()
     dto: {
       name: string;
@@ -190,14 +180,14 @@ export class RoleManagementController {
 
   @Get('approval-requests')
   @ApiOperation({ summary: 'Get pending approval requests' })
-  async getApprovalRequests(@Request() req: any) {
+  async getApprovalRequests(@Request() req: AuthedRequest) {
     return this.roleService.getPendingApprovalRequests(req.user.workspaceId);
   }
 
   @Post('approval-requests')
   @ApiOperation({ summary: 'Create an approval request' })
   async createApprovalRequest(
-    @Request() req: any,
+    @Request() req: AuthedRequest,
     @Body()
     dto: {
       workflowId: string;
@@ -207,18 +197,14 @@ export class RoleManagementController {
       changes: any;
     },
   ) {
-    return this.roleService.createApprovalRequest(
-      req.user.workspaceId,
-      req.user.id,
-      dto,
-    );
+    return this.roleService.createApprovalRequest(req.user.workspaceId, req.user.id, dto);
   }
 
   @Post('approval-requests/:requestId/decide')
   @ApiOperation({ summary: 'Process approval decision' })
   @ApiParam({ name: 'requestId', description: 'Request ID' })
   async processApprovalDecision(
-    @Request() req: any,
+    @Request() req: AuthedRequest,
     @Param('requestId') requestId: string,
     @Body() dto: { decision: 'approved' | 'rejected'; comment?: string },
   ) {
@@ -236,7 +222,7 @@ export class RoleManagementController {
   @Get('audit-logs')
   @ApiOperation({ summary: 'Get permission audit logs' })
   async getAuditLogs(
-    @Request() req: any,
+    @Request() req: AuthedRequest,
     @Query('limit') limit?: string,
     @Query('action') action?: string,
   ) {

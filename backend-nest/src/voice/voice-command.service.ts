@@ -15,8 +15,7 @@ export class VoiceCommandService {
   private readonly commandPatterns: CommandPattern[] = [
     // Navigation commands
     {
-      pattern:
-        /(?:show|open|go to|navigate to)\s+(?:the\s+)?(.+?)(?:\s+dashboard|\s+portal)?$/i,
+      pattern: /(?:show|open|go to|navigate to)\s+(?:the\s+)?(.+?)(?:\s+dashboard|\s+portal)?$/i,
       action: 'navigate',
       extractParams: (match) => ({ target: match[1].trim() }),
     },
@@ -59,8 +58,7 @@ export class VoiceCommandService {
 
     // Data commands
     {
-      pattern:
-        /(?:refresh|reload|update)\s+(?:the\s+)?(?:data|dashboard|view)?$/i,
+      pattern: /(?:refresh|reload|update)\s+(?:the\s+)?(?:data|dashboard|view)?$/i,
       action: 'refresh',
       extractParams: () => ({}),
     },
@@ -73,20 +71,17 @@ export class VoiceCommandService {
 
     // Widget commands
     {
-      pattern:
-        /(?:zoom|focus)\s+(?:in\s+)?(?:on\s+)?(?:the\s+)?(.+?)(?:\s+widget|\s+chart)?$/i,
+      pattern: /(?:zoom|focus)\s+(?:in\s+)?(?:on\s+)?(?:the\s+)?(.+?)(?:\s+widget|\s+chart)?$/i,
       action: 'zoom_widget',
       extractParams: (match) => ({ widgetName: match[1] }),
     },
     {
-      pattern:
-        /(?:expand|maximize)\s+(?:the\s+)?(.+?)(?:\s+widget|\s+chart)?$/i,
+      pattern: /(?:expand|maximize)\s+(?:the\s+)?(.+?)(?:\s+widget|\s+chart)?$/i,
       action: 'expand_widget',
       extractParams: (match) => ({ widgetName: match[1] }),
     },
     {
-      pattern:
-        /(?:collapse|minimize)\s+(?:the\s+)?(.+?)(?:\s+widget|\s+chart)?$/i,
+      pattern: /(?:collapse|minimize)\s+(?:the\s+)?(.+?)(?:\s+widget|\s+chart)?$/i,
       action: 'collapse_widget',
       extractParams: (match) => ({ widgetName: match[1] }),
     },
@@ -111,8 +106,7 @@ export class VoiceCommandService {
 
     // Alert commands
     {
-      pattern:
-        /(?:set|create)\s+(?:an?\s+)?alert\s+(?:for\s+)?(.+?)\s+(?:when|if)\s+(.+)$/i,
+      pattern: /(?:set|create)\s+(?:an?\s+)?alert\s+(?:for\s+)?(.+?)\s+(?:when|if)\s+(.+)$/i,
       action: 'create_alert',
       extractParams: (match) => ({ metric: match[1], condition: match[2] }),
     },
@@ -302,8 +296,7 @@ export class VoiceCommandService {
 
       default:
         return {
-          response:
-            "I'm not sure how to do that. Try saying 'help' for available commands.",
+          response: "I'm not sure how to do that. Try saying 'help' for available commands.",
         };
     }
   }
@@ -311,14 +304,9 @@ export class VoiceCommandService {
   /**
    * Fuzzy match for common variations
    */
-  private fuzzyMatch(
-    transcript: string,
-  ): Omit<VoiceCommand, 'confidence'> | null {
+  private fuzzyMatch(transcript: string): Omit<VoiceCommand, 'confidence'> | null {
     // Common phrase variations
-    const variations: Record<
-      string,
-      { action: string; parameters?: Record<string, any> }
-    > = {
+    const variations: Record<string, { action: string; parameters?: Record<string, any> }> = {
       'go back': { action: 'navigate_back' },
       'previous page': { action: 'navigate_back' },
       'main page': { action: 'navigate_home' },
@@ -379,11 +367,7 @@ export class VoiceCommandService {
       },
       {
         category: 'Insights',
-        commands: [
-          "What's the [metric]?",
-          'Summarize [target]',
-          'Compare [A] and [B]',
-        ],
+        commands: ["What's the [metric]?", 'Summarize [target]', 'Compare [A] and [B]'],
       },
       {
         category: 'Alerts',

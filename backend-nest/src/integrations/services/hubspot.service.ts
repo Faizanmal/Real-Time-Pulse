@@ -27,11 +27,7 @@ export class HubSpotService {
     }
   }
 
-  async fetchData(
-    integration: Integration,
-    dataType: string,
-    params?: unknown,
-  ): Promise<unknown> {
+  async fetchData(integration: Integration, dataType: string, params?: unknown): Promise<unknown> {
     const headers = {
       Authorization: `Bearer ${integration.accessToken as string}`,
       'Content-Type': 'application/json',
@@ -58,10 +54,7 @@ export class HubSpotService {
     }
   }
 
-  private async fetchContacts(
-    headers: any,
-    params?: unknown,
-  ): Promise<unknown> {
+  private async fetchContacts(headers: any, params?: unknown): Promise<unknown> {
     try {
       const limit = (params as { limit?: number })?.limit || 50;
 
@@ -70,8 +63,7 @@ export class HubSpotService {
           headers,
           params: {
             limit,
-            properties:
-              'firstname,lastname,email,phone,company,createdate,hs_lead_status',
+            properties: 'firstname,lastname,email,phone,company,createdate,hs_lead_status',
           },
         }),
       );
@@ -82,10 +74,7 @@ export class HubSpotService {
     }
   }
 
-  private async fetchCompanies(
-    headers: any,
-    params?: unknown,
-  ): Promise<unknown> {
+  private async fetchCompanies(headers: any, params?: unknown): Promise<unknown> {
     try {
       const limit = (params as { limit?: number })?.limit || 50;
 
@@ -94,8 +83,7 @@ export class HubSpotService {
           headers,
           params: {
             limit,
-            properties:
-              'name,domain,industry,numberofemployees,annualrevenue,createdate',
+            properties: 'name,domain,industry,numberofemployees,annualrevenue,createdate',
           },
         }),
       );
@@ -115,8 +103,7 @@ export class HubSpotService {
           headers,
           params: {
             limit,
-            properties:
-              'dealname,amount,dealstage,pipeline,closedate,createdate,hubspot_owner_id',
+            properties: 'dealname,amount,dealstage,pipeline,closedate,createdate,hubspot_owner_id',
           },
         }),
       );
@@ -127,19 +114,14 @@ export class HubSpotService {
     }
   }
 
-  private async fetchPipeline(
-    headers: any,
-    params?: unknown,
-  ): Promise<unknown> {
+  private async fetchPipeline(headers: any, params?: unknown): Promise<unknown> {
     try {
       const pipelineId = (params as { pipelineId?: string })?.pipelineId;
       const url = pipelineId
         ? `${this.baseUrl}/crm/v3/pipelines/deals/${pipelineId}`
         : `${this.baseUrl}/crm/v3/pipelines/deals`;
 
-      const response = await firstValueFrom(
-        this.httpService.get(url, { headers }),
-      );
+      const response = await firstValueFrom(this.httpService.get(url, { headers }));
 
       // If getting all pipelines, return the results array
       if (!pipelineId) {
@@ -153,16 +135,10 @@ export class HubSpotService {
       // Group deals by stage
       const stageData = stages.map((stage: any) => ({
         ...stage,
-        deals: (deals as any[]).filter(
-          (deal: any) => deal.properties.dealstage === stage.id,
-        ),
+        deals: (deals as any[]).filter((deal: any) => deal.properties.dealstage === stage.id),
         totalValue: (deals as any[])
           .filter((deal: any) => deal.properties.dealstage === stage.id)
-          .reduce(
-            (sum: number, deal: any) =>
-              sum + (parseFloat(deal.properties.amount) || 0),
-            0,
-          ),
+          .reduce((sum: number, deal: any) => sum + (parseFloat(deal.properties.amount) || 0), 0),
       }));
 
       return {
@@ -175,10 +151,7 @@ export class HubSpotService {
     }
   }
 
-  private async fetchAnalytics(
-    headers: any,
-    _params?: unknown,
-  ): Promise<unknown> {
+  private async fetchAnalytics(headers: any, _params?: unknown): Promise<unknown> {
     try {
       // Aggregate analytics from various sources
       const [contacts, companies, deals] = await Promise.all([

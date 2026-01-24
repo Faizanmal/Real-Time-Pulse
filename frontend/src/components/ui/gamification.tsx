@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, createContext, useContext } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, createContext, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -381,10 +381,11 @@ interface StreakDisplayProps {
 export function StreakDisplay({ streak, compact = false, className }: StreakDisplayProps) {
     const [isActive, setIsActive] = useState(false);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const active = !!(streak.lastActivity &&
             Date.now() - new Date(streak.lastActivity).getTime() <
             (streak.type === "daily" ? 86400000 : streak.type === "weekly" ? 604800000 : 2592000000));
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsActive(active);
     }, [streak.lastActivity, streak.type]);
 

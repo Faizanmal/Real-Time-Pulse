@@ -65,7 +65,7 @@ export function OfflineIndicator() {
 
       {!isOnline && (
         <div className="mt-2 flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+          <AlertCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400 mt-0.5 shrink-0" />
           <p className="text-xs text-yellow-700 dark:text-yellow-300">
             Your changes are saved locally and will sync when connection is restored.
           </p>

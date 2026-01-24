@@ -233,18 +233,12 @@ export class ProjectService {
 
     if (!project) return;
 
-    const totalHours = project.timeEntries.reduce(
-      (sum, entry) => sum + entry.hours,
-      0,
-    );
+    const totalHours = project.timeEntries.reduce((sum, entry) => sum + entry.hours, 0);
     const billableHours = project.timeEntries
       .filter((entry) => entry.billable)
       .reduce((sum, entry) => sum + entry.hours, 0);
 
-    const actualCosts = project.expenses.reduce(
-      (sum, expense) => sum + expense.amount,
-      0,
-    );
+    const actualCosts = project.expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
     await this.prisma.project.update({
       where: { id: projectId },

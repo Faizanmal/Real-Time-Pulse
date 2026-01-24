@@ -43,7 +43,7 @@ export class RateLimitService {
   async checkLimit(
     identifier: string,
     config: RateLimitConfig,
-    category: string = 'default',
+    category = 'default',
   ): Promise<RateLimitResult> {
     const key = `${this.RATE_LIMIT_PREFIX}${category}:${identifier}`;
     const blockKey = `${this.BLOCK_PREFIX}${category}:${identifier}`;
@@ -57,9 +57,7 @@ export class RateLimitService {
           allowed: false,
           remaining: 0,
           resetAt: new Date(blockData.expiresAt),
-          retryAfter: Math.ceil(
-            (new Date(blockData.expiresAt).getTime() - Date.now()) / 1000,
-          ),
+          retryAfter: Math.ceil((new Date(blockData.expiresAt).getTime() - Date.now()) / 1000),
         };
       }
 
@@ -73,11 +71,7 @@ export class RateLimitService {
       if (count >= config.limit) {
         // Limit exceeded
         if (config.blockDuration) {
-          await this.blockIdentifier(
-            identifier,
-            category,
-            config.blockDuration,
-          );
+          await this.blockIdentifier(identifier, category, config.blockDuration);
         }
 
         // Log anomaly
@@ -126,10 +120,8 @@ export class RateLimitService {
    */
   async checkAuthLimit(identifier: string): Promise<RateLimitResult> {
     const config = {
-      ttl:
-        this.configService.get<number>('security.rateLimit.auth.ttl') || 900000,
-      limit:
-        this.configService.get<number>('security.rateLimit.auth.limit') || 5,
+      ttl: this.configService.get<number>('security.rateLimit.auth.ttl') || 900000,
+      limit: this.configService.get<number>('security.rateLimit.auth.limit') || 5,
       blockDuration: 1800000, // 30 minutes
     };
 
@@ -141,10 +133,8 @@ export class RateLimitService {
    */
   async checkApiLimit(identifier: string): Promise<RateLimitResult> {
     const config = {
-      ttl:
-        this.configService.get<number>('security.rateLimit.api.ttl') || 60000,
-      limit:
-        this.configService.get<number>('security.rateLimit.api.limit') || 1000,
+      ttl: this.configService.get<number>('security.rateLimit.api.ttl') || 60000,
+      limit: this.configService.get<number>('security.rateLimit.api.limit') || 1000,
     };
 
     return this.checkLimit(identifier, config, 'api');
@@ -208,10 +198,7 @@ export class RateLimitService {
   /**
    * Get recent anomalies for an identifier
    */
-  async getRecentAnomalies(
-    identifier: string,
-    _limit: number = 10,
-  ): Promise<AnomalyEvent[]> {
+  async getRecentAnomalies(identifier: string, _limit = 10): Promise<AnomalyEvent[]> {
     // This would need a more sophisticated implementation
     // with proper data storage for production use
     return [];
@@ -220,16 +207,10 @@ export class RateLimitService {
   /**
    * Reset rate limit for an identifier
    */
-  async resetLimit(
-    identifier: string,
-    category: string = 'default',
-  ): Promise<void> {
+  async resetLimit(identifier: string, category = 'default'): Promise<void> {
     const key = `${this.RATE_LIMIT_PREFIX}${category}:${identifier}`;
     const blockKey = `${this.BLOCK_PREFIX}${category}:${identifier}`;
 
-    await Promise.all([
-      this.cacheService.del(key),
-      this.cacheService.del(blockKey),
-    ]);
+    await Promise.all([this.cacheService.del(key), this.cacheService.del(blockKey)]);
   }
 }

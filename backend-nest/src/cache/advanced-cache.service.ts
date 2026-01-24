@@ -182,9 +182,7 @@ export class AdvancedCacheService implements OnModuleInit {
   /**
    * Get cached entry with metadata
    */
-  private async getCacheEntry<T>(
-    fullKey: string,
-  ): Promise<CacheEntry<T> | null> {
+  private async getCacheEntry<T>(fullKey: string): Promise<CacheEntry<T> | null> {
     const data = await this.redis.get(fullKey);
     if (!data) return null;
 
@@ -225,15 +223,13 @@ export class AdvancedCacheService implements OnModuleInit {
 
       this.metrics.totalFetchTime += fetchTime;
       this.metrics.avgFetchTime =
-        this.metrics.totalFetchTime /
-        (this.metrics.misses + this.metrics.revalidations);
+        this.metrics.totalFetchTime / (this.metrics.misses + this.metrics.revalidations);
 
       const entry: CacheEntry<T> = {
         data,
         createdAt: Date.now(),
         ttl: options.ttl,
-        staleUntil:
-          Date.now() + (options.ttl + options.staleWhileRevalidate) * 1000,
+        staleUntil: Date.now() + (options.ttl + options.staleWhileRevalidate) * 1000,
         tags: options.tags,
         version: this.currentVersion,
       };
@@ -276,8 +272,7 @@ export class AdvancedCacheService implements OnModuleInit {
         this.metrics.revalidations++;
         await this.fetchAndCache(key, fullKey, fetchFn, {
           ttl: options.ttl || this.DEFAULT_TTL,
-          staleWhileRevalidate:
-            options.staleWhileRevalidate || this.DEFAULT_STALE_WINDOW,
+          staleWhileRevalidate: options.staleWhileRevalidate || this.DEFAULT_STALE_WINDOW,
           tags: options.tags || [],
         });
       } catch (error) {
@@ -293,13 +288,8 @@ export class AdvancedCacheService implements OnModuleInit {
   /**
    * Simple distributed lock
    */
-  private async acquireLock(
-    lockKey: string,
-    ttlSeconds: number,
-  ): Promise<boolean> {
-    const result = await this.redis
-      .getClient()
-      .set(lockKey, '1', 'EX', ttlSeconds, 'NX');
+  private async acquireLock(lockKey: string, ttlSeconds: number): Promise<boolean> {
+    const result = await this.redis.getClient().set(lockKey, '1', 'EX', ttlSeconds, 'NX');
     return result === 'OK';
   }
 
@@ -328,9 +318,7 @@ export class AdvancedCacheService implements OnModuleInit {
    * Invalidate cache by pattern (local)
    */
   private async invalidatePatternLocal(pattern: string): Promise<void> {
-    const keys = await this.redis
-      .getClient()
-      .keys(`${this.CACHE_PREFIX}${pattern}`);
+    const keys = await this.redis.getClient().keys(`${this.CACHE_PREFIX}${pattern}`);
     if (keys.length > 0) {
       await this.redis.getClient().del(...keys);
       this.metrics.invalidations += keys.length;
@@ -342,9 +330,7 @@ export class AdvancedCacheService implements OnModuleInit {
    */
   private async invalidateByTagsLocal(tags: string[]): Promise<void> {
     for (const tag of tags) {
-      const keys = await this.redis
-        .getClient()
-        .smembers(`${this.TAG_PREFIX}${tag}`);
+      const keys = await this.redis.getClient().smembers(`${this.TAG_PREFIX}${tag}`);
       if (keys.length > 0) {
         await this.redis.getClient().del(...keys);
         await this.redis.getClient().del(`${this.TAG_PREFIX}${tag}`);
@@ -360,9 +346,7 @@ export class AdvancedCacheService implements OnModuleInit {
     await this.invalidatePatternLocal(pattern);
 
     // Broadcast to other instances
-    await this.redis
-      .getClient()
-      .publish('cache:invalidate', JSON.stringify({ pattern }));
+    await this.redis.getClient().publish('cache:invalidate', JSON.stringify({ pattern }));
   }
 
   /**
@@ -372,9 +356,7 @@ export class AdvancedCacheService implements OnModuleInit {
     await this.invalidateByTagsLocal(tags);
 
     // Broadcast to other instances
-    await this.redis
-      .getClient()
-      .publish('cache:invalidate', JSON.stringify({ tags }));
+    await this.redis.getClient().publish('cache:invalidate', JSON.stringify({ tags }));
   }
 
   /**
@@ -384,9 +366,7 @@ export class AdvancedCacheService implements OnModuleInit {
     await this.incrementVersion();
 
     // Broadcast to other instances
-    await this.redis
-      .getClient()
-      .publish('cache:invalidate', JSON.stringify({ global: true }));
+    await this.redis.getClient().publish('cache:invalidate', JSON.stringify({ global: true }));
   }
 
   /**
@@ -406,27 +386,22 @@ export class AdvancedCacheService implements OnModuleInit {
         const fullKey = this.getFullKey(key);
         await this.fetchAndCache(key, fullKey, fetchFn, {
           ttl: options?.ttl || this.DEFAULT_TTL,
-          staleWhileRevalidate:
-            options?.staleWhileRevalidate || this.DEFAULT_STALE_WINDOW,
+          staleWhileRevalidate: options?.staleWhileRevalidate || this.DEFAULT_STALE_WINDOW,
           tags: options?.tags || [],
         });
       }),
     );
 
     const successful = results.filter((r) => r.status === 'fulfilled').length;
-    this.logger.log(
-      `Cache warming complete: ${successful}/${entries.length} entries`,
-    );
+    this.logger.log(`Cache warming complete: ${successful}/${entries.length} entries`);
   }
 
   /**
    * Get cache metrics
    */
   getMetrics(): CacheMetrics & { hitRate: number } {
-    const total =
-      this.metrics.hits + this.metrics.misses + this.metrics.staleHits;
-    const hitRate =
-      total > 0 ? (this.metrics.hits + this.metrics.staleHits) / total : 0;
+    const total = this.metrics.hits + this.metrics.misses + this.metrics.staleHits;
+    const hitRate = total > 0 ? (this.metrics.hits + this.metrics.staleHits) / total : 0;
 
     return {
       ...this.metrics,
@@ -468,15 +443,10 @@ export class AdvancedCacheService implements OnModuleInit {
   /**
    * Simple set (for backwards compatibility)
    */
-  async set<T>(
-    key: string,
-    data: T,
-    options: CacheOptions = {},
-  ): Promise<void> {
+  async set<T>(key: string, data: T, options: CacheOptions = {}): Promise<void> {
     const fullKey = this.getFullKey(key);
     const ttl = options.ttl || this.DEFAULT_TTL;
-    const staleWhileRevalidate =
-      options.staleWhileRevalidate || this.DEFAULT_STALE_WINDOW;
+    const staleWhileRevalidate = options.staleWhileRevalidate || this.DEFAULT_STALE_WINDOW;
 
     const entry: CacheEntry<T> = {
       data,
@@ -487,11 +457,7 @@ export class AdvancedCacheService implements OnModuleInit {
       version: this.currentVersion,
     };
 
-    await this.redis.set(
-      fullKey,
-      JSON.stringify(entry),
-      ttl + staleWhileRevalidate,
-    );
+    await this.redis.set(fullKey, JSON.stringify(entry), ttl + staleWhileRevalidate);
   }
 
   /**

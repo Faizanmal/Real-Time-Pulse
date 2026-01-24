@@ -1,20 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { BlockchainService } from './blockchain.service';
 import { MerkleTreeService } from './merkle-tree.service';
@@ -78,11 +63,7 @@ export class BlockchainController {
     @Param('entityType') entityType: string,
     @Param('entityId') entityId: string,
   ) {
-    return this.blockchainService.getEntityAuditTrail(
-      req.user.workspaceId,
-      entityType,
-      entityId,
-    );
+    return this.blockchainService.getEntityAuditTrail(req.user.workspaceId, entityType, entityId);
   }
 
   @Get('compliance')
@@ -98,23 +79,16 @@ export class BlockchainController {
     @Query('entityTypes') entityTypes?: string | string[],
     @Query('actions') actions?: string | string[],
   ) {
-    return this.blockchainService.generateComplianceReport(
-      req.user.workspaceId,
-      {
-        startDate: startDate ? new Date(startDate) : undefined,
-        endDate: endDate ? new Date(endDate) : undefined,
-        entityTypes: entityTypes
-          ? Array.isArray(entityTypes)
-            ? entityTypes
-            : [entityTypes]
-          : undefined,
-        actions: actions
-          ? Array.isArray(actions)
-            ? actions
-            : [actions]
-          : undefined,
-      },
-    );
+    return this.blockchainService.generateComplianceReport(req.user.workspaceId, {
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+      entityTypes: entityTypes
+        ? Array.isArray(entityTypes)
+          ? entityTypes
+          : [entityTypes]
+        : undefined,
+      actions: actions ? (Array.isArray(actions) ? actions : [actions]) : undefined,
+    });
   }
 
   @Get('export')
@@ -134,10 +108,7 @@ export class BlockchainController {
       checksum: string;
     },
   ) {
-    const success = await this.blockchainService.importChain(
-      req.user.workspaceId,
-      dto,
-    );
+    const success = await this.blockchainService.importChain(req.user.workspaceId, dto);
     return { success };
   }
 
@@ -151,11 +122,7 @@ export class BlockchainController {
       root: string;
     },
   ) {
-    const valid = this.merkleService.verifyProof(
-      dto.leafHash,
-      dto.proof,
-      dto.root,
-    );
+    const valid = this.merkleService.verifyProof(dto.leafHash, dto.proof, dto.root);
     return { valid };
   }
 

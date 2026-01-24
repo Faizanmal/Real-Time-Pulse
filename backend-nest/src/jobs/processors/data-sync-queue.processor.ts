@@ -13,9 +13,7 @@ export class DataSyncQueueProcessor {
 
   @Process('sync-data')
   async handleDataSync(job: Job<DataSyncJobData>) {
-    this.logger.log(
-      `Processing data sync job ${job.id} for workspace ${job.data.workspaceId}`,
-    );
+    this.logger.log(`Processing data sync job ${job.id} for workspace ${job.data.workspaceId}`);
 
     try {
       const { integrationId, syncType } = job.data;
@@ -41,10 +39,7 @@ export class DataSyncQueueProcessor {
 
         case 'GOOGLE_ANALYTICS':
         case 'GOOGLE_ANALYTICS_4':
-          syncedCount = await this.syncGoogleAnalyticsData(
-            integration,
-            syncType,
-          );
+          syncedCount = await this.syncGoogleAnalyticsData(integration, syncType);
           break;
 
         case 'HARVEST':
@@ -64,9 +59,7 @@ export class DataSyncQueueProcessor {
       });
 
       await job.progress(100);
-      this.logger.log(
-        `Data sync completed for job ${job.id}. Synced ${syncedCount} items`,
-      );
+      this.logger.log(`Data sync completed for job ${job.id}. Synced ${syncedCount} items`);
 
       return { success: true, syncedCount };
     } catch (error) {
@@ -75,36 +68,21 @@ export class DataSyncQueueProcessor {
     }
   }
 
-  private syncAsanaData(
-    integration: unknown,
-    syncType: string,
-  ): Promise<number> {
+  private syncAsanaData(integration: unknown, syncType: string): Promise<number> {
     // Implement Asana API integration
     // This is a placeholder
-    this.logger.log(
-      `Syncing Asana data for integration (${syncType})`,
-      integration,
-    );
+    this.logger.log(`Syncing Asana data for integration (${syncType})`, integration);
     return Promise.resolve(0);
   }
 
-  private syncGoogleAnalyticsData(
-    integration: unknown,
-    syncType: string,
-  ): Promise<number> {
+  private syncGoogleAnalyticsData(integration: unknown, syncType: string): Promise<number> {
     // Implement Google Analytics API integration
     // This is a placeholder
-    this.logger.log(
-      `Syncing Google Analytics data for integration (${syncType})`,
-      integration,
-    );
+    this.logger.log(`Syncing Google Analytics data for integration (${syncType})`, integration);
     return Promise.resolve(0);
   }
 
-  private syncHarvestData(
-    integration: unknown,
-    syncType: string,
-  ): Promise<number> {
+  private syncHarvestData(integration: unknown, syncType: string): Promise<number> {
     // Implement Harvest API integration
     // This is a placeholder
     this.logger.log(`Syncing Harvest data (${syncType})`);

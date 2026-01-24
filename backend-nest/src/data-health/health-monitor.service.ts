@@ -39,9 +39,7 @@ export class HealthMonitorService {
       try {
         await this.performHealthCheck(monitor.id);
       } catch (error) {
-        this.logger.error(
-          `Health check failed for monitor ${monitor.id}: ${error.message}`,
-        );
+        this.logger.error(`Health check failed for monitor ${monitor.id}: ${error.message}`);
       }
     }
   }
@@ -65,9 +63,7 @@ export class HealthMonitorService {
 
     try {
       // Check integration health based on provider
-      const checkResult = await this.checkIntegrationHealth(
-        monitor.integration,
-      );
+      const checkResult = await this.checkIntegrationHealth(monitor.integration);
 
       if (!checkResult.success) {
         status = HealthStatus.DOWN;
@@ -89,10 +85,7 @@ export class HealthMonitorService {
           monitor.lastKnownSchema &&
           !this.schemasMatch(monitor.lastKnownSchema, checkResult.schema)
         ) {
-          await this.dataHealthService.updateSchemaChange(
-            healthId,
-            checkResult.schema,
-          );
+          await this.dataHealthService.updateSchemaChange(healthId, checkResult.schema);
           status = HealthStatus.SCHEMA_CHANGED;
           errorMessage = 'Data schema has changed';
         } else if (checkResult.schema && !monitor.lastKnownSchema) {
@@ -160,14 +153,11 @@ export class HealthMonitorService {
   private async checkGoogleAnalytics(integration: any) {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(
-          'https://analyticsdata.googleapis.com/v1beta/properties',
-          {
-            headers: {
-              Authorization: `Bearer ${integration.accessToken}`,
-            },
+        this.httpService.get('https://analyticsdata.googleapis.com/v1beta/properties', {
+          headers: {
+            Authorization: `Bearer ${integration.accessToken}`,
           },
-        ),
+        }),
       );
 
       return {
@@ -196,12 +186,8 @@ export class HealthMonitorService {
       );
 
       // Check rate limit headers
-      const rateLimit = parseInt(
-        response.headers['x-ratelimit-remaining'] || '0',
-      );
-      const rateLimitTotal = parseInt(
-        response.headers['x-ratelimit-limit'] || '5000',
-      );
+      const rateLimit = parseInt(response.headers['x-ratelimit-remaining'] || '0');
+      const rateLimitTotal = parseInt(response.headers['x-ratelimit-limit'] || '5000');
 
       return {
         success: true,
@@ -287,8 +273,7 @@ export class HealthMonitorService {
 
     const shouldAlert =
       monitor.consecutiveErrors >= monitor.alertThreshold &&
-      (!monitor.lastAlertSentAt ||
-        Date.now() - monitor.lastAlertSentAt.getTime() > 3600000); // 1 hour
+      (!monitor.lastAlertSentAt || Date.now() - monitor.lastAlertSentAt.getTime() > 3600000); // 1 hour
 
     if (shouldAlert) {
       await this.sendHealthAlert(monitor);
@@ -301,9 +286,7 @@ export class HealthMonitorService {
 
   private async sendHealthAlert(monitor: any) {
     // Create alert notification
-    this.logger.warn(
-      `Health alert for ${monitor.integration.provider}: ${monitor.lastError}`,
-    );
+    this.logger.warn(`Health alert for ${monitor.integration.provider}: ${monitor.lastError}`);
 
     // Get workspace owner/admins for notification
     const workspaceUsers = await this.prisma.user.findMany({
@@ -333,9 +316,7 @@ export class HealthMonitorService {
           },
         });
       } catch (error) {
-        this.logger.error(
-          `Failed to send health alert to user ${user.id}: ${error.message}`,
-        );
+        this.logger.error(`Failed to send health alert to user ${user.id}: ${error.message}`);
       }
     }
 

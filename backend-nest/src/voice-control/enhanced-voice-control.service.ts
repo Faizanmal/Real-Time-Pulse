@@ -115,9 +115,7 @@ export class EnhancedVoiceControlService {
       },
       {
         command: 'refresh',
-        patterns: [
-          /(?:refresh|reload|update)\s+(?:the\s+)?(?:data|dashboard|widgets?)?/i,
-        ],
+        patterns: [/(?:refresh|reload|update)\s+(?:the\s+)?(?:data|dashboard|widgets?)?/i],
         action: 'data.refresh',
         parameters: [],
         description: 'Refresh the current data',
@@ -157,10 +155,7 @@ export class EnhancedVoiceControlService {
       // Search commands
       {
         command: 'search',
-        patterns: [
-          /(?:search|find|look for)\s+(.+)/i,
-          /(?:where is|what is)\s+(.+)/i,
-        ],
+        patterns: [/(?:search|find|look for)\s+(.+)/i, /(?:where is|what is)\s+(.+)/i],
         action: 'search.query',
         parameters: ['query'],
         description: 'Search for data or entities',
@@ -168,10 +163,7 @@ export class EnhancedVoiceControlService {
       // Query commands
       {
         command: 'query',
-        patterns: [
-          /(?:what|how|show me|tell me)\s+(.+)/i,
-          /(?:query)\s+(.+)/i,
-        ],
+        patterns: [/(?:what|how|show me|tell me)\s+(.+)/i, /(?:query)\s+(.+)/i],
         action: 'query.natural',
         parameters: ['question'],
         description: 'Ask a natural language question about data',
@@ -179,9 +171,7 @@ export class EnhancedVoiceControlService {
       // Help command
       {
         command: 'help',
-        patterns: [
-          /(?:help|what can you do|commands|options)/i,
-        ],
+        patterns: [/(?:help|what can you do|commands|options)/i],
         action: 'system.help',
         parameters: [],
         description: 'Show available voice commands',
@@ -420,7 +410,10 @@ export class EnhancedVoiceControlService {
     };
   }
 
-  private async handleQuery(action: string, params: Record<string, any>): Promise<VoiceCommandResult> {
+  private async handleQuery(
+    action: string,
+    params: Record<string, any>,
+  ): Promise<VoiceCommandResult> {
     // This would integrate with the predictive analytics service
     return {
       success: true,
@@ -430,7 +423,7 @@ export class EnhancedVoiceControlService {
     };
   }
 
-  private handleSystem(action: string, params: Record<string, any>): VoiceCommandResult {
+  private handleSystem(action: string, _params: Record<string, any>): VoiceCommandResult {
     if (action === 'help') {
       const commandList = this.commands.map((c) => ({
         name: c.command,
@@ -480,13 +473,7 @@ export class EnhancedVoiceControlService {
     }
 
     // Add more natural speech patterns
-    const prefixes = [
-      'Okay, ',
-      'Sure, ',
-      'Got it, ',
-      'Alright, ',
-      '',
-    ];
+    const prefixes = ['Okay, ', 'Sure, ', 'Got it, ', 'Alright, ', ''];
 
     const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
     return prefix + result.message;

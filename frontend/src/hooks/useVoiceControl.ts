@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useLayoutEffect, useCallback, useRef } from 'react';
 
 interface VoiceControlOptions {
   language?: string;
@@ -32,24 +32,25 @@ interface SpeechRecognitionLike {
 export function useVoiceControl(options: VoiceControlOptions = {}) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
-  const [isSupported, setIsSupported] = useState(false);
+  const isSupported = (() => {
+    const win = window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown };
+    return !!(win.SpeechRecognition ?? win.webkitSpeechRecognition);
+  })();
   const [error, setError] = useState<string | null>(null);
   
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const onCommandRef = useRef<((command: VoiceCommand) => void) | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     // Check if browser supports Web Speech API
     const win = window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown };
     const impl: unknown = win.SpeechRecognition ?? win.webkitSpeechRecognition;
 
     if (!impl) {
-      setIsSupported(false);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError('Voice recognition not supported in this browser');
       return;
     }
-
-    setIsSupported(true);
 
     // Initialize speech recognition
     const RecognitionCtor = impl as unknown as new () => SpeechRecognitionLike;

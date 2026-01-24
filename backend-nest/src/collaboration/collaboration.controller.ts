@@ -8,22 +8,12 @@ import {
   Delete,
   ForbiddenException,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CollaborationService } from './collaboration.service';
 import { CollaborationGateway } from './collaboration.gateway';
 import type { UserPresence } from './collaboration.gateway';
-import type {
-  ActivityLog,
-  WidgetChange,
-  ChatMessage,
-} from './collaboration.service';
+import type { ActivityLog, WidgetChange, ChatMessage } from './collaboration.service';
 import type { RequestUser } from '../common/interfaces/auth.interface';
 
 @ApiTags('Collaboration')
@@ -62,10 +52,7 @@ export class CollaborationController {
     @Param('portalId') portalId: string,
     @Query('limit') limit?: number,
   ): Promise<{ success: boolean; activities: ActivityLog[] }> {
-    const activities = await this.collaborationService.getActivityFeed(
-      portalId,
-      limit || 50,
-    );
+    const activities = await this.collaborationService.getActivityFeed(portalId, limit || 50);
     return {
       success: true,
       activities,
@@ -84,10 +71,7 @@ export class CollaborationController {
     @Param('portalId') portalId: string,
     @Query('limit') limit?: number,
   ): Promise<{ success: boolean; history: WidgetChange[] }> {
-    const history = await this.collaborationService.getChangeHistory(
-      portalId,
-      limit || 50,
-    );
+    const history = await this.collaborationService.getChangeHistory(portalId, limit || 50);
     return {
       success: true,
       history,
@@ -106,10 +90,7 @@ export class CollaborationController {
     @Param('portalId') portalId: string,
     @Query('limit') limit?: number,
   ): Promise<{ success: boolean; messages: ChatMessage[] }> {
-    const messages = await this.collaborationService.getChatMessages(
-      portalId,
-      limit || 100,
-    );
+    const messages = await this.collaborationService.getChatMessages(portalId, limit || 100);
     return {
       success: true,
       messages,
@@ -120,8 +101,7 @@ export class CollaborationController {
   @ApiOperation({ summary: 'Get collaboration statistics for a portal' })
   @ApiParam({ name: 'portalId', description: 'Portal ID' })
   async getCollaborationStats(@Param('portalId') portalId: string) {
-    const stats =
-      await this.collaborationService.getCollaborationStats(portalId);
+    const stats = await this.collaborationService.getCollaborationStats(portalId);
     return {
       success: true,
       stats,
@@ -133,10 +113,7 @@ export class CollaborationController {
     summary: 'Clear collaboration data for a portal (admin only)',
   })
   @ApiParam({ name: 'portalId', description: 'Portal ID' })
-  async clearCollaborationData(
-    @Param('portalId') portalId: string,
-    @Request() req: any,
-  ) {
+  async clearCollaborationData(@Param('portalId') portalId: string, @Request() req: any) {
     const user = req.user as RequestUser;
 
     if (!user || (user.role !== 'OWNER' && user.role !== 'ADMIN')) {

@@ -51,10 +51,7 @@ export class SnapshotService {
   }
 
   // Save a snapshot
-  async saveSnapshot(
-    aggregate: AggregateRoot,
-    aggregateType: string,
-  ): Promise<void> {
+  async saveSnapshot(aggregate: AggregateRoot, aggregateType: string): Promise<void> {
     const state = this.serializeAggregate(aggregate);
 
     await this.eventStore.createSnapshot(
@@ -76,9 +73,7 @@ export class SnapshotService {
   ): Promise<T | null> {
     const factory = this.aggregateFactories.get(aggregateType);
     if (!factory) {
-      throw new Error(
-        `No factory registered for aggregate type: ${aggregateType}`,
-      );
+      throw new Error(`No factory registered for aggregate type: ${aggregateType}`);
     }
 
     // Try to load from snapshot first
@@ -112,10 +107,7 @@ export class SnapshotService {
   }
 
   // Check if snapshot is needed
-  async shouldSnapshot(
-    aggregateId: string,
-    _aggregateType: string,
-  ): Promise<boolean> {
+  async shouldSnapshot(aggregateId: string, _aggregateType: string): Promise<boolean> {
     const snapshot = await this.eventStore.getSnapshot(aggregateId);
 
     if (!snapshot) {
@@ -144,10 +136,7 @@ export class SnapshotService {
     let refreshed = 0;
     for (const snapshot of staleSnapshots) {
       try {
-        await this.refreshSnapshot(
-          snapshot.aggregateId,
-          snapshot.aggregateType,
-        );
+        await this.refreshSnapshot(snapshot.aggregateId, snapshot.aggregateType);
         refreshed++;
       } catch (error) {
         this.logger.error(
@@ -156,16 +145,11 @@ export class SnapshotService {
       }
     }
 
-    this.logger.log(
-      `Snapshot maintenance completed: ${refreshed} snapshots refreshed`,
-    );
+    this.logger.log(`Snapshot maintenance completed: ${refreshed} snapshots refreshed`);
   }
 
   // Refresh a single snapshot
-  async refreshSnapshot(
-    aggregateId: string,
-    aggregateType: string,
-  ): Promise<void> {
+  async refreshSnapshot(aggregateId: string, aggregateType: string): Promise<void> {
     const aggregate = await this.loadAggregate(aggregateId, aggregateType);
     if (aggregate) {
       await this.saveSnapshot(aggregate, aggregateType);
@@ -253,9 +237,7 @@ export class SnapshotService {
 
     // Also check for methods starting with 'get'
     const methods = Object.getOwnPropertyNames(prototype).filter(
-      (name) =>
-        name.startsWith('get') &&
-        typeof (aggregate as any)[name] === 'function',
+      (name) => name.startsWith('get') && typeof (aggregate as any)[name] === 'function',
     );
 
     for (const method of methods) {

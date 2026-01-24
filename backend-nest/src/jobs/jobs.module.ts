@@ -30,12 +30,7 @@ import { QUEUE_NAMES } from './queue.constants';
     EmailModule,
     PrismaModule,
   ],
-  providers: [
-    JobsService,
-    EmailQueueProcessor,
-    ReportQueueProcessor,
-    DataSyncQueueProcessor,
-  ],
+  providers: [JobsService, EmailQueueProcessor, ReportQueueProcessor, DataSyncQueueProcessor],
   exports: [JobsService, BullModule],
 })
 export class JobsModule {}

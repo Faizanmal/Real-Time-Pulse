@@ -17,10 +17,7 @@ export class AWSCloudWatchService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  private getEndpoint(
-    integration: AWSCloudWatchIntegration,
-    service: string,
-  ): string {
+  private getEndpoint(integration: AWSCloudWatchIntegration, service: string): string {
     return `https://${service}.${integration.settings.region}.amazonaws.com`;
   }
 
@@ -50,27 +47,18 @@ export class AWSCloudWatchService {
     return signedHeaders;
   }
 
-  async testConnection(
-    integration: AWSCloudWatchIntegration,
-  ): Promise<boolean> {
+  async testConnection(integration: AWSCloudWatchIntegration): Promise<boolean> {
     try {
       // Use AWS SDK or make a simple API call to verify credentials
       const endpoint = this.getEndpoint(integration, 'monitoring');
-      const headers = await this.signRequest(
-        integration,
-        'monitoring',
-        'POST',
-        '/',
-        '',
-        { 'Content-Type': 'application/x-www-form-urlencoded' },
-      );
+      const headers = await this.signRequest(integration, 'monitoring', 'POST', '/', '', {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      });
 
       const response = await firstValueFrom(
-        this.httpService.post(
-          endpoint,
-          'Action=DescribeAlarms&Version=2010-08-01&MaxRecords=1',
-          { headers },
-        ),
+        this.httpService.post(endpoint, 'Action=DescribeAlarms&Version=2010-08-01&MaxRecords=1', {
+          headers,
+        }),
       );
 
       return response.status === 200;
@@ -113,8 +101,7 @@ export class AWSCloudWatchService {
       const dimensions = params?.dimensions as Record<string, string>;
       const period = (params?.period as number) || 300;
       const startTime =
-        (params?.startTime as string) ||
-        new Date(Date.now() - 3600000).toISOString();
+        (params?.startTime as string) || new Date(Date.now() - 3600000).toISOString();
       const endTime = (params?.endTime as string) || new Date().toISOString();
       const statistics = (params?.statistics as string[]) || [
         'Average',
@@ -146,14 +133,9 @@ export class AWSCloudWatchService {
 
       const queryString = new URLSearchParams(queryParams as any).toString();
       const endpoint = this.getEndpoint(integration, 'monitoring');
-      const headers = await this.signRequest(
-        integration,
-        'monitoring',
-        'POST',
-        '/',
-        queryString,
-        { 'Content-Type': 'application/x-www-form-urlencoded' },
-      );
+      const headers = await this.signRequest(integration, 'monitoring', 'POST', '/', queryString, {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      });
 
       const response = await firstValueFrom(
         this.httpService.post(endpoint, queryString, { headers }),
@@ -186,14 +168,9 @@ export class AWSCloudWatchService {
 
       const queryString = new URLSearchParams(queryParams as any).toString();
       const endpoint = this.getEndpoint(integration, 'monitoring');
-      const headers = await this.signRequest(
-        integration,
-        'monitoring',
-        'POST',
-        '/',
-        queryString,
-        { 'Content-Type': 'application/x-www-form-urlencoded' },
-      );
+      const headers = await this.signRequest(integration, 'monitoring', 'POST', '/', queryString, {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      });
 
       const response = await firstValueFrom(
         this.httpService.post(endpoint, queryString, { headers }),
@@ -265,14 +242,9 @@ export class AWSCloudWatchService {
 
       const queryString = new URLSearchParams(queryParams).toString();
       const endpoint = this.getEndpoint(integration, 'monitoring');
-      const headers = await this.signRequest(
-        integration,
-        'monitoring',
-        'POST',
-        '/',
-        queryString,
-        { 'Content-Type': 'application/x-www-form-urlencoded' },
-      );
+      const headers = await this.signRequest(integration, 'monitoring', 'POST', '/', queryString, {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      });
 
       const response = await firstValueFrom(
         this.httpService.post(endpoint, queryString, { headers }),
@@ -345,11 +317,9 @@ export class AWSCloudWatchService {
 
       // Parse alarms
       const alarmList =
-        alarmsData?.DescribeAlarmsResponse?.DescribeAlarmsResult
-          ?.MetricAlarms || [];
+        alarmsData?.DescribeAlarmsResponse?.DescribeAlarmsResult?.MetricAlarms || [];
       const dashboardList =
-        dashboardsData?.ListDashboardsResponse?.ListDashboardsResult
-          ?.DashboardEntries || [];
+        dashboardsData?.ListDashboardsResponse?.ListDashboardsResult?.DashboardEntries || [];
 
       const alarmsByState: Record<string, number> = {};
       alarmList.forEach((alarm: any) => {

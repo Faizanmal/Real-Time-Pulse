@@ -29,7 +29,7 @@ export class EnhancedCacheService implements OnModuleInit, OnModuleDestroy {
   private subscriber: Redis;
   private localCache = new Map<string, { value: unknown; expiry: number }>();
   private stats = { hits: 0, misses: 0, writes: 0, deletes: 0 };
-  
+
   // Default TTLs by category
   private readonly defaultTtls = {
     session: 3600, // 1 hour
@@ -46,7 +46,7 @@ export class EnhancedCacheService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     const redisUrl = this.config.get('REDIS_URL', 'redis://localhost:6379');
-    
+
     this.redis = new Redis(redisUrl, {
       maxRetriesPerRequest: 3,
       retryStrategy: (times) => Math.min(times * 100, 3000),
@@ -59,7 +59,7 @@ export class EnhancedCacheService implements OnModuleInit, OnModuleDestroy {
     try {
       await this.redis.connect();
       await this.subscriber.connect();
-      this.setupSubscriber();
+      await this.setupSubscriber();
       this.logger.log('Enhanced cache service connected to Redis');
     } catch (error) {
       this.logger.warn('Failed to connect to Redis, using local cache only', error);
@@ -74,13 +74,13 @@ export class EnhancedCacheService implements OnModuleInit, OnModuleDestroy {
     await this.subscriber?.quit();
   }
 
-  private setupSubscriber() {
-    this.subscriber.subscribe('cache:invalidate');
-    
+  private async setupSubscriber() {
+    await this.subscriber.subscribe('cache:invalidate');
+
     this.subscriber.on('message', (channel, message) => {
       if (channel === 'cache:invalidate') {
         const { pattern } = JSON.parse(message);
-        this.invalidateLocalCache(pattern);
+        void this.invalidateLocalCache(pattern);
       }
     });
   }
@@ -101,13 +101,13 @@ export class EnhancedCacheService implements OnModuleInit, OnModuleDestroy {
       if (cached) {
         this.stats.hits++;
         const parsed = JSON.parse(cached);
-        
+
         // Update local cache
         this.localCache.set(key, {
           value: parsed,
           expiry: Date.now() + 30000, // 30 seconds local TTL
         });
-        
+
         return parsed as T;
       }
     } catch (error) {
@@ -118,11 +118,7 @@ export class EnhancedCacheService implements OnModuleInit, OnModuleDestroy {
     return null;
   }
 
-  async set(
-    key: string,
-    value: unknown,
-    options: CacheOptions = {}
-  ): Promise<void> {
+  async set(key: string, value: unknown, options: CacheOptions = {}): Promise<void> {
     const ttl = options.ttl || 300;
     const serialized = JSON.stringify(value);
 
@@ -167,12 +163,9 @@ export class EnhancedCacheService implements OnModuleInit, OnModuleDestroy {
       if (keys.length > 0) {
         await this.redis.del(...keys);
         keys.forEach((k) => this.localCache.delete(k));
-        
+
         // Notify other instances
-        await this.redis.publish(
-          'cache:invalidate',
-          JSON.stringify({ pattern })
-        );
+        await this.redis.publish('cache:invalidate', JSON.stringify({ pattern }));
       }
       return keys.length;
     } catch (error) {
@@ -189,7 +182,7 @@ export class EnhancedCacheService implements OnModuleInit, OnModuleDestroy {
   async getOrSet<T>(
     key: string,
     factory: () => Promise<T>,
-    options: CacheOptions = {}
+    options: CacheOptions = {},
   ): Promise<T> {
     const cached = await this.get<T>(key);
     if (cached !== null) {
@@ -208,10 +201,10 @@ export class EnhancedCacheService implements OnModuleInit, OnModuleDestroy {
   async getStaleWhileRevalidate<T>(
     key: string,
     factory: () => Promise<T>,
-    options: CacheOptions & { staleWhileRevalidate: number }
+    options: CacheOptions & { staleWhileRevalidate: number },
   ): Promise<T | null> {
     const metaKey = `${key}:meta`;
-    
+
     // Get cached value and metadata
     const [cached, meta] = await Promise.all([
       this.get<T>(key),
@@ -223,7 +216,7 @@ export class EnhancedCacheService implements OnModuleInit, OnModuleDestroy {
       const age = meta ? Date.now() - meta.fetchedAt : Infinity;
       if (age > (options.staleWhileRevalidate || 60) * 1000) {
         // Revalidate in background
-        this.revalidateInBackground(key, factory, options);
+        void this.revalidateInBackground(key, factory, options);
       }
       return cached;
     }
@@ -238,7 +231,7 @@ export class EnhancedCacheService implements OnModuleInit, OnModuleDestroy {
   private async revalidateInBackground<T>(
     key: string,
     factory: () => Promise<T>,
-    options: CacheOptions
+    options: CacheOptions,
   ): Promise<void> {
     try {
       const value = await factory();
@@ -254,7 +247,7 @@ export class EnhancedCacheService implements OnModuleInit, OnModuleDestroy {
    */
   async mget<T>(keys: string[]): Promise<Map<string, T | null>> {
     const results = new Map<string, T | null>();
-    
+
     try {
       const values = await this.redis.mget(...keys);
       keys.forEach((key, index) => {
@@ -272,10 +265,7 @@ export class EnhancedCacheService implements OnModuleInit, OnModuleDestroy {
   /**
    * Multi-set for batch operations
    */
-  async mset(
-    entries: Map<string, unknown>,
-    options: CacheOptions = {}
-  ): Promise<void> {
+  async mset(entries: Map<string, unknown>, options: CacheOptions = {}): Promise<void> {
     const pipeline = this.redis.pipeline();
     const ttl = options.ttl || 300;
 
@@ -298,7 +288,7 @@ export class EnhancedCacheService implements OnModuleInit, OnModuleDestroy {
 
   private async addToTags(key: string, tags: string[], ttl: number): Promise<void> {
     const pipeline = this.redis.pipeline();
-    
+
     tags.forEach((tag) => {
       const tagKey = `tag:${tag}`;
       pipeline.sadd(tagKey, key);
@@ -312,17 +302,14 @@ export class EnhancedCacheService implements OnModuleInit, OnModuleDestroy {
 
   async invalidateByTag(tag: string): Promise<number> {
     const tagKey = `tag:${tag}`;
-    
+
     try {
       const keys = await this.redis.smembers(tagKey);
       if (keys.length > 0) {
         await this.redis.del(...keys, tagKey);
         keys.forEach((k) => this.localCache.delete(k));
-        
-        await this.redis.publish(
-          'cache:invalidate',
-          JSON.stringify({ pattern: `tag:${tag}` })
-        );
+
+        await this.redis.publish('cache:invalidate', JSON.stringify({ pattern: `tag:${tag}` }));
       }
       return keys.length;
     } catch (error) {
@@ -344,14 +331,14 @@ export class EnhancedCacheService implements OnModuleInit, OnModuleDestroy {
   async checkRateLimit(
     key: string,
     maxRequests: number,
-    windowSeconds: number
+    windowSeconds: number,
   ): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
     const now = Date.now();
     const windowKey = `ratelimit:${key}:${Math.floor(now / (windowSeconds * 1000))}`;
-    
+
     try {
       const count = await this.redis.incr(windowKey);
-      
+
       if (count === 1) {
         await this.redis.expire(windowKey, windowSeconds);
       }
@@ -369,20 +356,11 @@ export class EnhancedCacheService implements OnModuleInit, OnModuleDestroy {
 
   // ==================== DISTRIBUTED LOCKING ====================
 
-  async acquireLock(
-    lockKey: string,
-    ttlSeconds: number = 30
-  ): Promise<string | null> {
+  async acquireLock(lockKey: string, ttlSeconds = 30): Promise<string | null> {
     const lockId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    
+
     try {
-      const result = await this.redis.set(
-        `lock:${lockKey}`,
-        lockId,
-        'EX',
-        ttlSeconds,
-        'NX'
-      );
+      const result = await this.redis.set(`lock:${lockKey}`, lockId, 'EX', ttlSeconds, 'NX');
 
       return result === 'OK' ? lockId : null;
     } catch (error) {
@@ -412,13 +390,13 @@ export class EnhancedCacheService implements OnModuleInit, OnModuleDestroy {
   async withLock<T>(
     lockKey: string,
     fn: () => Promise<T>,
-    options: { ttl?: number; retries?: number; retryDelay?: number } = {}
+    options: { ttl?: number; retries?: number; retryDelay?: number } = {},
   ): Promise<T | null> {
     const { ttl = 30, retries = 3, retryDelay = 100 } = options;
-    
+
     for (let attempt = 0; attempt < retries; attempt++) {
       const lockId = await this.acquireLock(lockKey, ttl);
-      
+
       if (lockId) {
         try {
           return await fn();
@@ -481,10 +459,9 @@ export class EnhancedCacheService implements OnModuleInit, OnModuleDestroy {
     widgetData: (widgetId: string, hash: string) => `widget:${widgetId}:data:${hash}`,
     dashboard: (dashboardId: string) => `dashboard:${dashboardId}`,
     integration: (integrationId: string) => `integration:${integrationId}`,
-    integrationData: (integrationId: string, query: string) => 
+    integrationData: (integrationId: string, query: string) =>
       `integration:${integrationId}:${Buffer.from(query).toString('base64')}`,
-    analytics: (workspaceId: string, metric: string) => 
-      `analytics:${workspaceId}:${metric}`,
+    analytics: (workspaceId: string, metric: string) => `analytics:${workspaceId}:${metric}`,
     session: (sessionId: string) => `session:${sessionId}`,
     template: (templateId: string) => `template:${templateId}`,
     templateList: (category?: string) => `templates:list:${category || 'all'}`,

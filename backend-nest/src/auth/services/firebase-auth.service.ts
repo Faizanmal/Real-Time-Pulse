@@ -41,15 +41,11 @@ export class FirebaseAuthService {
   private initializeFirebase(): void {
     try {
       const projectId = this.configService.get<string>('firebase.projectId');
-      const clientEmail = this.configService.get<string>(
-        'firebase.clientEmail',
-      );
+      const clientEmail = this.configService.get<string>('firebase.clientEmail');
       const privateKey = this.configService.get<string>('firebase.privateKey');
 
       if (!projectId || !clientEmail || !privateKey) {
-        this.logger.warn(
-          'Firebase configuration incomplete - Firebase auth disabled',
-        );
+        this.logger.warn('Firebase configuration incomplete - Firebase auth disabled');
         return;
       }
 
@@ -76,9 +72,7 @@ export class FirebaseAuthService {
    */
   async verifyIdToken(idToken: string): Promise<DecodedIdToken> {
     if (!this.firebaseInitialized) {
-      throw new UnauthorizedException(
-        'Firebase authentication is not configured',
-      );
+      throw new UnauthorizedException('Firebase authentication is not configured');
     }
 
     try {

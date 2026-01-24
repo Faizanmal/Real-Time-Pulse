@@ -187,13 +187,10 @@ export class ZendeskService {
       const perPage = (params?.limit as number) || 50;
 
       const response = await firstValueFrom(
-        this.httpService.get(
-          `${this.getBaseUrl(integration)}/satisfaction_ratings`,
-          {
-            headers: this.getHeaders(integration),
-            params: { per_page: perPage },
-          },
-        ),
+        this.httpService.get(`${this.getBaseUrl(integration)}/satisfaction_ratings`, {
+          headers: this.getHeaders(integration),
+          params: { per_page: perPage },
+        }),
       );
 
       return response.data.satisfaction_ratings || [];
@@ -242,8 +239,7 @@ export class ZendeskService {
         }
       });
 
-      const avgResponseTime =
-        responseTimeCount > 0 ? totalResponseTime / responseTimeCount : 0;
+      const avgResponseTime = responseTimeCount > 0 ? totalResponseTime / responseTimeCount : 0;
 
       return {
         summary: {
@@ -263,9 +259,7 @@ export class ZendeskService {
     }
   }
 
-  private async fetchTicketCounts(
-    integration: ZendeskIntegration,
-  ): Promise<{ count: number }> {
+  private async fetchTicketCounts(integration: ZendeskIntegration): Promise<{ count: number }> {
     try {
       const response = await firstValueFrom(
         this.httpService.get(`${this.getBaseUrl(integration)}/tickets/count`, {

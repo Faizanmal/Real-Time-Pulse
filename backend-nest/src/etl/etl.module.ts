@@ -6,11 +6,7 @@ import { ETLPipelineService } from './etl-pipeline.service';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-  imports: [
-    PrismaModule,
-    ScheduleModule.forRoot(),
-    EventEmitterModule.forRoot(),
-  ],
+  imports: [PrismaModule, ScheduleModule.forRoot(), EventEmitterModule.forRoot()],
   controllers: [ETLController],
   providers: [ETLPipelineService],
   exports: [ETLPipelineService],

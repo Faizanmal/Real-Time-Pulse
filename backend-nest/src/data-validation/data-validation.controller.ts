@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Patch,
-  Delete,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Delete, Query } from '@nestjs/common';
 import { DataValidationService } from './data-validation.service';
 import { ValidationEngineService } from './validation-engine.service';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -45,10 +36,7 @@ export class DataValidationController {
 
   @Get('rules/workspace/:workspaceId')
   @ApiOperation({ summary: 'Get all validation rules for a workspace' })
-  async getRules(
-    @Param('workspaceId') workspaceId: string,
-    @Query('enabled') enabled?: string,
-  ) {
+  async getRules(@Param('workspaceId') workspaceId: string, @Query('enabled') enabled?: string) {
     return this.dataValidationService.getRules(workspaceId, {
       ...(enabled && { enabled: enabled === 'true' }),
     });
@@ -105,23 +93,13 @@ export class DataValidationController {
     @Param('violationId') violationId: string,
     @Body() body: { resolvedBy: string; notes?: string },
   ) {
-    return this.dataValidationService.resolveViolation(
-      violationId,
-      body.resolvedBy,
-      body.notes,
-    );
+    return this.dataValidationService.resolveViolation(violationId, body.resolvedBy, body.notes);
   }
 
   @Get('violations/workspace/:workspaceId/stats')
   @ApiOperation({ summary: 'Get violation statistics' })
-  async getViolationStats(
-    @Param('workspaceId') workspaceId: string,
-    @Query('days') days?: string,
-  ) {
-    return this.dataValidationService.getViolationStats(
-      workspaceId,
-      days ? parseInt(days) : 7,
-    );
+  async getViolationStats(@Param('workspaceId') workspaceId: string, @Query('days') days?: string) {
+    return this.dataValidationService.getViolationStats(workspaceId, days ? parseInt(days) : 7);
   }
 
   @Post('validate-on-demand')
@@ -134,10 +112,6 @@ export class DataValidationController {
       fieldPath: string;
     },
   ) {
-    return this.validationEngine.validateDataOnDemand(
-      body.workspaceId,
-      body.data,
-      body.fieldPath,
-    );
+    return this.validationEngine.validateDataOnDemand(body.workspaceId, body.data, body.fieldPath);
   }
 }

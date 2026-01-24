@@ -16,9 +16,7 @@ import { WorkflowAutomationService } from './workflow-automation.service';
 @Controller('workflow-automation')
 @UseGuards(JwtAuthGuard)
 export class WorkflowAutomationController {
-  constructor(
-    private readonly workflowAutomationService: WorkflowAutomationService,
-  ) {}
+  constructor(private readonly workflowAutomationService: WorkflowAutomationService) {}
 
   // Workflows
   @Post('workflows')
@@ -35,10 +33,7 @@ export class WorkflowAutomationController {
       edges: any;
     },
   ) {
-    return this.workflowAutomationService.createWorkflow(
-      req.user.workspaceId,
-      data,
-    );
+    return this.workflowAutomationService.createWorkflow(req.user.workspaceId, data);
   }
 
   @Get('workflows')
@@ -52,24 +47,13 @@ export class WorkflowAutomationController {
   }
 
   @Patch('workflows/:id')
-  async updateWorkflow(
-    @Param('id') id: string,
-    @Req() req: any,
-    @Body() data: any,
-  ) {
-    return this.workflowAutomationService.updateWorkflow(
-      id,
-      req.user.workspaceId,
-      data,
-    );
+  async updateWorkflow(@Param('id') id: string, @Req() req: any, @Body() data: any) {
+    return this.workflowAutomationService.updateWorkflow(id, req.user.workspaceId, data);
   }
 
   @Delete('workflows/:id')
   async deleteWorkflow(@Param('id') id: string, @Req() req: any) {
-    return this.workflowAutomationService.deleteWorkflow(
-      id,
-      req.user.workspaceId,
-    );
+    return this.workflowAutomationService.deleteWorkflow(id, req.user.workspaceId);
   }
 
   @Patch('workflows/:id/toggle')
@@ -78,47 +62,28 @@ export class WorkflowAutomationController {
     @Req() req: any,
     @Body() data: { isActive: boolean },
   ) {
-    return this.workflowAutomationService.toggleWorkflow(
-      id,
-      req.user.workspaceId,
-      data.isActive,
-    );
+    return this.workflowAutomationService.toggleWorkflow(id, req.user.workspaceId, data.isActive);
   }
 
   // Execution
   @Post('workflows/:id/execute')
-  async executeWorkflow(
-    @Param('id') workflowId: string,
-    @Body() data: { triggerData: any },
-  ) {
-    return this.workflowAutomationService.executeWorkflow(
-      workflowId,
-      data.triggerData,
-    );
+  async executeWorkflow(@Param('id') workflowId: string, @Body() data: { triggerData: any }) {
+    return this.workflowAutomationService.executeWorkflow(workflowId, data.triggerData);
   }
 
   @Get('workflows/:id/executions')
   async getExecutions(@Param('id') workflowId: string, @Req() req: any) {
-    return this.workflowAutomationService.getExecutions(
-      workflowId,
-      req.user.workspaceId,
-    );
+    return this.workflowAutomationService.getExecutions(workflowId, req.user.workspaceId);
   }
 
   @Get('executions/:id')
   async getExecution(@Param('id') executionId: string, @Req() req: any) {
-    return this.workflowAutomationService.getExecution(
-      executionId,
-      req.user.workspaceId,
-    );
+    return this.workflowAutomationService.getExecution(executionId, req.user.workspaceId);
   }
 
   @Post('executions/:id/retry')
   async retryExecution(@Param('id') executionId: string, @Req() req: any) {
-    return this.workflowAutomationService.retryExecution(
-      executionId,
-      req.user.workspaceId,
-    );
+    return this.workflowAutomationService.retryExecution(executionId, req.user.workspaceId);
   }
 
   // Templates

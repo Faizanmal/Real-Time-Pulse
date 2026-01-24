@@ -52,7 +52,7 @@ export class EmailService {
   private loadTemplate(templateName: string): handlebars.TemplateDelegate {
     // Check cache first
     if (this.templatesCache.has(templateName)) {
-      return this.templatesCache.get(templateName)!;
+      return this.templatesCache.get(templateName);
     }
 
     // Load from file
@@ -65,10 +65,7 @@ export class EmailService {
       this.templatesCache.set(templateName, compiledTemplate);
       return compiledTemplate;
     } catch (error) {
-      this.logger.error(
-        `Failed to load email template: ${templateName}`,
-        error,
-      );
+      this.logger.error(`Failed to load email template: ${templateName}`, error);
       throw new Error(`Email template not found: ${templateName}`);
     }
   }
@@ -198,12 +195,7 @@ export class EmailService {
     });
   }
 
-  async sendPortalSharedEmail(
-    to: string,
-    portalName: string,
-    shareUrl: string,
-    message?: string,
-  ) {
+  async sendPortalSharedEmail(to: string, portalName: string, shareUrl: string, message?: string) {
     return this.sendEmail({
       to,
       subject: `${portalName} has been shared with you`,
@@ -216,11 +208,7 @@ export class EmailService {
     });
   }
 
-  async sendSubscriptionExpiringEmail(
-    to: string,
-    workspaceName: string,
-    daysRemaining: number,
-  ) {
+  async sendSubscriptionExpiringEmail(to: string, workspaceName: string, daysRemaining: number) {
     return this.sendEmail({
       to,
       subject: `Your ${workspaceName} subscription is expiring soon`,

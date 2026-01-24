@@ -68,9 +68,7 @@ export class AnalyticsService {
   /**
    * Get portal views over time
    */
-  async getPortalViews(
-    query: AnalyticsQuery,
-  ): Promise<Array<{ date: string; count: number }>> {
+  async getPortalViews(query: AnalyticsQuery): Promise<Array<{ date: string; count: number }>> {
     const cacheKey = `analytics:portal_views:${JSON.stringify(query)}`;
     const cached = await this.cache.get(cacheKey);
 
@@ -117,9 +115,7 @@ export class AnalyticsService {
    */
   async getWidgetInteractions(
     query: AnalyticsQuery,
-  ): Promise<
-    Array<{ widgetId: string | null; eventType: string; count: number }>
-  > {
+  ): Promise<Array<{ widgetId: string | null; eventType: string; count: number }>> {
     const cacheKey = `analytics:widget_interactions:${JSON.stringify(query)}`;
     const cached = await this.cache.get(cacheKey);
 
@@ -153,9 +149,7 @@ export class AnalyticsService {
 
     const events = await this.prisma.analyticsEvent.groupBy({
       by: ['widgetId', 'eventType'],
-      where: where as Parameters<
-        typeof this.prisma.analyticsEvent.groupBy
-      >[0]['where'],
+      where: where as any,
       _count: true,
     });
 
@@ -201,23 +195,22 @@ export class AnalyticsService {
       if (endDate) where.timestamp.lte = endDate;
     }
 
-    const [totalEvents, uniqueUsers, uniqueSessions, avgSessionDuration] =
-      await Promise.all([
-        this.prisma.analyticsEvent.count({ where }),
+    const [totalEvents, uniqueUsers, uniqueSessions, avgSessionDuration] = await Promise.all([
+      this.prisma.analyticsEvent.count({ where }),
 
-        this.prisma.analyticsEvent.findMany({
-          where,
-          distinct: ['userId'],
-          select: { userId: true },
-        }),
+      this.prisma.analyticsEvent.findMany({
+        where,
+        distinct: ['userId'],
+        select: { userId: true },
+      }),
 
-        this.prisma.analyticsEvent.findMany({
-          where,
-          distinct: ['sessionId'],
-          select: { sessionId: true },
-        }),
-        this.calculateAvgSessionDuration(workspaceId, startDate, endDate),
-      ]);
+      this.prisma.analyticsEvent.findMany({
+        where,
+        distinct: ['sessionId'],
+        select: { sessionId: true },
+      }),
+      this.calculateAvgSessionDuration(workspaceId, startDate, endDate),
+    ]);
 
     const result = {
       totalEvents,
@@ -346,8 +339,7 @@ export class AnalyticsService {
 
     const totalDuration = sessions.reduce((sum: number, session: any) => {
       const duration =
-        (session._max.timestamp as Date).getTime() -
-        (session._min.timestamp as Date).getTime();
+        (session._max.timestamp as Date).getTime() - (session._min.timestamp as Date).getTime();
       return sum + duration;
     }, 0);
 

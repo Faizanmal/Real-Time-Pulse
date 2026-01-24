@@ -81,9 +81,7 @@ export class ShareLinksService {
       },
     });
 
-    this.logger.log(
-      `Share link created: ${shareLink.id} for portal ${dto.portalId}`,
-    );
+    this.logger.log(`Share link created: ${shareLink.id} for portal ${dto.portalId}`);
 
     return {
       ...shareLink,
@@ -287,9 +285,7 @@ export class ShareLinksService {
 
     // Check view limit
     if (link.maxViews && link.currentViews >= link.maxViews) {
-      throw new ForbiddenException(
-        'This share link has reached its view limit',
-      );
+      throw new ForbiddenException('This share link has reached its view limit');
     }
 
     // Check password
@@ -460,11 +456,7 @@ export class ShareLinksService {
       const logs: AccessLog[] = existing ? JSON.parse(existing) : [];
       logs.unshift(accessLog);
       const trimmedLogs = logs.slice(0, 1000);
-      await this.cacheService.set(
-        cacheKey,
-        JSON.stringify(trimmedLogs),
-        30 * 24 * 60 * 60,
-      ); // 30 days
+      await this.cacheService.set(cacheKey, JSON.stringify(trimmedLogs), 30 * 24 * 60 * 60); // 30 days
     } catch (error) {
       this.logger.error('Failed to log access:', error);
     }
@@ -473,10 +465,7 @@ export class ShareLinksService {
   /**
    * Get analytics for a share link
    */
-  async getAnalytics(
-    id: string,
-    workspaceId: string,
-  ): Promise<ShareLinkAnalytics> {
+  async getAnalytics(id: string, workspaceId: string): Promise<ShareLinkAnalytics> {
     const link = await this.prisma.shareLink.findFirst({
       where: {
         id,

@@ -37,9 +37,7 @@ export default registerAs('security', () => ({
 
   // CORS
   cors: {
-    allowedOrigins: (
-      process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:3001'
-    ).split(','),
+    allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:3001').split(','),
     allowCredentials: process.env.CORS_ALLOW_CREDENTIALS !== 'false',
     maxAge: parseInt(process.env.CORS_MAX_AGE || '86400', 10),
   },
@@ -67,10 +65,7 @@ export default registerAs('security', () => ({
   ipBlocking: {
     enabled: process.env.IP_BLOCKING_ENABLED !== 'false',
     maxFailedAttempts: parseInt(process.env.IP_MAX_FAILED_ATTEMPTS || '10', 10),
-    blockDurationMinutes: parseInt(
-      process.env.IP_BLOCK_DURATION_MINUTES || '30',
-      10,
-    ),
+    blockDurationMinutes: parseInt(process.env.IP_BLOCK_DURATION_MINUTES || '30', 10),
   },
 
   // Encryption
@@ -84,13 +79,6 @@ export default registerAs('security', () => ({
   audit: {
     enabled: process.env.AUDIT_LOGGING_ENABLED !== 'false',
     retentionDays: parseInt(process.env.AUDIT_RETENTION_DAYS || '365', 10),
-    sensitiveFields: [
-      'password',
-      'token',
-      'secret',
-      'apiKey',
-      'accessToken',
-      'refreshToken',
-    ],
+    sensitiveFields: ['password', 'token', 'secret', 'apiKey', 'accessToken', 'refreshToken'],
   },
 }));

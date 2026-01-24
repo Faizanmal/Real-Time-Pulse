@@ -22,10 +22,9 @@ import { EmailModule } from '../email/email.module';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
         return {
-          secret: configService.get<string>('jwt.secret') as string,
+          secret: configService.get<string>('jwt.secret'),
           signOptions: {
-            expiresIn:
-              (configService.get<string>('jwt.expiresIn') as string) || '15m',
+            expiresIn: configService.get<string>('jwt.expiresIn') || '15m',
             issuer: 'real-time-pulse',
             audience: 'real-time-pulse-api',
           },
@@ -41,13 +40,7 @@ import { EmailModule } from '../email/email.module';
     EmailModule,
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    JwtStrategy,
-    GoogleStrategy,
-    GitHubStrategy,
-    FirebaseAuthService,
-  ],
+  providers: [AuthService, JwtStrategy, GoogleStrategy, GitHubStrategy, FirebaseAuthService],
   exports: [AuthService, FirebaseAuthService],
 })
 export class AuthModule {}

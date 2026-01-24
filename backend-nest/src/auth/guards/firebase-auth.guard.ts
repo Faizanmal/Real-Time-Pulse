@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { FirebaseAuthService } from '../services/firebase-auth.service';
 
 @Injectable()
@@ -26,8 +21,7 @@ export class FirebaseAuthGuard implements CanActivate {
 
     try {
       const decodedToken = await this.firebaseAuthService.verifyIdToken(token);
-      const user =
-        await this.firebaseAuthService.createOrUpdateUser(decodedToken);
+      const user = await this.firebaseAuthService.createOrUpdateUser(decodedToken);
       request.user = user;
       return true;
     } catch {

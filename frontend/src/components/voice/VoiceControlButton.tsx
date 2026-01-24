@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { useVoiceControl } from '@/contexts/VoiceControlContext';
 
 interface VoiceControlButtonProps {
@@ -189,7 +189,7 @@ export function VoiceCommandHelp({ isOpen, onClose }: { isOpen: boolean; onClose
                     key={example}
                     className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
                   >
-                    "{example}"
+                    &quot;{example}&quot;
                   </span>
                 ))}
               </div>

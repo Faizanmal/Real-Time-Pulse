@@ -177,38 +177,47 @@ export function CommandPalette({
   onCommand,
   placeholder = 'Search commands, pages, or actions...',
 }: CommandPaletteProps) {
-  const [state, setState] = useState<CommandPaletteState>({
-    isOpen: false,
-    query: '',
-    selectedIndex: 0,
-    activeCategory: null,
-    recentSearches: [],
-    recentCommands: [],
-    favoriteCommands: [],
-  });
-
-  const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-
-  // Load persisted state
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+  const [state, setState] = useState<CommandPaletteState>(() => {
+    if (typeof window === 'undefined') return {
+      isOpen: false,
+      query: '',
+      selectedIndex: 0,
+      activeCategory: null,
+      recentSearches: [],
+      recentCommands: [],
+      favoriteCommands: [],
+    };
     
     try {
       const saved = localStorage.getItem('pulse_command_palette');
       if (saved) {
         const data = JSON.parse(saved);
-        setState(prev => ({
-          ...prev,
+        return {
+          isOpen: false,
+          query: '',
+          selectedIndex: 0,
+          activeCategory: null,
           recentSearches: data.recentSearches || [],
           recentCommands: data.recentCommands || [],
           favoriteCommands: data.favoriteCommands || [],
-        }));
+        };
       }
     } catch {
       // Ignore
     }
-  }, []);
+    return {
+      isOpen: false,
+      query: '',
+      selectedIndex: 0,
+      activeCategory: null,
+      recentSearches: [],
+      recentCommands: [],
+      favoriteCommands: [],
+    };
+  });
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // Save state
   const saveState = useCallback(() => {

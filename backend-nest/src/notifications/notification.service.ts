@@ -23,13 +23,7 @@ interface NotificationPayload {
   scheduledFor?: Date;
 }
 
-type NotificationChannel =
-  | 'email'
-  | 'push'
-  | 'sms'
-  | 'in-app'
-  | 'slack'
-  | 'webhook';
+type NotificationChannel = 'email' | 'push' | 'sms' | 'in-app' | 'slack' | 'webhook';
 
 interface EmailOptions {
   to: string;
@@ -133,10 +127,7 @@ export class NotificationService implements OnModuleInit {
     // Send through each channel
     const promises = channels.map(async (channel) => {
       // Check if user has enabled this channel
-      if (
-        preferences &&
-        !this.isChannelEnabled(preferences, channel, payload.type)
-      ) {
+      if (preferences && !this.isChannelEnabled(preferences, channel, payload.type)) {
         return;
       }
 
@@ -459,21 +450,18 @@ export class NotificationService implements OnModuleInit {
 
     const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
 
-    await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Basic ${auth}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          To: options.to,
-          From: from,
-          Body: options.body,
-        }),
+    await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${auth}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-    );
+      body: new URLSearchParams({
+        To: options.to,
+        From: from,
+        Body: options.body,
+      }),
+    });
   }
 
   private async sendWithNexmo(_options: SMSOptions): Promise<void> {
@@ -494,9 +482,7 @@ export class NotificationService implements OnModuleInit {
     this.preferences.set(preferences.userId, preferences);
   }
 
-  async getPreferences(
-    userId: string,
-  ): Promise<NotificationPreferences | undefined> {
+  async getPreferences(userId: string): Promise<NotificationPreferences | undefined> {
     return this.preferences.get(userId);
   }
 
@@ -549,9 +535,7 @@ export class NotificationService implements OnModuleInit {
   private getNextActiveTime(preferences?: NotificationPreferences): Date {
     if (!preferences?.quietHours) return new Date();
 
-    const [endHour, endMinute] = preferences.quietHours.end
-      .split(':')
-      .map(Number);
+    const [endHour, endMinute] = preferences.quietHours.end.split(':').map(Number);
     const next = new Date();
     next.setHours(endHour, endMinute, 0, 0);
 
@@ -631,9 +615,7 @@ export class NotificationService implements OnModuleInit {
   }
 
   private interpolate(template: string, data: Record<string, unknown>): string {
-    return template.replace(/\{\{(\w+)\}\}/g, (_, key) =>
-      String((data[key] as any) || ''),
-    );
+    return template.replace(/\{\{(\w+)\}\}/g, (_, key) => String((data[key] as any) || ''));
   }
 
   private wrapHtmlEmail(title: string, body: string): string {
@@ -735,19 +717,13 @@ export class NotificationService implements OnModuleInit {
         select: { settings: true },
       });
 
-      if (
-        slackIntegration?.settings &&
-        typeof slackIntegration.settings === 'object'
-      ) {
+      if (slackIntegration?.settings && typeof slackIntegration.settings === 'object') {
         const settings = slackIntegration.settings as Record<string, unknown>;
         return (settings.webhookUrl as string) ?? null;
       }
       return null;
     } catch (error) {
-      this.logger.error(
-        `Failed to get Slack webhook for user ${userId}`,
-        error,
-      );
+      this.logger.error(`Failed to get Slack webhook for user ${userId}`, error);
       return null;
     }
   }
@@ -787,13 +763,9 @@ export class NotificationService implements OnModuleInit {
         this.processing = true;
         const now = new Date();
 
-        const toProcess = this.queue.filter(
-          (p) => !p.scheduledFor || p.scheduledFor <= now,
-        );
+        const toProcess = this.queue.filter((p) => !p.scheduledFor || p.scheduledFor <= now);
 
-        this.queue = this.queue.filter(
-          (p) => p.scheduledFor && p.scheduledFor > now,
-        );
+        this.queue = this.queue.filter((p) => p.scheduledFor && p.scheduledFor > now);
 
         for (const payload of toProcess) {
           try {

@@ -25,10 +25,7 @@ export interface AIProvider {
   priority: number;
   isAvailable: boolean;
   generateResponse(prompt: string, options: GenerationOptions): Promise<string>;
-  generateStreamingResponse(
-    prompt: string,
-    options: GenerationOptions,
-  ): AsyncGenerator<string>;
+  generateStreamingResponse(prompt: string, options: GenerationOptions): AsyncGenerator<string>;
 }
 
 export interface GenerationOptions {
@@ -71,10 +68,7 @@ export interface InsightFeedbackSummary {
 export class EnhancedAIService {
   private readonly logger = new Logger(EnhancedAIService.name);
   private readonly providers: AIProvider[] = [];
-  private readonly responseCache = new Map<
-    string,
-    { response: string; timestamp: number }
-  >();
+  private readonly responseCache = new Map<string, { response: string; timestamp: number }>();
   private readonly cacheTTL = 5 * 60 * 1000; // 5 minutes
 
   constructor(
@@ -99,8 +93,7 @@ export class EnhancedAIService {
         name: 'openai',
         priority: 1,
         isAvailable: true,
-        generateResponse: (prompt, options) =>
-          this.openAIGenerate(prompt, options, openAIKey),
+        generateResponse: (prompt, options) => this.openAIGenerate(prompt, options, openAIKey),
         generateStreamingResponse: (prompt, options) =>
           this.openAIStream(prompt, options, openAIKey),
       });
@@ -125,9 +118,7 @@ export class EnhancedAIService {
     this.providers.sort((a, b) => a.priority - b.priority);
 
     if (this.providers.length === 0) {
-      this.logger.warn(
-        'No AI providers configured. AI features will be limited.',
-      );
+      this.logger.warn('No AI providers configured. AI features will be limited.');
     }
   }
 
@@ -138,10 +129,7 @@ export class EnhancedAIService {
   /**
    * Generate response with automatic failover between providers
    */
-  async generate(
-    prompt: string,
-    options: GenerationOptions = {},
-  ): Promise<string> {
+  async generate(prompt: string, options: GenerationOptions = {}): Promise<string> {
     // Check cache first
     const cacheKey = this.getCacheKey(prompt, options);
     const cached = this.responseCache.get(cacheKey);
@@ -192,10 +180,7 @@ export class EnhancedAIService {
   /**
    * Stream response with automatic failover
    */
-  async *stream(
-    prompt: string,
-    options: GenerationOptions = {},
-  ): AsyncGenerator<StreamChunk> {
+  async *stream(prompt: string, options: GenerationOptions = {}): AsyncGenerator<StreamChunk> {
     for (const provider of this.providers.filter((p) => p.isAvailable)) {
       try {
         this.logger.debug(`Starting streaming with ${provider.name}`);
@@ -207,10 +192,7 @@ export class EnhancedAIService {
           timestamp: Date.now(),
         };
 
-        for await (const chunk of provider.generateStreamingResponse(
-          prompt,
-          options,
-        )) {
+        for await (const chunk of provider.generateStreamingResponse(prompt, options)) {
           yield {
             type: 'text',
             content: chunk,
@@ -228,9 +210,7 @@ export class EnhancedAIService {
 
         return;
       } catch (error) {
-        this.logger.warn(
-          `${provider.name} streaming failed, trying next provider`,
-        );
+        this.logger.warn(`${provider.name} streaming failed, trying next provider`);
         this.handleProviderError(provider, error);
 
         yield {
@@ -267,9 +247,7 @@ export class EnhancedAIService {
       body: JSON.stringify({
         model: options.model || 'gpt-4o-mini',
         messages: [
-          ...(options.systemPrompt
-            ? [{ role: 'system', content: options.systemPrompt }]
-            : []),
+          ...(options.systemPrompt ? [{ role: 'system', content: options.systemPrompt }] : []),
           { role: 'user', content: prompt },
         ],
         max_tokens: options.maxTokens || 1000,
@@ -300,9 +278,7 @@ export class EnhancedAIService {
       body: JSON.stringify({
         model: options.model || 'gpt-4o-mini',
         messages: [
-          ...(options.systemPrompt
-            ? [{ role: 'system', content: options.systemPrompt }]
-            : []),
+          ...(options.systemPrompt ? [{ role: 'system', content: options.systemPrompt }] : []),
           { role: 'user', content: prompt },
         ],
         max_tokens: options.maxTokens || 1000,
@@ -458,9 +434,7 @@ export class EnhancedAIService {
     // Update insight quality score
     await this.updateInsightQualityScore(feedback.insightId);
 
-    this.logger.log(
-      `Feedback recorded for insight ${feedback.insightId}: ${feedback.rating}`,
-    );
+    this.logger.log(`Feedback recorded for insight ${feedback.insightId}: ${feedback.rating}`);
   }
 
   /**
@@ -473,14 +447,9 @@ export class EnhancedAIService {
     });
 
     const helpful = feedbacks.filter((f) => f.rating === 'helpful').length;
-    const notHelpful = feedbacks.filter(
-      (f) => f.rating === 'not_helpful',
-    ).length;
+    const notHelpful = feedbacks.filter((f) => f.rating === 'not_helpful').length;
 
-    const score =
-      feedbacks.length > 0
-        ? (helpful * 1 + notHelpful * -1) / feedbacks.length
-        : 0;
+    const score = feedbacks.length > 0 ? (helpful * 1 + notHelpful * -1) / feedbacks.length : 0;
 
     return {
       insightId,
@@ -491,7 +460,7 @@ export class EnhancedAIService {
       recentComments: feedbacks
         .filter((f) => f.comment)
         .slice(0, 5)
-        .map((f) => f.comment!),
+        .map((f) => f.comment),
     };
   }
 
@@ -503,9 +472,7 @@ export class EnhancedAIService {
 
     // Calculate quality score (0-1 scale)
     const qualityScore =
-      summary.totalFeedback > 0
-        ? summary.helpfulCount / summary.totalFeedback
-        : 0.5; // Default neutral score
+      summary.totalFeedback > 0 ? summary.helpfulCount / summary.totalFeedback : 0.5; // Default neutral score
 
     await this.prisma.aIInsight.update({
       where: { id: insightId },
@@ -560,10 +527,7 @@ export class EnhancedAIService {
   /**
    * Generate insights with context-aware prompts
    */
-  async generateContextualInsights(
-    workspaceId: string,
-    portalId: string,
-  ): Promise<any> {
+  async generateContextualInsights(workspaceId: string, portalId: string): Promise<any> {
     // Gather comprehensive context
     const context = await this.gatherEnhancedContext(workspaceId, portalId);
 
@@ -603,30 +567,29 @@ export class EnhancedAIService {
   }
 
   private async gatherEnhancedContext(workspaceId: string, portalId: string) {
-    const [portal, integrations, recentActivity, historicalInsights] =
-      await Promise.all([
-        this.prisma.portal.findUnique({
-          where: { id: portalId },
-          include: {
-            widgets: {
-              include: { integration: true },
-            },
+    const [portal, integrations, recentActivity, historicalInsights] = await Promise.all([
+      this.prisma.portal.findUnique({
+        where: { id: portalId },
+        include: {
+          widgets: {
+            include: { integration: true },
           },
-        }),
-        this.prisma.integration.findMany({
-          where: { workspaceId },
-        }),
-        this.prisma.auditLog.findMany({
-          where: { workspaceId },
-          orderBy: { createdAt: 'desc' },
-          take: 50,
-        }),
-        this.prisma.aIInsight.findMany({
-          where: { workspaceId, portalId },
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-        }),
-      ]);
+        },
+      }),
+      this.prisma.integration.findMany({
+        where: { workspaceId },
+      }),
+      this.prisma.auditLog.findMany({
+        where: { workspaceId },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      }),
+      this.prisma.aIInsight.findMany({
+        where: { workspaceId, portalId },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
+    ]);
 
     return {
       portalData: portal,

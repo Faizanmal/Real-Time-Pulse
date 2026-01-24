@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useLayoutEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -171,7 +171,7 @@ export function AnnotationTooltip({
     // Calculate tooltip position
     const [adjustedPosition, setAdjustedPosition] = useState(position);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!tooltipRef.current) return;
         const rect = tooltipRef.current.getBoundingClientRect();
         let x = position.x;
@@ -184,6 +184,7 @@ export function AnnotationTooltip({
             y = position.y - rect.height - 20;
         }
 
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setAdjustedPosition({ x: Math.max(16, x), y: Math.max(16, y) });
     }, [position]);
 

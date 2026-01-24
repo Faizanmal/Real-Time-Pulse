@@ -10,12 +10,7 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TemplatesService } from './templates.service';
 import { RequestUser } from '../common/interfaces/auth.interface';
@@ -47,11 +42,7 @@ export class TemplatesController {
     @Request() req: { user: RequestUser },
     @Body() dto: CreateWidgetTemplateDto,
   ) {
-    return this.templatesService.createWidgetTemplate(
-      req.user.workspaceId,
-      req.user.id,
-      dto,
-    );
+    return this.templatesService.createWidgetTemplate(req.user.workspaceId, req.user.id, dto);
   }
 
   @Get('widgets')
@@ -75,10 +66,7 @@ export class TemplatesController {
   @Get('widgets/:id')
   @ApiOperation({ summary: 'Get a widget template' })
   @ApiResponse({ status: 200, description: 'Returns the widget template' })
-  async findWidgetTemplate(
-    @Request() req: { user: RequestUser },
-    @Param('id') id: string,
-  ) {
+  async findWidgetTemplate(@Request() req: { user: RequestUser }, @Param('id') id: string) {
     return this.templatesService.findWidgetTemplate(id, req.user.workspaceId);
   }
 
@@ -90,30 +78,20 @@ export class TemplatesController {
     @Param('id') id: string,
     @Body() dto: UpdateWidgetTemplateDto,
   ) {
-    return this.templatesService.updateWidgetTemplate(
-      id,
-      req.user.workspaceId,
-      dto,
-    );
+    return this.templatesService.updateWidgetTemplate(id, req.user.workspaceId, dto);
   }
 
   @Delete('widgets/:id')
   @ApiOperation({ summary: 'Delete a widget template' })
   @ApiResponse({ status: 200, description: 'Template deleted successfully' })
-  async deleteWidgetTemplate(
-    @Request() req: { user: RequestUser },
-    @Param('id') id: string,
-  ) {
+  async deleteWidgetTemplate(@Request() req: { user: RequestUser }, @Param('id') id: string) {
     return this.templatesService.deleteWidgetTemplate(id, req.user.workspaceId);
   }
 
   @Post('widgets/:id/use')
   @ApiOperation({ summary: 'Use a widget template (get config)' })
   @ApiResponse({ status: 200, description: 'Returns template configuration' })
-  async useWidgetTemplate(
-    @Request() req: { user: RequestUser },
-    @Param('id') id: string,
-  ) {
+  async useWidgetTemplate(@Request() req: { user: RequestUser }, @Param('id') id: string) {
     return this.templatesService.useWidgetTemplate(id, req.user.workspaceId);
   }
 
@@ -128,11 +106,7 @@ export class TemplatesController {
     @Request() req: { user: RequestUser },
     @Body() dto: CreatePortalTemplateDto,
   ) {
-    return this.templatesService.createPortalTemplate(
-      req.user.workspaceId,
-      req.user.id,
-      dto,
-    );
+    return this.templatesService.createPortalTemplate(req.user.workspaceId, req.user.id, dto);
   }
 
   @Get('portals')
@@ -154,10 +128,7 @@ export class TemplatesController {
   @Get('portals/:id')
   @ApiOperation({ summary: 'Get a portal template' })
   @ApiResponse({ status: 200, description: 'Returns the portal template' })
-  async findPortalTemplate(
-    @Request() req: { user: RequestUser },
-    @Param('id') id: string,
-  ) {
+  async findPortalTemplate(@Request() req: { user: RequestUser }, @Param('id') id: string) {
     return this.templatesService.findPortalTemplate(id, req.user.workspaceId);
   }
 
@@ -169,30 +140,20 @@ export class TemplatesController {
     @Param('id') id: string,
     @Body() dto: UpdatePortalTemplateDto,
   ) {
-    return this.templatesService.updatePortalTemplate(
-      id,
-      req.user.workspaceId,
-      dto,
-    );
+    return this.templatesService.updatePortalTemplate(id, req.user.workspaceId, dto);
   }
 
   @Delete('portals/:id')
   @ApiOperation({ summary: 'Delete a portal template' })
   @ApiResponse({ status: 200, description: 'Template deleted successfully' })
-  async deletePortalTemplate(
-    @Request() req: { user: RequestUser },
-    @Param('id') id: string,
-  ) {
+  async deletePortalTemplate(@Request() req: { user: RequestUser }, @Param('id') id: string) {
     return this.templatesService.deletePortalTemplate(id, req.user.workspaceId);
   }
 
   @Post('portals/:id/use')
   @ApiOperation({ summary: 'Use a portal template (get config)' })
   @ApiResponse({ status: 200, description: 'Returns template configuration' })
-  async usePortalTemplate(
-    @Request() req: { user: RequestUser },
-    @Param('id') id: string,
-  ) {
+  async usePortalTemplate(@Request() req: { user: RequestUser }, @Param('id') id: string) {
     return this.templatesService.usePortalTemplate(id, req.user.workspaceId);
   }
 

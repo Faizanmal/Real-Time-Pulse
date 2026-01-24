@@ -7,7 +7,7 @@ import { IntegrationService } from '../integrations/integration.service';
 describe('WidgetService', () => {
   let service: WidgetService;
   let prisma: jest.Mocked<PrismaService>;
-  let cacheService: jest.Mocked<CacheService>;
+  let _cacheService: jest.Mocked<CacheService>;
   let integrationService: jest.Mocked<IntegrationService>;
 
   const mockWidget = {
@@ -71,7 +71,7 @@ describe('WidgetService', () => {
 
     service = module.get<WidgetService>(WidgetService);
     prisma = module.get(PrismaService);
-    cacheService = module.get(CacheService);
+    _cacheService = module.get(CacheService);
     integrationService = module.get(IntegrationService);
   });
 

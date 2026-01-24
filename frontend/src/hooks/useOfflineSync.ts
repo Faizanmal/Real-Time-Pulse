@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useLayoutEffect, useState, useCallback } from 'react';
 
 interface UseOfflineSyncResult {
   isOnline: boolean;
@@ -8,7 +8,7 @@ interface UseOfflineSyncResult {
 }
 
 export function useOfflineSync(): UseOfflineSyncResult {
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
   const [pendingSync, setPendingSync] = useState(0);
 
   const updatePendingCount = useCallback(async () => {
@@ -45,10 +45,7 @@ export function useOfflineSync(): UseOfflineSyncResult {
     }
   }, [isOnline, updatePendingCount]);
 
-  useEffect(() => {
-    // Check online status
-    setIsOnline(navigator.onLine);
-
+  useLayoutEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
       syncPendingRequests();
@@ -62,6 +59,7 @@ export function useOfflineSync(): UseOfflineSyncResult {
     window.addEventListener('offline', handleOffline);
 
     // Check pending sync count
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     updatePendingCount();
 
     return () => {

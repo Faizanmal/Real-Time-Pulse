@@ -44,9 +44,7 @@ export interface UserPresence {
   },
   namespace: '/collaboration',
 })
-export class CollaborationGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
-{
+export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
@@ -56,10 +54,8 @@ export class CollaborationGateway
   private portalUsers: Map<string, Map<string, UserPresence>> = new Map();
 
   // Track editing locks
-  private editingLocks: Map<
-    string,
-    { userId: string; userName: string; timestamp: number }
-  > = new Map();
+  private editingLocks: Map<string, { userId: string; userName: string; timestamp: number }> =
+    new Map();
 
   // Operation transformation queue for conflict resolution
   private operationQueues: Map<string, WidgetChange[]> = new Map();
@@ -73,13 +69,10 @@ export class CollaborationGateway
     try {
       const authData = client.handshake.auth as any;
       const authHeader = client.handshake.headers.authorization;
-      const token =
-        (authData.token as string | undefined) || authHeader?.split(' ')[1];
+      const token = (authData.token as string | undefined) || authHeader?.split(' ')[1];
 
       if (!token) {
-        this.logger.warn(
-          `Client ${client.id} connection rejected: No token provided`,
-        );
+        this.logger.warn(`Client ${client.id} connection rejected: No token provided`);
         client.disconnect();
         return;
       }
@@ -92,9 +85,7 @@ export class CollaborationGateway
         : payload.email;
       client.userAvatar = payload.avatar;
 
-      this.logger.log(
-        `Collaboration client connected: ${client.id} (User: ${client.userId})`,
-      );
+      this.logger.log(`Collaboration client connected: ${client.id} (User: ${client.userId})`);
 
       client.emit('connected', {
         message: 'Successfully connected to collaboration service',
@@ -111,8 +102,8 @@ export class CollaborationGateway
     if (client.userId) {
       // Remove user from all portals they were in
       this.portalUsers.forEach((users, portalId) => {
-        if (users.has(client.userId!)) {
-          users.delete(client.userId!);
+        if (users.has(client.userId)) {
+          users.delete(client.userId);
           // Notify others in the portal
           this.server.to(`portal:${portalId}`).emit('user:left', {
             userId: client.userId,
@@ -147,8 +138,8 @@ export class CollaborationGateway
 
     // Verify access to portal
     const hasAccess = await this.collaborationService.verifyPortalAccess(
-      client.userId!,
-      client.workspaceId!,
+      client.userId,
+      client.workspaceId,
       portalId,
     );
 
@@ -166,16 +157,16 @@ export class CollaborationGateway
 
     // Add user to portal
     const userPresence: UserPresence = {
-      userId: client.userId!,
+      userId: client.userId,
       name: client.userName || 'Anonymous',
       avatar: client.userAvatar,
       lastSeen: new Date(),
       status: 'active',
     };
-    this.portalUsers.get(portalId)!.set(client.userId!, userPresence);
+    this.portalUsers.get(portalId).set(client.userId, userPresence);
 
     // Get current users in portal
-    const currentUsers = Array.from(this.portalUsers.get(portalId)!.values());
+    const currentUsers = Array.from(this.portalUsers.get(portalId).values());
 
     // Notify others that user joined
     client.to(`portal:${portalId}`).emit('user:joined', {
@@ -186,7 +177,7 @@ export class CollaborationGateway
     // Log activity
     await this.collaborationService.logActivity({
       portalId,
-      userId: client.userId!,
+      userId: client.userId,
       action: 'joined',
       timestamp: new Date(),
     });
@@ -212,7 +203,7 @@ export class CollaborationGateway
     // Remove user from portal
     const portalUserMap = this.portalUsers.get(portalId);
     if (portalUserMap) {
-      portalUserMap.delete(client.userId!);
+      portalUserMap.delete(client.userId);
     }
 
     // Notify others
@@ -248,8 +239,8 @@ export class CollaborationGateway
 
     // Update user presence with cursor
     const portalUserMap = this.portalUsers.get(portalId);
-    if (portalUserMap && portalUserMap.has(client.userId!)) {
-      const user = portalUserMap.get(client.userId!)!;
+    if (portalUserMap && portalUserMap.has(client.userId)) {
+      const user = portalUserMap.get(client.userId);
       user.cursor = cursor;
       user.lastSeen = new Date();
       user.status = 'active';
@@ -290,7 +281,7 @@ export class CollaborationGateway
 
     // Acquire lock
     this.editingLocks.set(lockKey, {
-      userId: client.userId!,
+      userId: client.userId,
       userName: client.userName || 'Anonymous',
       timestamp: Date.now(),
     });
@@ -346,10 +337,7 @@ export class CollaborationGateway
     change.timestamp = Date.now();
 
     // Apply operational transformation for conflict resolution
-    const transformedChange = await this.collaborationService.transformChange(
-      portalId,
-      change,
-    );
+    const transformedChange = await this.collaborationService.transformChange(portalId, change);
 
     // Broadcast change to others
     client.to(`portal:${portalId}`).emit('widget:changed', {
@@ -359,15 +347,12 @@ export class CollaborationGateway
     });
 
     // Save change to history for undo/redo
-    await this.collaborationService.saveChangeHistory(
-      portalId,
-      transformedChange,
-    );
+    await this.collaborationService.saveChangeHistory(portalId, transformedChange);
 
     // Log activity
     await this.collaborationService.logActivity({
       portalId,
-      userId: client.userId!,
+      userId: client.userId,
       action: 'widget_edited',
       widgetId: change.widgetId,
       changeType: change.changeType,
@@ -391,8 +376,8 @@ export class CollaborationGateway
 
     // Update user presence
     const portalUserMap = this.portalUsers.get(portalId);
-    if (portalUserMap && portalUserMap.has(client.userId!)) {
-      const user = portalUserMap.get(client.userId!)!;
+    if (portalUserMap && portalUserMap.has(client.userId)) {
+      const user = portalUserMap.get(client.userId);
       user.status = status;
       user.activeWidgetId = activeWidgetId;
       user.lastSeen = new Date();
@@ -417,10 +402,7 @@ export class CollaborationGateway
   ) {
     const { portalId, limit = 50 } = data;
 
-    const activities = await this.collaborationService.getActivityFeed(
-      portalId,
-      limit,
-    );
+    const activities = await this.collaborationService.getActivityFeed(portalId, limit);
 
     return { success: true, activities };
   }

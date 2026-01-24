@@ -59,7 +59,7 @@ interface LiveCursorProps {
 export function LiveCursor({ collaborator, position, showLabel = true }: LiveCursorProps) {
     return (
         <motion.div
-            className="pointer-events-none fixed z-[9999]"
+            className="pointer-events-none fixed z-9999"
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{
                 opacity: 1,

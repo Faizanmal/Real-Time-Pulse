@@ -18,7 +18,7 @@ import {
   createMockConfigService,
   createMockRedisService,
   createTestUser,
-} from '../../test/test-utils';
+} from 'common/testing/test-utils';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -104,7 +104,9 @@ describe('AuthService', () => {
   describe('login', () => {
     it('should return access and refresh tokens on successful login', async () => {
       const testUser = createTestUser();
-      jwtService.signAsync.mockResolvedValueOnce('access-token').mockResolvedValueOnce('refresh-token');
+      jwtService.signAsync
+        .mockResolvedValueOnce('access-token')
+        .mockResolvedValueOnce('refresh-token');
       prismaService.session.create.mockResolvedValue({ id: 'session-id' });
 
       const result = await service.login(testUser, '127.0.0.1', 'Chrome');
@@ -164,7 +166,7 @@ describe('AuthService', () => {
 
       expect(result).toBeDefined();
       expect(prismaService.user.create).toHaveBeenCalled();
-      
+
       const createCall = prismaService.user.create.mock.calls[0][0];
       expect(createCall.data.password).not.toBe('securepassword123');
     });
@@ -198,9 +200,7 @@ describe('AuthService', () => {
     it('should throw UnauthorizedException for invalid refresh token', async () => {
       jwtService.verifyAsync.mockRejectedValue(new Error('Invalid token'));
 
-      await expect(service.refreshToken('invalid-token')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(service.refreshToken('invalid-token')).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException for revoked session', async () => {

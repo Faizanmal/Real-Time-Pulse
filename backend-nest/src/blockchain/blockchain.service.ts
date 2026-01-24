@@ -130,9 +130,7 @@ export class BlockchainService {
     // Clear pending entries
     await this.clearPendingEntries(workspaceId);
 
-    this.logger.log(
-      `Created block ${block.id} with ${pendingEntries.length} entries`,
-    );
+    this.logger.log(`Created block ${block.id} with ${pendingEntries.length} entries`);
 
     return block;
   }
@@ -140,9 +138,7 @@ export class BlockchainService {
   /**
    * Verify entire blockchain integrity
    */
-  async verifyChainIntegrity(
-    workspaceId: string,
-  ): Promise<IntegrityVerification> {
+  async verifyChainIntegrity(workspaceId: string): Promise<IntegrityVerification> {
     const chain = await this.getChain(workspaceId);
     const invalidBlocks: string[] = [];
     const invalidEntries: string[] = [];
@@ -283,8 +279,7 @@ export class BlockchainService {
     }
 
     return entries.sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
     );
   }
 
@@ -317,13 +312,8 @@ export class BlockchainService {
         const entryTime = new Date(entry.timestamp).getTime();
 
         if (entryTime < startTime || entryTime > endTime) continue;
-        if (
-          options.entityTypes &&
-          !options.entityTypes.includes(entry.entityType)
-        )
-          continue;
-        if (options.actions && !options.actions.includes(entry.action))
-          continue;
+        if (options.entityTypes && !options.entityTypes.includes(entry.entityType)) continue;
+        if (options.actions && !options.actions.includes(entry.action)) continue;
 
         entries.push(entry);
       }
@@ -338,14 +328,10 @@ export class BlockchainService {
       dateRange: {
         start:
           options.startDate ||
-          new Date(
-            Math.min(...entries.map((e) => new Date(e.timestamp).getTime())),
-          ),
+          new Date(Math.min(...entries.map((e) => new Date(e.timestamp).getTime()))),
         end:
           options.endDate ||
-          new Date(
-            Math.max(...entries.map((e) => new Date(e.timestamp).getTime())),
-          ),
+          new Date(Math.max(...entries.map((e) => new Date(e.timestamp).getTime()))),
       },
     };
 
@@ -354,10 +340,7 @@ export class BlockchainService {
 
     // Generate report signature
     const reportData = JSON.stringify({ summary, entries, integrity });
-    const signature = crypto
-      .createHash('sha256')
-      .update(reportData)
-      .digest('hex');
+    const signature = crypto.createHash('sha256').update(reportData).digest('hex');
 
     return {
       summary,
@@ -451,10 +434,7 @@ export class BlockchainService {
       data: entry.data,
       timestamp: entry.timestamp,
     };
-    return crypto
-      .createHash('sha256')
-      .update(JSON.stringify(data))
-      .digest('hex');
+    return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
   }
 
   private hashBlock(data: any, nonce: number): string {
@@ -470,10 +450,7 @@ export class BlockchainService {
     return chainJson ? JSON.parse(chainJson) : [];
   }
 
-  private async saveChain(
-    workspaceId: string,
-    chain: AuditBlock[],
-  ): Promise<void> {
+  private async saveChain(workspaceId: string, chain: AuditBlock[]): Promise<void> {
     const key = `blockchain:${workspaceId}:chain`;
     await this.cache.set(key, JSON.stringify(chain), 86400 * 365 * 10); // 10 years
   }
@@ -484,18 +461,12 @@ export class BlockchainService {
     return entriesJson ? JSON.parse(entriesJson) : [];
   }
 
-  private async savePendingEntries(
-    workspaceId: string,
-    entries: AuditEntry[],
-  ): Promise<void> {
+  private async savePendingEntries(workspaceId: string, entries: AuditEntry[]): Promise<void> {
     const key = `blockchain:${workspaceId}:pending`;
     await this.cache.set(key, JSON.stringify(entries), 86400 * 365);
   }
 
-  private async addToPendingEntries(
-    workspaceId: string,
-    entry: AuditEntry,
-  ): Promise<void> {
+  private async addToPendingEntries(workspaceId: string, entry: AuditEntry): Promise<void> {
     const entries = await this.getPendingEntries(workspaceId);
     entries.push(entry);
     await this.savePendingEntries(workspaceId, entries);
@@ -511,18 +482,13 @@ export class BlockchainService {
     await this.cache.del(key);
   }
 
-  private groupBy(
-    entries: AuditEntry[],
-    field: keyof AuditEntry,
-  ): Record<string, number> {
+  private groupBy(entries: AuditEntry[], field: keyof AuditEntry): Record<string, number> {
     return entries.reduce(
       (acc, entry) => {
         const value = entry[field];
         // Only convert to string if it's a primitive value
         const key =
-          typeof value === 'object' && value !== null
-            ? JSON.stringify(value)
-            : String(value);
+          typeof value === 'object' && value !== null ? JSON.stringify(value) : (value as string);
         acc[key] = (acc[key] || 0) + 1;
         return acc;
       },

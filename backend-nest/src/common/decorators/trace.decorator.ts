@@ -43,8 +43,7 @@ export const SENSITIVE_FIELDS_KEY = 'sensitive_fields';
 
 export function SensitiveData(): PropertyDecorator {
   return (target: object, propertyKey: string | symbol) => {
-    const existingFields =
-      Reflect.getMetadata(SENSITIVE_FIELDS_KEY, target.constructor) || [];
+    const existingFields = Reflect.getMetadata(SENSITIVE_FIELDS_KEY, target.constructor) || [];
     Reflect.defineMetadata(
       SENSITIVE_FIELDS_KEY,
       [...existingFields, propertyKey],

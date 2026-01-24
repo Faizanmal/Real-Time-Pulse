@@ -25,10 +25,7 @@ export default registerAs('ai', () => ({
     },
     maxTokens: {
       chat: parseInt(process.env.OPENAI_MAX_TOKENS_CHAT || '4096', 10),
-      embedding: parseInt(
-        process.env.OPENAI_MAX_TOKENS_EMBEDDING || '8192',
-        10,
-      ),
+      embedding: parseInt(process.env.OPENAI_MAX_TOKENS_EMBEDDING || '8192', 10),
     },
     temperature: {
       default: parseFloat(process.env.OPENAI_TEMPERATURE || '0.7'),
@@ -115,9 +112,7 @@ export default registerAs('ai', () => ({
     chunkSize: parseInt(process.env.RAG_CHUNK_SIZE || '1000', 10),
     chunkOverlap: parseInt(process.env.RAG_CHUNK_OVERLAP || '200', 10),
     topK: parseInt(process.env.RAG_TOP_K || '5', 10),
-    similarityThreshold: parseFloat(
-      process.env.RAG_SIMILARITY_THRESHOLD || '0.7',
-    ),
+    similarityThreshold: parseFloat(process.env.RAG_SIMILARITY_THRESHOLD || '0.7'),
     reranking: {
       enabled: process.env.RAG_RERANKING_ENABLED === 'true',
       model: process.env.RAG_RERANKING_MODEL || 'cohere-rerank-v3',
@@ -227,10 +222,7 @@ export default registerAs('ai', () => ({
     enabled: true,
     requestsPerMinute: parseInt(process.env.AI_RATE_LIMIT_RPM || '60', 10),
     tokensPerMinute: parseInt(process.env.AI_RATE_LIMIT_TPM || '90000', 10),
-    concurrentRequests: parseInt(
-      process.env.AI_CONCURRENT_REQUESTS || '10',
-      10,
-    ),
+    concurrentRequests: parseInt(process.env.AI_CONCURRENT_REQUESTS || '10', 10),
     retryAttempts: 3,
     retryDelay: 1000, // ms
     exponentialBackoff: true,
@@ -256,12 +248,10 @@ Your role is to help users understand their data, identify trends, and provide a
 Always be concise, accurate, and data-driven in your responses.`,
 
     templates: {
-      dataAnalysis:
-        'Analyze the following data and provide key insights: {{data}}',
+      dataAnalysis: 'Analyze the following data and provide key insights: {{data}}',
       trendDetection: 'Identify trends and patterns in: {{metrics}}',
       anomalyExplanation: 'Explain this anomaly in simple terms: {{anomaly}}',
-      recommendation:
-        'Based on the data, what actions would you recommend? {{context}}',
+      recommendation: 'Based on the data, what actions would you recommend? {{context}}',
       summary: 'Summarize the key points from this report: {{report}}',
       nlq: 'Convert this natural language query to a data query: "{{query}}"',
     },

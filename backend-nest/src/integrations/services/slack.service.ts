@@ -31,11 +31,7 @@ export class SlackService {
     }
   }
 
-  async fetchData(
-    integration: Integration,
-    dataType: string,
-    params?: unknown,
-  ): Promise<unknown> {
+  async fetchData(integration: Integration, dataType: string, params?: unknown): Promise<unknown> {
     const headers = {
       Authorization: `Bearer ${integration.accessToken as string}`,
       'Content-Type': 'application/json',
@@ -157,19 +153,14 @@ export class SlackService {
       }
 
       // Filter out bots and deactivated users
-      return response.data.members.filter(
-        (user: any) => !user.is_bot && !user.deleted,
-      );
+      return response.data.members.filter((user: any) => !user.is_bot && !user.deleted);
     } catch (error) {
       this.logger.error('Failed to fetch Slack users', error);
       throw error;
     }
   }
 
-  private async fetchMessages(
-    headers: any,
-    params?: unknown,
-  ): Promise<unknown> {
+  private async fetchMessages(headers: any, params?: unknown): Promise<unknown> {
     try {
       const channel = (params as { channel?: string })?.channel;
       if (!channel) {
@@ -205,16 +196,12 @@ export class SlackService {
     try {
       // Fetch team info and aggregate stats
       const [teamInfo, users, channels] = await Promise.all([
-        firstValueFrom(
-          this.httpService.get(`${this.baseUrl}/team.info`, { headers }),
-        ),
+        firstValueFrom(this.httpService.get(`${this.baseUrl}/team.info`, { headers })),
         this.fetchUsers(headers),
         this.fetchChannels(headers),
       ]);
 
-      const activeUsers = (users as any[]).filter(
-        (u: any) => u.presence === 'active',
-      ).length;
+      const activeUsers = (users as any[]).filter((u: any) => u.presence === 'active').length;
 
       return {
         team: teamInfo.data.team,
@@ -222,10 +209,8 @@ export class SlackService {
           totalUsers: (users as any[]).length,
           activeUsers,
           totalChannels: (channels as any[]).length,
-          publicChannels: (channels as any[]).filter((c: any) => !c.is_private)
-            .length,
-          privateChannels: (channels as any[]).filter((c: any) => c.is_private)
-            .length,
+          publicChannels: (channels as any[]).filter((c: any) => !c.is_private).length,
+          privateChannels: (channels as any[]).filter((c: any) => c.is_private).length,
         },
       };
     } catch (error) {

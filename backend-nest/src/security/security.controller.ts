@@ -1,20 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 import type { RequestUser } from '../common/interfaces/auth.interface';
@@ -50,11 +35,7 @@ export class SecurityController {
     @CurrentUser() user: RequestUser,
     @Body() settings: Partial<SecuritySettings>,
   ) {
-    return this.securityService.updateSecuritySettings(
-      user.workspaceId,
-      settings,
-      user.id,
-    );
+    return this.securityService.updateSecuritySettings(user.workspaceId, settings, user.id);
   }
 
   // ==================== Account Security ====================
@@ -69,10 +50,7 @@ export class SecurityController {
   @Post('account/unlock/:userId')
   @ApiOperation({ summary: 'Unlock a user account (admin)' })
   @ApiResponse({ status: 200, description: 'Account unlocked' })
-  async unlockAccount(
-    @CurrentUser() user: RequestUser,
-    @Param('userId') targetUserId: string,
-  ) {
+  async unlockAccount(@CurrentUser() user: RequestUser, @Param('userId') targetUserId: string) {
     await this.securityService.unlockAccount(targetUserId, user.id);
     return { success: true, message: 'Account unlocked' };
   }
@@ -89,10 +67,7 @@ export class SecurityController {
   @Delete('sessions/:sessionId')
   @ApiOperation({ summary: 'Terminate a session' })
   @ApiResponse({ status: 200, description: 'Session terminated' })
-  async terminateSession(
-    @CurrentUser() user: RequestUser,
-    @Param('sessionId') sessionId: string,
-  ) {
+  async terminateSession(@CurrentUser() user: RequestUser, @Param('sessionId') sessionId: string) {
     await this.securityService.terminateSession(user.id, sessionId);
     return { success: true, message: 'Session terminated' };
   }
@@ -124,14 +99,8 @@ export class SecurityController {
   @Post('2fa/totp/verify')
   @ApiOperation({ summary: 'Complete TOTP setup' })
   @ApiResponse({ status: 200, description: 'TOTP enabled' })
-  async completeTotpSetup(
-    @CurrentUser() user: RequestUser,
-    @Body('token') token: string,
-  ) {
-    const success = await this.twoFactorService.completeTotpSetup(
-      user.id,
-      token,
-    );
+  async completeTotpSetup(@CurrentUser() user: RequestUser, @Body('token') token: string) {
+    const success = await this.twoFactorService.completeTotpSetup(user.id, token);
     return {
       success,
       message: success ? 'TOTP enabled' : 'Verification failed',
@@ -157,10 +126,7 @@ export class SecurityController {
   @Post('2fa/email/verify')
   @ApiOperation({ summary: 'Verify email code' })
   @ApiResponse({ status: 200, description: 'Code verified' })
-  async verifyEmailCode(
-    @CurrentUser() user: RequestUser,
-    @Body('code') code: string,
-  ) {
+  async verifyEmailCode(@CurrentUser() user: RequestUser, @Body('code') code: string) {
     const success = await this.twoFactorService.verifyEmailCode(user.id, code);
     return { success, message: success ? 'Code verified' : 'Invalid code' };
   }
@@ -193,15 +159,8 @@ export class SecurityController {
   @Post('sso/providers')
   @ApiOperation({ summary: 'Configure SSO provider' })
   @ApiResponse({ status: 201, description: 'SSO provider configured' })
-  async configureSsoProvider(
-    @CurrentUser() user: RequestUser,
-    @Body() provider: SsoProvider,
-  ) {
-    return this.ssoService.configureSsoProvider(
-      user.workspaceId,
-      provider,
-      user.id,
-    );
+  async configureSsoProvider(@CurrentUser() user: RequestUser, @Body() provider: SsoProvider) {
+    return this.ssoService.configureSsoProvider(user.workspaceId, provider, user.id);
   }
 
   @Delete('sso/providers/:providerId')
@@ -211,11 +170,7 @@ export class SecurityController {
     @CurrentUser() user: RequestUser,
     @Param('providerId') providerId: string,
   ) {
-    await this.ssoService.removeSsoProvider(
-      user.workspaceId,
-      providerId,
-      user.id,
-    );
+    await this.ssoService.removeSsoProvider(user.workspaceId, providerId, user.id);
     return { success: true, message: 'SSO provider removed' };
   }
 

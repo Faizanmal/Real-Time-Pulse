@@ -39,9 +39,7 @@ export function createMockUser(overrides: Partial<MockUser> = {}): MockUser {
 /**
  * Create mock workspace data
  */
-export function createMockWorkspace(
-  overrides: Partial<MockWorkspace> = {},
-): MockWorkspace {
+export function createMockWorkspace(overrides: Partial<MockWorkspace> = {}): MockWorkspace {
   return {
     id: 'workspace-123',
     name: 'Test Workspace',
@@ -53,12 +51,14 @@ export function createMockWorkspace(
   };
 }
 
+// Backwards-compatible aliases expected by older tests
+export const createTestUser = createMockUser;
+export const createTestWorkspace = createMockWorkspace;
+
 /**
  * Create mock portal data
  */
-export function createMockPortal(
-  overrides: Partial<MockPortal> = {},
-): MockPortal {
+export function createMockPortal(overrides: Partial<MockPortal> = {}): MockPortal {
   return {
     id: 'portal-123',
     name: 'Test Portal',
@@ -75,9 +75,7 @@ export function createMockPortal(
 /**
  * Create mock widget data
  */
-export function createMockWidget(
-  overrides: Partial<MockWidget> = {},
-): MockWidget {
+export function createMockWidget(overrides: Partial<MockWidget> = {}): MockWidget {
   return {
     id: 'widget-123',
     title: 'Test Widget',
@@ -95,9 +93,7 @@ export function createMockWidget(
 /**
  * Create mock integration data
  */
-export function createMockIntegration(
-  overrides: Partial<MockIntegration> = {},
-): MockIntegration {
+export function createMockIntegration(overrides: Partial<MockIntegration> = {}): MockIntegration {
   return {
     id: 'integration-123',
     provider: 'ASANA',
@@ -258,14 +254,12 @@ export function createMockCacheService(): MockCacheService {
       cache.delete(key);
       return Promise.resolve();
     }),
-    getOrFetch: jest.fn(
-      async (key: string, fetchFn: () => Promise<unknown>) => {
-        if (cache.has(key)) return cache.get(key);
-        const value = await fetchFn();
-        cache.set(key, value);
-        return value;
-      },
-    ),
+    getOrFetch: jest.fn(async (key: string, fetchFn: () => Promise<unknown>) => {
+      if (cache.has(key)) return cache.get(key);
+      const value = await fetchFn();
+      cache.set(key, value);
+      return value;
+    }),
     invalidatePattern: jest.fn(() => Promise.resolve()),
     getMetrics: jest.fn(() => ({
       hits: 0,
@@ -389,9 +383,7 @@ export function createMockNotificationService(): MockNotificationService {
 /**
  * Build a test module with common providers
  */
-export async function buildTestModule(
-  options: TestModuleOptions = {},
-): Promise<TestingModule> {
+export async function buildTestModule(options: TestModuleOptions = {}): Promise<TestingModule> {
   const {
     providers = [],
     imports = [],
@@ -496,6 +488,14 @@ export function mockDate(date: Date | string): () => void {
   return () => {
     global.Date = RealDate;
   };
+}
+
+/**
+ * Generate a random email for testing
+ */
+export function randomEmail(): string {
+  const random = Math.random().toString(36).substring(2, 15);
+  return `test-${random}@example.com`;
 }
 
 // ============================================================================

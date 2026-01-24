@@ -91,14 +91,8 @@ export class CircuitBreakerService {
   /**
    * Get all circuit statuses
    */
-  getAllCircuitStatuses(): Record<
-    string,
-    { state: CircuitState; metrics: CircuitMetrics }
-  > {
-    const statuses: Record<
-      string,
-      { state: CircuitState; metrics: CircuitMetrics }
-    > = {};
+  getAllCircuitStatuses(): Record<string, { state: CircuitState; metrics: CircuitMetrics }> {
+    const statuses: Record<string, { state: CircuitState; metrics: CircuitMetrics }> = {};
     for (const [name, circuit] of this.circuits) {
       statuses[name] = {
         state: circuit.state,
@@ -131,7 +125,7 @@ export class CircuitBreakerService {
         options: { ...DEFAULT_OPTIONS, ...options },
       });
     }
-    return this.circuits.get(circuitName)!;
+    return this.circuits.get(circuitName);
   }
 
   private createEmptyMetrics(): CircuitMetrics {
@@ -201,11 +195,7 @@ export class CircuitBreakerService {
     }
   }
 
-  private transitionState(
-    circuit: Circuit,
-    newState: CircuitState,
-    circuitName: string,
-  ): void {
+  private transitionState(circuit: Circuit, newState: CircuitState, circuitName: string): void {
     const oldState = circuit.state;
     circuit.state = newState;
     circuit.metrics.lastStateChange = Date.now();
@@ -214,9 +204,7 @@ export class CircuitBreakerService {
       circuit.metrics = this.createEmptyMetrics();
     }
 
-    this.logger.log(
-      `Circuit ${circuitName} transitioned from ${oldState} to ${newState}`,
-    );
+    this.logger.log(`Circuit ${circuitName} transitioned from ${oldState} to ${newState}`);
   }
 
   private cleanupOldMetrics(circuit: Circuit): void {

@@ -7,7 +7,7 @@
  * WebSocket context provider for real-time communication.
  */
 
-import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useLayoutEffect, useState, useCallback, ReactNode } from 'react';
 import type { Annotation as ApiAnnotation } from '@/lib/api/annotations';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '@/store/auth';
@@ -120,10 +120,11 @@ export function SocketProvider({ children }: SocketProviderProps) {
   const { accessToken, isAuthenticated } = useAuthStore();
 
   // Initialize socket connection
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isAuthenticated || !accessToken) {
       if (socket) {
         socket.disconnect();
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSocket(null);
       }
       return;

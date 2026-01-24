@@ -1,18 +1,9 @@
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  TRACE_METADATA_KEY,
-  TraceMetadata,
-} from '../decorators/trace.decorator';
+import { TRACE_METADATA_KEY, TraceMetadata } from '../decorators/trace.decorator';
 
 interface TraceContext {
   correlationId: string;
@@ -45,9 +36,7 @@ export class TraceInterceptor implements NestInterceptor {
 
     // Get or generate correlation ID
     const correlationId =
-      request.headers['x-correlation-id'] ||
-      request.headers['x-request-id'] ||
-      uuidv4();
+      request.headers['x-correlation-id'] || request.headers['x-request-id'] || uuidv4();
 
     const traceContext: TraceContext = {
       correlationId,
@@ -87,10 +76,7 @@ export class TraceInterceptor implements NestInterceptor {
 
         // Optionally log the result (with sensitive fields masked)
         if (traceMetadata.logResult && result) {
-          logData.result = this.maskSensitiveFields(
-            result,
-            traceMetadata.sensitiveFields || [],
-          );
+          logData.result = this.maskSensitiveFields(result, traceMetadata.sensitiveFields || []);
         }
 
         this.logger.log(logData);
@@ -123,10 +109,7 @@ export class TraceInterceptor implements NestInterceptor {
     );
   }
 
-  private maskSensitiveFields(
-    data: unknown,
-    sensitiveFields: string[],
-  ): unknown {
+  private maskSensitiveFields(data: unknown, sensitiveFields: string[]): unknown {
     if (!data || typeof data !== 'object') {
       return data;
     }

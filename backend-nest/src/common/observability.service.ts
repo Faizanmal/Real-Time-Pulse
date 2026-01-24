@@ -6,12 +6,7 @@
  * Comprehensive observability including logging, metrics, tracing, and monitoring.
  */
 
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-} from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
 import { Observable, tap, catchError } from 'rxjs';
 import * as opentelemetry from '@opentelemetry/api';
 
@@ -102,11 +97,7 @@ export class StructuredLogger {
     });
   }
 
-  performance(
-    operation: string,
-    durationMs: number,
-    meta?: Record<string, unknown>,
-  ) {
+  performance(operation: string, durationMs: number, meta?: Record<string, unknown>) {
     this.info(`PERF: ${operation} completed in ${durationMs}ms`, {
       performance: true,
       operation,
@@ -132,21 +123,13 @@ export class MetricsService {
   private labels: Map<string, Map<string, number>> = new Map();
 
   // Counter operations
-  increment(
-    name: string,
-    value: number = 1,
-    labelValues?: Record<string, string>,
-  ) {
+  increment(name: string, value = 1, labelValues?: Record<string, string>) {
     const key = this.getKey(name, labelValues);
     const current = this.metrics.get(key) || 0;
     this.metrics.set(key, current + value);
   }
 
-  decrement(
-    name: string,
-    value: number = 1,
-    labelValues?: Record<string, string>,
-  ) {
+  decrement(name: string, value = 1, labelValues?: Record<string, string>) {
     this.increment(name, -value, labelValues);
   }
 
@@ -162,7 +145,7 @@ export class MetricsService {
     if (!this.histograms.has(key)) {
       this.histograms.set(key, []);
     }
-    this.histograms.get(key)!.push(value);
+    this.histograms.get(key).push(value);
   }
 
   // Timer helper
@@ -336,30 +319,18 @@ export class TracingInterceptor implements NestInterceptor {
 // Health check service
 @Injectable()
 export class HealthService {
-  private checks: Map<
-    string,
-    () => Promise<{ healthy: boolean; details?: unknown }>
-  > = new Map();
+  private checks: Map<string, () => Promise<{ healthy: boolean; details?: unknown }>> = new Map();
 
-  registerCheck(
-    name: string,
-    check: () => Promise<{ healthy: boolean; details?: unknown }>,
-  ) {
+  registerCheck(name: string, check: () => Promise<{ healthy: boolean; details?: unknown }>) {
     this.checks.set(name, check);
   }
 
   async getHealth(): Promise<{
     status: 'healthy' | 'degraded' | 'unhealthy';
-    checks: Record<
-      string,
-      { healthy: boolean; details?: unknown; duration: number }
-    >;
+    checks: Record<string, { healthy: boolean; details?: unknown; duration: number }>;
     timestamp: string;
   }> {
-    const results: Record<
-      string,
-      { healthy: boolean; details?: unknown; duration: number }
-    > = {};
+    const results: Record<string, { healthy: boolean; details?: unknown; duration: number }> = {};
     let overallHealthy = true;
     let hasDegraded = false;
 
@@ -387,11 +358,7 @@ export class HealthService {
     }
 
     return {
-      status: !overallHealthy
-        ? 'unhealthy'
-        : hasDegraded
-          ? 'degraded'
-          : 'healthy',
+      status: !overallHealthy ? 'unhealthy' : hasDegraded ? 'degraded' : 'healthy',
       checks: results,
       timestamp: new Date().toISOString(),
     };

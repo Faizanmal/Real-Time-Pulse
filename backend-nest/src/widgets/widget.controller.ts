@@ -33,10 +33,7 @@ export class WidgetController {
    * Get all widgets for a portal
    */
   @Get('portal/:portalId')
-  async findAllByPortal(
-    @Param('portalId') portalId: string,
-    @CurrentUser() user: RequestUser,
-  ) {
+  async findAllByPortal(@Param('portalId') portalId: string, @CurrentUser() user: RequestUser) {
     return this.widgetService.findAllByPortal(portalId, user.workspaceId);
   }
 
@@ -73,10 +70,7 @@ export class WidgetController {
    * Refresh widget data
    */
   @Post(':id/refresh')
-  async refreshData(
-    @Param('id') id: string,
-    @CurrentUser() user: RequestUser,
-  ): Promise<any> {
+  async refreshData(@Param('id') id: string, @CurrentUser() user: RequestUser): Promise<any> {
     return this.widgetService.refreshData(id, user.workspaceId);
   }
 }

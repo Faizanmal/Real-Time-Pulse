@@ -141,13 +141,7 @@ export class HealthcareSolutionService {
   async createPatient(
     data: Omit<
       PatientRecord,
-      | 'id'
-      | 'encounters'
-      | 'conditions'
-      | 'medications'
-      | 'vitals'
-      | 'labResults'
-      | 'consents'
+      'id' | 'encounters' | 'conditions' | 'medications' | 'vitals' | 'labResults' | 'consents'
     >,
   ): Promise<PatientRecord> {
     const id = `patient-${Date.now()}`;
@@ -210,10 +204,7 @@ export class HealthcareSolutionService {
           continue;
         }
       }
-      if (
-        query.dateOfBirth &&
-        patient.demographics.dateOfBirth === query.dateOfBirth
-      ) {
+      if (query.dateOfBirth && patient.demographics.dateOfBirth === query.dateOfBirth) {
         results.push(patient);
       }
     }
@@ -267,10 +258,7 @@ export class HealthcareSolutionService {
     }
   }
 
-  async addLabResult(
-    patientId: string,
-    result: Omit<LabResult, 'id'>,
-  ): Promise<LabResult> {
+  async addLabResult(patientId: string, result: Omit<LabResult, 'id'>): Promise<LabResult> {
     const patient = this.patients.get(patientId);
     if (!patient) throw new Error(`Patient ${patientId} not found`);
 
@@ -415,9 +403,7 @@ export class HealthcareSolutionService {
   }
 
   // HIPAA Compliance
-  private logAccess(
-    entry: Omit<AccessLogEntry, 'id' | 'timestamp' | 'ipAddress'>,
-  ): void {
+  private logAccess(entry: Omit<AccessLogEntry, 'id' | 'timestamp' | 'ipAddress'>): void {
     const logEntry: AccessLogEntry = {
       ...entry,
       id: `access-${Date.now()}`,
@@ -441,8 +427,7 @@ export class HealthcareSolutionService {
     action?: AccessLogEntry['action'];
   }): Promise<AccessLogEntry[]> {
     return this.accessLog.filter((log) => {
-      if (filters.patientId && log.patientId !== filters.patientId)
-        return false;
+      if (filters.patientId && log.patientId !== filters.patientId) return false;
       if (filters.userId && log.userId !== filters.userId) return false;
       if (filters.action && log.action !== filters.action) return false;
       if (filters.startDate && log.timestamp < filters.startDate) return false;
@@ -475,9 +460,7 @@ export class HealthcareSolutionService {
 
     // Check for various risk factors
     const recentBreaches = this.breachNotifications.filter(
-      (b) =>
-        new Date(b.reportDate) >
-        new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
+      (b) => new Date(b.reportDate) > new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
     );
 
     if (recentBreaches.length > 0) {
@@ -490,8 +473,7 @@ export class HealthcareSolutionService {
     const bulkExports = this.accessLog.filter(
       (log) =>
         log.action === 'export' &&
-        new Date(log.timestamp) >
-          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        new Date(log.timestamp) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     );
 
     if (bulkExports.length > 100) {
@@ -527,13 +509,11 @@ export class HealthcareSolutionService {
 
     for (const patient of patients) {
       for (const encounter of patient.encounters) {
-        encountersByType[encounter.type] =
-          (encountersByType[encounter.type] || 0) + 1;
+        encountersByType[encounter.type] = (encountersByType[encounter.type] || 0) + 1;
         totalEncounters++;
       }
       for (const condition of patient.conditions) {
-        conditionsByStatus[condition.status] =
-          (conditionsByStatus[condition.status] || 0) + 1;
+        conditionsByStatus[condition.status] = (conditionsByStatus[condition.status] || 0) + 1;
       }
     }
 
@@ -541,8 +521,7 @@ export class HealthcareSolutionService {
       totalPatients: patients.length,
       encountersByType,
       conditionsByStatus,
-      averageEncountersPerPatient:
-        patients.length > 0 ? totalEncounters / patients.length : 0,
+      averageEncountersPerPatient: patients.length > 0 ? totalEncounters / patients.length : 0,
     };
   }
 }

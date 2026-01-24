@@ -1,13 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsString,
-  IsEnum,
-  IsUrl,
-  IsOptional,
-  IsBoolean,
-  IsNumber,
-  Min,
-} from 'class-validator';
+import { IsString, IsEnum, IsUrl, IsOptional, IsBoolean, IsNumber, Min } from 'class-validator';
 
 export enum SubscriptionPlanTier {
   PRO = 'PRO',

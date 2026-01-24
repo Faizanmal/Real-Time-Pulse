@@ -60,8 +60,7 @@ export class MerkleTreeService {
 
     while (currentLevel.length > 1) {
       // Determine sibling index
-      const siblingIndex =
-        currentIndex % 2 === 0 ? currentIndex + 1 : currentIndex - 1;
+      const siblingIndex = currentIndex % 2 === 0 ? currentIndex + 1 : currentIndex - 1;
 
       // Add sibling to proof with direction indicator
       const direction = currentIndex % 2 === 0 ? 'R' : 'L';

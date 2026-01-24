@@ -5,13 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export interface MLModel {
   id: string;
   name: string;
-  type:
-    | 'classification'
-    | 'regression'
-    | 'clustering'
-    | 'timeseries'
-    | 'anomaly'
-    | 'nlp';
+  type: 'classification' | 'regression' | 'clustering' | 'timeseries' | 'anomaly' | 'nlp';
   framework: 'sklearn' | 'tensorflow' | 'pytorch' | 'xgboost' | 'custom';
   version: string;
   status: 'training' | 'ready' | 'failed' | 'archived';
@@ -124,11 +118,7 @@ export class MLModelService {
   }
 
   // Training
-  async trainModel(
-    modelId: string,
-    data: any[],
-    config: TrainingConfig,
-  ): Promise<MLModel> {
+  async trainModel(modelId: string, data: any[], config: TrainingConfig): Promise<MLModel> {
     const model = this.models.get(modelId);
     if (!model) throw new Error(`Model ${modelId} not found`);
 
@@ -245,11 +235,7 @@ export class MLModelService {
   }
 
   // AutoML
-  async runAutoML(
-    model: MLModel,
-    _data: any[],
-    _config: TrainingConfig,
-  ): Promise<AutoMLResult> {
+  async runAutoML(model: MLModel, _data: any[], _config: TrainingConfig): Promise<AutoMLResult> {
     this.logger.log(`Running AutoML for model ${model.name}`);
 
     const algorithms = this.getAlgorithmsForType(model.type);
@@ -275,7 +261,7 @@ export class MLModelService {
       .map((f) => ({
         feature: f,
         importance: Math.random(),
-        direction: (Math.random() > 0.5 ? 'positive' : 'negative') as 'positive' | 'negative',
+        direction: Math.random() > 0.5 ? ('positive' as const) : ('negative' as const),
       }))
       .sort((a, b) => b.importance - a.importance);
 
@@ -293,13 +279,7 @@ export class MLModelService {
   private getAlgorithmsForType(type: MLModel['type']): string[] {
     switch (type) {
       case 'classification':
-        return [
-          'random_forest',
-          'xgboost',
-          'logistic_regression',
-          'svm',
-          'neural_network',
-        ];
+        return ['random_forest', 'xgboost', 'logistic_regression', 'svm', 'neural_network'];
       case 'regression':
         return [
           'linear_regression',
@@ -342,13 +322,10 @@ export class MLModelService {
   async predict(request: PredictionRequest): Promise<PredictionResult> {
     const model = this.models.get(request.modelId);
     if (!model) throw new Error(`Model ${request.modelId} not found`);
-    if (model.status !== 'ready')
-      throw new Error(`Model ${request.modelId} is not ready`);
+    if (model.status !== 'ready') throw new Error(`Model ${request.modelId} is not ready`);
 
     // Validate features
-    const missingFeatures = model.features.filter(
-      (f) => !(f in request.features),
-    );
+    const missingFeatures = model.features.filter((f) => !(f in request.features));
     if (missingFeatures.length > 0) {
       throw new Error(`Missing features: ${missingFeatures.join(', ')}`);
     }
@@ -391,8 +368,7 @@ export class MLModelService {
         return {
           value: classes[maxIdx],
           probability: normalized[maxIdx],
-          confidence:
-            normalized[maxIdx] - (normalized.sort((a, b) => b - a)[1] || 0),
+          confidence: normalized[maxIdx] - (normalized.sort((a, b) => b - a)[1] || 0),
         };
       }
 
@@ -422,15 +398,12 @@ export class MLModelService {
     }
   }
 
-  private generateExplanation(
-    model: MLModel,
-    _features: Record<string, any>,
-  ): FeatureImportance[] {
+  private generateExplanation(model: MLModel, _features: Record<string, any>): FeatureImportance[] {
     return model.features
       .map((feature) => ({
         feature,
         importance: Math.random(),
-        direction: (Math.random() > 0.5 ? 'positive' : 'negative') as 'positive' | 'negative',
+        direction: Math.random() > 0.5 ? ('positive' as const) : ('negative' as const),
       }))
       .sort((a, b) => b.importance - a.importance);
   }
@@ -491,9 +464,7 @@ export class MLModelService {
     return { features, recommendations };
   }
 
-  private inferFeatureType(
-    values: any[],
-  ): 'numeric' | 'categorical' | 'text' | 'datetime' {
+  private inferFeatureType(values: any[]): 'numeric' | 'categorical' | 'text' | 'datetime' {
     const sample = values.find((v) => v !== null && v !== undefined);
     if (typeof sample === 'number') return 'numeric';
     if (sample instanceof Date) return 'datetime';
@@ -511,8 +482,7 @@ export class MLModelService {
       const nums = nonNull.map(Number).filter((n) => !isNaN(n));
       const sum = nums.reduce((a, b) => a + b, 0);
       const mean = sum / nums.length;
-      const variance =
-        nums.reduce((acc, n) => acc + Math.pow(n - mean, 2), 0) / nums.length;
+      const variance = nums.reduce((acc, n) => acc + Math.pow(n - mean, 2), 0) / nums.length;
 
       return {
         count: nums.length,

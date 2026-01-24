@@ -127,10 +127,7 @@ export class ARVisualizationService {
   /**
    * Get scene by ID
    */
-  async getScene(
-    workspaceId: string,
-    sceneId: string,
-  ): Promise<ARScene | null> {
+  async getScene(workspaceId: string, sceneId: string): Promise<ARScene | null> {
     const scenes = await this.getScenes(workspaceId);
     return scenes.find((s) => s.id === sceneId) || null;
   }
@@ -178,11 +175,7 @@ export class ARVisualizationService {
     if (markersJson) {
       const markers: ARMarker[] = JSON.parse(markersJson);
       const filteredMarkers = markers.filter((m) => m.sceneId !== sceneId);
-      await this.cache.set(
-        markerKey,
-        JSON.stringify(filteredMarkers),
-        86400 * 365,
-      );
+      await this.cache.set(markerKey, JSON.stringify(filteredMarkers), 86400 * 365);
     }
   }
 
@@ -313,35 +306,9 @@ export class ARVisualizationService {
       const baseIndex = vertices.length / 3;
 
       // Front face
-      vertices.push(
-        x,
-        0,
-        0,
-        x + width,
-        0,
-        0,
-        x + width,
-        height,
-        0,
-        x,
-        height,
-        0,
-      );
+      vertices.push(x, 0, 0, x + width, 0, 0, x + width, height, 0, x, height, 0);
       // Back face
-      vertices.push(
-        x,
-        0,
-        depth,
-        x + width,
-        0,
-        depth,
-        x + width,
-        height,
-        depth,
-        x,
-        height,
-        depth,
-      );
+      vertices.push(x, 0, depth, x + width, 0, depth, x + width, height, depth, x, height, depth);
 
       // Generate color based on value
       const hue = (1 - value / Math.max(...series)) * 0.7;
@@ -461,13 +428,11 @@ export class ARVisualizationService {
     const vertices: number[] = [];
     const colors: number[] = [];
 
-    points.forEach(
-      (point: { x: number; y: number; z?: number; value?: number }) => {
-        vertices.push(point.x, point.y, point.z || 0);
-        const intensity = (point.value || 0.5) / 1;
-        colors.push(intensity, 0.5, 1 - intensity, 1);
-      },
-    );
+    points.forEach((point: { x: number; y: number; z?: number; value?: number }) => {
+      vertices.push(point.x, point.y, point.z || 0);
+      const intensity = (point.value || 0.5) / 1;
+      colors.push(intensity, 0.5, 1 - intensity, 1);
+    });
 
     return {
       vertices,

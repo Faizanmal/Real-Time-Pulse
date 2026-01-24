@@ -13,10 +13,10 @@ import { AdvancedCacheService } from './advanced-cache.service';
     BullModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
         redis: {
-          host: configService.get<string>('redis.host') as string,
-          port: configService.get<number>('redis.port') as number,
+          host: configService.get<string>('redis.host'),
+          port: configService.get<number>('redis.port'),
           password: configService.get<string>('redis.password'),
-          db: configService.get<number>('redis.db') as number,
+          db: configService.get<number>('redis.db'),
         },
       }),
       inject: [ConfigService],

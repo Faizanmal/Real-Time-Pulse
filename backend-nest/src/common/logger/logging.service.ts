@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  LoggerService as NestLoggerService,
-  Scope,
-} from '@nestjs/common';
+import { Injectable, LoggerService as NestLoggerService, Scope } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
@@ -37,13 +33,10 @@ export class LoggingService implements NestLoggerService {
     } else {
       formats.push(
         winston.format.printf((info: winston.Logform.TransformableInfo) => {
-          const timestamp =
-            typeof info.timestamp === 'string' ? info.timestamp : '';
+          const timestamp = typeof info.timestamp === 'string' ? info.timestamp : '';
           const level = typeof info.level === 'string' ? info.level : '';
           const message =
-            typeof info.message === 'string'
-              ? info.message
-              : JSON.stringify(info.message);
+            typeof info.message === 'string' ? info.message : JSON.stringify(info.message);
           const context = info.context as string | undefined;
           const metadata = info.metadata as Record<string, unknown> | undefined;
           const ctx = context ? `[${context}]` : '';
@@ -59,10 +52,7 @@ export class LoggingService implements NestLoggerService {
     // Transport for rotating files
     const fileRotateTransport = new DailyRotateFile({
       filename: `${logDir}/application-%DATE%.log`,
-      datePattern: this.configService.get<string>(
-        'logger.datePattern',
-        'YYYY-MM-DD',
-      ),
+      datePattern: this.configService.get<string>('logger.datePattern', 'YYYY-MM-DD'),
       maxSize: this.configService.get<string>('logger.maxSize', '20m'),
       maxFiles: this.configService.get<string>('logger.maxFiles', '14d'),
       format: winston.format.combine(...formats),
@@ -70,10 +60,7 @@ export class LoggingService implements NestLoggerService {
 
     const errorFileRotateTransport = new DailyRotateFile({
       filename: `${logDir}/error-%DATE%.log`,
-      datePattern: this.configService.get<string>(
-        'logger.datePattern',
-        'YYYY-MM-DD',
-      ),
+      datePattern: this.configService.get<string>('logger.datePattern', 'YYYY-MM-DD'),
       level: 'error',
       maxSize: this.configService.get<string>('logger.maxSize', '20m'),
       maxFiles: this.configService.get<string>('logger.maxFiles', '14d'),
@@ -89,13 +76,10 @@ export class LoggingService implements NestLoggerService {
           format: winston.format.combine(
             winston.format.colorize(),
             winston.format.printf((info: winston.Logform.TransformableInfo) => {
-              const timestamp =
-                typeof info.timestamp === 'string' ? info.timestamp : '';
+              const timestamp = typeof info.timestamp === 'string' ? info.timestamp : '';
               const level = typeof info.level === 'string' ? info.level : '';
               const message =
-                typeof info.message === 'string'
-                  ? info.message
-                  : JSON.stringify(info.message);
+                typeof info.message === 'string' ? info.message : JSON.stringify(info.message);
               const context = info.context as string | undefined;
               const ctx = context ? `[${context}]` : '';
               return `${timestamp} ${level} ${ctx} ${message}`;
@@ -107,11 +91,7 @@ export class LoggingService implements NestLoggerService {
   }
 
   // Contexts to suppress (NestJS internal noisy logs)
-  private readonly suppressedContexts = [
-    'RouterExplorer',
-    'RoutesResolver',
-    'InstanceLoader',
-  ];
+  private readonly suppressedContexts = ['RouterExplorer', 'RoutesResolver', 'InstanceLoader'];
 
   setContext(context: string) {
     this.context = context;

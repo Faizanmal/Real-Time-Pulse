@@ -34,11 +34,7 @@ export class JiraService {
     }
   }
 
-  async fetchData(
-    integration: Integration,
-    dataType: string,
-    params?: unknown,
-  ): Promise<unknown> {
+  async fetchData(integration: Integration, dataType: string, params?: unknown): Promise<unknown> {
     const cloudId = integration.settings?.cloudId;
     if (!cloudId) {
       throw new Error('Jira cloud ID not configured');
@@ -70,10 +66,7 @@ export class JiraService {
   private async fetchProjects(cloudId: string, headers: any): Promise<unknown> {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(
-          `${this.baseUrl}/${cloudId}/rest/api/3/project/search`,
-          { headers },
-        ),
+        this.httpService.get(`${this.baseUrl}/${cloudId}/rest/api/3/project/search`, { headers }),
       );
       return response.data.values;
     } catch (error) {
@@ -82,11 +75,7 @@ export class JiraService {
     }
   }
 
-  private async fetchIssues(
-    cloudId: string,
-    headers: any,
-    params?: unknown,
-  ): Promise<unknown> {
+  private async fetchIssues(cloudId: string, headers: any, params?: unknown): Promise<unknown> {
     try {
       const projectKey = (params as { projectKey?: string })?.projectKey;
       const jql = projectKey
@@ -110,11 +99,7 @@ export class JiraService {
     }
   }
 
-  private async fetchSprints(
-    cloudId: string,
-    headers: any,
-    params?: unknown,
-  ): Promise<unknown> {
+  private async fetchSprints(cloudId: string, headers: any, params?: unknown): Promise<unknown> {
     try {
       const boardId = (params as { boardId?: string })?.boardId;
       if (!boardId) {
@@ -137,10 +122,9 @@ export class JiraService {
   private async fetchBoards(cloudId: string, headers: any): Promise<unknown> {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(
-          `https://api.atlassian.com/ex/jira/${cloudId}/rest/agile/1.0/board`,
-          { headers },
-        ),
+        this.httpService.get(`https://api.atlassian.com/ex/jira/${cloudId}/rest/agile/1.0/board`, {
+          headers,
+        }),
       );
       return response.data.values;
     } catch (error) {

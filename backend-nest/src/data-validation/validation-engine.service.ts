@@ -32,9 +32,7 @@ export class ValidationEngineService {
       try {
         await this.validateRule(rule);
       } catch (error) {
-        this.logger.error(
-          `Validation failed for rule ${rule.id}: ${error.message}`,
-        );
+        this.logger.error(`Validation failed for rule ${rule.id}: ${error.message}`);
       }
     }
   }
@@ -232,10 +230,7 @@ export class ValidationEngineService {
 
     const { min, max } = config;
 
-    if (
-      (min !== undefined && value < min) ||
-      (max !== undefined && value > max)
-    ) {
+    if ((min !== undefined && value < min) || (max !== undefined && value > max)) {
       return {
         type: 'OUT_OF_RANGE',
         expectedValue: `${min} - ${max}`,
@@ -250,17 +245,16 @@ export class ValidationEngineService {
     if (typeof value !== 'number') return null;
 
     // Get historical values
-    const historicalViolations =
-      await this.prisma.dataValidationViolation.findMany({
-        where: {
-          ruleId: rule.id,
-          timestamp: {
-            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
-          },
+    const historicalViolations = await this.prisma.dataValidationViolation.findMany({
+      where: {
+        ruleId: rule.id,
+        timestamp: {
+          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
         },
-        orderBy: { timestamp: 'desc' },
-        take: 100,
-      });
+      },
+      orderBy: { timestamp: 'desc' },
+      take: 100,
+    });
 
     if (historicalViolations.length < 10) {
       // Not enough historical data
@@ -273,9 +267,7 @@ export class ValidationEngineService {
       .filter((v) => !isNaN(v));
 
     const mean = values.reduce((a, b) => a + b, 0) / values.length;
-    const variance =
-      values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) /
-      values.length;
+    const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
     const stdDev = Math.sqrt(variance);
 
     const threshold = rule.config.standardDeviations || 3;
@@ -395,9 +387,7 @@ export class ValidationEngineService {
   }
 
   private async sendViolationNotification(rule: any, violation: any) {
-    this.logger.warn(
-      `Validation violation for rule "${rule.name}": ${violation.type}`,
-    );
+    this.logger.warn(`Validation violation for rule "${rule.name}": ${violation.type}`);
 
     const recipients = Array.isArray(rule.notifyEmails)
       ? rule.notifyEmails.filter((email: string) => !!email)
@@ -424,17 +414,11 @@ export class ValidationEngineService {
     });
 
     if (!emailSent) {
-      this.logger.warn(
-        `Failed to deliver validation notification for rule ${rule.id}`,
-      );
+      this.logger.warn(`Failed to deliver validation notification for rule ${rule.id}`);
     }
   }
 
-  async validateDataOnDemand(
-    workspaceId: string,
-    data: any,
-    fieldPath: string,
-  ) {
+  async validateDataOnDemand(workspaceId: string, data: any, fieldPath: string) {
     const rules = await this.prisma.dataValidationRule.findMany({
       where: {
         workspaceId,

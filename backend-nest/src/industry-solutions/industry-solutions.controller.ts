@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-  Req,
-  Patch,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards, Req, Patch } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { IndustrySolutionsService } from './industry-solutions.service';
 import { IndustryType } from '@prisma/client';
@@ -16,9 +6,7 @@ import { IndustryType } from '@prisma/client';
 @Controller('industry-solutions')
 @UseGuards(JwtAuthGuard)
 export class IndustrySolutionsController {
-  constructor(
-    private readonly industrySolutionsService: IndustrySolutionsService,
-  ) {}
+  constructor(private readonly industrySolutionsService: IndustrySolutionsService) {}
 
   @Get('templates')
   async getTemplates(@Query('industry') industry?: IndustryType) {
@@ -82,10 +70,7 @@ export class IndustrySolutionsController {
 
   @Get('deployments/:id/compliance')
   async getComplianceCheck(@Param('id') deploymentId: string, @Req() req: any) {
-    return this.industrySolutionsService.getComplianceCheck(
-      deploymentId,
-      req.user.workspaceId,
-    );
+    return this.industrySolutionsService.getComplianceCheck(deploymentId, req.user.workspaceId);
   }
 
   @Get('healthcare/templates')
@@ -102,10 +87,7 @@ export class IndustrySolutionsController {
   }
 
   @Post('templates/:id/rate')
-  async rateTemplate(
-    @Param('id') templateId: string,
-    @Body() data: { rating: number },
-  ) {
+  async rateTemplate(@Param('id') templateId: string, @Body() data: { rating: number }) {
     return this.industrySolutionsService.rateTemplate(templateId, data.rating);
   }
 }

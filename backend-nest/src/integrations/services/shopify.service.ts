@@ -239,34 +239,21 @@ export class ShopifyService {
       const orders = ordersResponse.data.orders as ShopifyOrder[];
 
       // Calculate analytics
-      const totalRevenue = orders.reduce(
-        (sum, order) => sum + parseFloat(order.total_price),
-        0,
-      );
+      const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.total_price), 0);
       const totalOrders = orders.length;
-      const averageOrderValue =
-        totalOrders > 0 ? totalRevenue / totalOrders : 0;
+      const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-      const paidOrders = orders.filter(
-        (order) => order.financial_status === 'paid',
-      );
-      const pendingOrders = orders.filter(
-        (order) => order.financial_status === 'pending',
-      );
-      const refundedOrders = orders.filter(
-        (order) => order.financial_status === 'refunded',
-      );
+      const paidOrders = orders.filter((order) => order.financial_status === 'paid');
+      const pendingOrders = orders.filter((order) => order.financial_status === 'pending');
+      const refundedOrders = orders.filter((order) => order.financial_status === 'refunded');
 
-      const fulfilledOrders = orders.filter(
-        (order) => order.fulfillment_status === 'fulfilled',
-      );
+      const fulfilledOrders = orders.filter((order) => order.fulfillment_status === 'fulfilled');
 
       // Daily revenue breakdown
       const dailyRevenue: Record<string, number> = {};
       orders.forEach((order) => {
         const date = order.created_at.split('T')[0];
-        dailyRevenue[date] =
-          (dailyRevenue[date] || 0) + parseFloat(order.total_price);
+        dailyRevenue[date] = (dailyRevenue[date] || 0) + parseFloat(order.total_price);
       });
 
       return {
@@ -293,10 +280,7 @@ export class ShopifyService {
     }
   }
 
-  private async fetchShopInfo(
-    baseUrl: string,
-    headers: Record<string, string>,
-  ): Promise<unknown> {
+  private async fetchShopInfo(baseUrl: string, headers: Record<string, string>): Promise<unknown> {
     try {
       const response = await firstValueFrom(
         this.httpService.get(`${baseUrl}/shop.json`, { headers }),

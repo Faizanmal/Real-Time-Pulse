@@ -67,8 +67,7 @@ export class SignUpDto {
   @IsString()
   @IsOptional()
   @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
-    message:
-      'Workspace slug must contain only lowercase letters, numbers, and hyphens',
+    message: 'Workspace slug must contain only lowercase letters, numbers, and hyphens',
   })
   @MaxLength(50)
   workspaceSlug?: string;

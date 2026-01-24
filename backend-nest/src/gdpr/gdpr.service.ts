@@ -1,11 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  ConsentType,
-  GDPRRequestType,
-  GDPRRequestStatus,
-  Prisma,
-} from '@prisma/client';
+import { ConsentType, GDPRRequestType, GDPRRequestStatus, Prisma } from '@prisma/client';
 
 @Injectable()
 export class GdprService {
@@ -169,17 +164,10 @@ export class GdprService {
     }
 
     // Update status to in progress
-    await this.updateDataRequestStatus(
-      requestId,
-      GDPRRequestStatus.IN_PROGRESS,
-      performedBy,
-    );
+    await this.updateDataRequestStatus(requestId, GDPRRequestStatus.IN_PROGRESS, performedBy);
 
     // Collect all data for the requester
-    const userData = await this.collectUserData(
-      request.workspaceId,
-      request.requesterEmail,
-    );
+    const userData = await this.collectUserData(request.workspaceId, request.requesterEmail);
 
     // Generate data export (in production, this would create a downloadable file)
     const exportUrl = await this.generateDataExport(userData);
@@ -194,11 +182,7 @@ export class GdprService {
     });
 
     // Mark as completed
-    await this.updateDataRequestStatus(
-      requestId,
-      GDPRRequestStatus.COMPLETED,
-      performedBy,
-    );
+    await this.updateDataRequestStatus(requestId, GDPRRequestStatus.COMPLETED, performedBy);
 
     return { exportUrl, expiresIn: '7 days' };
   }
@@ -210,11 +194,7 @@ export class GdprService {
     }
 
     // Update status to in progress
-    await this.updateDataRequestStatus(
-      requestId,
-      GDPRRequestStatus.IN_PROGRESS,
-      performedBy,
-    );
+    await this.updateDataRequestStatus(requestId, GDPRRequestStatus.IN_PROGRESS, performedBy);
 
     // Perform data deletion/anonymization
     const deletionResult = await this.deleteOrAnonymizeUserData(
@@ -360,9 +340,7 @@ export class GdprService {
       (c) => c.consented && (!c.expiresAt || c.expiresAt > new Date()),
     ).length;
     const revoked = consents.filter((c) => c.revokedAt !== null).length;
-    const expired = consents.filter(
-      (c) => c.expiresAt && c.expiresAt <= new Date(),
-    ).length;
+    const expired = consents.filter((c) => c.expiresAt && c.expiresAt <= new Date()).length;
 
     const byType: Record<string, number> = {};
     consents.forEach((c) => {
@@ -400,9 +378,7 @@ export class GdprService {
     const avgResponseTimeHours =
       completedRequests.length > 0
         ? completedRequests.reduce((sum, r) => {
-            const hours =
-              (r.processedAt!.getTime() - r.submittedAt.getTime()) /
-              (1000 * 60 * 60);
+            const hours = (r.processedAt.getTime() - r.submittedAt.getTime()) / (1000 * 60 * 60);
             return sum + hours;
           }, 0) / completedRequests.length
         : 0;

@@ -58,9 +58,7 @@ export class WooCommerceService {
     return `${integration.settings.siteUrl}/wp-json/${apiVersion}`;
   }
 
-  private getAuthHeaders(
-    integration: WooCommerceIntegration,
-  ): Record<string, string> {
+  private getAuthHeaders(integration: WooCommerceIntegration): Record<string, string> {
     const credentials = Buffer.from(
       `${integration.accessToken}:${integration.refreshToken}`,
     ).toString('base64');
@@ -211,27 +209,21 @@ export class WooCommerceService {
       const orders = ordersResponse.data as WooCommerceOrder[];
 
       // Calculate analytics
-      const totalRevenue = orders.reduce(
-        (sum, order) => sum + parseFloat(order.total),
-        0,
-      );
+      const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.total), 0);
       const totalOrders = orders.length;
-      const averageOrderValue =
-        totalOrders > 0 ? totalRevenue / totalOrders : 0;
+      const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
       // Status breakdown
       const statusBreakdown: Record<string, number> = {};
       orders.forEach((order) => {
-        statusBreakdown[order.status] =
-          (statusBreakdown[order.status] || 0) + 1;
+        statusBreakdown[order.status] = (statusBreakdown[order.status] || 0) + 1;
       });
 
       // Daily breakdown
       const dailyRevenue: Record<string, number> = {};
       orders.forEach((order) => {
         const date = order.date_created.split('T')[0];
-        dailyRevenue[date] =
-          (dailyRevenue[date] || 0) + parseFloat(order.total);
+        dailyRevenue[date] = (dailyRevenue[date] || 0) + parseFloat(order.total);
       });
 
       return {
@@ -297,15 +289,8 @@ export class WooCommerceService {
   }
 
   // Webhook signature verification
-  verifyWebhookSignature(
-    payload: string,
-    signature: string,
-    secret: string,
-  ): boolean {
-    const computedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(payload)
-      .digest('base64');
+  verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
+    const computedSignature = crypto.createHmac('sha256', secret).update(payload).digest('base64');
     return signature === computedSignature;
   }
 }

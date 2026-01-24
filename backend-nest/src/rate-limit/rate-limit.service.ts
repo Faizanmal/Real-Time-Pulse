@@ -32,8 +32,7 @@ interface QueuedRequest {
 export class RateLimitService {
   private readonly logger = new Logger(RateLimitService.name);
   private rateLimitCache: Map<string, RateLimitConfig> = new Map();
-  private requestCounters: Map<string, { count: number; resetAt: number }> =
-    new Map();
+  private requestCounters: Map<string, { count: number; resetAt: number }> = new Map();
   private predictiveMetrics: Map<string, number[]> = new Map(); // Store request patterns
 
   constructor(
@@ -146,7 +145,7 @@ export class RateLimitService {
     endpoint: string,
     method: string,
     params: any,
-    priority: number = 5,
+    priority = 5,
   ): Promise<string> {
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
@@ -228,7 +227,7 @@ export class RateLimitService {
         if (!batches.has(key)) {
           batches.set(key, []);
         }
-        batches.get(key)!.push(request);
+        batches.get(key).push(request);
       }
     }
 
@@ -259,7 +258,7 @@ export class RateLimitService {
       this.predictiveMetrics.set(integrationId, []);
     }
 
-    const metrics = this.predictiveMetrics.get(integrationId)!;
+    const metrics = this.predictiveMetrics.get(integrationId);
     metrics.push(now);
 
     // Keep only last hour of data
@@ -271,10 +270,7 @@ export class RateLimitService {
   }
 
   private analyzePredictivePatterns() {
-    for (const [
-      integrationId,
-      timestamps,
-    ] of this.predictiveMetrics.entries()) {
+    for (const [integrationId, timestamps] of this.predictiveMetrics.entries()) {
       if (timestamps.length < 10) continue; // Need enough data
 
       // Calculate request rate
@@ -301,15 +297,10 @@ export class RateLimitService {
   /**
    * Exponential backoff retry logic
    */
-  async retryWithBackoff(
-    request: QueuedRequest,
-    attempt: number,
-  ): Promise<void> {
+  async retryWithBackoff(request: QueuedRequest, attempt: number): Promise<void> {
     const delayMs = Math.min(1000 * Math.pow(2, attempt), 30000); // Max 30 seconds
 
-    this.logger.log(
-      `Retry attempt ${attempt} for ${request.id} in ${delayMs}ms`,
-    );
+    this.logger.log(`Retry attempt ${attempt} for ${request.id} in ${delayMs}ms`);
 
     await this.requestQueue.add('execute-request', request, {
       delay: delayMs,
@@ -324,9 +315,7 @@ export class RateLimitService {
   async getMonitoring(integrationId?: string): Promise<RequestMetrics[]> {
     const metrics: RequestMetrics[] = [];
 
-    const integrations = integrationId
-      ? [integrationId]
-      : Array.from(this.rateLimitCache.keys());
+    const integrations = integrationId ? [integrationId] : Array.from(this.rateLimitCache.keys());
 
     for (const id of integrations) {
       const config = this.rateLimitCache.get(id);
@@ -394,10 +383,7 @@ export class RateLimitService {
   /**
    * Adjust rate limit dynamically based on usage
    */
-  async adjustRateLimit(
-    integrationId: string,
-    adjustment: 'increase' | 'decrease',
-  ): Promise<void> {
+  async adjustRateLimit(integrationId: string, adjustment: 'increase' | 'decrease'): Promise<void> {
     const config = this.rateLimitCache.get(integrationId);
     if (!config) return;
 

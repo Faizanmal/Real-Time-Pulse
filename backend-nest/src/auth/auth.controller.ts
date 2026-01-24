@@ -12,12 +12,7 @@ import {
   Ip,
 } from '@nestjs/common';
 import type { Response, Request } from 'express';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService, Session } from './auth.service';
 import {
@@ -105,9 +100,7 @@ export class AuthController {
 
     // Redirect to frontend with token
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
-    res.redirect(
-      `${frontendUrl}/auth/callback?token=${result.accessToken}&provider=google`,
-    );
+    res.redirect(`${frontendUrl}/auth/callback?token=${result.accessToken}&provider=google`);
   }
 
   // ==================== GITHUB OAUTH ====================
@@ -126,9 +119,7 @@ export class AuthController {
     const result = await this.authService.githubAuth(req.user);
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
-    res.redirect(
-      `${frontendUrl}/auth/callback?token=${result.accessToken}&provider=github`,
-    );
+    res.redirect(`${frontendUrl}/auth/callback?token=${result.accessToken}&provider=github`);
   }
 
   // ==================== FIREBASE AUTH ====================
@@ -157,10 +148,7 @@ export class AuthController {
     status: 200,
     description: 'Reset email sent if account exists',
   })
-  async requestPasswordReset(
-    @Body() dto: ResetPasswordRequestDto,
-    @Ip() ip: string,
-  ) {
+  async requestPasswordReset(@Body() dto: ResetPasswordRequestDto, @Ip() ip: string) {
     await this.authService.requestPasswordReset(dto.email, ip);
     return { message: 'If the email exists, a reset link has been sent' };
   }
@@ -208,10 +196,7 @@ export class AuthController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Logout current session' })
   @ApiResponse({ status: 200, description: 'Logged out successfully' })
-  async logout(
-    @CurrentUser() user: RequestUser,
-    @Headers('authorization') authHeader: string,
-  ) {
+  async logout(@CurrentUser() user: RequestUser, @Headers('authorization') authHeader: string) {
     const token = authHeader?.replace('Bearer ', '');
     await this.authService.logout(user.id, token);
     return { message: 'Logged out successfully' };
@@ -235,9 +220,7 @@ export class AuthController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get active sessions' })
   @ApiResponse({ status: 200, description: 'List of active sessions' })
-  async getActiveSessions(
-    @CurrentUser() user: RequestUser,
-  ): Promise<Session[]> {
+  async getActiveSessions(@CurrentUser() user: RequestUser): Promise<Session[]> {
     return this.authService.getActiveSessions(user.id);
   }
 

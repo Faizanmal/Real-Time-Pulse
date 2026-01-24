@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useCallback, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Trophy, Star, Sparkles, PartyPopper, Medal, Crown, Zap, Target, Flame, Award } from "lucide-react";
@@ -174,7 +174,7 @@ export function ConfettiCanvas({
     return (
         <canvas
             ref={canvasRef}
-            className="pointer-events-none fixed inset-0 z-[9999]"
+            className="pointer-events-none fixed inset-0 z-9999"
             style={{ width: "100vw", height: "100vh" }}
         />
     );
@@ -257,22 +257,18 @@ export function AchievementToast({
     const rarity = achievement?.rarity || "common";
     const colors = rarityColors[rarity];
 
-    const [sparkleParticles, setSparkleParticles] = useState<{ id: number; x: number; y: number; left: string; top: string }[] | null>(null);
+    const [sparkleParticles] = useState(() =>
+        [...Array(6)].map((_, i) => ({
+            id: i,
+            x: (Math.random() - 0.5) * 100,
+            y: (Math.random() - 0.5) * 50,
+            left: `${20 + Math.random() * 60}%`,
+            top: `${20 + Math.random() * 60}%`,
+        })));
 
-    useEffect(() => {
-        if (!sparkleParticles) {
-            setSparkleParticles([...Array(6)].map((_, i) => ({
-                id: i,
-                x: (Math.random() - 0.5) * 100,
-                y: (Math.random() - 0.5) * 50,
-                left: `${20 + Math.random() * 60}%`,
-                top: `${20 + Math.random() * 60}%`,
-            })));
-        }
-    }, [sparkleParticles]);
-
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (achievement) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setIsVisible(true);
             const timer = setTimeout(() => {
                 setIsVisible(false);
@@ -298,7 +294,7 @@ export function AchievementToast({
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -50, scale: 0.9 }}
                         transition={{ type: "spring", damping: 15, stiffness: 300 }}
-                        className="fixed top-6 left-1/2 z-[9998] -translate-x-1/2"
+                        className="fixed top-6 left-1/2 z-9998 -translate-x-1/2"
                     >
                         <div
                             className={cn(
@@ -565,8 +561,9 @@ export function MiniCelebration({
 }: MiniCelebrationProps) {
     const [showEffect, setShowEffect] = useState(false);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (trigger) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setShowEffect(true);
             const timer = setTimeout(() => setShowEffect(false), 1000);
             return () => clearTimeout(timer);

@@ -24,8 +24,7 @@ export class RequestIdMiddleware implements NestMiddleware {
     const requestId = (req.headers['x-request-id'] as string) || uuidv4();
 
     // Use or generate correlation ID (for distributed tracing)
-    const correlationId =
-      (req.headers['x-correlation-id'] as string) || requestId;
+    const correlationId = (req.headers['x-correlation-id'] as string) || requestId;
 
     // Attach to request
     req.requestId = requestId;
@@ -70,9 +69,7 @@ export class RequestIdMiddleware implements NestMiddleware {
   private getClientIp(req: Request): string {
     const forwardedFor = req.headers['x-forwarded-for'];
     if (forwardedFor) {
-      return Array.isArray(forwardedFor)
-        ? forwardedFor[0]
-        : forwardedFor.split(',')[0].trim();
+      return Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor.split(',')[0].trim();
     }
     return req.ip || req.socket.remoteAddress || 'unknown';
   }

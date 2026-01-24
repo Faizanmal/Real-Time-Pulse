@@ -29,11 +29,7 @@ async function bootstrap() {
           styleSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: ["'self'", 'data:', 'https:'],
           scriptSrc: ["'self'"],
-          connectSrc: [
-            "'self'",
-            'https://www.google.com',
-            'https://www.gstatic.com',
-          ],
+          connectSrc: ["'self'", 'https://www.google.com', 'https://www.gstatic.com'],
           frameSrc: ["'none'"],
           objectSrc: ["'none'"],
           upgradeInsecureRequests: [],
@@ -66,9 +62,9 @@ async function bootstrap() {
   app.use(cookieParser());
 
   // ==================== CORS CONFIGURATION ====================
-  const allowedOrigins = configService
-    .get<string>('app.frontendUrl')
-    ?.split(',') || ['http://localhost:3001'];
+  const allowedOrigins = configService.get<string>('app.frontendUrl')?.split(',') || [
+    'http://localhost:3001',
+  ];
 
   app.enableCors({
     origin: (origin, callback) => {

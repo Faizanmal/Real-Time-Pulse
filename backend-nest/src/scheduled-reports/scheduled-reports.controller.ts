@@ -10,18 +10,10 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ScheduledReportsService } from './scheduled-reports.service';
-import {
-  CreateScheduledReportDto,
-  UpdateScheduledReportDto,
-} from './dto/scheduled-report.dto';
+import { CreateScheduledReportDto, UpdateScheduledReportDto } from './dto/scheduled-report.dto';
 
 @ApiTags('Scheduled Reports')
 @ApiBearerAuth()
@@ -79,15 +71,7 @@ export class ScheduledReportsController {
   @Get(':id/history')
   @ApiOperation({ summary: 'Get report run history' })
   @ApiResponse({ status: 200, description: 'Returns run history' })
-  async getHistory(
-    @Request() req: any,
-    @Param('id') id: string,
-    @Query('limit') limit?: number,
-  ) {
-    return this.reportsService.getRunHistory(
-      id,
-      req.user.workspaceId,
-      limit || 20,
-    );
+  async getHistory(@Request() req: any, @Param('id') id: string, @Query('limit') limit?: number) {
+    return this.reportsService.getRunHistory(id, req.user.workspaceId, limit || 20);
   }
 }

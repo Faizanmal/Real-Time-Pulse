@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Activity, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface RateLimitMetric {
@@ -26,31 +26,31 @@ export function RateLimitMonitor({ integrationId }: RateLimitMonitorProps) {
   const [metrics, setMetrics] = useState<RateLimitMetric[]>([]);
   const [queueStats, setQueueStats] = useState<QueueStats | null>(null);
 
-  const loadMetrics = useCallback(async () => {
-    try {
-      const url = integrationId
-        ? `/api/rate-limit/monitoring?integrationId=${integrationId}`
-        : '/api/rate-limit/monitoring';
-      
-      const response = await fetch(url);
-      const data = await response.json();
-      setMetrics(data);
-    } catch (error) {
-      console.error('Failed to load metrics', error);
-    }
-  }, [integrationId]);
-
-  const loadQueueStats = async () => {
-    try {
-      const response = await fetch('/api/rate-limit/queue/stats');
-      const data = await response.json();
-      setQueueStats(data);
-    } catch (error) {
-      console.error('Failed to load queue stats', error);
-    }
-  };
-
   useEffect(() => {
+    const loadMetrics = async () => {
+      try {
+        const url = integrationId
+          ? `/api/rate-limit/monitoring?integrationId=${integrationId}`
+          : '/api/rate-limit/monitoring';
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        setMetrics(data);
+      } catch (error) {
+        console.error('Failed to load metrics', error);
+      }
+    };
+
+    const loadQueueStats = async () => {
+      try {
+        const response = await fetch('/api/rate-limit/queue/stats');
+        const data = await response.json();
+        setQueueStats(data);
+      } catch (error) {
+        console.error('Failed to load queue stats', error);
+      }
+    };
+
     loadMetrics();
     loadQueueStats();
     
@@ -60,7 +60,7 @@ export function RateLimitMonitor({ integrationId }: RateLimitMonitorProps) {
     }, 5000); // Refresh every 5 seconds
 
     return () => clearInterval(interval);
-  }, [loadMetrics]);
+  }, [integrationId]);
 
   const getStatusColor = (remaining: number, total: number) => {
     const percentage = (remaining / total) * 100;

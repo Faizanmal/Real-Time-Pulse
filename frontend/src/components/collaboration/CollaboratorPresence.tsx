@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react';
+import Image from 'next/image';
 
 interface Collaborator {
   id: string;
@@ -18,6 +19,16 @@ interface CollaboratorCursorsProps {
 }
 
 export function CollaboratorCursors({ collaborators, containerRef }: CollaboratorCursorsProps) {
+  const [containerRect, setContainerRect] = useState<DOMRect | null>(null);
+
+  useLayoutEffect(() => {
+    if (containerRef.current) {
+      setContainerRect(containerRef.current.getBoundingClientRect());
+    } else {
+      setContainerRect(null);
+    }
+  }, [containerRef]);
+
   return (
     <>
       {collaborators
@@ -26,7 +37,7 @@ export function CollaboratorCursors({ collaborators, containerRef }: Collaborato
           <CollaboratorCursor
             key={collaborator.id}
             collaborator={collaborator}
-            containerRef={containerRef}
+            containerRect={containerRect}
           />
         ))}
     </>
@@ -35,15 +46,14 @@ export function CollaboratorCursors({ collaborators, containerRef }: Collaborato
 
 interface CollaboratorCursorProps {
   collaborator: Collaborator;
-  containerRef: React.RefObject<HTMLElement>;
+  containerRect: DOMRect | null;
 }
 
-function CollaboratorCursor({ collaborator, containerRef }: CollaboratorCursorProps) {
+function CollaboratorCursor({ collaborator, containerRect }: CollaboratorCursorProps) {
   const { cursor, name, color } = collaborator;
 
-  if (!cursor || !containerRef.current) return null;
+  if (!cursor || !containerRect) return null;
 
-  const containerRect = containerRef.current.getBoundingClientRect();
   const x = cursor.x - containerRect.left;
   const y = cursor.y - containerRect.top;
 
@@ -105,7 +115,7 @@ export function CollaboratorList({ collaborators, maxVisible = 5 }: Collaborator
             style={{ backgroundColor: collaborator.color }}
           >
             {collaborator.avatar ? (
-              <img
+              <Image
                 src={collaborator.avatar}
                 alt={collaborator.name}
                 className="w-full h-full rounded-full object-cover"
@@ -173,11 +183,17 @@ export function TypingIndicator({ collaborators, typingUsers }: TypingIndicatorP
 // Selection highlight for co-editing
 interface SelectionHighlightProps {
   collaborator: Collaborator;
-  elementRef: React.RefObject<HTMLElement>;
+  ComponentRef: React.RefObject<HTMLElement>;
 }
 
-export function SelectionHighlight({ collaborator, elementRef }: SelectionHighlightProps) {
-  if (!elementRef.current) return null;
+export function SelectionHighlight({ collaborator, ComponentRef }: SelectionHighlightProps) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useLayoutEffect(() => {
+    setIsVisible(!!ComponentRef.current);
+  }, [ComponentRef]);
+
+  if (!isVisible) return null;
 
   return (
     <div

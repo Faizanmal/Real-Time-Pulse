@@ -79,11 +79,7 @@ export class SagaOrchestrator implements OnModuleInit {
   }
 
   // Start a new saga
-  async start<T>(
-    sagaType: string,
-    data: T,
-    metadata?: SagaContext['metadata'],
-  ): Promise<string> {
+  async start<T>(sagaType: string, data: T, metadata?: SagaContext['metadata']): Promise<string> {
     const definition = this.sagas.get(sagaType);
     if (!definition) {
       throw new Error(`Unknown saga type: ${sagaType}`);
@@ -129,9 +125,7 @@ export class SagaOrchestrator implements OnModuleInit {
         const step = definition.steps[i];
         context.currentStep = i;
 
-        this.logger.debug(
-          `Executing step ${step.name} for saga ${context.sagaId}`,
-        );
+        this.logger.debug(`Executing step ${step.name} for saga ${context.sagaId}`);
 
         try {
           // Execute with timeout and retries
@@ -189,10 +183,7 @@ export class SagaOrchestrator implements OnModuleInit {
   }
 
   // Execute step with retry logic
-  private async executeStepWithRetry<T>(
-    step: SagaStep<T>,
-    context: SagaContext<T>,
-  ): Promise<void> {
+  private async executeStepWithRetry<T>(step: SagaStep<T>, context: SagaContext<T>): Promise<void> {
     const maxRetries = step.retries || 3;
     const timeout = step.timeout || 30000;
 
@@ -240,12 +231,8 @@ export class SagaOrchestrator implements OnModuleInit {
             step: step.name,
           });
         } catch (error) {
-          this.logger.error(
-            `Compensation for step ${step.name} failed: ${error.message}`,
-          );
-          context.errors.push(
-            `Compensation failed for ${step.name}: ${error.message}`,
-          );
+          this.logger.error(`Compensation for step ${step.name} failed: ${error.message}`);
+          context.errors.push(`Compensation failed for ${step.name}: ${error.message}`);
         }
       }
     }
@@ -299,7 +286,7 @@ export class SagaOrchestrator implements OnModuleInit {
       for (const saga of interruptedSagas) {
         const definition = this.sagas.get(saga.sagaType);
         if (definition) {
-          const context = JSON.parse(saga.context as string) as SagaContext;
+          const context = JSON.parse(saga.context) as SagaContext;
           this.runningSagas.set(saga.sagaId, context);
 
           if (saga.state === 'COMPENSATING') {
@@ -343,7 +330,7 @@ export class SagaOrchestrator implements OnModuleInit {
     });
 
     if (!saga) return null;
-    return JSON.parse(saga.context as string) as SagaContext;
+    return JSON.parse(saga.context) as SagaContext;
   }
 
   // Helper methods

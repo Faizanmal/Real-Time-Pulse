@@ -70,9 +70,7 @@ export class TwoFactorService {
    * Get 2FA config from cache
    */
   private async get2FAConfig(userId: string): Promise<TwoFactorConfig | null> {
-    const data = await this.cacheService.get(
-      `${this.TWO_FACTOR_PREFIX}config:${userId}`,
-    );
+    const data = await this.cacheService.get(`${this.TWO_FACTOR_PREFIX}config:${userId}`);
     if (!data) return null;
     try {
       return JSON.parse(data) as TwoFactorConfig;
@@ -84,10 +82,7 @@ export class TwoFactorService {
   /**
    * Save 2FA config to cache
    */
-  private async save2FAConfig(
-    userId: string,
-    config: TwoFactorConfig,
-  ): Promise<void> {
+  private async save2FAConfig(userId: string, config: TwoFactorConfig): Promise<void> {
     // Store for 1 year
     await this.cacheService.set(
       `${this.TWO_FACTOR_PREFIX}config:${userId}`,
@@ -150,9 +145,7 @@ export class TwoFactorService {
    * Complete TOTP setup
    */
   async completeTotpSetup(userId: string, token: string): Promise<boolean> {
-    const setupData = await this.cacheService.get(
-      `${this.TWO_FACTOR_PREFIX}setup:${userId}`,
-    );
+    const setupData = await this.cacheService.get(`${this.TWO_FACTOR_PREFIX}setup:${userId}`);
 
     if (!setupData) {
       throw new BadRequestException('TOTP setup not initialized or expired');
@@ -238,9 +231,7 @@ export class TwoFactorService {
       backupCodes: updatedBackupCodes,
     });
 
-    this.logger.log(
-      `Backup code used for user ${userId}. Remaining: ${updatedBackupCodes.length}`,
-    );
+    this.logger.log(`Backup code used for user ${userId}. Remaining: ${updatedBackupCodes.length}`);
     return true;
   }
 
@@ -283,23 +274,17 @@ export class TwoFactorService {
    * Verify email code
    */
   async verifyEmailCode(userId: string, code: string): Promise<boolean> {
-    const cachedData = await this.cacheService.get(
-      `${this.TWO_FACTOR_PREFIX}email:${userId}`,
-    );
+    const cachedData = await this.cacheService.get(`${this.TWO_FACTOR_PREFIX}email:${userId}`);
 
     if (!cachedData) {
-      throw new BadRequestException(
-        'Verification code expired or not requested',
-      );
+      throw new BadRequestException('Verification code expired or not requested');
     }
 
     const cached: EmailCodeCache = JSON.parse(cachedData) as EmailCodeCache;
 
     if (cached.attempts >= 3) {
       await this.cacheService.del(`${this.TWO_FACTOR_PREFIX}email:${userId}`);
-      throw new BadRequestException(
-        'Too many attempts. Please request a new code.',
-      );
+      throw new BadRequestException('Too many attempts. Please request a new code.');
     }
 
     if (cached.code !== code) {
@@ -369,9 +354,7 @@ export class TwoFactorService {
   /**
    * Check if 2FA is enabled
    */
-  async is2FAEnabled(
-    userId: string,
-  ): Promise<{ enabled: boolean; method?: string }> {
+  async is2FAEnabled(userId: string): Promise<{ enabled: boolean; method?: string }> {
     const config = await this.get2FAConfig(userId);
 
     if (!config?.enabled) {

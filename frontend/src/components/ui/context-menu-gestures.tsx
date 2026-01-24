@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useLayoutEffect } from "react";
 import { motion, AnimatePresence, PanInfo, useMotionValue, useTransform } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
@@ -48,7 +48,7 @@ export function ContextMenu({ items, position, onClose, className }: ContextMenu
     const [adjustedPosition, setAdjustedPosition] = useState(position);
 
     // Adjust position to stay within viewport
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!menuRef.current) return;
 
         const rect = menuRef.current.getBoundingClientRect();
@@ -65,6 +65,7 @@ export function ContextMenu({ items, position, onClose, className }: ContextMenu
             y = viewportHeight - rect.height - 10;
         }
 
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setAdjustedPosition({ x, y });
     }, [position]);
 
@@ -102,7 +103,7 @@ export function ContextMenu({ items, position, onClose, className }: ContextMenu
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.1 }}
             className={cn(
-                "fixed z-[9999] min-w-[200px] overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-xl dark:border-gray-700 dark:bg-gray-800",
+                "fixed z-9999 min-w-[200px] overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-xl dark:border-gray-700 dark:bg-gray-800",
                 className
             )}
             style={{ left: adjustedPosition.x, top: adjustedPosition.y }}

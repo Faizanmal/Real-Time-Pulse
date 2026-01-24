@@ -22,12 +22,11 @@ import * as bcrypt from 'bcrypt';
 // Rate limiter using sliding window algorithm
 @Injectable()
 export class RateLimiterService {
-  private windows: Map<string, { count: number; timestamps: number[] }> =
-    new Map();
+  private windows: Map<string, { count: number; timestamps: number[] }> = new Map();
   private readonly windowSizeMs: number;
   private readonly maxRequests: number;
 
-  constructor(windowSizeMs: number = 60000, maxRequests: number = 100) {
+  constructor(windowSizeMs = 60000, maxRequests = 100) {
     this.windowSizeMs = windowSizeMs;
     this.maxRequests = maxRequests;
 
@@ -96,10 +95,7 @@ export class RateLimitGuard implements CanActivate {
 
     response.setHeader('X-RateLimit-Limit', '100');
     response.setHeader('X-RateLimit-Remaining', result.remaining.toString());
-    response.setHeader(
-      'X-RateLimit-Reset',
-      Math.ceil(result.resetMs / 1000).toString(),
-    );
+    response.setHeader('X-RateLimit-Reset', Math.ceil(result.resetMs / 1000).toString());
 
     if (!result.allowed) {
       throw new HttpException(
@@ -120,9 +116,7 @@ export class RateLimitGuard implements CanActivate {
     const userId = (request as any).user?.id;
     const forwardedFor = request.headers['x-forwarded-for'];
     const ip =
-      request.ip ||
-      (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor) ||
-      'unknown';
+      request.ip || (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor) || 'unknown';
     return userId ? `user:${userId}` : `ip:${ip}`;
   }
 }
@@ -209,11 +203,7 @@ export class EncryptionService {
   // Encrypt data
   encrypt(plaintext: string): string {
     const iv = crypto.randomBytes(this.ivLength);
-    const cipher = crypto.createCipheriv(
-      this.algorithm,
-      this.encryptionKey,
-      iv,
-    );
+    const cipher = crypto.createCipheriv(this.algorithm, this.encryptionKey, iv);
 
     let encrypted = cipher.update(plaintext, 'utf8', 'hex');
     encrypted += cipher.final('hex');
@@ -235,11 +225,7 @@ export class EncryptionService {
     const iv = Buffer.from(ivHex, 'hex');
     const tag = Buffer.from(tagHex, 'hex');
 
-    const decipher = crypto.createDecipheriv(
-      this.algorithm,
-      this.encryptionKey,
-      iv,
-    );
+    const decipher = crypto.createDecipheriv(this.algorithm, this.encryptionKey, iv);
     decipher.setAuthTag(tag);
 
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');
@@ -260,7 +246,7 @@ export class EncryptionService {
   }
 
   // Generate secure random token
-  generateToken(length: number = 32): string {
+  generateToken(length = 32): string {
     return crypto.randomBytes(length).toString('hex');
   }
 
@@ -285,10 +271,7 @@ export class EncryptionService {
   // Verify HMAC signature
   verifySignature(data: string, signature: string, secret?: string): boolean {
     const expected = this.sign(data, secret);
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expected),
-    );
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
   }
 }
 
@@ -340,10 +323,7 @@ export class SanitizationService {
   }
 
   // Strip potentially dangerous characters
-  sanitizeString(
-    input: string,
-    options?: { maxLength?: number; allowNewlines?: boolean },
-  ): string {
+  sanitizeString(input: string, options?: { maxLength?: number; allowNewlines?: boolean }): string {
     let result = input.trim();
 
     // Remove null bytes
@@ -403,10 +383,7 @@ export class SecurityHeadersMiddleware implements NestMiddleware {
 
     // HSTS (enable in production with proper SSL)
     if (process.env.NODE_ENV === 'production') {
-      res.setHeader(
-        'Strict-Transport-Security',
-        'max-age=31536000; includeSubDomains; preload',
-      );
+      res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
     }
 
     next();
@@ -441,10 +418,7 @@ export class CsrfService {
       this.tokens.delete(sessionId);
       return false;
     }
-    return crypto.timingSafeEqual(
-      Buffer.from(stored.token),
-      Buffer.from(token),
-    );
+    return crypto.timingSafeEqual(Buffer.from(stored.token), Buffer.from(token));
   }
 
   private cleanup() {

@@ -72,10 +72,7 @@ export class CollaborationService {
    * Transform a change using Operational Transformation (OT)
    * This handles conflict resolution for concurrent edits
    */
-  async transformChange(
-    portalId: string,
-    change: WidgetChange,
-  ): Promise<WidgetChange> {
+  async transformChange(portalId: string, change: WidgetChange): Promise<WidgetChange> {
     // Get history for this portal
     const history = this.changeHistory.get(portalId) || [];
 
@@ -83,7 +80,7 @@ export class CollaborationService {
     if (!this.versionVectors.has(portalId)) {
       this.versionVectors.set(portalId, new Map());
     }
-    const versionVector = this.versionVectors.get(portalId)!;
+    const versionVector = this.versionVectors.get(portalId);
 
     // Get user's last known version
     const userVersion = versionVector.get(change.userId) || 0;
@@ -91,19 +88,14 @@ export class CollaborationService {
     // Find concurrent changes (changes made by others after user's last change)
     const concurrentChanges = history.filter(
       (h) =>
-        h.timestamp > userVersion &&
-        h.userId !== change.userId &&
-        h.widgetId === change.widgetId,
+        h.timestamp > userVersion && h.userId !== change.userId && h.widgetId === change.widgetId,
     );
 
     // Apply transformation based on change type
     let transformedChange = { ...change };
 
     for (const concurrent of concurrentChanges) {
-      transformedChange = this.applyTransformation(
-        transformedChange,
-        concurrent,
-      );
+      transformedChange = this.applyTransformation(transformedChange, concurrent);
     }
 
     // Update version vector
@@ -124,15 +116,9 @@ export class CollaborationService {
   /**
    * Apply operational transformation between two changes
    */
-  private applyTransformation(
-    incoming: WidgetChange,
-    existing: WidgetChange,
-  ): WidgetChange {
+  private applyTransformation(incoming: WidgetChange, existing: WidgetChange): WidgetChange {
     // Same widget, same change type - need to merge
-    if (
-      incoming.widgetId === existing.widgetId &&
-      incoming.changeType === existing.changeType
-    ) {
+    if (incoming.widgetId === existing.widgetId && incoming.changeType === existing.changeType) {
       switch (incoming.changeType) {
         case 'position':
           // For position changes, last write wins but we could merge
@@ -183,11 +169,7 @@ export class CollaborationService {
 
     const result = { ...target };
     for (const key of Object.keys(source)) {
-      if (
-        source[key] &&
-        typeof source[key] === 'object' &&
-        !Array.isArray(source[key])
-      ) {
+      if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
         result[key] = this.deepMerge(target[key] || {}, source[key]);
       } else {
         result[key] = source[key];
@@ -199,17 +181,12 @@ export class CollaborationService {
   /**
    * Save change to history for undo/redo support
    */
-  async saveChangeHistory(
-    portalId: string,
-    change: WidgetChange,
-  ): Promise<void> {
+  async saveChangeHistory(portalId: string, change: WidgetChange): Promise<void> {
     try {
       // Store in Redis for persistence
       const key = `collaboration:history:${portalId}`;
       const historyJson = await this.cache.get(key);
-      const history: WidgetChange[] = historyJson
-        ? JSON.parse(historyJson)
-        : [];
+      const history: WidgetChange[] = historyJson ? JSON.parse(historyJson) : [];
 
       history.push(change);
 
@@ -225,16 +202,11 @@ export class CollaborationService {
   /**
    * Get change history for a portal
    */
-  async getChangeHistory(
-    portalId: string,
-    limit: number = 50,
-  ): Promise<WidgetChange[]> {
+  async getChangeHistory(portalId: string, limit = 50): Promise<WidgetChange[]> {
     try {
       const key = `collaboration:history:${portalId}`;
       const historyJson = await this.cache.get(key);
-      const history: WidgetChange[] = historyJson
-        ? JSON.parse(historyJson)
-        : [];
+      const history: WidgetChange[] = historyJson ? JSON.parse(historyJson) : [];
       return history.slice(-limit);
     } catch (error) {
       this.logger.error(`Error getting change history: ${error}`);
@@ -249,9 +221,7 @@ export class CollaborationService {
     try {
       const key = `collaboration:activity:${activity.portalId}`;
       const activityJson = await this.cache.get(key);
-      const activities: ActivityLog[] = activityJson
-        ? JSON.parse(activityJson)
-        : [];
+      const activities: ActivityLog[] = activityJson ? JSON.parse(activityJson) : [];
 
       activities.push(activity);
 
@@ -267,16 +237,11 @@ export class CollaborationService {
   /**
    * Get activity feed for a portal
    */
-  async getActivityFeed(
-    portalId: string,
-    limit: number = 50,
-  ): Promise<ActivityLog[]> {
+  async getActivityFeed(portalId: string, limit = 50): Promise<ActivityLog[]> {
     try {
       const key = `collaboration:activity:${portalId}`;
       const activityJson = await this.cache.get(key);
-      const activities: ActivityLog[] = activityJson
-        ? JSON.parse(activityJson)
-        : [];
+      const activities: ActivityLog[] = activityJson ? JSON.parse(activityJson) : [];
       return activities.slice(-limit).reverse();
     } catch (error) {
       this.logger.error(`Error getting activity feed: ${error}`);
@@ -291,9 +256,7 @@ export class CollaborationService {
     try {
       const key = `collaboration:chat:${portalId}`;
       const messagesJson = await this.cache.get(key);
-      const messages: ChatMessage[] = messagesJson
-        ? JSON.parse(messagesJson)
-        : [];
+      const messages: ChatMessage[] = messagesJson ? JSON.parse(messagesJson) : [];
 
       messages.push(message);
 
@@ -309,16 +272,11 @@ export class CollaborationService {
   /**
    * Get chat messages for a portal
    */
-  async getChatMessages(
-    portalId: string,
-    limit: number = 100,
-  ): Promise<ChatMessage[]> {
+  async getChatMessages(portalId: string, limit = 100): Promise<ChatMessage[]> {
     try {
       const key = `collaboration:chat:${portalId}`;
       const messagesJson = await this.cache.get(key);
-      const messages: ChatMessage[] = messagesJson
-        ? JSON.parse(messagesJson)
-        : [];
+      const messages: ChatMessage[] = messagesJson ? JSON.parse(messagesJson) : [];
       return messages.slice(-limit);
     } catch (error) {
       this.logger.error(`Error getting chat messages: ${error}`);
@@ -340,12 +298,8 @@ export class CollaborationService {
         this.cache.get(`collaboration:activity:${portalId}`),
       ]);
 
-      const history: WidgetChange[] = historyJson
-        ? JSON.parse(historyJson)
-        : [];
-      const activities: ActivityLog[] = activityJson
-        ? JSON.parse(activityJson)
-        : [];
+      const history: WidgetChange[] = historyJson ? JSON.parse(historyJson) : [];
+      const activities: ActivityLog[] = activityJson ? JSON.parse(activityJson) : [];
 
       // Count unique users in last hour
       const oneHourAgo = Date.now() - 3600000;

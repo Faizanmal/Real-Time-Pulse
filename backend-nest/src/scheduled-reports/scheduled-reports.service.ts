@@ -3,10 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ExportService } from '../exports/export.service';
 import { EmailService } from '../email/email.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import {
-  CreateScheduledReportDto,
-  UpdateScheduledReportDto,
-} from './dto/scheduled-report.dto';
+import { CreateScheduledReportDto, UpdateScheduledReportDto } from './dto/scheduled-report.dto';
 import { ReportFormat, ReportStatus } from '@prisma/client';
 
 @Injectable()
@@ -22,11 +19,7 @@ export class ScheduledReportsService {
   /**
    * Create a scheduled report
    */
-  async create(
-    workspaceId: string,
-    userId: string,
-    dto: CreateScheduledReportDto,
-  ) {
+  async create(workspaceId: string, userId: string, dto: CreateScheduledReportDto) {
     // Verify portal exists
     const portal = await this.prisma.portal.findFirst({
       where: { id: dto.portalId, workspaceId },
@@ -37,10 +30,7 @@ export class ScheduledReportsService {
     }
 
     // Calculate next run time
-    const nextRunAt = this.calculateNextRun(
-      dto.schedule,
-      dto.timezone || 'UTC',
-    );
+    const nextRunAt = this.calculateNextRun(dto.schedule, dto.timezone || 'UTC');
 
     const report = await this.prisma.scheduledReport.create({
       data: {
@@ -132,10 +122,7 @@ export class ScheduledReportsService {
     // Recalculate next run if schedule changed
     let nextRunAt = report.nextRunAt;
     if (dto.schedule) {
-      nextRunAt = this.calculateNextRun(
-        dto.schedule,
-        dto.timezone || report.timezone,
-      );
+      nextRunAt = this.calculateNextRun(dto.schedule, dto.timezone || report.timezone);
     }
 
     return this.prisma.scheduledReport.update({
@@ -236,10 +223,7 @@ export class ScheduledReportsService {
       try {
         await this.executeReport(report);
       } catch (error) {
-        this.logger.error(
-          `Failed to execute report ${report.id}:`,
-          (error as Error).message,
-        );
+        this.logger.error(`Failed to execute report ${report.id}:`, (error as Error).message);
       }
     }
   }
@@ -285,8 +269,7 @@ export class ScheduledReportsService {
             report.portalId,
             report.workspaceId,
           );
-          _contentType =
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+          _contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
           _extension = 'xlsx';
           break;
         default:

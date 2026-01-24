@@ -26,9 +26,7 @@ export class ClientReportService {
         reportType: data.reportType,
         recipientEmails: data.recipientEmails,
         scheduledFor: data.scheduledFor,
-        status: data.scheduledFor
-          ? ClientReportStatus.SCHEDULED
-          : ClientReportStatus.DRAFT,
+        status: data.scheduledFor ? ClientReportStatus.SCHEDULED : ClientReportStatus.DRAFT,
       },
       include: {
         project: true,
@@ -161,18 +159,10 @@ export class ClientReportService {
     });
 
     const total = reports.length;
-    const sent = reports.filter(
-      (r) => r.status === ClientReportStatus.SENT,
-    ).length;
-    const scheduled = reports.filter(
-      (r) => r.status === ClientReportStatus.SCHEDULED,
-    ).length;
-    const draft = reports.filter(
-      (r) => r.status === ClientReportStatus.DRAFT,
-    ).length;
-    const failed = reports.filter(
-      (r) => r.status === ClientReportStatus.FAILED,
-    ).length;
+    const sent = reports.filter((r) => r.status === ClientReportStatus.SENT).length;
+    const scheduled = reports.filter((r) => r.status === ClientReportStatus.SCHEDULED).length;
+    const draft = reports.filter((r) => r.status === ClientReportStatus.DRAFT).length;
+    const failed = reports.filter((r) => r.status === ClientReportStatus.FAILED).length;
 
     const aiGenerated = reports.filter((r) => r.aiGenerated).length;
 

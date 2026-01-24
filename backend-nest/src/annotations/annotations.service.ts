@@ -1,16 +1,7 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
-import {
-  CreateAnnotationDto,
-  UpdateAnnotationDto,
-  ReplyAnnotationDto,
-} from './dto/annotation.dto';
+import { CreateAnnotationDto, UpdateAnnotationDto, ReplyAnnotationDto } from './dto/annotation.dto';
 
 @Injectable()
 export class AnnotationsService {
@@ -40,11 +31,7 @@ export class AnnotationsService {
       },
     });
 
-    this.realtimeGateway.broadcastToPortal(
-      dto.portalId,
-      'annotation:created',
-      annotation,
-    );
+    this.realtimeGateway.broadcastToPortal(dto.portalId, 'annotation:created', annotation);
     return annotation;
   }
 
@@ -96,11 +83,7 @@ export class AnnotationsService {
       },
     });
 
-    this.realtimeGateway.broadcastToPortal(
-      annotation.portalId,
-      'annotation:updated',
-      updated,
-    );
+    this.realtimeGateway.broadcastToPortal(annotation.portalId, 'annotation:updated', updated);
     return updated;
   }
 
@@ -126,14 +109,10 @@ export class AnnotationsService {
       },
     });
 
-    this.realtimeGateway.broadcastToPortal(
-      parent.portalId,
-      'annotation:reply_added',
-      {
-        parentId,
-        reply,
-      },
-    );
+    this.realtimeGateway.broadcastToPortal(parent.portalId, 'annotation:reply_added', {
+      parentId,
+      reply,
+    });
 
     return reply;
   }
@@ -148,11 +127,7 @@ export class AnnotationsService {
       data: { isDeleted: true },
     });
 
-    this.realtimeGateway.broadcastToPortal(
-      annotation.portalId,
-      'annotation:deleted',
-      { id },
-    );
+    this.realtimeGateway.broadcastToPortal(annotation.portalId, 'annotation:deleted', { id });
     return { success: true };
   }
 }

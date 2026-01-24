@@ -10,17 +10,9 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import {
-  ARVisualizationService,
-  ARSceneConfig,
-} from './ar-visualization.service';
+import { ARVisualizationService, ARSceneConfig } from './ar-visualization.service';
 import { ARSceneService } from './ar-scene.service';
 
 @ApiTags('AR Visualization')
@@ -89,10 +81,7 @@ export class ARVisualizationController {
   @Get('scenes/:sceneId/qr')
   @ApiOperation({ summary: 'Get QR code for AR scene' })
   @ApiParam({ name: 'sceneId', description: 'Scene ID' })
-  async getQRCode(
-    @Param('sceneId') sceneId: string,
-    @Query('baseUrl') baseUrl?: string,
-  ) {
+  async getQRCode(@Param('sceneId') sceneId: string, @Query('baseUrl') baseUrl?: string) {
     const qrCode = await this.arService.generateQRCode(sceneId, baseUrl);
     return { qrCode };
   }
@@ -122,10 +111,7 @@ export class ARVisualizationController {
   @ApiOperation({ summary: 'Delete AR marker' })
   @ApiParam({ name: 'markerId', description: 'Marker ID' })
   async deleteMarker(@Request() req: any, @Param('markerId') markerId: string) {
-    const deleted = await this.arService.deleteMarker(
-      req.user.workspaceId,
-      markerId,
-    );
+    const deleted = await this.arService.deleteMarker(req.user.workspaceId, markerId);
     return { success: deleted };
   }
 

@@ -14,7 +14,7 @@ import {
   createMockRedisService,
   createTestUser,
   createTestWorkspace,
-} from '../../test/test-utils';
+} from 'common/testing/test-utils';
 
 describe('BillingService', () => {
   let service: BillingService;
@@ -105,7 +105,10 @@ describe('BillingService', () => {
       providers: [
         BillingService,
         { provide: PrismaService, useValue: prismaService },
-        { provide: ConfigService, useValue: createMockConfigService({ 'stripe.secretKey': 'sk_test' }) },
+        {
+          provide: ConfigService,
+          useValue: createMockConfigService({ 'stripe.secretKey': 'sk_test' }),
+        },
         { provide: CacheService, useValue: cacheService },
         { provide: AuditService, useValue: { logAction: jest.fn() } },
         { provide: 'STRIPE_CLIENT', useValue: mockStripe },
@@ -159,9 +162,7 @@ describe('BillingService', () => {
     it('should throw error if workspace not found', async () => {
       prismaService.workspace.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.createSubscription('non-existent', 'price_pro'),
-      ).rejects.toThrow();
+      await expect(service.createSubscription('non-existent', 'price_pro')).rejects.toThrow();
     });
   });
 
@@ -173,9 +174,12 @@ describe('BillingService', () => {
         status: 'active',
       };
       prismaService.subscription.findUnique.mockResolvedValue(subscription);
-      prismaService.subscription.update.mockResolvedValue({ ...subscription, cancelAtPeriodEnd: true });
+      prismaService.subscription.update.mockResolvedValue({
+        ...subscription,
+        cancelAtPeriodEnd: true,
+      });
 
-      const result = await service.cancelSubscription(subscription.id);
+      await service.cancelSubscription(subscription.id);
 
       expect(mockStripe.subscriptions.update).toHaveBeenCalledWith(
         'sub_test123',
@@ -284,12 +288,12 @@ describe('BillingService', () => {
     });
   });
 
-  describe('createBillingPortalSession', () => {
+  describe('createPortalSession', () => {
     it('should create a billing portal session', async () => {
       const user = createTestUser({ stripeCustomerId: 'cus_test123' });
       prismaService.user.findUnique.mockResolvedValue(user);
 
-      const result = await service.createBillingPortalSession(user.id);
+      const result = await service.createPortalSession(user.id);
 
       expect(result).toHaveProperty('url');
       expect(mockStripe.billingPortal.sessions.create).toHaveBeenCalledWith(

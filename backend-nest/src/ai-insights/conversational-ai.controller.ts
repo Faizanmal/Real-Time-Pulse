@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Body,
-  Query,
-  UseGuards,
-  Req,
-} from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, UseGuards, Req } from '@nestjs/common';
 import {
   ConversationalAIService,
   ConversationContext,
@@ -35,9 +27,7 @@ interface DataStoryDto {
 @Controller('ai/conversation')
 @UseGuards(JwtAuthGuard)
 export class ConversationalAIController {
-  constructor(
-    private readonly conversationalAIService: ConversationalAIService,
-  ) {}
+  constructor(private readonly conversationalAIService: ConversationalAIService) {}
 
   /**
    * Process a natural language query
@@ -48,13 +38,8 @@ export class ConversationalAIController {
       workspaceId: req.user.workspaceId,
       userId: req.user.id,
       portalId: dto.portalId,
-      recentMessages: await this.getRecentMessages(
-        req.user.workspaceId,
-        req.user.id,
-      ),
-      availableDataSources: await this.getAvailableDataSources(
-        req.user.workspaceId,
-      ),
+      recentMessages: await this.getRecentMessages(req.user.workspaceId, req.user.id),
+      availableDataSources: await this.getAvailableDataSources(req.user.workspaceId),
       activeFilters: dto.context?.activeFilters,
     };
 
@@ -66,10 +51,7 @@ export class ConversationalAIController {
    */
   @Get('insights')
   async getProactiveInsights(@Req() req: any) {
-    return this.conversationalAIService.getProactiveInsights(
-      req.user.workspaceId,
-      req.user.id,
-    );
+    return this.conversationalAIService.getProactiveInsights(req.user.workspaceId, req.user.id);
   }
 
   /**
@@ -98,11 +80,7 @@ export class ConversationalAIController {
       availableDataSources: [],
     };
 
-    const answer = await this.conversationalAIService.askAboutData(
-      dto.question,
-      dto.data,
-      context,
-    );
+    const answer = await this.conversationalAIService.askAboutData(dto.question, dto.data, context);
 
     return { answer };
   }
@@ -112,10 +90,7 @@ export class ConversationalAIController {
    */
   @Post('story')
   async generateDataStory(@Body() dto: DataStoryDto, @Req() req: any) {
-    return this.conversationalAIService.generateDataStory(
-      req.user.workspaceId,
-      dto.metrics,
-    );
+    return this.conversationalAIService.generateDataStory(req.user.workspaceId, dto.metrics);
   }
 
   /**
@@ -142,25 +117,11 @@ export class ConversationalAIController {
     workspaceId: string,
     userId: string,
   ): Promise<ConversationMessage[]> {
-    return this.conversationalAIService.getConversationHistory(
-      workspaceId,
-      userId,
-      10,
-    );
+    return this.conversationalAIService.getConversationHistory(workspaceId, userId, 10);
   }
 
-  private async getAvailableDataSources(
-    _workspaceId: string,
-  ): Promise<string[]> {
+  private async getAvailableDataSources(_workspaceId: string): Promise<string[]> {
     // This would typically query the database for active integrations
-    return [
-      'GOOGLE_ANALYTICS',
-      'HUBSPOT',
-      'SALESFORCE',
-      'SHOPIFY',
-      'STRIPE',
-      'JIRA',
-      'GITHUB',
-    ];
+    return ['GOOGLE_ANALYTICS', 'HUBSPOT', 'SALESFORCE', 'SHOPIFY', 'STRIPE', 'JIRA', 'GITHUB'];
   }
 }

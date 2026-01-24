@@ -22,9 +22,7 @@ export class SalesforceService {
     return `${integration.settings.instanceUrl}/services/data/${version}`;
   }
 
-  private getHeaders(
-    integration: SalesforceIntegration,
-  ): Record<string, string> {
+  private getHeaders(integration: SalesforceIntegration): Record<string, string> {
     return {
       Authorization: `Bearer ${integration.accessToken}`,
       'Content-Type': 'application/json',
@@ -207,18 +205,12 @@ export class SalesforceService {
 
       // Fetch multiple metrics in parallel
       const [leads, opportunities, cases, closedWonOpps] = await Promise.all([
-        this.executeSOQL(
-          integration,
-          `SELECT COUNT() totalCount FROM Lead WHERE ${dateFilter}`,
-        ),
+        this.executeSOQL(integration, `SELECT COUNT() totalCount FROM Lead WHERE ${dateFilter}`),
         this.executeSOQL(
           integration,
           `SELECT COUNT() totalCount, SUM(Amount) totalAmount FROM Opportunity WHERE ${dateFilter}`,
         ),
-        this.executeSOQL(
-          integration,
-          `SELECT COUNT() totalCount FROM Case WHERE ${dateFilter}`,
-        ),
+        this.executeSOQL(integration, `SELECT COUNT() totalCount FROM Case WHERE ${dateFilter}`),
         this.executeSOQL(
           integration,
           `SELECT COUNT() totalCount, SUM(Amount) totalAmount FROM Opportunity WHERE IsWon = true AND CloseDate >= ${startDate.toISOString().split('T')[0]}`,
@@ -257,16 +249,14 @@ export class SalesforceService {
       if (reportId) {
         // Fetch specific report
         const response = await firstValueFrom(
-          this.httpService.get(
-            `${this.getApiUrl(integration)}/analytics/reports/${reportId}`,
-            { headers: this.getHeaders(integration) },
-          ),
+          this.httpService.get(`${this.getApiUrl(integration)}/analytics/reports/${reportId}`, {
+            headers: this.getHeaders(integration),
+          }),
         );
         return response.data;
       } else {
         // List all reports
-        const query =
-          'SELECT Id, Name, Description, FolderName, Format FROM Report LIMIT 50';
+        const query = 'SELECT Id, Name, Description, FolderName, Format FROM Report LIMIT 50';
         return this.executeSOQL(integration, query);
       }
     } catch (error) {
@@ -291,8 +281,7 @@ export class SalesforceService {
         );
         return response.data;
       } else {
-        const query =
-          'SELECT Id, Title, Description, FolderName FROM Dashboard LIMIT 50';
+        const query = 'SELECT Id, Title, Description, FolderName FROM Dashboard LIMIT 50';
         return this.executeSOQL(integration, query);
       }
     } catch (error) {
@@ -312,10 +301,7 @@ export class SalesforceService {
     return this.executeSOQL(integration, query);
   }
 
-  private async executeSOQL(
-    integration: SalesforceIntegration,
-    query: string,
-  ): Promise<unknown> {
+  private async executeSOQL(integration: SalesforceIntegration, query: string): Promise<unknown> {
     try {
       const response = await firstValueFrom(
         this.httpService.get(`${this.getApiUrl(integration)}/query`, {

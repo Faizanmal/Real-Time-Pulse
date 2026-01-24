@@ -28,11 +28,7 @@ export class GitHubService {
     }
   }
 
-  async fetchData(
-    integration: Integration,
-    dataType: string,
-    params?: unknown,
-  ): Promise<unknown> {
+  async fetchData(integration: Integration, dataType: string, params?: unknown): Promise<unknown> {
     const headers = {
       Authorization: `Bearer ${integration.accessToken as string}`,
       Accept: 'application/vnd.github.v3+json',
@@ -65,9 +61,7 @@ export class GitHubService {
   private async fetchRepos(headers: any, params?: unknown): Promise<unknown> {
     try {
       const org = (params as { org?: string })?.org;
-      const url = org
-        ? `${this.baseUrl}/orgs/${org}/repos`
-        : `${this.baseUrl}/user/repos`;
+      const url = org ? `${this.baseUrl}/orgs/${org}/repos` : `${this.baseUrl}/user/repos`;
 
       const response = await firstValueFrom(
         this.httpService.get(url, {
@@ -109,10 +103,7 @@ export class GitHubService {
     }
   }
 
-  private async fetchPullRequests(
-    headers: any,
-    params?: unknown,
-  ): Promise<unknown> {
+  private async fetchPullRequests(headers: any, params?: unknown): Promise<unknown> {
     try {
       const { owner, repo } = params as { owner: string; repo: string };
       if (!owner || !repo) {
@@ -163,10 +154,7 @@ export class GitHubService {
     }
   }
 
-  private async fetchWorkflows(
-    headers: any,
-    params?: unknown,
-  ): Promise<unknown> {
+  private async fetchWorkflows(headers: any, params?: unknown): Promise<unknown> {
     try {
       const { owner, repo } = params as { owner: string; repo: string };
       if (!owner || !repo) {
@@ -175,19 +163,15 @@ export class GitHubService {
 
       const [workflows, runs] = await Promise.all([
         firstValueFrom(
-          this.httpService.get(
-            `${this.baseUrl}/repos/${owner}/${repo}/actions/workflows`,
-            { headers },
-          ),
+          this.httpService.get(`${this.baseUrl}/repos/${owner}/${repo}/actions/workflows`, {
+            headers,
+          }),
         ),
         firstValueFrom(
-          this.httpService.get(
-            `${this.baseUrl}/repos/${owner}/${repo}/actions/runs`,
-            {
-              headers,
-              params: { per_page: 20 },
-            },
-          ),
+          this.httpService.get(`${this.baseUrl}/repos/${owner}/${repo}/actions/runs`, {
+            headers,
+            params: { per_page: 20 },
+          }),
         ),
       ]);
 
@@ -201,10 +185,7 @@ export class GitHubService {
     }
   }
 
-  private async fetchRepoStats(
-    headers: any,
-    params?: unknown,
-  ): Promise<unknown> {
+  private async fetchRepoStats(headers: any, params?: unknown): Promise<unknown> {
     try {
       const { owner, repo } = params as { owner: string; repo: string };
       if (!owner || !repo) {
@@ -213,25 +194,18 @@ export class GitHubService {
 
       const [contributors, languages, participation] = await Promise.all([
         firstValueFrom(
-          this.httpService.get(
-            `${this.baseUrl}/repos/${owner}/${repo}/contributors`,
-            {
-              headers,
-              params: { per_page: 10 },
-            },
-          ),
+          this.httpService.get(`${this.baseUrl}/repos/${owner}/${repo}/contributors`, {
+            headers,
+            params: { per_page: 10 },
+          }),
         ).catch(() => ({ data: [] })),
         firstValueFrom(
-          this.httpService.get(
-            `${this.baseUrl}/repos/${owner}/${repo}/languages`,
-            { headers },
-          ),
+          this.httpService.get(`${this.baseUrl}/repos/${owner}/${repo}/languages`, { headers }),
         ).catch(() => ({ data: {} })),
         firstValueFrom(
-          this.httpService.get(
-            `${this.baseUrl}/repos/${owner}/${repo}/stats/participation`,
-            { headers },
-          ),
+          this.httpService.get(`${this.baseUrl}/repos/${owner}/${repo}/stats/participation`, {
+            headers,
+          }),
         ).catch(() => ({ data: null })),
       ]);
 

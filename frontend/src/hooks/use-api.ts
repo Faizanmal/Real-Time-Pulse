@@ -32,7 +32,7 @@ export function useMeetingStats() {
   });
 }
 
-export function useAnalytics(days: number = 30) {
+export function useAnalytics(days = 30) {
   return useQuery({
     queryKey: ['meetings', 'analytics', days],
     queryFn: () => meetingsAPI.getAnalytics(days),

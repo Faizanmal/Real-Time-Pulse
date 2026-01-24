@@ -90,14 +90,7 @@ export class PortalController {
    */
   @Post(':id/regenerate-token')
   @UseGuards(JwtAuthGuard)
-  async regenerateToken(
-    @Param('id') id: string,
-    @CurrentUser() user: RequestUser,
-  ) {
-    return this.portalService.regenerateShareToken(
-      id,
-      user.workspaceId,
-      user.id,
-    );
+  async regenerateToken(@Param('id') id: string, @CurrentUser() user: RequestUser) {
+    return this.portalService.regenerateShareToken(id, user.workspaceId, user.id);
   }
 }

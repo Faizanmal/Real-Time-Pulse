@@ -169,7 +169,7 @@ export function useAIRecommendations(portalId: string | undefined) {
 /**
  * Hook to fetch anomalies
  */
-export function useAnomalies(workspaceId: string | undefined, days: number = 7) {
+export function useAnomalies(workspaceId: string | undefined, days = 7) {
   return useQuery({
     queryKey: ["ai-anomalies", workspaceId, days],
     queryFn: async () => {
@@ -322,7 +322,7 @@ export function useRefreshWidget() {
 /**
  * Hook for debounced value
  */
-export function useDebounce<T>(value: T, delay: number = 500): T {
+export function useDebounce<T>(value: T, delay = 500): T {
   const [debouncedValue, setDebouncedValue] = React.useState<T>(value);
 
   React.useEffect(() => {
@@ -338,13 +338,13 @@ export function useDebounce<T>(value: T, delay: number = 500): T {
  */
 export function useThrottle<T extends (...args: unknown[]) => unknown>(
   callback: T,
-  delay: number = 500
+  delay = 500
 ): T {
   const lastCall = React.useRef<number>(0);
   const lastCallTimer = React.useRef<NodeJS.Timeout | null>(null);
 
   return React.useCallback(
-    ((...args: Parameters<T>) => {
+    (...args: Parameters<T>) => {
       const now = Date.now();
       const timeSinceLastCall = now - lastCall.current;
 
@@ -360,9 +360,9 @@ export function useThrottle<T extends (...args: unknown[]) => unknown>(
           callback(...args);
         }, delay - timeSinceLastCall);
       }
-    }) as T,
+    },
     [callback, delay]
-  );
+  ) as T;
 }
 
 /**
@@ -660,7 +660,7 @@ export function useAsync<T>(
  * Hook for toggle state
  */
 export function useToggle(
-  initialValue: boolean = false
+  initialValue = false
 ): [boolean, () => void, (value: boolean) => void] {
   const [value, setValue] = React.useState(initialValue);
   const toggle = React.useCallback(() => setValue((v) => !v), []);
@@ -670,7 +670,7 @@ export function useToggle(
 /**
  * Hook for counter
  */
-export function useCounter(initialValue: number = 0) {
+export function useCounter(initialValue = 0) {
   const [count, setCount] = React.useState(initialValue);
 
   return {

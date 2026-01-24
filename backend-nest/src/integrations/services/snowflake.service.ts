@@ -24,9 +24,7 @@ export class SnowflakeService {
     return `https://${integration.settings.account}.snowflakecomputing.com/api/v2`;
   }
 
-  private getHeaders(
-    integration: SnowflakeIntegration,
-  ): Record<string, string> {
+  private getHeaders(integration: SnowflakeIntegration): Record<string, string> {
     return {
       Authorization: `Bearer ${integration.accessToken}`,
       'Content-Type': 'application/json',
@@ -37,10 +35,7 @@ export class SnowflakeService {
   async testConnection(integration: SnowflakeIntegration): Promise<boolean> {
     try {
       // Test with a simple query
-      const result = await this.executeQuery(
-        integration,
-        'SELECT CURRENT_VERSION()',
-      );
+      const result = await this.executeQuery(integration, 'SELECT CURRENT_VERSION()');
       return !!result;
     } catch (error) {
       this.logger.error('Snowflake connection test failed', error);
@@ -81,10 +76,8 @@ export class SnowflakeService {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const warehouse =
-        (params?.warehouse as string) || integration.settings.warehouse;
-      const database =
-        (params?.database as string) || integration.settings.database;
+      const warehouse = (params?.warehouse as string) || integration.settings.warehouse;
+      const database = (params?.database as string) || integration.settings.database;
       const schema = (params?.schema as string) || integration.settings.schema;
       const role = (params?.role as string) || integration.settings.role;
 
@@ -102,19 +95,14 @@ export class SnowflakeService {
       if (role) requestBody.role = role;
 
       const response = await firstValueFrom(
-        this.httpService.post(
-          `${this.getBaseUrl(integration)}/statements`,
-          requestBody,
-          { headers: this.getHeaders(integration) },
-        ),
+        this.httpService.post(`${this.getBaseUrl(integration)}/statements`, requestBody, {
+          headers: this.getHeaders(integration),
+        }),
       );
 
       // Handle async queries
       if (response.data.statementHandle) {
-        return this.waitForQueryResult(
-          integration,
-          response.data.statementHandle,
-        );
+        return this.waitForQueryResult(integration, response.data.statementHandle);
       }
 
       return this.formatQueryResult(response.data);
@@ -127,14 +115,13 @@ export class SnowflakeService {
   private async waitForQueryResult(
     integration: SnowflakeIntegration,
     statementHandle: string,
-    maxRetries: number = 60,
+    maxRetries = 60,
   ): Promise<unknown> {
     for (let i = 0; i < maxRetries; i++) {
       const response = await firstValueFrom(
-        this.httpService.get(
-          `${this.getBaseUrl(integration)}/statements/${statementHandle}`,
-          { headers: this.getHeaders(integration) },
-        ),
+        this.httpService.get(`${this.getBaseUrl(integration)}/statements/${statementHandle}`, {
+          headers: this.getHeaders(integration),
+        }),
       );
 
       const status = response.data.statementStatusUrl ? 'running' : 'complete';
@@ -170,9 +157,7 @@ export class SnowflakeService {
     };
   }
 
-  private async fetchDatabases(
-    integration: SnowflakeIntegration,
-  ): Promise<unknown> {
+  private async fetchDatabases(integration: SnowflakeIntegration): Promise<unknown> {
     return this.executeQuery(integration, 'SHOW DATABASES');
   }
 
@@ -180,11 +165,8 @@ export class SnowflakeService {
     integration: SnowflakeIntegration,
     params?: Record<string, unknown>,
   ): Promise<unknown> {
-    const database =
-      (params?.database as string) || integration.settings.database;
-    const query = database
-      ? `SHOW SCHEMAS IN DATABASE ${database}`
-      : 'SHOW SCHEMAS';
+    const database = (params?.database as string) || integration.settings.database;
+    const query = database ? `SHOW SCHEMAS IN DATABASE ${database}` : 'SHOW SCHEMAS';
     return this.executeQuery(integration, query);
   }
 
@@ -192,8 +174,7 @@ export class SnowflakeService {
     integration: SnowflakeIntegration,
     params?: Record<string, unknown>,
   ): Promise<unknown> {
-    const database =
-      (params?.database as string) || integration.settings.database;
+    const database = (params?.database as string) || integration.settings.database;
     const schema = (params?.schema as string) || integration.settings.schema;
 
     let query = 'SHOW TABLES';
@@ -206,9 +187,7 @@ export class SnowflakeService {
     return this.executeQuery(integration, query);
   }
 
-  private async fetchWarehouses(
-    integration: SnowflakeIntegration,
-  ): Promise<unknown> {
+  private async fetchWarehouses(integration: SnowflakeIntegration): Promise<unknown> {
     return this.executeQuery(integration, 'SHOW WAREHOUSES');
   }
 
@@ -276,11 +255,10 @@ export class SnowflakeService {
     try {
       const days = (params?.days as number) || 7;
 
-      const [queryStats, warehouseUsage, storageUsage, userActivity] =
-        await Promise.all([
-          this.executeQuery(
-            integration,
-            `
+      const [queryStats, warehouseUsage, storageUsage, userActivity] = await Promise.all([
+        this.executeQuery(
+          integration,
+          `
           SELECT 
             COUNT(*) as total_queries,
             AVG(TOTAL_ELAPSED_TIME) as avg_execution_time,
@@ -291,10 +269,10 @@ export class SnowflakeService {
           FROM SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY
           WHERE START_TIME >= DATEADD(DAY, -${days}, CURRENT_TIMESTAMP())
           `,
-          ),
-          this.executeQuery(
-            integration,
-            `
+        ),
+        this.executeQuery(
+          integration,
+          `
           SELECT 
             WAREHOUSE_NAME,
             SUM(CREDITS_USED) as credits_used,
@@ -304,20 +282,20 @@ export class SnowflakeService {
           GROUP BY WAREHOUSE_NAME
           ORDER BY credits_used DESC
           `,
-          ),
-          this.executeQuery(
-            integration,
-            `
+        ),
+        this.executeQuery(
+          integration,
+          `
           SELECT 
             SUM(AVERAGE_DATABASE_BYTES) / 1024 / 1024 / 1024 as total_storage_gb,
             SUM(AVERAGE_FAILSAFE_BYTES) / 1024 / 1024 / 1024 as failsafe_storage_gb
           FROM SNOWFLAKE.ACCOUNT_USAGE.DATABASE_STORAGE_USAGE_HISTORY
           WHERE USAGE_DATE = CURRENT_DATE()
           `,
-          ),
-          this.executeQuery(
-            integration,
-            `
+        ),
+        this.executeQuery(
+          integration,
+          `
           SELECT 
             USER_NAME,
             COUNT(*) as query_count,
@@ -328,8 +306,8 @@ export class SnowflakeService {
           ORDER BY query_count DESC
           LIMIT 10
           `,
-          ),
-        ]);
+        ),
+      ]);
 
       const queryStatsData = (queryStats as any).rows?.[0] || {};
       const storageData = (storageUsage as any).rows?.[0] || {};

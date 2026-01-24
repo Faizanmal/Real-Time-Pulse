@@ -81,8 +81,7 @@ export class CustomEndpointService {
       rateLimit: data.rateLimit || { requests: 100, windowMs: 60000 },
       caching: data.caching || { enabled: false, ttlSeconds: 60 },
       status: 'draft',
-      apiKey:
-        data.authentication === 'api_key' ? this.generateApiKey() : undefined,
+      apiKey: data.authentication === 'api_key' ? this.generateApiKey() : undefined,
       usageCount: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -105,10 +104,7 @@ export class CustomEndpointService {
   /**
    * Get endpoint by ID
    */
-  async getEndpoint(
-    workspaceId: string,
-    endpointId: string,
-  ): Promise<CustomEndpoint | null> {
+  async getEndpoint(workspaceId: string, endpointId: string): Promise<CustomEndpoint | null> {
     const endpoints = await this.getEndpoints(workspaceId);
     return endpoints.find((e) => e.id === endpointId) || null;
   }
@@ -119,9 +115,7 @@ export class CustomEndpointService {
   async updateEndpoint(
     workspaceId: string,
     endpointId: string,
-    updates: Partial<
-      Omit<CustomEndpoint, 'id' | 'workspaceId' | 'createdAt' | 'apiKey'>
-    >,
+    updates: Partial<Omit<CustomEndpoint, 'id' | 'workspaceId' | 'createdAt' | 'apiKey'>>,
   ): Promise<CustomEndpoint | null> {
     const endpoints = await this.getEndpoints(workspaceId);
     const index = endpoints.findIndex((e) => e.id === endpointId);
@@ -151,10 +145,7 @@ export class CustomEndpointService {
   /**
    * Activate endpoint
    */
-  async activateEndpoint(
-    workspaceId: string,
-    endpointId: string,
-  ): Promise<CustomEndpoint | null> {
+  async activateEndpoint(workspaceId: string, endpointId: string): Promise<CustomEndpoint | null> {
     return this.updateEndpoint(workspaceId, endpointId, { status: 'active' });
   }
 
@@ -171,10 +162,7 @@ export class CustomEndpointService {
   /**
    * Regenerate API key
    */
-  async regenerateApiKey(
-    workspaceId: string,
-    endpointId: string,
-  ): Promise<string | null> {
+  async regenerateApiKey(workspaceId: string, endpointId: string): Promise<string | null> {
     const endpoints = await this.getEndpoints(workspaceId);
     const index = endpoints.findIndex((e) => e.id === endpointId);
 
@@ -213,10 +201,7 @@ export class CustomEndpointService {
     }
 
     // Check rate limit
-    const rateLimitOk = await this.checkRateLimit(
-      endpointId,
-      endpoint.rateLimit,
-    );
+    const rateLimitOk = await this.checkRateLimit(endpointId, endpoint.rateLimit);
     if (!rateLimitOk) {
       return { success: false, error: 'Rate limit exceeded', cached: false };
     }
@@ -239,30 +224,16 @@ export class CustomEndpointService {
 
       switch (endpoint.dataSource.type) {
         case 'widget':
-          data = await this.fetchWidgetData(
-            workspaceId,
-            endpoint.dataSource.sourceId,
-          );
+          data = await this.fetchWidgetData(workspaceId, endpoint.dataSource.sourceId);
           break;
         case 'portal':
-          data = await this.fetchPortalData(
-            workspaceId,
-            endpoint.dataSource.sourceId,
-          );
+          data = await this.fetchPortalData(workspaceId, endpoint.dataSource.sourceId);
           break;
         case 'query':
-          data = await this.executeQuery(
-            workspaceId,
-            endpoint.dataSource.sourceId,
-            params,
-          );
+          data = await this.executeQuery(workspaceId, endpoint.dataSource.sourceId, params);
           break;
         case 'connector':
-          data = await this.executeConnector(
-            workspaceId,
-            endpoint.dataSource.sourceId,
-            params,
-          );
+          data = await this.executeConnector(workspaceId, endpoint.dataSource.sourceId, params);
           break;
         default:
           data = { message: 'Unknown data source type' };
@@ -276,11 +247,7 @@ export class CustomEndpointService {
       // Cache result if enabled
       if (endpoint.caching.enabled) {
         const cacheKey = `endpoint_cache:${endpointId}:${JSON.stringify(params)}`;
-        await this.cache.set(
-          cacheKey,
-          JSON.stringify(data),
-          endpoint.caching.ttlSeconds,
-        );
+        await this.cache.set(cacheKey, JSON.stringify(data), endpoint.caching.ttlSeconds);
       }
 
       // Record usage
@@ -304,7 +271,7 @@ export class CustomEndpointService {
   async getUsageStats(
     workspaceId: string,
     endpointId: string,
-    days: number = 7,
+    days = 7,
   ): Promise<{
     totalRequests: number;
     successRate: number;
@@ -324,8 +291,7 @@ export class CustomEndpointService {
     const successCount = recentUsages.filter((u) => u.statusCode < 400).length;
     const avgResponseTime =
       totalRequests > 0
-        ? recentUsages.reduce((sum, u) => sum + u.responseTimeMs, 0) /
-          totalRequests
+        ? recentUsages.reduce((sum, u) => sum + u.responseTimeMs, 0) / totalRequests
         : 0;
 
     const requestsByDay: Record<string, number> = {};
@@ -358,19 +324,13 @@ export class CustomEndpointService {
 
   // Private helper methods
 
-  private async saveEndpoint(
-    workspaceId: string,
-    endpoint: CustomEndpoint,
-  ): Promise<void> {
+  private async saveEndpoint(workspaceId: string, endpoint: CustomEndpoint): Promise<void> {
     const endpoints = await this.getEndpoints(workspaceId);
     endpoints.push(endpoint);
     await this.saveEndpoints(workspaceId, endpoints);
   }
 
-  private async saveEndpoints(
-    workspaceId: string,
-    endpoints: CustomEndpoint[],
-  ): Promise<void> {
+  private async saveEndpoints(workspaceId: string, endpoints: CustomEndpoint[]): Promise<void> {
     const key = `custom_endpoints:${workspaceId}`;
     await this.cache.set(key, JSON.stringify(endpoints), 86400 * 365);
   }
@@ -383,8 +343,7 @@ export class CustomEndpointService {
   }
 
   private generateApiKey(): string {
-    const chars =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let key = 'rtp_';
     for (let i = 0; i < 32; i++) {
       key += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -404,11 +363,7 @@ export class CustomEndpointService {
       return false;
     }
 
-    await this.cache.set(
-      key,
-      (count + 1).toString(),
-      Math.ceil(limit.windowMs / 1000),
-    );
+    await this.cache.set(key, (count + 1).toString(), Math.ceil(limit.windowMs / 1000));
     return true;
   }
 
@@ -434,10 +389,7 @@ export class CustomEndpointService {
     await this.cache.set(key, JSON.stringify(trimmed), 86400 * 30);
   }
 
-  private async incrementUsageCount(
-    workspaceId: string,
-    endpointId: string,
-  ): Promise<void> {
+  private async incrementUsageCount(workspaceId: string, endpointId: string): Promise<void> {
     const endpoints = await this.getEndpoints(workspaceId);
     const index = endpoints.findIndex((e) => e.id === endpointId);
     if (index !== -1) {
@@ -572,9 +524,7 @@ export class CustomEndpointService {
     }
 
     // If no integration found, return params for custom processing
-    this.logger.warn(
-      `Query ${queryId} not found, returning params for custom processing`,
-    );
+    this.logger.warn(`Query ${queryId} not found, returning params for custom processing`);
     return {
       queryId,
       params,

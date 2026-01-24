@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
 import { MultiRegionService } from './multi-region.service';
 import { HorizontalScalingService } from './horizontal-scaling.service';
 
@@ -69,9 +60,7 @@ export class ScalingController {
   }
 
   @Post('failover')
-  async triggerFailover(
-    @Body() body: { fromRegion: string; toRegion: string },
-  ) {
+  async triggerFailover(@Body() body: { fromRegion: string; toRegion: string }) {
     await this.multiRegion.triggerFailover(body.fromRegion, body.toRegion);
     return { success: true };
   }

@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Param,
-  Body,
-  UseGuards,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, UseGuards, Query } from '@nestjs/common';
 import { AIInsightsService } from './ai-insights.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
@@ -30,11 +21,7 @@ export class AIInsightsController {
     @Query('status') status?: string,
     @Query('type') type?: string,
   ) {
-    return this.aiInsightsService.getWorkspaceInsights(
-      user.workspaceId,
-      status,
-      type,
-    );
+    return this.aiInsightsService.getWorkspaceInsights(user.workspaceId, status, type);
   }
 
   /**
@@ -42,10 +29,7 @@ export class AIInsightsController {
    */
   @Get('portal/:portalId')
   @ApiOperation({ summary: 'Get portal-specific insights' })
-  async getPortalInsights(
-    @Param('portalId') portalId: string,
-    @CurrentUser() user: RequestUser,
-  ) {
+  async getPortalInsights(@Param('portalId') portalId: string, @CurrentUser() user: RequestUser) {
     return this.aiInsightsService.getPortalInsights(portalId, user.workspaceId);
   }
 
@@ -54,10 +38,7 @@ export class AIInsightsController {
    */
   @Post('portal/:portalId/generate')
   @ApiOperation({ summary: 'Generate AI insights for portal' })
-  async generateInsights(
-    @Param('portalId') portalId: string,
-    @CurrentUser() user: RequestUser,
-  ) {
+  async generateInsights(@Param('portalId') portalId: string, @CurrentUser() user: RequestUser) {
     return this.aiInsightsService.generateInsights(portalId, user.workspaceId);
   }
 
@@ -70,10 +51,7 @@ export class AIInsightsController {
     @Param('portalId') portalId: string,
     @CurrentUser() user: RequestUser,
   ) {
-    return this.aiInsightsService.generatePredictiveInsights(
-      portalId,
-      user.workspaceId,
-    );
+    return this.aiInsightsService.generatePredictiveInsights(portalId, user.workspaceId);
   }
 
   /**
@@ -95,10 +73,7 @@ export class AIInsightsController {
     @Body() body: { query: string; portalId?: string },
     @CurrentUser() user: RequestUser,
   ) {
-    return this.aiInsightsService.processNaturalLanguageQuery(
-      user.workspaceId,
-      body,
-    );
+    return this.aiInsightsService.processNaturalLanguageQuery(user.workspaceId, body);
   }
 
   /**
@@ -106,10 +81,7 @@ export class AIInsightsController {
    */
   @Patch(':id/dismiss')
   @ApiOperation({ summary: 'Dismiss an insight' })
-  async dismissInsight(
-    @Param('id') id: string,
-    @CurrentUser() user: RequestUser,
-  ) {
+  async dismissInsight(@Param('id') id: string, @CurrentUser() user: RequestUser) {
     return this.aiInsightsService.dismissInsight(id, user.id);
   }
 

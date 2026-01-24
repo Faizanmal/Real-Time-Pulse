@@ -25,13 +25,7 @@ export class EncryptionService {
     if (!encryptionKey) {
       throw new Error('ENCRYPTION_KEY is not set in environment variables');
     }
-    return crypto.pbkdf2Sync(
-      encryptionKey,
-      salt,
-      100000,
-      this.keyLength,
-      'sha512',
-    );
+    return crypto.pbkdf2Sync(encryptionKey, salt, 100000, this.keyLength, 'sha512');
   }
 
   /**
@@ -44,10 +38,7 @@ export class EncryptionService {
     const key = this.getKey(salt);
 
     const cipher = crypto.createCipheriv(this.algorithm, key, iv);
-    const encrypted = Buffer.concat([
-      cipher.update(text, 'utf8'),
-      cipher.final(),
-    ]);
+    const encrypted = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
     const tag = cipher.getAuthTag();
 
     return Buffer.concat([salt, iv, tag, encrypted]).toString('base64');
@@ -69,9 +60,7 @@ export class EncryptionService {
     const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
     decipher.setAuthTag(tag);
 
-    return (
-      decipher.update(encrypted, undefined, 'utf8') + decipher.final('utf8')
-    );
+    return decipher.update(encrypted, undefined, 'utf8') + decipher.final('utf8');
   }
 
   /**
@@ -93,7 +82,7 @@ export class EncryptionService {
   /**
    * Generates a random token
    */
-  generateToken(length: number = 32): string {
+  generateToken(length = 32): string {
     return crypto.randomBytes(length).toString('hex');
   }
 }

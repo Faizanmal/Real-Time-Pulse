@@ -48,14 +48,9 @@ export class RedshiftService {
 
     const payloadHash = crypto.createHash('sha256').update(body).digest('hex');
 
-    const canonicalRequest = [
-      method,
-      '/',
-      '',
-      canonicalHeaders,
-      signedHeaders,
-      payloadHash,
-    ].join('\n');
+    const canonicalRequest = [method, '/', '', canonicalHeaders, signedHeaders, payloadHash].join(
+      '\n',
+    );
 
     const credentialScope = `${date}/${region}/${service}/aws4_request`;
     const stringToSign = [
@@ -70,18 +65,9 @@ export class RedshiftService {
       .update(date)
       .digest();
     const kRegion = crypto.createHmac('sha256', kDate).update(region).digest();
-    const kService = crypto
-      .createHmac('sha256', kRegion)
-      .update(service)
-      .digest();
-    const kSigning = crypto
-      .createHmac('sha256', kService)
-      .update('aws4_request')
-      .digest();
-    const signature = crypto
-      .createHmac('sha256', kSigning)
-      .update(stringToSign)
-      .digest('hex');
+    const kService = crypto.createHmac('sha256', kRegion).update(service).digest();
+    const kSigning = crypto.createHmac('sha256', kService).update('aws4_request').digest();
+    const signature = crypto.createHmac('sha256', kSigning).update(stringToSign).digest('hex');
 
     const authorization = [
       `AWS4-HMAC-SHA256 Credential=${integration.accessToken}/${credentialScope}`,
@@ -114,11 +100,7 @@ export class RedshiftService {
   ): Promise<unknown> {
     switch (dataType) {
       case 'query':
-        return this.executeStatement(
-          integration,
-          params?.query as string,
-          params,
-        );
+        return this.executeStatement(integration, params?.query as string, params);
       case 'schemas':
         return this.fetchSchemas(integration);
       case 'tables':
@@ -160,18 +142,10 @@ export class RedshiftService {
       }
 
       const body = JSON.stringify(requestBody);
-      const headers = await this.signRequest(
-        integration,
-        'POST',
-        url,
-        body,
-        'redshift-data',
-      );
+      const headers = await this.signRequest(integration, 'POST', url, body, 'redshift-data');
       headers['X-Amz-Target'] = 'RedshiftData.ExecuteStatement';
 
-      const response = await firstValueFrom(
-        this.httpService.post(url, body, { headers }),
-      );
+      const response = await firstValueFrom(this.httpService.post(url, body, { headers }));
 
       const statementId = response.data.Id;
 
@@ -186,7 +160,7 @@ export class RedshiftService {
   private async waitForStatementResult(
     integration: RedshiftIntegration,
     statementId: string,
-    maxRetries: number = 60,
+    maxRetries = 60,
   ): Promise<unknown> {
     const url = this.getRedshiftDataApiUrl(integration);
 
@@ -225,9 +199,7 @@ export class RedshiftService {
 
         return this.formatQueryResult(resultResponse.data);
       } else if (status === 'FAILED' || status === 'ABORTED') {
-        throw new Error(
-          statusResponse.data.Error || `Query ${status.toLowerCase()}`,
-        );
+        throw new Error(statusResponse.data.Error || `Query ${status.toLowerCase()}`);
       }
 
       // Wait 1 second before retry
@@ -271,9 +243,7 @@ export class RedshiftService {
     };
   }
 
-  private async fetchSchemas(
-    integration: RedshiftIntegration,
-  ): Promise<unknown> {
+  private async fetchSchemas(integration: RedshiftIntegration): Promise<unknown> {
     return this.executeStatement(
       integration,
       `SELECT schema_name, schema_owner, schema_type
@@ -318,9 +288,7 @@ export class RedshiftService {
     );
   }
 
-  private async fetchClusterInfo(
-    integration: RedshiftIntegration,
-  ): Promise<unknown> {
+  private async fetchClusterInfo(integration: RedshiftIntegration): Promise<unknown> {
     const url = this.getRedshiftApiUrl(integration);
 
     const requestBody = {
@@ -328,19 +296,11 @@ export class RedshiftService {
     };
 
     const body = JSON.stringify(requestBody);
-    const headers = await this.signRequest(
-      integration,
-      'POST',
-      url,
-      body,
-      'redshift',
-    );
+    const headers = await this.signRequest(integration, 'POST', url, body, 'redshift');
     headers['X-Amz-Target'] = 'RedshiftServiceVersion20121201.DescribeClusters';
 
     try {
-      const response = await firstValueFrom(
-        this.httpService.post(url, body, { headers }),
-      );
+      const response = await firstValueFrom(this.httpService.post(url, body, { headers }));
 
       const cluster = response.data.Clusters?.[0];
       if (!cluster) {
@@ -388,34 +348,33 @@ export class RedshiftService {
     _params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const [tableStats, diskUsage, queryStats, clusterInfo] =
-        await Promise.all([
-          this.executeStatement(
-            integration,
-            `SELECT COUNT(*) as table_count,
+      const [tableStats, diskUsage, queryStats, clusterInfo] = await Promise.all([
+        this.executeStatement(
+          integration,
+          `SELECT COUNT(*) as table_count,
                   SUM(tbl_rows) as total_rows,
                   SUM(size) as total_size_mb
            FROM svv_table_info`,
-          ),
-          this.executeStatement(
-            integration,
-            `SELECT SUM(used) as used_mb,
+        ),
+        this.executeStatement(
+          integration,
+          `SELECT SUM(used) as used_mb,
                   SUM(capacity) as capacity_mb,
                   ROUND(100.0 * SUM(used) / SUM(capacity), 2) as pct_used
            FROM stv_partitions
            WHERE part_begin = 0`,
-          ),
-          this.executeStatement(
-            integration,
-            `SELECT COUNT(*) as total_queries,
+        ),
+        this.executeStatement(
+          integration,
+          `SELECT COUNT(*) as total_queries,
                   AVG(elapsed) / 1000000.0 as avg_duration_sec,
                   COUNT(CASE WHEN aborted = 1 THEN 1 END) as aborted_queries
            FROM stl_query
            WHERE starttime >= CURRENT_DATE - 1
              AND userid > 1`,
-          ),
-          this.fetchClusterInfo(integration),
-        ]);
+        ),
+        this.fetchClusterInfo(integration),
+      ]);
 
       const tableStatsRow = ((tableStats as any).rows || [])[0] || {};
       const diskUsageRow = ((diskUsage as any).rows || [])[0] || {};

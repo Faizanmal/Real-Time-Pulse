@@ -52,10 +52,7 @@ export class PortalResolver {
     description: 'Get a portal by ID',
   })
   @UseGuards(GqlAuthGuard)
-  async portal(
-    @Args('id', { type: () => ID }) id: string,
-    @CurrentUser() user: any,
-  ): Promise<any> {
+  async portal(@Args('id', { type: () => ID }) id: string, @CurrentUser() user: any): Promise<any> {
     return this.prisma.portal.findFirst({
       where: {
         id,
@@ -343,26 +340,17 @@ export class PortalResolver {
   // ============================================
 
   @ResolveField('widgets', () => [WidgetType])
-  async widgets(
-    @Parent() portal: any,
-    @Context() _context: any,
-  ): Promise<any[]> {
+  async widgets(@Parent() portal: any, @Context() _context: any): Promise<any[]> {
     return this.dataLoader.getWidgetsByPortalId(portal.id);
   }
 
   @ResolveField('createdBy')
-  async createdBy(
-    @Parent() portal: any,
-    @Context() _context: any,
-  ): Promise<any> {
+  async createdBy(@Parent() portal: any, @Context() _context: any): Promise<any> {
     return this.dataLoader.getUserById(portal.createdById);
   }
 
   @ResolveField('workspace')
-  async workspace(
-    @Parent() portal: any,
-    @Context() _context: any,
-  ): Promise<any> {
+  async workspace(@Parent() portal: any, @Context() _context: any): Promise<any> {
     return this.dataLoader.getWorkspaceById(portal.workspaceId);
   }
 

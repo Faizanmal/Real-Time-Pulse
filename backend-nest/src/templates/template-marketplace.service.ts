@@ -19,30 +19,30 @@ interface Template {
   thumbnail: string;
   previewImages: string[];
   data: any; // Template configuration data
-  
+
   // Author
   authorId: string;
   author?: { id: string; name: string; avatar?: string };
-  
+
   // Metadata
   tags: string[];
   industry?: string;
   useCase?: string;
-  
+
   // Stats
   downloads: number;
   rating: number;
   ratingCount: number;
-  
+
   // Pricing
   isPremium: boolean;
   price?: number;
-  
+
   // Dates
   createdAt: Date;
   updatedAt: Date;
   publishedAt?: Date;
-  
+
   // Status
   status: 'draft' | 'pending_review' | 'published' | 'rejected';
 }
@@ -114,15 +114,15 @@ export class TemplateMarketplaceService {
   async searchTemplates(
     options: TemplateSearchOptions,
   ): Promise<{ templates: Template[]; total: number; page: number; totalPages: number }> {
-    const { 
-      query, 
-      category, 
-      type, 
-      industry, 
-      tags, 
-      isPremium, 
+    const {
+      query,
+      category,
+      type,
+      industry,
+      tags,
+      isPremium,
       sortBy = 'popular',
-      page = 1, 
+      page = 1,
       limit = 20,
     } = options;
 
@@ -189,13 +189,13 @@ export class TemplateMarketplaceService {
   /**
    * Get featured templates
    */
-  async getFeaturedTemplates(limit: number = 10): Promise<Template[]> {
+  async getFeaturedTemplates(limit = 10): Promise<Template[]> {
     const cacheKey = `templates:featured:${limit}`;
     const cached = await this.cache.get(cacheKey);
     if (cached) return JSON.parse(cached);
 
     const templates = await this.prisma.template.findMany({
-      where: { status: 'published', isFeatured: true },
+      where: { status: 'published', isFeatured: true } as any,
       orderBy: [{ downloads: 'desc' }, { rating: 'desc' }],
       take: limit,
       include: {
@@ -243,7 +243,7 @@ export class TemplateMarketplaceService {
   /**
    * Get related templates
    */
-  async getRelatedTemplates(templateId: string, limit: number = 5): Promise<Template[]> {
+  async getRelatedTemplates(templateId: string, limit = 5): Promise<Template[]> {
     const template = await this.prisma.template.findUnique({
       where: { id: templateId },
     });
@@ -256,8 +256,8 @@ export class TemplateMarketplaceService {
         status: 'published',
         OR: [
           { category: template.category },
-          { tags: { hasSome: template.tags as string[] } },
-          { industry: template.industry },
+          { tags: { hasSome: template.tags } },
+          { industry: (template as any).industry },
         ],
       },
       orderBy: { downloads: 'desc' },
@@ -303,7 +303,7 @@ export class TemplateMarketplaceService {
         status: 'draft',
         createdAt: new Date(),
         updatedAt: new Date(),
-      },
+      } as any,
       include: {
         author: { select: { id: true, name: true, avatar: true } },
       },
@@ -358,7 +358,7 @@ export class TemplateMarketplaceService {
     }
 
     // Validate template has required fields
-    if (!template.name || !template.description || !template.thumbnail) {
+    if (!(template as any).name || !template.description || !(template as any).thumbnail) {
       throw new BadRequestException('Template must have name, description, and thumbnail');
     }
 
@@ -380,7 +380,7 @@ export class TemplateMarketplaceService {
         status: 'published',
         publishedAt: new Date(),
         updatedAt: new Date(),
-      },
+      } as any,
     });
 
     await this.cache.del('templates:*');
@@ -422,7 +422,7 @@ export class TemplateMarketplaceService {
     }
 
     // Check if premium and user has access
-    if (template.isPremium) {
+    if ((template as any).isPremium) {
       const hasPurchased = await this.checkTemplatePurchase(templateId, userId);
       if (!hasPurchased) {
         throw new BadRequestException('Please purchase this template first');
@@ -432,38 +432,40 @@ export class TemplateMarketplaceService {
     // Create instance from template
     let createdId: string;
 
-    switch (template.type) {
-      case 'dashboard':
+    switch ((template as any).type) {
+      case 'dashboard': {
         const portal = await this.prisma.portal.create({
           data: {
             id: uuidv4(),
-            name: `${template.name} (Copy)`,
+            name: `${(template as any).name} (Copy)`,
             description: template.description,
             workspaceId,
             createdById: userId,
             config: template.data,
             templateId,
             createdAt: new Date(),
-          },
+          } as any,
         });
         createdId = portal.id;
         break;
-        
-      case 'widget':
+      }
+
+      case 'widget': {
         const widget = await this.prisma.widget.create({
           data: {
             id: uuidv4(),
-            name: template.name,
-            type: template.data?.type || 'custom',
+            name: (template as any).name,
+            type: (template.data as any)?.type || 'custom',
             config: template.data,
             createdById: userId,
             templateId,
             createdAt: new Date(),
-          },
+          } as any,
         });
         createdId = widget.id;
         break;
-        
+      }
+
       default:
         throw new BadRequestException('Unsupported template type');
     }
@@ -483,7 +485,7 @@ export class TemplateMarketplaceService {
         workspaceId,
         createdId,
         installedAt: new Date(),
-      },
+      } as any,
     });
 
     return { success: true, createdId };
@@ -495,10 +497,10 @@ export class TemplateMarketplaceService {
   async purchaseTemplate(
     templateId: string,
     userId: string,
-    paymentMethodId: string,
+    _paymentMethodId: string,
   ): Promise<{ success: boolean; purchaseId: string }> {
     const template = await this.prisma.template.findFirst({
-      where: { id: templateId, status: 'published', isPremium: true },
+      where: { id: templateId, status: 'published', isPremium: true } as any,
     });
 
     if (!template) {
@@ -507,7 +509,7 @@ export class TemplateMarketplaceService {
 
     // Check if already purchased
     const existing = await this.prisma.templatePurchase.findFirst({
-      where: { templateId, userId },
+      where: { templateId, userId } as any,
     });
 
     if (existing) {
@@ -525,18 +527,19 @@ export class TemplateMarketplaceService {
         userId,
         price: template.price || 0,
         purchasedAt: new Date(),
-      },
+      } as any,
     });
 
     // Calculate author earnings (e.g., 70% to author)
     const authorEarnings = (template.price || 0) * 0.7;
-    await this.prisma.authorEarnings.create({
+    await this.prisma.authorEarning.create({
       data: {
         id: uuidv4(),
-        authorId: template.authorId,
-        templateId,
+        author: { connect: { id: template.authorId } },
+        template: { connect: { id: templateId } },
         purchaseId,
         amount: authorEarnings,
+        type: 'purchase',
         createdAt: new Date(),
       },
     });
@@ -546,7 +549,7 @@ export class TemplateMarketplaceService {
 
   private async checkTemplatePurchase(templateId: string, userId: string): Promise<boolean> {
     const purchase = await this.prisma.templatePurchase.findFirst({
-      where: { templateId, userId },
+      where: { templateId, userId } as any,
     });
     return !!purchase;
   }
@@ -577,7 +580,7 @@ export class TemplateMarketplaceService {
 
     // Check for existing review
     const existing = await this.prisma.templateReview.findFirst({
-      where: { templateId, userId },
+      where: { templateId, userId } as any,
     });
 
     if (existing) {
@@ -592,7 +595,7 @@ export class TemplateMarketplaceService {
         rating,
         comment,
         createdAt: new Date(),
-      },
+      } as any,
     });
 
     // Update template rating
@@ -610,7 +613,7 @@ export class TemplateMarketplaceService {
       orderBy: { createdAt: 'desc' },
       include: {
         user: { select: { id: true, name: true, avatar: true } },
-      },
+      } as any,
     });
 
     return reviews as unknown as TemplateReview[];
@@ -628,7 +631,7 @@ export class TemplateMarketplaceService {
       data: {
         rating: result._avg.rating || 0,
         ratingCount: result._count,
-      },
+      } as any,
     });
   }
 
@@ -644,7 +647,7 @@ export class TemplateMarketplaceService {
   /**
    * Get popular tags
    */
-  async getPopularTags(limit: number = 20): Promise<{ tag: string; count: number }[]> {
+  async getPopularTags(limit = 20): Promise<{ tag: string; count: number }[]> {
     const cacheKey = `templates:tags:${limit}`;
     const cached = await this.cache.get(cacheKey);
     if (cached) return JSON.parse(cached);
@@ -656,7 +659,7 @@ export class TemplateMarketplaceService {
 
     const tagCounts = new Map<string, number>();
     for (const template of templates) {
-      for (const tag of (template.tags as string[]) || []) {
+      for (const tag of template.tags || []) {
         tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
       }
     }

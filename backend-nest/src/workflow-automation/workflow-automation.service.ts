@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { WorkflowExecutionStatus } from '@prisma/client';
 
@@ -120,21 +116,14 @@ export class WorkflowAutomationService {
     return execution;
   }
 
-  private async runWorkflow(
-    workflow: any,
-    executionId: string,
-    triggerData: any,
-  ) {
+  private async runWorkflow(workflow: any, executionId: string, triggerData: any) {
     const startTime = Date.now();
     const steps: any[] = [];
 
     try {
       // Evaluate conditions
       if (workflow.conditions) {
-        const conditionsMet = this.evaluateConditions(
-          workflow.conditions,
-          triggerData,
-        );
+        const conditionsMet = this.evaluateConditions(workflow.conditions, triggerData);
         if (!conditionsMet) {
           await this.prisma.workflowExecution.update({
             where: { id: executionId },
@@ -156,11 +145,7 @@ export class WorkflowAutomationService {
         const stepStartTime = Date.now();
 
         try {
-          const result = await this.executeAction(
-            action,
-            triggerData,
-            workflow.workspaceId,
-          );
+          const result = await this.executeAction(action, triggerData, workflow.workspaceId);
 
           steps.push({
             action: action.type,
@@ -231,13 +216,9 @@ export class WorkflowAutomationService {
     // In production, use a proper rules engine
 
     if (conditions.operator === 'AND') {
-      return conditions.rules.every((rule: any) =>
-        this.evaluateRule(rule, data),
-      );
+      return conditions.rules.every((rule: any) => this.evaluateRule(rule, data));
     } else if (conditions.operator === 'OR') {
-      return conditions.rules.some((rule: any) =>
-        this.evaluateRule(rule, data),
-      );
+      return conditions.rules.some((rule: any) => this.evaluateRule(rule, data));
     }
 
     return this.evaluateRule(conditions, data);
@@ -268,11 +249,7 @@ export class WorkflowAutomationService {
     return path.split('.').reduce((current, prop) => current?.[prop], obj);
   }
 
-  private async executeAction(
-    action: any,
-    triggerData: any,
-    workspaceId: string,
-  ): Promise<any> {
+  private async executeAction(action: any, triggerData: any, _workspaceId: string): Promise<any> {
     switch (action.type) {
       case 'send_email':
         return this.sendEmail(action.config, triggerData);
@@ -340,12 +317,7 @@ export class WorkflowAutomationService {
 
   private sendSlackMessage(config: any, triggerData: any): Promise<any> {
     // Send Slack message
-    console.log(
-      'Sending Slack message:',
-      config.channel,
-      config.message,
-      triggerData,
-    );
+    console.log('Sending Slack message:', config.channel, config.message, triggerData);
     return Promise.resolve({ sent: true, channel: config.channel });
   }
 
@@ -408,11 +380,7 @@ export class WorkflowAutomationService {
     return template;
   }
 
-  async createWorkflowFromTemplate(
-    templateId: string,
-    workspaceId: string,
-    customizations?: any,
-  ) {
+  async createWorkflowFromTemplate(templateId: string, workspaceId: string, customizations?: any) {
     const template = await this.getWorkflowTemplate(templateId);
 
     const templateData = template.template as any;

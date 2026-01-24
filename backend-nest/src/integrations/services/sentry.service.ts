@@ -69,8 +69,7 @@ export class SentryService {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const project =
-        (params?.project as string) || integration.settings.project;
+      const project = (params?.project as string) || integration.settings.project;
       const query = (params?.query as string) || 'is:unresolved';
       const limit = (params?.limit as number) || 50;
       const statsPeriod = (params?.statsPeriod as string) || '24h';
@@ -103,8 +102,7 @@ export class SentryService {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const project =
-        (params?.project as string) || integration.settings.project;
+      const project = (params?.project as string) || integration.settings.project;
       const issueId = params?.issueId as string;
 
       if (!project) {
@@ -186,12 +184,10 @@ export class SentryService {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const project =
-        (params?.project as string) || integration.settings.project;
+      const project = (params?.project as string) || integration.settings.project;
       const stat = (params?.stat as string) || 'received';
       const resolution = (params?.resolution as string) || '1h';
-      const since =
-        (params?.since as number) || Math.floor((Date.now() - 86400000) / 1000);
+      const since = (params?.since as number) || Math.floor((Date.now() - 86400000) / 1000);
       const until = (params?.until as number) || Math.floor(Date.now() / 1000);
 
       let url: string;

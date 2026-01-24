@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  UseGuards,
-  Res,
-  StreamableFile,
-} from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Res, StreamableFile } from '@nestjs/common';
 import type { Response } from 'express';
 import { ExportService } from './export.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -29,10 +22,7 @@ export class ExportController {
     @CurrentUser() user: RequestUser,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
-    const buffer = await this.exportService.exportPortalToPDF(
-      portalId,
-      user.workspaceId,
-    );
+    const buffer = await this.exportService.exportPortalToPDF(portalId, user.workspaceId);
 
     res.set({
       'Content-Type': 'application/pdf',
@@ -54,10 +44,7 @@ export class ExportController {
     @CurrentUser() user: RequestUser,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
-    const buffer = await this.exportService.exportPortalToCSV(
-      portalId,
-      user.workspaceId,
-    );
+    const buffer = await this.exportService.exportPortalToCSV(portalId, user.workspaceId);
 
     res.set({
       'Content-Type': 'text/csv',
@@ -79,14 +66,10 @@ export class ExportController {
     @CurrentUser() user: RequestUser,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
-    const buffer = await this.exportService.exportPortalToExcel(
-      portalId,
-      user.workspaceId,
-    );
+    const buffer = await this.exportService.exportPortalToExcel(portalId, user.workspaceId);
 
     res.set({
-      'Content-Type':
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': `attachment; filename="portal-${portalId}.xlsx"`,
       'Content-Length': buffer.length,
     });
@@ -111,8 +94,11 @@ export class ExportController {
     @CurrentUser() user: RequestUser,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
-    const { buffer, contentType, extension } =
-      await this.exportService.exportWidget(widgetId, format, user.workspaceId);
+    const { buffer, contentType, extension } = await this.exportService.exportWidget(
+      widgetId,
+      format,
+      user.workspaceId,
+    );
 
     res.set({
       'Content-Type': contentType,

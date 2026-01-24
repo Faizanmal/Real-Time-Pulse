@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-  Req,
-  Patch,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards, Req, Patch } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdvancedAiService } from './advanced-ai.service';
 import { AIModelType, AIProvider } from '@prisma/client';
@@ -128,10 +118,7 @@ export class AdvancedAiController {
       forecastPeriods: number;
     },
   ) {
-    return this.advancedAiService.forecastTimeSeries(
-      req.user.workspaceId,
-      data,
-    );
+    return this.advancedAiService.forecastTimeSeries(req.user.workspaceId, data);
   }
 
   // Anomaly Detection
@@ -150,13 +137,7 @@ export class AdvancedAiController {
 
   // Recommendations
   @Get('recommendations/:portalId')
-  async generateRecommendations(
-    @Req() req: any,
-    @Param('portalId') portalId: string,
-  ) {
-    return this.advancedAiService.generateRecommendations(
-      req.user.workspaceId,
-      portalId,
-    );
+  async generateRecommendations(@Req() req: any, @Param('portalId') portalId: string) {
+    return this.advancedAiService.generateRecommendations(req.user.workspaceId, portalId);
   }
 }

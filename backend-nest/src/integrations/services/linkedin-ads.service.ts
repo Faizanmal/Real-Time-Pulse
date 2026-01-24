@@ -17,9 +17,7 @@ export class LinkedInAdsService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  private getHeaders(
-    integration: LinkedInAdsIntegration,
-  ): Record<string, string> {
+  private getHeaders(integration: LinkedInAdsIntegration): Record<string, string> {
     return {
       Authorization: `Bearer ${integration.accessToken}`,
       'Content-Type': 'application/json',
@@ -213,11 +211,9 @@ export class LinkedInAdsService {
         totalLeads += element.leads || 0;
       });
 
-      const ctr =
-        totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+      const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
       const cpc = totalClicks > 0 ? totalCost / totalClicks : 0;
-      const cpm =
-        totalImpressions > 0 ? (totalCost / totalImpressions) * 1000 : 0;
+      const cpm = totalImpressions > 0 ? (totalCost / totalImpressions) * 1000 : 0;
 
       return {
         summary: {

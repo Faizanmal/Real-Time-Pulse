@@ -19,12 +19,8 @@ export class FreshdeskService {
     return `https://${integration.settings.domain}.freshdesk.com/api/v2`;
   }
 
-  private getHeaders(
-    integration: FreshdeskIntegration,
-  ): Record<string, string> {
-    const credentials = Buffer.from(`${integration.accessToken}:X`).toString(
-      'base64',
-    );
+  private getHeaders(integration: FreshdeskIntegration): Record<string, string> {
+    const credentials = Buffer.from(`${integration.accessToken}:X`).toString('base64');
     return {
       Authorization: `Basic ${credentials}`,
       'Content-Type': 'application/json',
@@ -197,21 +193,15 @@ export class FreshdeskService {
       }
 
       const response = await firstValueFrom(
-        this.httpService.get(
-          `${this.getBaseUrl(integration)}/surveys/satisfaction_ratings`,
-          {
-            headers: this.getHeaders(integration),
-            params: queryParams,
-          },
-        ),
+        this.httpService.get(`${this.getBaseUrl(integration)}/surveys/satisfaction_ratings`, {
+          headers: this.getHeaders(integration),
+          params: queryParams,
+        }),
       );
 
       return response.data || [];
     } catch (error) {
-      this.logger.error(
-        'Failed to fetch Freshdesk satisfaction ratings',
-        error,
-      );
+      this.logger.error('Failed to fetch Freshdesk satisfaction ratings', error);
       throw error;
     }
   }
@@ -257,11 +247,7 @@ export class FreshdeskService {
         const priority = priorityMap[ticket.priority] || 'normal';
         priorityBreakdown[priority] = (priorityBreakdown[priority] || 0) + 1;
 
-        if (
-          ticket.fr_escalated === false &&
-          ticket.created_at &&
-          ticket.updated_at
-        ) {
+        if (ticket.fr_escalated === false && ticket.created_at && ticket.updated_at) {
           const created = new Date(ticket.created_at).getTime();
           const updated = new Date(ticket.updated_at).getTime();
           totalResponseTime += (updated - created) / 1000 / 60;
@@ -269,8 +255,7 @@ export class FreshdeskService {
         }
       });
 
-      const avgResponseTime =
-        responseCount > 0 ? totalResponseTime / responseCount : 0;
+      const avgResponseTime = responseCount > 0 ? totalResponseTime / responseCount : 0;
 
       return {
         summary: {
@@ -292,10 +277,7 @@ export class FreshdeskService {
   }
 
   // Search functionality
-  async searchTickets(
-    integration: FreshdeskIntegration,
-    query: string,
-  ): Promise<unknown> {
+  async searchTickets(integration: FreshdeskIntegration, query: string): Promise<unknown> {
     try {
       const response = await firstValueFrom(
         this.httpService.get(`${this.getBaseUrl(integration)}/search/tickets`, {

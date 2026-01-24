@@ -190,34 +190,37 @@ const SAMPLE_NOTIFICATIONS: Notification[] = [
 ];
 
 export function NotificationCenterProvider({ children }: { children: ReactNode }) {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [preferences, setPreferences] = useState<NotificationPreferences>(DEFAULT_PREFERENCES);
-
-  // Load from localStorage
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
+  const [notifications, setNotifications] = useState<Notification[]>(() => {
+    if (typeof window === 'undefined') return SAMPLE_NOTIFICATIONS;
     try {
       const savedNotifications = localStorage.getItem(STORAGE_KEY);
       if (savedNotifications) {
         const parsed = JSON.parse(savedNotifications);
-        setNotifications(parsed.map((n: Notification) => ({
+        return parsed.map((n: Notification) => ({
           ...n,
           timestamp: new Date(n.timestamp),
-        })));
+        }));
       } else {
-        // Use sample notifications for demo
-        setNotifications(SAMPLE_NOTIFICATIONS);
-      }
-
-      const savedPrefs = localStorage.getItem(PREFS_KEY);
-      if (savedPrefs) {
-        setPreferences(JSON.parse(savedPrefs));
+        return SAMPLE_NOTIFICATIONS;
       }
     } catch {
-      setNotifications(SAMPLE_NOTIFICATIONS);
+      return SAMPLE_NOTIFICATIONS;
     }
-  }, []);
+  });
+  const [preferences, setPreferences] = useState<NotificationPreferences>(() => {
+    if (typeof window === 'undefined') return DEFAULT_PREFERENCES;
+    try {
+      const savedPrefs = localStorage.getItem(PREFS_KEY);
+      if (savedPrefs) {
+        return JSON.parse(savedPrefs);
+      }
+    } catch {
+      // Use defaults
+    }
+    return DEFAULT_PREFERENCES;
+  });
+
+
 
   // Save to localStorage
   useEffect(() => {

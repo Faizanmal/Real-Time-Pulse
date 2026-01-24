@@ -20,29 +20,21 @@ import { RoomService } from './room.service';
   imports: [
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('jwt.secret'),
-        signOptions: {
-          expiresIn:
-            configService.get<string>('jwt.expiresIn') || ('1h' as any),
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const expiresRaw = configService.get<string>('jwt.expiresIn') ?? '1h';
+        const expiresIn = Number.isFinite(Number(expiresRaw)) ? Number(expiresRaw) : expiresRaw;
+        return {
+          secret: configService.get<string>('jwt.secret'),
+          signOptions: {
+            // Cast to any to satisfy JwtModuleOptions type which expects number | StringValue
+            expiresIn: expiresIn as unknown as any,
+          },
+        };
+      },
       inject: [ConfigService],
     }),
   ],
-  providers: [
-    RealtimeGateway,
-    RealtimeService,
-    PresenceService,
-    BroadcastService,
-    RoomService,
-  ],
-  exports: [
-    RealtimeGateway,
-    RealtimeService,
-    PresenceService,
-    BroadcastService,
-    RoomService,
-  ],
+  providers: [RealtimeGateway, RealtimeService, PresenceService, BroadcastService, RoomService],
+  exports: [RealtimeGateway, RealtimeService, PresenceService, BroadcastService, RoomService],
 })
 export class RealtimeModule {}

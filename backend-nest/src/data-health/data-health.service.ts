@@ -129,7 +129,7 @@ export class DataHealthService {
     });
   }
 
-  async getHealthMetrics(workspaceId: string, days: number = 7) {
+  async getHealthMetrics(workspaceId: string, days = 7) {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
@@ -147,12 +147,9 @@ export class DataHealthService {
 
     // Calculate metrics
     const totalChecks = checks.length;
-    const healthyChecks = checks.filter(
-      (c) => c.status === HealthStatus.HEALTHY,
-    ).length;
+    const healthyChecks = checks.filter((c) => c.status === HealthStatus.HEALTHY).length;
     const avgResponseTime =
-      checks.reduce((sum, c) => sum + (c.responseTime || 0), 0) / totalChecks ||
-      0;
+      checks.reduce((sum, c) => sum + (c.responseTime || 0), 0) / totalChecks || 0;
 
     const uptimePercentage = (healthyChecks / totalChecks) * 100 || 0;
 

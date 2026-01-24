@@ -15,10 +15,7 @@ export interface IEventStore {
   append(events: DomainEvent[]): Promise<void>;
   getEvents(aggregateId: string, fromVersion?: number): Promise<DomainEvent[]>;
   getAllEvents(options?: EventQueryOptions): Promise<DomainEvent[]>;
-  getEventsByType(
-    eventType: string,
-    options?: EventQueryOptions,
-  ): Promise<DomainEvent[]>;
+  getEventsByType(eventType: string, options?: EventQueryOptions): Promise<DomainEvent[]>;
   getEventCount(aggregateId: string): Promise<number>;
 }
 
@@ -92,9 +89,7 @@ export class EventStore implements IEventStore, OnModuleInit {
         }
       });
 
-      this.logger.debug(
-        `Appended ${events.length} events in ${Date.now() - startTime}ms`,
-      );
+      this.logger.debug(`Appended ${events.length} events in ${Date.now() - startTime}ms`);
     } catch (error) {
       this.logger.error(`Failed to append events: ${error.message}`);
       throw error;
@@ -102,10 +97,7 @@ export class EventStore implements IEventStore, OnModuleInit {
   }
 
   // Get events for an aggregate
-  async getEvents(
-    aggregateId: string,
-    fromVersion: number = 0,
-  ): Promise<DomainEvent[]> {
+  async getEvents(aggregateId: string, fromVersion = 0): Promise<DomainEvent[]> {
     const events = await this.prisma.eventStoreEvent.findMany({
       where: {
         aggregateId,
@@ -232,9 +224,7 @@ export class EventStore implements IEventStore, OnModuleInit {
   }
 
   // Get snapshot for an aggregate
-  async getSnapshot(
-    aggregateId: string,
-  ): Promise<{ version: number; state: any } | null> {
+  async getSnapshot(aggregateId: string): Promise<{ version: number; state: any } | null> {
     const snapshot = await this.prisma.eventStoreSnapshot.findUnique({
       where: { aggregateId },
     });
@@ -257,9 +247,7 @@ export class EventStore implements IEventStore, OnModuleInit {
       data: { archived: true },
     });
 
-    this.logger.log(
-      `Archived ${result.count} events before ${beforeDate.toISOString()}`,
-    );
+    this.logger.log(`Archived ${result.count} events before ${beforeDate.toISOString()}`);
     return result.count;
   }
 
@@ -272,14 +260,8 @@ export class EventStore implements IEventStore, OnModuleInit {
       eventType: record.eventType,
       version: record.version,
       timestamp: record.timestamp,
-      payload:
-        typeof record.payload === 'string'
-          ? JSON.parse(record.payload)
-          : record.payload,
-      metadata:
-        typeof record.metadata === 'string'
-          ? JSON.parse(record.metadata)
-          : record.metadata,
+      payload: typeof record.payload === 'string' ? JSON.parse(record.payload) : record.payload,
+      metadata: typeof record.metadata === 'string' ? JSON.parse(record.metadata) : record.metadata,
     };
   }
 

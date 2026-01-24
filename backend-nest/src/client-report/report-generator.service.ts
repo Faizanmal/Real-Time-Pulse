@@ -26,9 +26,7 @@ export class ReportGeneratorService {
       try {
         await this.generateAndSendReport(report.id);
       } catch (error) {
-        this.logger.error(
-          `Failed to generate report ${report.id}: ${error.message}`,
-        );
+        this.logger.error(`Failed to generate report ${report.id}: ${error.message}`);
         await this.clientReportService.updateReport(report.id, {
           status: ClientReportStatus.FAILED,
         });
@@ -53,16 +51,10 @@ export class ReportGeneratorService {
     const insights = await this.generateAIInsights(report);
 
     // Generate executive summary
-    const executiveSummary = await this.generateExecutiveSummary(
-      report,
-      insights,
-    );
+    const executiveSummary = await this.generateExecutiveSummary(report, insights);
 
     // Generate recommendations
-    const recommendations = await this.generateRecommendations(
-      report,
-      insights,
-    );
+    const recommendations = await this.generateRecommendations(report, insights);
 
     // Collect metrics
     const metrics = this.collectMetrics(report);
@@ -138,8 +130,7 @@ export class ReportGeneratorService {
       const recentEntries = report.project.timeEntries.slice(0, 10);
       if (recentEntries.length > 0) {
         const avgHoursPerEntry =
-          recentEntries.reduce((sum: number, e: any) => sum + e.hours, 0) /
-          recentEntries.length;
+          recentEntries.reduce((sum: number, e: any) => sum + e.hours, 0) / recentEntries.length;
 
         insights.push({
           type: 'metric',
@@ -164,10 +155,7 @@ export class ReportGeneratorService {
     return insights;
   }
 
-  private async generateExecutiveSummary(
-    report: any,
-    insights: any[],
-  ): Promise<string> {
+  private async generateExecutiveSummary(report: any, insights: any[]): Promise<string> {
     const project = report.project;
 
     if (!project) {
@@ -197,9 +185,7 @@ export class ReportGeneratorService {
     }
 
     summary += `Key highlights include: `;
-    const positiveInsights = insights.filter(
-      (i) => i.trend === 'positive' || i.type === 'success',
-    );
+    const positiveInsights = insights.filter((i) => i.trend === 'positive' || i.type === 'success');
     if (positiveInsights.length > 0) {
       summary += positiveInsights.map((i) => i.title.toLowerCase()).join(', ');
     } else {
@@ -210,18 +196,12 @@ export class ReportGeneratorService {
     return summary;
   }
 
-  private async generateRecommendations(
-    report: any,
-    insights: any[],
-  ): Promise<any[]> {
+  private async generateRecommendations(report: any, insights: any[]): Promise<any[]> {
     const recommendations: any[] = [];
 
     // Extract warning and improvement insights
     const concerns = insights.filter(
-      (i) =>
-        i.type === 'warning' ||
-        i.type === 'improvement' ||
-        i.trend === 'negative',
+      (i) => i.type === 'warning' || i.type === 'improvement' || i.trend === 'negative',
     );
 
     if (concerns.length > 0) {
@@ -264,8 +244,7 @@ export class ReportGeneratorService {
       priority: 'medium',
       category: 'communication',
       title: 'Enhance Client Communication',
-      action:
-        'Schedule regular check-ins to ensure alignment on project goals and expectations.',
+      action: 'Schedule regular check-ins to ensure alignment on project goals and expectations.',
       expectedImpact: 'Improved client satisfaction and retention',
     });
 
@@ -338,9 +317,7 @@ export class ReportGeneratorService {
         },
       });
 
-      this.logger.log(
-        `Report ${reportId} sent successfully to ${recipients.join(', ')}`,
-      );
+      this.logger.log(`Report ${reportId} sent successfully to ${recipients.join(', ')}`);
     } catch (error) {
       this.logger.error(`Failed to send report ${reportId}: ${error.message}`);
       throw error;
@@ -372,11 +349,7 @@ export class ReportGeneratorService {
       html += `<h2 style="color: #1a1a2e;">Key Insights</h2><ul>`;
       for (const insight of report.keyInsights) {
         const trendIcon =
-          insight.trend === 'positive'
-            ? '📈'
-            : insight.trend === 'negative'
-              ? '📉'
-              : '➡️';
+          insight.trend === 'positive' ? '📈' : insight.trend === 'negative' ? '📉' : '➡️';
         html += `<li style="margin-bottom: 10px;"><strong>${trendIcon} ${insight.title}</strong>: ${insight.description}</li>`;
       }
       html += `</ul>`;
@@ -413,11 +386,7 @@ export class ReportGeneratorService {
       html += `<h2 style="color: #1a1a2e;">Recommendations</h2><ul>`;
       for (const rec of report.recommendations) {
         const priorityColor =
-          rec.priority === 'high'
-            ? '#e74c3c'
-            : rec.priority === 'medium'
-              ? '#f39c12'
-              : '#27ae60';
+          rec.priority === 'high' ? '#e74c3c' : rec.priority === 'medium' ? '#f39c12' : '#27ae60';
         html += `<li style="margin-bottom: 15px;">
           <span style="background: ${priorityColor}; color: white; padding: 2px 8px; border-radius: 3px; font-size: 12px;">${rec.priority?.toUpperCase()}</span>
           <strong style="margin-left: 8px;">${rec.title}</strong>

@@ -22,10 +22,7 @@ export class ComplianceService {
 
     for (const workspace of workspaces) {
       try {
-        await this.generateComplianceReport(
-          workspace.id,
-          ComplianceReportType.MONTHLY,
-        );
+        await this.generateComplianceReport(workspace.id, ComplianceReportType.MONTHLY);
       } catch (error) {
         this.logger.error(
           `Failed to generate compliance report for workspace ${workspace.id}: ${error.message}`,
@@ -43,8 +40,7 @@ export class ComplianceService {
 
     // Collect metrics
     const consentStats = await this.gdprService.getConsentStats(workspaceId);
-    const requestStats =
-      await this.gdprService.getDataRequestStats(workspaceId);
+    const requestStats = await this.gdprService.getDataRequestStats(workspaceId);
 
     // Calculate compliance score (0-100)
     const complianceScore = this.calculateComplianceScore({
@@ -94,9 +90,7 @@ export class ComplianceService {
       },
     });
 
-    this.logger.log(
-      `Generated ${reportType} compliance report for workspace ${workspaceId}`,
-    );
+    this.logger.log(`Generated ${reportType} compliance report for workspace ${workspaceId}`);
 
     return report;
   }
@@ -128,18 +122,12 @@ export class ComplianceService {
     return uniqueEmails.size;
   }
 
-  private calculateComplianceScore(data: {
-    consentStats: any;
-    requestStats: any;
-  }): number {
+  private calculateComplianceScore(data: { consentStats: any; requestStats: any }): number {
     let score = 100;
 
     // Deduct points for consent issues
     if (data.consentStats.expired > 0) {
-      score -= Math.min(
-        20,
-        (data.consentStats.expired / data.consentStats.total) * 20,
-      );
+      score -= Math.min(20, (data.consentStats.expired / data.consentStats.total) * 20);
     }
 
     // Deduct points for slow request processing
@@ -248,8 +236,7 @@ export class ComplianceService {
         priority: 'high',
         category: 'consent',
         title: 'Renew Expired Consents',
-        action:
-          'Contact users with expired consents to obtain renewed permissions.',
+        action: 'Contact users with expired consents to obtain renewed permissions.',
         impact: 'Ensures continued legal data processing',
       });
     }
@@ -259,8 +246,7 @@ export class ComplianceService {
         priority: 'high',
         category: 'operations',
         title: 'Improve Request Processing Speed',
-        action:
-          'Implement automated workflows for common data requests to reduce response time.',
+        action: 'Implement automated workflows for common data requests to reduce response time.',
         impact: 'Better compliance with GDPR timelines',
       });
     }
@@ -280,8 +266,7 @@ export class ComplianceService {
       priority: 'medium',
       category: 'documentation',
       title: 'Regular Compliance Audits',
-      action:
-        'Schedule quarterly reviews of GDPR compliance processes and documentation.',
+      action: 'Schedule quarterly reviews of GDPR compliance processes and documentation.',
       impact: 'Proactive identification of compliance gaps',
     });
 
@@ -322,13 +307,11 @@ export class ComplianceService {
     summary += `- Average Response Time: ${data.requestStats.avgResponseTimeHours.toFixed(1)} hours\n\n`;
 
     if (data.complianceScore >= 90) {
-      summary +=
-        'Overall, GDPR compliance is excellent with strong processes in place.';
+      summary += 'Overall, GDPR compliance is excellent with strong processes in place.';
     } else if (data.complianceScore >= 75) {
       summary += 'GDPR compliance is good with minor areas for improvement.';
     } else if (data.complianceScore >= 60) {
-      summary +=
-        'GDPR compliance requires attention in several areas to meet best practices.';
+      summary += 'GDPR compliance requires attention in several areas to meet best practices.';
     } else {
       summary += 'Immediate action required to address GDPR compliance gaps.';
     }
@@ -359,8 +342,7 @@ export class ComplianceService {
 
   async getComplianceDashboard(workspaceId: string) {
     const consentStats = await this.gdprService.getConsentStats(workspaceId);
-    const requestStats =
-      await this.gdprService.getDataRequestStats(workspaceId);
+    const requestStats = await this.gdprService.getDataRequestStats(workspaceId);
     const complianceScore = this.calculateComplianceScore({
       consentStats,
       requestStats,

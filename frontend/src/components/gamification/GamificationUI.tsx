@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
+import Image from 'next/image';
 
 // Types
 interface Badge {
@@ -157,7 +158,7 @@ export function BadgeIcon({
           rounded-full flex items-center justify-center
           border-2 ${tierBorders[badge.tier]}
           ${isEarned 
-            ? `bg-gradient-to-br ${tierColors[badge.tier]}` 
+            ? `bg-linear-to-br ${tierColors[badge.tier]}` 
             : 'bg-gray-200 dark:bg-gray-700'
           }
           ${!isEarned && 'opacity-50 grayscale'}
@@ -207,7 +208,7 @@ export function BadgeGrid({
   showLocked?: boolean;
 }) {
   const earnedBadges = badges.filter((b) => b.earnedAt);
-  const lockedBadges = badges.filter((b) => !b.earnedAt);
+  // const lockedBadges = badges.filter((b) => !b.earnedAt);
 
   const displayBadges = showLocked ? badges : earnedBadges;
 
@@ -248,7 +249,7 @@ export function LevelProgress({
     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
+          <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
             {level}
           </div>
           <div>
@@ -270,7 +271,7 @@ export function LevelProgress({
 
       <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500"
+          className="h-full bg-linear-to-r from-blue-500 to-purple-500 transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -293,7 +294,7 @@ export function StreakDisplay({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
+        <div className="w-12 h-12 rounded-full bg-linear-to-br from-orange-400 to-red-500 flex items-center justify-center">
           <span className="text-2xl">🔥</span>
         </div>
         <div>
@@ -310,7 +311,7 @@ export function StreakDisplay({
       </div>
       <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-orange-400 to-red-500"
+          className="h-full bg-linear-to-r from-orange-400 to-red-500"
           style={{ width: `${(currentStreak / nextMilestone) * 100}%` }}
         />
       </div>
@@ -426,7 +427,7 @@ export function Leaderboard({
 
               <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-600 overflow-hidden">
                 {entry.avatarUrl ? (
-                  <img
+                  <Image
                     src={entry.avatarUrl}
                     alt={entry.userName}
                     className="w-full h-full object-cover"
@@ -514,7 +515,7 @@ export function ChallengeCard({ challenge }: { challenge: Challenge }) {
             className={`h-full transition-all duration-500 ${
               isCompleted
                 ? 'bg-green-500'
-                : 'bg-gradient-to-r from-blue-500 to-purple-500'
+                : 'bg-linear-to-r from-blue-500 to-purple-500'
             }`}
             style={{ width: `${Math.min(progress, 100)}%` }}
           />
@@ -632,8 +633,8 @@ export function AchievementNotification({
 
   return (
     <div className="fixed bottom-4 right-4 z-50 animate-slide-up">
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg shadow-xl p-4 flex items-center gap-4 max-w-sm">
-        <div className="flex-shrink-0">
+      <div className="bg-linear-to-r from-purple-600 to-pink-600 rounded-lg shadow-xl p-4 flex items-center gap-4 max-w-sm">
+        <div className="shrink-0">
           <BadgeIcon badge={badge} size="lg" />
         </div>
         <div className="flex-1">

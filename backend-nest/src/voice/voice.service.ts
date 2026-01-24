@@ -84,11 +84,7 @@ export class VoiceService {
 
     try {
       const formData = new FormData();
-      formData.append(
-        'file',
-        new Blob([new Uint8Array(audioBuffer)]),
-        'audio.webm',
-      );
+      formData.append('file', new Blob([new Uint8Array(audioBuffer)]), 'audio.webm');
       formData.append('model', 'whisper-1');
       formData.append('response_format', 'verbose_json');
 
@@ -96,16 +92,13 @@ export class VoiceService {
         formData.append('language', options.language);
       }
 
-      const response = await fetch(
-        'https://api.openai.com/v1/audio/transcriptions',
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${this.openAiApiKey}`,
-          },
-          body: formData,
+      const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.openAiApiKey}`,
         },
-      );
+        body: formData,
+      });
 
       if (!response.ok) {
         throw new Error(`Whisper API error: ${response.statusText}`);
@@ -119,8 +112,7 @@ export class VoiceService {
         words: data.words,
       };
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Transcription failed: ${errorMessage}`);
       throw error;
     }
@@ -149,7 +141,7 @@ export class VoiceService {
     }
 
     // Execute command
-    const result = await this.commandService.executeCommand(workspaceId, command);
+    const result = this.commandService.executeCommand(workspaceId, command);
 
     return {
       command,
@@ -203,8 +195,7 @@ export class VoiceService {
         duration: text.length * 0.06, // Rough estimate
       };
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Speech synthesis failed: ${errorMessage}`);
       throw error;
     }
@@ -240,9 +231,7 @@ export class VoiceService {
     // Save annotation
     const key = `voice_annotations:${workspaceId}:${data.portalId}`;
     const annotationsJson = await this.cache.get(key);
-    const annotations: VoiceAnnotation[] = annotationsJson
-      ? JSON.parse(annotationsJson)
-      : [];
+    const annotations: VoiceAnnotation[] = annotationsJson ? JSON.parse(annotationsJson) : [];
     annotations.push(annotation);
 
     await this.cache.set(key, JSON.stringify(annotations), 86400 * 365);
@@ -250,10 +239,7 @@ export class VoiceService {
     return annotation;
   }
 
-  async getAnnotations(
-    workspaceId: string,
-    portalId: string,
-  ): Promise<VoiceAnnotation[]> {
+  async getAnnotations(workspaceId: string, portalId: string): Promise<VoiceAnnotation[]> {
     const key = `voice_annotations:${workspaceId}:${portalId}`;
     const annotationsJson = await this.cache.get(key);
     if (!annotationsJson) return [];
@@ -383,9 +369,7 @@ export class VoiceService {
 
   private describeMetric(data: MetricData): string {
     const { title, value, change, unit } = data;
-    const changeText = change
-      ? `${change > 0 ? 'up' : 'down'} ${Math.abs(change)}%`
-      : '';
+    const changeText = change ? `${change > 0 ? 'up' : 'down'} ${Math.abs(change)}%` : '';
 
     return `${title || 'Metric'}. Current value is ${value}${unit || ''}. ${changeText}`;
   }

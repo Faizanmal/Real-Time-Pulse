@@ -20,17 +20,11 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       console.error('GOOGLE OAUTH NOT CONFIGURED');
       console.error('========================================');
       console.error('To enable Google Sign-in, add these to your .env file:');
-      console.error(
-        '  GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com',
-      );
+      console.error('  GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com');
       console.error('  GOOGLE_CLIENT_SECRET=your-client-secret');
-      console.error(
-        '  GOOGLE_CALLBACK_URL=http://localhost:3001/api/v1/auth/google/callback',
-      );
+      console.error('  GOOGLE_CALLBACK_URL=http://localhost:3001/api/v1/auth/google/callback');
       console.error('');
-      console.error(
-        'Get credentials from: https://console.cloud.google.com/apis/credentials',
-      );
+      console.error('Get credentials from: https://console.cloud.google.com/apis/credentials');
       console.error('========================================');
     } else {
       console.log('✓ Google OAuth configured with callback URL:', callbackURL);
@@ -44,12 +38,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     });
   }
 
-  validate(
-    accessToken: string,
-    refreshToken: string,
-    profile: any,
-    done: VerifyCallback,
-  ): any {
+  validate(accessToken: string, refreshToken: string, profile: any, done: VerifyCallback): any {
     const { id, emails, name, photos } = profile;
 
     const user = {

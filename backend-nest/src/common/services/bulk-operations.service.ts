@@ -95,10 +95,7 @@ export class BulkOperationsService {
   /**
    * Bulk delete widgets
    */
-  async bulkDeleteWidgets(
-    workspaceId: string,
-    widgetIds: string[],
-  ): Promise<BulkOperationSummary> {
+  async bulkDeleteWidgets(workspaceId: string, widgetIds: string[]): Promise<BulkOperationSummary> {
     const results: BulkOperationResult[] = [];
 
     for (const widgetId of widgetIds) {
@@ -206,9 +203,7 @@ export class BulkOperationsService {
       }
     }
 
-    this.logger.log(
-      `Portal ${portalId} cloned to ${newPortal.id} with ${widgetsCloned} widgets`,
-    );
+    this.logger.log(`Portal ${portalId} cloned to ${newPortal.id} with ${widgetsCloned} widgets`);
 
     return {
       portalId: newPortal.id,
@@ -223,9 +218,7 @@ export class BulkOperationsService {
     workspaceId: string,
     userId: string,
     portalIds: string[],
-  ): Promise<
-    BulkOperationSummary<{ portalId: string; widgetsCloned: number }>
-  > {
+  ): Promise<BulkOperationSummary<{ portalId: string; widgetsCloned: number }>> {
     const results: BulkOperationResult<{
       portalId: string;
       widgetsCloned: number;
@@ -411,8 +404,7 @@ export class BulkOperationsService {
             description: (config.config.description as string) || null,
             isPublic: (config.config.isPublic as boolean) ?? true,
             layout: (config.config.layout as any) || [],
-            cacheRefreshInterval:
-              (config.config.cacheRefreshInterval as number) || 30,
+            cacheRefreshInterval: (config.config.cacheRefreshInterval as number) || 30,
             createdById: userId,
           },
         });

@@ -152,10 +152,8 @@ export function createCursorPaginatedResponse<T extends { id: string }>(
     meta: {
       hasMore,
       nextCursor:
-        hasMore && items.length > 0
-          ? String(items[items.length - 1][cursorField])
-          : null,
-      prevCursor: items.length > 0 ? String(items[0][cursorField]) : null,
+        hasMore && items.length > 0 ? (items[items.length - 1][cursorField] as string) : null,
+      prevCursor: items.length > 0 ? (items[0][cursorField] as string) : null,
       count: items.length,
     },
   };
@@ -175,9 +173,7 @@ export interface RateLimitInfo {
 /**
  * Create rate limit response headers
  */
-export function createRateLimitHeaders(
-  info: RateLimitInfo,
-): Record<string, string> {
+export function createRateLimitHeaders(info: RateLimitInfo): Record<string, string> {
   const headers: Record<string, string> = {
     'X-RateLimit-Limit': info.limit.toString(),
     'X-RateLimit-Remaining': info.remaining.toString(),
@@ -225,10 +221,7 @@ export interface ErrorResponse {
 /**
  * Create success response
  */
-export function success<T>(
-  data: T,
-  meta?: Record<string, unknown>,
-): SuccessResponse<T> {
+export function success<T>(data: T, meta?: Record<string, unknown>): SuccessResponse<T> {
   return {
     success: true,
     data,
@@ -279,10 +272,7 @@ export function getApiVersion(versionHeader?: string): ApiVersion {
 /**
  * API deprecation warning header
  */
-export function createDeprecationHeaders(
-  sunset: Date,
-  successor?: string,
-): Record<string, string> {
+export function createDeprecationHeaders(sunset: Date, successor?: string): Record<string, string> {
   const headers: Record<string, string> = {
     Deprecation: 'true',
     Sunset: sunset.toUTCString(),
@@ -330,9 +320,7 @@ export interface FilterCondition {
  * Format: field[operator]=value
  * Example: ?status[eq]=active&createdAt[gte]=2024-01-01
  */
-export function parseFilters(
-  query: Record<string, unknown>,
-): FilterCondition[] {
+export function parseFilters(query: Record<string, unknown>): FilterCondition[] {
   const filters: FilterCondition[] = [];
   const filterRegex = /^(\w+)\[(\w+)\]$/;
 
@@ -354,9 +342,7 @@ export function parseFilters(
 /**
  * Convert filters to Prisma where clause
  */
-export function filtersToPrismaWhere(
-  filters: FilterCondition[],
-): Record<string, unknown> {
+export function filtersToPrismaWhere(filters: FilterCondition[]): Record<string, unknown> {
   const where: Record<string, unknown> = {};
 
   for (const filter of filters) {
@@ -417,8 +403,7 @@ export function filtersToPrismaWhere(
  * Validate ID format (UUID)
  */
 export function isValidUUID(id: string): boolean {
-  const uuidRegex =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRegex.test(id);
 }
 

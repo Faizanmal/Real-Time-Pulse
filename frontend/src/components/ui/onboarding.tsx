@@ -12,8 +12,8 @@ import React, {
   createContext, 
   useContext, 
   useState, 
-  useEffect, 
   useCallback,
+  useEffect,
   ReactNode 
 } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -164,23 +164,22 @@ const DEFAULT_STATE: OnboardingState = {
 };
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<OnboardingState>(DEFAULT_STATE);
-  const [isInTour, setIsInTour] = useState(false);
-  const [currentTour, setCurrentTour] = useState<string | null>(null);
-
-  // Load state from localStorage
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
+  const [state, setState] = useState<OnboardingState>(() => {
+    if (typeof window === 'undefined') return DEFAULT_STATE;
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        setState(JSON.parse(saved));
+        return JSON.parse(saved);
       }
     } catch {
       // Use default state
     }
-  }, []);
+    return DEFAULT_STATE;
+  });
+  const [isInTour, setIsInTour] = useState(false);
+  const [currentTour, setCurrentTour] = useState<string | null>(null);
+
+
 
   // Save state to localStorage
   useEffect(() => {
@@ -322,6 +321,7 @@ function TourOverlay({ tour, currentStep, onNext, onPrev, onSkip, onComplete }: 
     const target = document.querySelector(step.target);
     if (target) {
       const rect = target.getBoundingClientRect();
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTargetRect(rect);
       
       // Scroll target into view

@@ -48,51 +48,48 @@ export class PredictiveAnalyticsService {
   /**
    * Forecast future values using statistical methods
    */
-  async forecast(
-    data: TimeSeriesPoint[],
-    horizonDays: number = 30,
-  ): Promise<PredictionResult> {
+  async forecast(data: TimeSeriesPoint[], horizonDays = 30): Promise<PredictionResult> {
     if (data.length < 7) {
       throw new Error('Insufficient data for forecasting (minimum 7 points)');
     }
 
     const values = data.map((d) => d.value);
-    
+
     // Calculate basic statistics
     const mean = this.calculateMean(values);
-    const stdDev = this.calculateStdDev(values, mean);
+    const _stdDev = this.calculateStdDev(values, mean);
     const trend = this.calculateTrend(values);
-    
+
     // Simple exponential smoothing for prediction
     const alpha = 0.3; // Smoothing factor
     let smoothed = values[0];
-    
+
     const predictions: { timestamp: Date; value: number; confidence: number }[] = [];
     const lastDate = data[data.length - 1].timestamp;
-    
+
     // Apply smoothing to existing data
     for (const value of values) {
       smoothed = alpha * value + (1 - alpha) * smoothed;
     }
-    
+
     // Generate predictions
     for (let i = 1; i <= horizonDays; i++) {
-      const predictedValue = smoothed + (trend.slope * i);
-      const confidence = Math.max(0.5, 1 - (i * 0.02)); // Confidence decreases over time
-      
+      const predictedValue = smoothed + trend.slope * i;
+      const confidence = Math.max(0.5, 1 - i * 0.02); // Confidence decreases over time
+
       const predictionDate = new Date(lastDate);
       predictionDate.setDate(predictionDate.getDate() + i);
-      
+
       predictions.push({
         timestamp: predictionDate,
         value: Math.max(0, predictedValue), // Ensure non-negative
         confidence,
       });
     }
-    
+
     // Detect seasonality
     const seasonality = this.detectSeasonality(values);
-    
+
     return {
       predictions,
       trend: trend.slope > 0.01 ? 'up' : trend.slope < -0.01 ? 'down' : 'stable',
@@ -111,23 +108,23 @@ export class PredictiveAnalyticsService {
     const values = data.map((d) => d.value);
     const mean = this.calculateMean(values);
     const stdDev = this.calculateStdDev(values, mean);
-    
+
     // Z-score thresholds based on sensitivity
     const thresholds = { low: 3, medium: 2, high: 1.5 };
     const threshold = thresholds[sensitivityLevel];
-    
+
     const results: (TimeSeriesPoint & AnomalyResult)[] = [];
     let anomalyCount = 0;
-    
+
     for (const point of data) {
       const zScore = Math.abs((point.value - mean) / stdDev);
       const isAnomaly = zScore > threshold;
-      
+
       if (isAnomaly) anomalyCount++;
-      
-      const expectedMin = mean - (threshold * stdDev);
-      const expectedMax = mean + (threshold * stdDev);
-      
+
+      const expectedMin = mean - threshold * stdDev;
+      const expectedMax = mean + threshold * stdDev;
+
       results.push({
         ...point,
         isAnomaly,
@@ -136,7 +133,7 @@ export class PredictiveAnalyticsService {
         severity: zScore > 3 ? 'high' : zScore > 2 ? 'medium' : 'low',
       });
     }
-    
+
     return {
       points: results,
       summary: {
@@ -195,9 +192,12 @@ export class PredictiveAnalyticsService {
     reportType: 'executive' | 'detailed' | 'technical',
   ): Promise<{ title: string; sections: any[]; summary: string }> {
     const prompts = {
-      executive: 'Generate a concise executive summary highlighting key metrics, trends, and recommended actions.',
-      detailed: 'Generate a detailed analysis with all metrics, comparisons, and in-depth insights.',
-      technical: 'Generate a technical report with statistical analysis, methodology, and data quality notes.',
+      executive:
+        'Generate a concise executive summary highlighting key metrics, trends, and recommended actions.',
+      detailed:
+        'Generate a detailed analysis with all metrics, comparisons, and in-depth insights.',
+      technical:
+        'Generate a technical report with statistical analysis, methodology, and data quality notes.',
     };
 
     try {
@@ -264,7 +264,8 @@ export class PredictiveAnalyticsService {
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful data analyst. Explain the query results in clear, conversational language.',
+            content:
+              'You are a helpful data analyst. Explain the query results in clear, conversational language.',
           },
           {
             role: 'user',
@@ -304,7 +305,12 @@ export class PredictiveAnalyticsService {
           metric1: datasets[i].name,
           metric2: datasets[j].name,
           correlation,
-          strength: Math.abs(correlation) > 0.7 ? 'strong' : Math.abs(correlation) > 0.4 ? 'moderate' : 'weak',
+          strength:
+            Math.abs(correlation) > 0.7
+              ? 'strong'
+              : Math.abs(correlation) > 0.4
+                ? 'moderate'
+                : 'weak',
           direction: correlation > 0 ? 'positive' : 'negative',
         });
       }
@@ -401,7 +407,7 @@ export class PredictiveAnalyticsService {
     return denominator === 0 ? 0 : numerator / denominator;
   }
 
-  private async executeStructuredQuery(spec: any, workspaceId: string): Promise<any> {
+  private async executeStructuredQuery(spec: any, _workspaceId: string): Promise<any> {
     // This would connect to your actual data sources
     // Simplified for demonstration
     return {

@@ -92,19 +92,13 @@ export class MultiRegionService implements OnModuleInit {
       },
     };
 
-    await this.redis.hset(
-      'cluster:replicas',
-      this.instanceId,
-      JSON.stringify(replicaInfo),
-    );
+    await this.redis.hset('cluster:replicas', this.instanceId, JSON.stringify(replicaInfo));
 
     // Set TTL for automatic cleanup
     await this.redis.expire(`cluster:replica:${this.instanceId}`, 30);
 
     this.replicas.set(this.instanceId, replicaInfo);
-    this.logger.log(
-      `Registered instance ${this.instanceId} in region ${this.currentRegion}`,
-    );
+    this.logger.log(`Registered instance ${this.instanceId} in region ${this.currentRegion}`);
   }
 
   private async loadRegionConfigs() {
@@ -234,11 +228,7 @@ export class MultiRegionService implements OnModuleInit {
       latency: Math.random() * 50,
     };
 
-    await this.redis.hset(
-      'cluster:replicas',
-      this.instanceId,
-      JSON.stringify(replica),
-    );
+    await this.redis.hset('cluster:replicas', this.instanceId, JSON.stringify(replica));
 
     // Refresh TTL
     await this.redis.setex(
@@ -257,8 +247,7 @@ export class MultiRegionService implements OnModuleInit {
         const latency = Date.now() - startTime;
 
         region.latency = latency;
-        region.healthStatus =
-          latency < 500 ? 'healthy' : latency < 1000 ? 'degraded' : 'unhealthy';
+        region.healthStatus = latency < 500 ? 'healthy' : latency < 1000 ? 'degraded' : 'unhealthy';
 
         // Simulate load changes
         region.currentLoad = Math.floor(region.capacity * Math.random() * 0.8);
@@ -269,10 +258,7 @@ export class MultiRegionService implements OnModuleInit {
     }
 
     // Store updated configs
-    await this.redis.set(
-      'cluster:regions',
-      JSON.stringify(Array.from(this.regions.values())),
-    );
+    await this.redis.set('cluster:regions', JSON.stringify(Array.from(this.regions.values())));
   }
 
   private async cleanupStaleReplicas() {
@@ -280,9 +266,7 @@ export class MultiRegionService implements OnModuleInit {
     const now = Date.now();
 
     for (const [instanceId, _data] of Object.entries(allReplicas)) {
-      const heartbeat = await this.redis.get(
-        `cluster:replica:${instanceId}:heartbeat`,
-      );
+      const heartbeat = await this.redis.get(`cluster:replica:${instanceId}:heartbeat`);
 
       if (!heartbeat || now - parseInt(heartbeat) > 60000) {
         await this.redis.hdel('cluster:replicas', instanceId);
@@ -321,31 +305,28 @@ export class MultiRegionService implements OnModuleInit {
     return this.selectBestRegion();
   }
 
-  private matchesConditions(
-    conditions: RoutingCondition[],
-    context: any,
-  ): boolean {
+  private matchesConditions(conditions: RoutingCondition[], context: any): boolean {
     return conditions.every((cond) => {
       let value: any;
 
       switch (cond.type) {
         case 'geo':
-          value = context.geo?.[cond.field!];
+          value = context.geo?.[cond.field];
           break;
         case 'header':
-          value = context.headers?.[cond.field!];
+          value = context.headers?.[cond.field];
           break;
         case 'cookie':
-          value = context.cookies?.[cond.field!];
+          value = context.cookies?.[cond.field];
           break;
         case 'query':
-          value = context.query?.[cond.field!];
+          value = context.query?.[cond.field];
           break;
         case 'user_segment':
           value = context.userSegment;
           break;
         case 'load': {
-          const region = this.regions.get(cond.field!);
+          const region = this.regions.get(cond.field);
           value = region ? region.currentLoad / region.capacity : 1;
           break;
         }
@@ -394,20 +375,14 @@ export class MultiRegionService implements OnModuleInit {
     return this.regions.get(id);
   }
 
-  async updateRegion(
-    id: string,
-    updates: Partial<RegionConfig>,
-  ): Promise<RegionConfig> {
+  async updateRegion(id: string, updates: Partial<RegionConfig>): Promise<RegionConfig> {
     const region = this.regions.get(id);
     if (!region) throw new Error(`Region ${id} not found`);
 
     const updated = { ...region, ...updates };
     this.regions.set(id, updated);
 
-    await this.redis.set(
-      'cluster:regions',
-      JSON.stringify(Array.from(this.regions.values())),
-    );
+    await this.redis.set('cluster:regions', JSON.stringify(Array.from(this.regions.values())));
 
     return updated;
   }
@@ -429,10 +404,7 @@ export class MultiRegionService implements OnModuleInit {
     return newRule;
   }
 
-  async updateRoutingRule(
-    id: string,
-    updates: Partial<RoutingRule>,
-  ): Promise<RoutingRule> {
+  async updateRoutingRule(id: string, updates: Partial<RoutingRule>): Promise<RoutingRule> {
     const idx = this.routingRules.findIndex((r) => r.id === id);
     if (idx === -1) throw new Error(`Rule ${id} not found`);
 
@@ -451,10 +423,7 @@ export class MultiRegionService implements OnModuleInit {
   }
 
   private async persistRoutingRules() {
-    await this.redis.set(
-      'cluster:routing-rules',
-      JSON.stringify(this.routingRules),
-    );
+    await this.redis.set('cluster:routing-rules', JSON.stringify(this.routingRules));
   }
 
   // Replica Management
@@ -477,18 +446,12 @@ export class MultiRegionService implements OnModuleInit {
       totalReplicas: replicas.length,
       healthyReplicas: replicas.filter((r) => r.status === 'running').length,
       totalRegions: regions.length,
-      healthyRegions: regions.filter((r) => r.healthStatus === 'healthy')
-        .length,
+      healthyRegions: regions.filter((r) => r.healthStatus === 'healthy').length,
       totalCapacity: regions.reduce((acc, r) => acc + r.capacity, 0),
       currentLoad: regions.reduce((acc, r) => acc + r.currentLoad, 0),
       avgLatency:
-        regions.length > 0
-          ? regions.reduce((acc, r) => acc + r.latency, 0) / regions.length
-          : 0,
-      byRegion: {} as Record<
-        string,
-        { replicas: number; load: number; health: string }
-      >,
+        regions.length > 0 ? regions.reduce((acc, r) => acc + r.latency, 0) / regions.length : 0,
+      byRegion: {} as Record<string, { replicas: number; load: number; health: string }>,
     };
 
     regions.forEach((region) => {
@@ -553,10 +516,7 @@ export class MultiRegionService implements OnModuleInit {
       to.isPrimary = true;
     }
 
-    await this.redis.set(
-      'cluster:regions',
-      JSON.stringify(Array.from(this.regions.values())),
-    );
+    await this.redis.set('cluster:regions', JSON.stringify(Array.from(this.regions.values())));
 
     await this.persistRoutingRules();
 

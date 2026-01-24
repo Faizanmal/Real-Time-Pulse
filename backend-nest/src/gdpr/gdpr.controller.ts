@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Patch,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Query } from '@nestjs/common';
 import { GdprService } from './gdpr.service';
 import { ComplianceService } from './compliance.service';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -52,10 +44,7 @@ export class GdprController {
 
   @Patch('consents/:consentId/revoke')
   @ApiOperation({ summary: 'Revoke consent' })
-  async revokeConsent(
-    @Param('consentId') consentId: string,
-    @Body() body: { reason?: string },
-  ) {
+  async revokeConsent(@Param('consentId') consentId: string, @Body() body: { reason?: string }) {
     return this.gdprService.revokeConsent(consentId, body.reason);
   }
 
@@ -147,10 +136,7 @@ export class GdprController {
     @Param('requestId') requestId: string,
     @Body() body: { performedBy: string },
   ) {
-    return this.gdprService.processDataAccessRequest(
-      requestId,
-      body.performedBy,
-    );
+    return this.gdprService.processDataAccessRequest(requestId, body.performedBy);
   }
 
   @Post('requests/:requestId/process-erasure')
@@ -159,10 +145,7 @@ export class GdprController {
     @Param('requestId') requestId: string,
     @Body() body: { performedBy: string },
   ) {
-    return this.gdprService.processDataErasureRequest(
-      requestId,
-      body.performedBy,
-    );
+    return this.gdprService.processDataErasureRequest(requestId, body.performedBy);
   }
 
   @Get('requests/workspace/:workspaceId/stats')

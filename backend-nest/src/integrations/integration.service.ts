@@ -142,9 +142,7 @@ export class IntegrationService {
       },
     });
 
-    this.logger.log(
-      `Integration created: ${integration.id} (${config.provider})`,
-    );
+    this.logger.log(`Integration created: ${integration.id} (${config.provider})`);
 
     // Trigger initial sync
     await this.triggerSync(integration.id, 'full');
@@ -187,10 +185,7 @@ export class IntegrationService {
   /**
    * Update integration settings
    */
-  async updateIntegration(
-    integrationId: string,
-    settings: Record<string, any>,
-  ) {
+  async updateIntegration(integrationId: string, settings: Record<string, any>) {
     return this.prisma.integration.update({
       where: { id: integrationId },
       data: { settings },
@@ -211,10 +206,7 @@ export class IntegrationService {
   /**
    * Trigger data sync for an integration
    */
-  async triggerSync(
-    integrationId: string,
-    syncType: 'full' | 'incremental' = 'incremental',
-  ) {
+  async triggerSync(integrationId: string, syncType: 'full' | 'incremental' = 'incremental') {
     const integration = await this.getIntegration(integrationId);
 
     await this.jobsService.queueDataSync({
@@ -230,11 +222,7 @@ export class IntegrationService {
   /**
    * Fetch data from an integration
    */
-  async fetchData(
-    integrationId: string,
-    dataType: string,
-    params?: unknown,
-  ): Promise<unknown> {
+  async fetchData(integrationId: string, dataType: string, params?: unknown): Promise<unknown> {
     const integration = await this.getIntegration(integrationId);
     const integrationConfig = {
       accessToken: integration.accessToken,
@@ -249,11 +237,7 @@ export class IntegrationService {
 
       case 'GOOGLE_ANALYTICS':
       case 'GOOGLE_ANALYTICS_4':
-        return this.googleAnalyticsService.fetchData(
-          integration,
-          dataType,
-          params,
-        );
+        return this.googleAnalyticsService.fetchData(integration, dataType, params);
 
       case 'HARVEST':
         return this.harvestService.fetchData(
@@ -283,105 +267,49 @@ export class IntegrationService {
 
       // E-commerce integrations
       case 'SHOPIFY':
-        return this.shopifyService.fetchData(
-          integrationConfig as any,
-          dataType,
-          params as any,
-        );
+        return this.shopifyService.fetchData(integrationConfig as any, dataType, params as any);
 
       case 'WOOCOMMERCE':
-        return this.woocommerceService.fetchData(
-          integrationConfig as any,
-          dataType,
-          params as any,
-        );
+        return this.woocommerceService.fetchData(integrationConfig as any, dataType, params as any);
 
       case 'BIGCOMMERCE':
-        return this.bigcommerceService.fetchData(
-          integrationConfig as any,
-          dataType,
-          params as any,
-        );
+        return this.bigcommerceService.fetchData(integrationConfig as any, dataType, params as any);
 
       // Marketing integrations
       case 'FACEBOOK_ADS':
-        return this.facebookAdsService.fetchData(
-          integrationConfig as any,
-          dataType,
-          params as any,
-        );
+        return this.facebookAdsService.fetchData(integrationConfig as any, dataType, params as any);
 
       case 'GOOGLE_ADS':
-        return this.googleAdsService.fetchData(
-          integrationConfig as any,
-          dataType,
-          params as any,
-        );
+        return this.googleAdsService.fetchData(integrationConfig as any, dataType, params as any);
 
       case 'LINKEDIN_ADS':
-        return this.linkedinAdsService.fetchData(
-          integrationConfig as any,
-          dataType,
-          params as any,
-        );
+        return this.linkedinAdsService.fetchData(integrationConfig as any, dataType, params as any);
 
       case 'TIKTOK_ADS':
-        return this.tiktokAdsService.fetchData(
-          integrationConfig as any,
-          dataType,
-          params as any,
-        );
+        return this.tiktokAdsService.fetchData(integrationConfig as any, dataType, params as any);
 
       // CRM integrations
       case 'SALESFORCE':
-        return this.salesforceService.fetchData(
-          integrationConfig as any,
-          dataType,
-          params as any,
-        );
+        return this.salesforceService.fetchData(integrationConfig as any, dataType, params as any);
 
       case 'PIPEDRIVE':
-        return this.pipedriveService.fetchData(
-          integrationConfig,
-          dataType,
-          params as any,
-        );
+        return this.pipedriveService.fetchData(integrationConfig, dataType, params as any);
 
       case 'ZOHO_CRM':
-        return this.zohoCrmService.fetchData(
-          integrationConfig,
-          dataType,
-          params as any,
-        );
+        return this.zohoCrmService.fetchData(integrationConfig, dataType, params as any);
 
       // Support integrations
       case 'ZENDESK':
-        return this.zendeskService.fetchData(
-          integrationConfig as any,
-          dataType,
-          params as any,
-        );
+        return this.zendeskService.fetchData(integrationConfig as any, dataType, params as any);
 
       case 'INTERCOM':
-        return this.intercomService.fetchData(
-          integrationConfig,
-          dataType,
-          params as any,
-        );
+        return this.intercomService.fetchData(integrationConfig, dataType, params as any);
 
       case 'FRESHDESK':
-        return this.freshdeskService.fetchData(
-          integrationConfig as any,
-          dataType,
-          params as any,
-        );
+        return this.freshdeskService.fetchData(integrationConfig as any, dataType, params as any);
 
       case 'HELPSCOUT':
-        return this.helpscoutService.fetchData(
-          integrationConfig,
-          dataType,
-          params as any,
-        );
+        return this.helpscoutService.fetchData(integrationConfig, dataType, params as any);
 
       // Database integrations
       case 'MONGODB_ATLAS':
@@ -400,32 +328,16 @@ export class IntegrationService {
         );
 
       case 'DATADOG':
-        return this.datadogService.fetchData(
-          integrationConfig,
-          dataType,
-          params as any,
-        );
+        return this.datadogService.fetchData(integrationConfig, dataType, params as any);
 
       case 'SENTRY':
-        return this.sentryService.fetchData(
-          integrationConfig as any,
-          dataType,
-          params as any,
-        );
+        return this.sentryService.fetchData(integrationConfig as any, dataType, params as any);
 
       case 'PAGERDUTY':
-        return this.pagerdutyService.fetchData(
-          integrationConfig,
-          dataType,
-          params as any,
-        );
+        return this.pagerdutyService.fetchData(integrationConfig, dataType, params as any);
 
       case 'NEW_RELIC':
-        return this.newrelicService.fetchData(
-          integrationConfig as any,
-          dataType,
-          params as any,
-        );
+        return this.newrelicService.fetchData(integrationConfig as any, dataType, params as any);
 
       case 'GCP_MONITORING':
         return this.gcpMonitoringService.fetchData(
@@ -443,55 +355,27 @@ export class IntegrationService {
 
       // Data Warehouse integrations
       case 'SNOWFLAKE':
-        return this.snowflakeService.fetchData(
-          integrationConfig as any,
-          dataType,
-          params as any,
-        );
+        return this.snowflakeService.fetchData(integrationConfig as any, dataType, params as any);
 
       case 'BIGQUERY':
-        return this.bigqueryService.fetchData(
-          integrationConfig as any,
-          dataType,
-          params as any,
-        );
+        return this.bigqueryService.fetchData(integrationConfig as any, dataType, params as any);
 
       case 'REDSHIFT':
-        return this.redshiftService.fetchData(
-          integrationConfig as any,
-          dataType,
-          params as any,
-        );
+        return this.redshiftService.fetchData(integrationConfig as any, dataType, params as any);
 
       // IoT & Streaming integrations
       case 'KAFKA':
-        return this.kafkaService.fetchData(
-          integrationConfig as any,
-          dataType,
-          params as any,
-        );
+        return this.kafkaService.fetchData(integrationConfig as any, dataType, params as any);
 
       case 'MQTT_BROKER':
-        return this.mqttService.fetchData(
-          integrationConfig as any,
-          dataType,
-          params as any,
-        );
+        return this.mqttService.fetchData(integrationConfig as any, dataType, params as any);
 
       case 'AWS_IOT':
-        return this.awsIotService.fetchData(
-          integrationConfig as any,
-          dataType,
-          params as any,
-        );
+        return this.awsIotService.fetchData(integrationConfig as any, dataType, params as any);
 
       // Payment integrations
       case 'STRIPE_CONNECT':
-        return this.stripeConnectService.fetchData(
-          integrationConfig,
-          dataType,
-          params as any,
-        );
+        return this.stripeConnectService.fetchData(integrationConfig, dataType, params as any);
 
       default:
         throw new Error(`Unsupported provider: ${integration.provider}`);
@@ -510,9 +394,7 @@ export class IntegrationService {
 
     // Implement OAuth refresh flow based on provider
     // This is provider-specific and would require actual OAuth implementation
-    this.logger.log(
-      `Token refresh requested for integration: ${integrationId}`,
-    );
+    this.logger.log(`Token refresh requested for integration: ${integrationId}`);
 
     return { message: 'Token refresh not yet implemented' };
   }
@@ -539,8 +421,7 @@ export class IntegrationService {
 
         case 'GOOGLE_ANALYTICS':
         case 'GOOGLE_ANALYTICS_4':
-          result =
-            await this.googleAnalyticsService.testConnection(integration);
+          result = await this.googleAnalyticsService.testConnection(integration);
           break;
 
         case 'HARVEST':
@@ -573,58 +454,41 @@ export class IntegrationService {
 
         // E-commerce integrations
         case 'SHOPIFY':
-          result = await this.shopifyService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.shopifyService.testConnection(integrationConfig as any);
           break;
 
         case 'WOOCOMMERCE':
-          result = await this.woocommerceService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.woocommerceService.testConnection(integrationConfig as any);
           break;
 
         case 'BIGCOMMERCE':
-          result = await this.bigcommerceService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.bigcommerceService.testConnection(integrationConfig as any);
           break;
 
         // Marketing integrations
         case 'FACEBOOK_ADS':
-          result = await this.facebookAdsService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.facebookAdsService.testConnection(integrationConfig as any);
           break;
 
         case 'GOOGLE_ADS':
-          result = await this.googleAdsService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.googleAdsService.testConnection(integrationConfig as any);
           break;
 
         case 'LINKEDIN_ADS':
-          result = await this.linkedinAdsService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.linkedinAdsService.testConnection(integrationConfig as any);
           break;
 
         case 'TIKTOK_ADS':
-          result = await this.tiktokAdsService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.tiktokAdsService.testConnection(integrationConfig as any);
           break;
 
         // CRM integrations
         case 'SALESFORCE':
-          result = await this.salesforceService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.salesforceService.testConnection(integrationConfig as any);
           break;
 
         case 'PIPEDRIVE':
-          result =
-            await this.pipedriveService.testConnection(integrationConfig);
+          result = await this.pipedriveService.testConnection(integrationConfig);
           break;
 
         case 'ZOHO_CRM':
@@ -633,9 +497,7 @@ export class IntegrationService {
 
         // Support integrations
         case 'ZENDESK':
-          result = await this.zendeskService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.zendeskService.testConnection(integrationConfig as any);
           break;
 
         case 'INTERCOM':
@@ -643,28 +505,21 @@ export class IntegrationService {
           break;
 
         case 'FRESHDESK':
-          result = await this.freshdeskService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.freshdeskService.testConnection(integrationConfig as any);
           break;
 
         case 'HELPSCOUT':
-          result =
-            await this.helpscoutService.testConnection(integrationConfig);
+          result = await this.helpscoutService.testConnection(integrationConfig);
           break;
 
         // Database integrations
         case 'MONGODB_ATLAS':
-          result = await this.mongoDbAtlasService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.mongoDbAtlasService.testConnection(integrationConfig as any);
           break;
 
         // Cloud & DevOps integrations
         case 'AWS_CLOUDWATCH':
-          result = await this.awsCloudWatchService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.awsCloudWatchService.testConnection(integrationConfig as any);
           break;
 
         case 'DATADOG':
@@ -672,76 +527,54 @@ export class IntegrationService {
           break;
 
         case 'SENTRY':
-          result = await this.sentryService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.sentryService.testConnection(integrationConfig as any);
           break;
 
         case 'PAGERDUTY':
-          result =
-            await this.pagerdutyService.testConnection(integrationConfig);
+          result = await this.pagerdutyService.testConnection(integrationConfig);
           break;
 
         case 'NEW_RELIC':
-          result = await this.newrelicService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.newrelicService.testConnection(integrationConfig as any);
           break;
 
         case 'GCP_MONITORING':
-          result = await this.gcpMonitoringService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.gcpMonitoringService.testConnection(integrationConfig as any);
           break;
 
         case 'AZURE_MONITOR':
-          result = await this.azureMonitorService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.azureMonitorService.testConnection(integrationConfig as any);
           break;
 
         // Data Warehouse integrations
         case 'SNOWFLAKE':
-          result = await this.snowflakeService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.snowflakeService.testConnection(integrationConfig as any);
           break;
 
         case 'BIGQUERY':
-          result = await this.bigqueryService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.bigqueryService.testConnection(integrationConfig as any);
           break;
 
         case 'REDSHIFT':
-          result = await this.redshiftService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.redshiftService.testConnection(integrationConfig as any);
           break;
 
         // IoT & Streaming integrations
         case 'KAFKA':
-          result = await this.kafkaService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.kafkaService.testConnection(integrationConfig as any);
           break;
 
         case 'MQTT_BROKER':
-          result = await this.mqttService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.mqttService.testConnection(integrationConfig as any);
           break;
 
         case 'AWS_IOT':
-          result = await this.awsIotService.testConnection(
-            integrationConfig as any,
-          );
+          result = await this.awsIotService.testConnection(integrationConfig as any);
           break;
 
         // Payment integrations
         case 'STRIPE_CONNECT':
-          result =
-            await this.stripeConnectService.testConnection(integrationConfig);
+          result = await this.stripeConnectService.testConnection(integrationConfig);
           break;
 
         default:
@@ -750,10 +583,7 @@ export class IntegrationService {
 
       return { connected: result };
     } catch (error) {
-      this.logger.error(
-        `Connection test failed for integration: ${integrationId}`,
-        error,
-      );
+      this.logger.error(`Connection test failed for integration: ${integrationId}`, error);
       return {
         connected: false,
         error: (error as { message: string }).message,

@@ -240,11 +240,11 @@ export function VoiceControlPanel({ workspaceId, onCommand }: VoiceControlPanelP
           Try saying:
         </p>
         <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-          <li>• "Show me project X status"</li>
-          <li>• "Create alert for budget overruns"</li>
-          <li>• "Generate weekly report"</li>
-          <li>• "Show dashboard overview"</li>
-          <li>• "Go to analytics"</li>
+          <li>• &quot;Show me project X status&quot;</li>
+          <li>• &quot;Create alert for budget overruns&quot;</li>
+          <li>• &quot;Generate weekly report&quot;</li>
+          <li>• &quot;Show dashboard overview&quot;</li>
+          <li>• &quot;Go to analytics&quot;</li>
         </ul>
       </div>
 

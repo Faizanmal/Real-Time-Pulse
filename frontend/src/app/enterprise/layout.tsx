@@ -227,15 +227,9 @@ function Sidebar() {
 // Header Component
 function Header() {
   const { collapsed } = useContext(SidebarContext);
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
   const [] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-
-  useEffect(() => {
-    // Check for dark mode preference
-    const isDarkMode = document.documentElement.classList.contains('dark');
-    setIsDark(isDarkMode);
-  }, []);
 
   const toggleTheme = () => {
     document.documentElement.classList.toggle('dark');

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef, createContext, useContext } from "react";
+import { useState, useCallback, useEffect, useLayoutEffect, useRef, createContext, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
@@ -83,7 +83,7 @@ export function SpotlightHighlight({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className={cn("fixed inset-0 z-[9998] pointer-events-none", className)}
+            className={cn("fixed inset-0 z-9998 pointer-events-none", className)}
         >
             {/* Overlay with cutout */}
             <svg className="h-full w-full">
@@ -162,9 +162,10 @@ export function TooltipGuide({
 
     const isLastStep = currentStep === totalSteps - 1;
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!step.target) {
             // Center position for non-targeted steps
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setPosition({
                 x: window.innerWidth / 2 - 175,
                 y: window.innerHeight / 2 - 100,
@@ -220,7 +221,7 @@ export function TooltipGuide({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 10 }}
             className={cn(
-                "fixed z-[9999] w-[350px] rounded-2xl bg-white p-5 shadow-2xl dark:bg-gray-800",
+                "fixed z-9999 w-[350px] rounded-2xl bg-white p-5 shadow-2xl dark:bg-gray-800",
                 className
             )}
             style={{ left: position.x, top: position.y }}
@@ -262,7 +263,7 @@ export function TooltipGuide({
             {step.tips && step.tips.length > 0 && (
                 <div className="mb-4 rounded-lg bg-amber-50 p-3 dark:bg-amber-900/20">
                     <div className="flex items-start gap-2">
-                        <Lightbulb className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />
+                        <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
                         <div className="space-y-1">
                             {step.tips.map((tip, i) => (
                                 <p key={i} className="text-sm text-amber-800 dark:text-amber-400">
@@ -532,10 +533,18 @@ export function FeatureAnnouncement({
     variant = "default",
     className,
 }: FeatureAnnouncementProps) {
-    const [sparkles, setSparkles] = useState<{ id: number; x: number; y: number; left: string; top: string }[] | null>(null);
+    const [sparkles, setSparkles] = useState(() =>
+        variant === "celebration" ? [...Array(6)].map((_, i) => ({
+            id: i,
+            x: (Math.random() - 0.5) * 100,
+            y: (Math.random() - 0.5) * 50,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+        })) : []);
 
     useEffect(() => {
-        if (variant === "celebration" && !sparkles) {
+        if (variant === "celebration") {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setSparkles([...Array(6)].map((_, i) => ({
                 id: i,
                 x: (Math.random() - 0.5) * 100,
@@ -543,8 +552,10 @@ export function FeatureAnnouncement({
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
             })));
+        } else {
+            setSparkles([]);
         }
-    }, [variant, sparkles]);
+    }, [variant]);
 
     const variants = {
         default: "from-blue-500/10 via-purple-500/10 to-pink-500/10 border-purple-500/30",

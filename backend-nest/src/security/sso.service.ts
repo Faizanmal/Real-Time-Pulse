@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  BadRequestException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
@@ -93,19 +88,14 @@ export class SsoService {
    * Get SSO providers for a workspace
    */
   async getSsoProviders(workspaceId: string): Promise<SsoProvider[]> {
-    const cached = await this.cacheService.get(
-      `${this.SSO_PREFIX}${workspaceId}`,
-    );
+    const cached = await this.cacheService.get(`${this.SSO_PREFIX}${workspaceId}`);
     return cached ? (JSON.parse(cached) as SsoProvider[]) : [];
   }
 
   /**
    * Save SSO providers for a workspace
    */
-  private async saveSsoProviders(
-    workspaceId: string,
-    providers: SsoProvider[],
-  ): Promise<void> {
+  private async saveSsoProviders(workspaceId: string, providers: SsoProvider[]): Promise<void> {
     await this.cacheService.set(
       `${this.SSO_PREFIX}${workspaceId}`,
       JSON.stringify(providers),
@@ -145,20 +135,14 @@ export class SsoService {
       metadata: { providerType: provider.type, providerName: provider.name },
     });
 
-    this.logger.log(
-      `SSO provider ${provider.name} configured for workspace ${workspaceId}`,
-    );
+    this.logger.log(`SSO provider ${provider.name} configured for workspace ${workspaceId}`);
     return provider;
   }
 
   /**
    * Remove SSO provider
    */
-  async removeSsoProvider(
-    workspaceId: string,
-    providerId: string,
-    userId: string,
-  ): Promise<void> {
+  async removeSsoProvider(workspaceId: string, providerId: string, userId: string): Promise<void> {
     const providers = await this.getSsoProviders(workspaceId);
     const updatedProviders = providers.filter((p) => p.id !== providerId);
 
@@ -176,9 +160,7 @@ export class SsoService {
       metadata: {},
     });
 
-    this.logger.log(
-      `SSO provider ${providerId} removed from workspace ${workspaceId}`,
-    );
+    this.logger.log(`SSO provider ${providerId} removed from workspace ${workspaceId}`);
   }
 
   /**
@@ -386,9 +368,7 @@ export class SsoService {
    * Get SSO links for a user
    */
   private async getSsoLinks(userId: string): Promise<SsoLink[]> {
-    const cached = await this.cacheService.get(
-      `${this.SSO_LINKS_PREFIX}${userId}`,
-    );
+    const cached = await this.cacheService.get(`${this.SSO_LINKS_PREFIX}${userId}`);
     return cached ? (JSON.parse(cached) as SsoLink[]) : [];
   }
 
@@ -406,11 +386,7 @@ export class SsoService {
   /**
    * Link SSO account to existing user
    */
-  async linkSsoAccount(
-    userId: string,
-    ssoUser: SsoUser,
-    workspaceId: string,
-  ): Promise<void> {
+  async linkSsoAccount(userId: string, ssoUser: SsoUser, workspaceId: string): Promise<void> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -444,18 +420,13 @@ export class SsoService {
       },
     });
 
-    this.logger.log(
-      `SSO account linked for user ${userId} with provider ${ssoUser.provider}`,
-    );
+    this.logger.log(`SSO account linked for user ${userId} with provider ${ssoUser.provider}`);
   }
 
   /**
    * Find user by SSO identity
    */
-  async findUserBySsoIdentity(
-    provider: string,
-    externalId: string,
-  ): Promise<string | null> {
+  async findUserBySsoIdentity(provider: string, externalId: string): Promise<string | null> {
     // Search through all users - in production, use a proper index
     const users = await this.prisma.user.findMany({
       select: { id: true },
@@ -464,8 +435,7 @@ export class SsoService {
     for (const user of users) {
       const links = await this.getSsoLinks(user.id);
       const match = links.find(
-        (link: SsoLink) =>
-          link.provider === provider && link.externalId === externalId,
+        (link: SsoLink) => link.provider === provider && link.externalId === externalId,
       );
       if (match) {
         return user.id;
@@ -478,10 +448,7 @@ export class SsoService {
   /**
    * Provision user from SSO
    */
-  async provisionUserFromSso(
-    ssoUser: SsoUser,
-    workspaceId: string,
-  ): Promise<string> {
+  async provisionUserFromSso(ssoUser: SsoUser, workspaceId: string): Promise<string> {
     // Check if user with email exists
     let user = await this.prisma.user.findUnique({
       where: { email: ssoUser.email },
@@ -504,9 +471,7 @@ export class SsoService {
         },
       });
 
-      this.logger.log(
-        `User ${user.id} provisioned from SSO provider ${ssoUser.provider}`,
-      );
+      this.logger.log(`User ${user.id} provisioned from SSO provider ${ssoUser.provider}`);
     }
 
     // Link SSO account

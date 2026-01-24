@@ -15,9 +15,7 @@ export class IndustryController {
 
   // Healthcare Endpoints
   @Get('healthcare/patients')
-  async searchPatients(
-    @Query() query: { mrn?: string; name?: string; dateOfBirth?: string },
-  ) {
+  async searchPatients(@Query() query: { mrn?: string; name?: string; dateOfBirth?: string }) {
     return this.healthcare.searchPatients(query);
   }
 
@@ -92,10 +90,7 @@ export class IndustryController {
   }
 
   @Post('finance/sox/controls/:id/test')
-  async testSOXControl(
-    @Param('id') id: string,
-    @Body() body: { evidence: string[] },
-  ) {
+  async testSOXControl(@Param('id') id: string, @Body() body: { evidence: string[] }) {
     return this.finance.testSOXControl(id, body.evidence);
   }
 
@@ -131,10 +126,7 @@ export class IndustryController {
   }
 
   @Put('manufacturing/equipment/:id/status')
-  async updateEquipmentStatus(
-    @Param('id') id: string,
-    @Body() body: { status: any },
-  ) {
+  async updateEquipmentStatus(@Param('id') id: string, @Body() body: { status: any }) {
     return this.manufacturing.updateEquipmentStatus(id, body.status);
   }
 
@@ -189,9 +181,7 @@ export class IndustryController {
 
   // Retail Endpoints
   @Get('retail/inventory')
-  async getInventory(
-    @Query() filters: { locationId?: string; belowReorderPoint?: boolean },
-  ) {
+  async getInventory(@Query() filters: { locationId?: string; belowReorderPoint?: boolean }) {
     return this.retail.getInventoryLevels(filters);
   }
 
@@ -228,10 +218,7 @@ export class IndustryController {
   }
 
   @Get('retail/forecast/:productId')
-  async getDemandForecast(
-    @Param('productId') productId: string,
-    @Query('days') days?: number,
-  ) {
+  async getDemandForecast(@Param('productId') productId: string, @Query('days') days?: number) {
     return this.retail.generateDemandForecast(productId, days);
   }
 
@@ -261,10 +248,7 @@ export class IndustryController {
   }
 
   @Get('retail/analytics')
-  async getSalesAnalytics(
-    @Query('start') start: string,
-    @Query('end') end: string,
-  ) {
+  async getSalesAnalytics(@Query('start') start: string, @Query('end') end: string) {
     return this.retail.getSalesAnalytics({ start, end });
   }
 }

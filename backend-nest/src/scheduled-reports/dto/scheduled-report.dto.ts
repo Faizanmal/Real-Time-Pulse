@@ -210,9 +210,7 @@ export class CreateScheduledReportDto {
   isActive?: boolean;
 }
 
-export class UpdateScheduledReportDto extends PartialType(
-  CreateScheduledReportDto,
-) {}
+export class UpdateScheduledReportDto extends PartialType(CreateScheduledReportDto) {}
 
 export class ReportRunQueryDto {
   @ApiPropertyOptional({

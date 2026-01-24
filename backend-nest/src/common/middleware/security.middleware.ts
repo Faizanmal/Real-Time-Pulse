@@ -25,8 +25,7 @@ export class SecurityMiddleware implements NestMiddleware {
     private readonly configService: ConfigService,
     private readonly cacheService: CacheService,
   ) {
-    this.isDevelopment =
-      configService.get<string>('app.nodeEnv') !== 'production';
+    this.isDevelopment = configService.get<string>('app.nodeEnv') !== 'production';
 
     // Patterns to detect common attacks
     this.SUSPICIOUS_PATTERNS = [
@@ -133,9 +132,7 @@ export class SecurityMiddleware implements NestMiddleware {
   private getClientIp(req: Request): string {
     const forwardedFor = req.headers['x-forwarded-for'];
     if (forwardedFor) {
-      const ips = Array.isArray(forwardedFor)
-        ? forwardedFor[0]
-        : forwardedFor.split(',')[0];
+      const ips = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor.split(',')[0];
       return ips.trim();
     }
 
@@ -147,11 +144,7 @@ export class SecurityMiddleware implements NestMiddleware {
     return req.socket?.remoteAddress || req.ip || 'unknown';
   }
 
-  private generateFingerprint(
-    ip: string,
-    userAgent: string,
-    headers: Request['headers'],
-  ): string {
+  private generateFingerprint(ip: string, userAgent: string, headers: Request['headers']): string {
     const components = [
       ip,
       userAgent,
@@ -159,18 +152,12 @@ export class SecurityMiddleware implements NestMiddleware {
       headers['accept-encoding'] || '',
     ];
 
-    return crypto
-      .createHash('sha256')
-      .update(components.join('|'))
-      .digest('hex')
-      .substring(0, 32);
+    return crypto.createHash('sha256').update(components.join('|')).digest('hex').substring(0, 32);
   }
 
   private async isIpBlocked(ip: string): Promise<boolean> {
     try {
-      const blocked = await this.cacheService.get(
-        `${this.IP_BLOCK_PREFIX}${ip}`,
-      );
+      const blocked = await this.cacheService.get(`${this.IP_BLOCK_PREFIX}${ip}`);
       return blocked !== null;
     } catch {
       return false;
@@ -198,8 +185,7 @@ export class SecurityMiddleware implements NestMiddleware {
 
     // Check body (if exists)
     if (req.body) {
-      const bodyString =
-        typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+      const bodyString = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
 
       for (const pattern of this.SUSPICIOUS_PATTERNS) {
         if (pattern.test(bodyString)) {
@@ -229,9 +215,7 @@ export class SecurityMiddleware implements NestMiddleware {
     context: SecurityContext,
     patterns: string[],
   ): Promise<void> {
-    this.logger.warn(
-      `Suspicious request detected from ${context.ip}: ${patterns.join(', ')}`,
-    );
+    this.logger.warn(`Suspicious request detected from ${context.ip}: ${patterns.join(', ')}`);
 
     try {
       // Increment failed attempts counter
@@ -243,13 +227,9 @@ export class SecurityMiddleware implements NestMiddleware {
 
       // Block IP if too many suspicious requests
       const maxAttempts =
-        this.configService.get<number>(
-          'security.ipBlocking.maxFailedAttempts',
-        ) || 10;
+        this.configService.get<number>('security.ipBlocking.maxFailedAttempts') || 10;
       const blockDuration =
-        this.configService.get<number>(
-          'security.ipBlocking.blockDurationMinutes',
-        ) || 30;
+        this.configService.get<number>('security.ipBlocking.blockDurationMinutes') || 30;
 
       if (attempts >= maxAttempts) {
         await this.cacheService.set(

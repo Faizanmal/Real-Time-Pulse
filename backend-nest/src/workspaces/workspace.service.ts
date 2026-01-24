@@ -32,10 +32,7 @@ export class WorkspaceService {
   /**
    * Get workspace by ID
    */
-  async getWorkspace(
-    workspaceId: string,
-    userId: string,
-  ): Promise<WorkspaceResponseDto> {
+  async getWorkspace(workspaceId: string, userId: string): Promise<WorkspaceResponseDto> {
     const workspace = await this.prisma.workspace.findUnique({
       where: { id: workspaceId },
     });
@@ -93,9 +90,7 @@ export class WorkspaceService {
 
     // Validate file
     if (!this.s3Service.validateImageFile(file)) {
-      throw new BadRequestException(
-        'Invalid file type. Only images are allowed.',
-      );
+      throw new BadRequestException('Invalid file type. Only images are allowed.');
     }
 
     if (!this.s3Service.validateFileSize(file, 5)) {
@@ -136,10 +131,7 @@ export class WorkspaceService {
   /**
    * Delete workspace logo
    */
-  async deleteLogo(
-    workspaceId: string,
-    userId: string,
-  ): Promise<WorkspaceResponseDto> {
+  async deleteLogo(workspaceId: string, userId: string): Promise<WorkspaceResponseDto> {
     await this.verifyUserPermission(userId, workspaceId, ['OWNER', 'ADMIN']);
 
     const workspace = await this.prisma.workspace.findUnique({
@@ -171,10 +163,7 @@ export class WorkspaceService {
   /**
    * Get workspace members
    */
-  async getMembers(
-    workspaceId: string,
-    userId: string,
-  ): Promise<WorkspaceMemberResponseDto[]> {
+  async getMembers(workspaceId: string, userId: string): Promise<WorkspaceMemberResponseDto[]> {
     await this.verifyUserInWorkspace(userId, workspaceId);
 
     const members = await this.prisma.user.findMany({
@@ -212,13 +201,9 @@ export class WorkspaceService {
 
     if (existingUser) {
       if (existingUser.workspaceId === workspaceId) {
-        throw new ConflictException(
-          'User is already a member of this workspace',
-        );
+        throw new ConflictException('User is already a member of this workspace');
       } else {
-        throw new ConflictException(
-          'User already has an account in another workspace',
-        );
+        throw new ConflictException('User already has an account in another workspace');
       }
     }
 
@@ -243,8 +228,7 @@ export class WorkspaceService {
 
     // Generate temporary password for new member
     const tempPassword = this.encryptionService.generateToken(16);
-    const hashedPassword =
-      await this.encryptionService.hashPassword(tempPassword);
+    const hashedPassword = await this.encryptionService.hashPassword(tempPassword);
 
     const inviter = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -270,8 +254,7 @@ export class WorkspaceService {
     });
 
     const inviterName = inviter
-      ? `${inviter.firstName || ''} ${inviter.lastName || ''}`.trim() ||
-        inviter.email
+      ? `${inviter.firstName || ''} ${inviter.lastName || ''}`.trim() || inviter.email
       : 'Workspace Admin';
 
     const emailSent = await this.emailService.sendWorkspaceInvitationEmail({
@@ -300,11 +283,7 @@ export class WorkspaceService {
   /**
    * Remove a member from workspace
    */
-  async removeMember(
-    workspaceId: string,
-    userId: string,
-    memberIdToRemove: string,
-  ): Promise<void> {
+  async removeMember(workspaceId: string, userId: string, memberIdToRemove: string): Promise<void> {
     // Verify user has permission
     await this.verifyUserPermission(userId, workspaceId, ['OWNER', 'ADMIN']);
 
@@ -331,11 +310,7 @@ export class WorkspaceService {
       where: { id: userId },
     });
 
-    if (
-      currentUser &&
-      currentUser.role === 'ADMIN' &&
-      memberToRemove.role === 'ADMIN'
-    ) {
+    if (currentUser && currentUser.role === 'ADMIN' && memberToRemove.role === 'ADMIN') {
       throw new ForbiddenException('Admins cannot remove other admins');
     }
 
@@ -347,10 +322,7 @@ export class WorkspaceService {
   /**
    * Get workspace statistics
    */
-  async getStats(
-    workspaceId: string,
-    userId: string,
-  ): Promise<WorkspaceStatsDto> {
+  async getStats(workspaceId: string, userId: string): Promise<WorkspaceStatsDto> {
     await this.verifyUserInWorkspace(userId, workspaceId);
 
     // Run counts/lookup in parallel and handle as untyped result first
@@ -378,7 +350,7 @@ export class WorkspaceService {
 
     let subscriptionDto: WorkspaceStatsDto['subscription'] | undefined;
     if (subscription) {
-      const sub = subscription as unknown as {
+      const sub = subscription as {
         plan: string;
         status: string;
         maxPortals: number;
@@ -406,10 +378,7 @@ export class WorkspaceService {
   /**
    * Verify user belongs to workspace
    */
-  private async verifyUserInWorkspace(
-    userId: string,
-    workspaceId: string,
-  ): Promise<void> {
+  private async verifyUserInWorkspace(userId: string, workspaceId: string): Promise<void> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -436,9 +405,7 @@ export class WorkspaceService {
     }
 
     if (!allowedRoles.includes(user.role)) {
-      throw new ForbiddenException(
-        'You do not have permission to perform this action',
-      );
+      throw new ForbiddenException('You do not have permission to perform this action');
     }
   }
 

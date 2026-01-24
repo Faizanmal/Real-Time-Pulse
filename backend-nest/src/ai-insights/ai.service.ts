@@ -88,8 +88,7 @@ export class AIService implements OnModuleInit {
   private readonly logger = new Logger(AIService.name);
   private openai: OpenAI | null = null;
   private anthropic: Anthropic | null = null;
-  private cache: Map<string, { result: AICompletion; expiry: number }> =
-    new Map();
+  private cache: Map<string, { result: AICompletion; expiry: number }> = new Map();
   private readonly cacheTTL = 3600000; // 1 hour
 
   constructor(private config: ConfigService) {}
@@ -117,10 +116,7 @@ export class AIService implements OnModuleInit {
   // CORE COMPLETION API
   // ============================================================================
 
-  async complete(
-    messages: AIMessage[],
-    options: AICompletionOptions = {},
-  ): Promise<AICompletion> {
+  async complete(messages: AIMessage[], options: AICompletionOptions = {}): Promise<AICompletion> {
     const {
       model,
       provider = 'auto',
@@ -180,9 +176,7 @@ export class AIService implements OnModuleInit {
         return result;
       } catch (error) {
         lastError = error as Error;
-        this.logger.warn(
-          `AI completion attempt ${attempt + 1} failed: ${lastError.message}`,
-        );
+        this.logger.warn(`AI completion attempt ${attempt + 1} failed: ${lastError.message}`);
 
         // Try fallback provider
         if (attempt === 0 && provider === 'auto') {
@@ -332,8 +326,7 @@ Return ONLY the JSON array, no additional text.`;
     const response = await this.complete([
       {
         role: 'system',
-        content:
-          'You are an expert business analyst. Always respond with valid JSON.',
+        content: 'You are an expert business analyst. Always respond with valid JSON.',
       },
       { role: 'user', content: prompt },
     ]);
@@ -352,7 +345,7 @@ Return ONLY the JSON array, no additional text.`;
   async generateForecast(
     historicalData: Array<{ date: string; value: number }>,
     metric: string,
-    periods: number = 7,
+    periods = 7,
   ): Promise<ForecastResult> {
     const prompt = `Based on the following historical data for "${metric}", predict the next ${periods} periods.
 
@@ -485,15 +478,11 @@ Return ONLY the JSON object.`;
   /**
    * Generate report summary
    */
-  async generateReportSummary(
-    data: Record<string, unknown>,
-    reportType: string,
-  ): Promise<string> {
+  async generateReportSummary(data: Record<string, unknown>, reportType: string): Promise<string> {
     const response = await this.complete([
       {
         role: 'system',
-        content:
-          'You are an expert business analyst. Write clear, concise executive summaries.',
+        content: 'You are an expert business analyst. Write clear, concise executive summaries.',
       },
       {
         role: 'user',
@@ -550,10 +539,7 @@ ${dataContext ? `Current data context:\n${JSON.stringify(dataContext, null, 2)}`
     return 'openai';
   }
 
-  private getCacheKey(
-    messages: AIMessage[],
-    options: AICompletionOptions,
-  ): string {
+  private getCacheKey(messages: AIMessage[], options: AICompletionOptions): string {
     return JSON.stringify({ messages, options });
   }
 

@@ -14,10 +14,9 @@ export class S3Service {
     const endpoint = this.configService.get<string>('s3.endpoint');
     const region = this.configService.get<string>('s3.region');
     const accessKeyId = this.configService.get<string>('s3.accessKeyId');
-    const secretAccessKey =
-      this.configService.get<string>('s3.secretAccessKey');
+    const secretAccessKey = this.configService.get<string>('s3.secretAccessKey');
 
-    this.bucket = this.configService.get<string>('s3.bucket') as string;
+    this.bucket = this.configService.get<string>('s3.bucket');
     this.publicUrlBase = this.configService.get<string>('s3.publicUrlBase');
 
     this.s3Client = new S3Client({
@@ -37,10 +36,7 @@ export class S3Service {
   /**
    * Upload a file to S3/R2
    */
-  async uploadFile(
-    file: Express.Multer.File,
-    folder: string = 'uploads',
-  ): Promise<string> {
+  async uploadFile(file: Express.Multer.File, folder = 'uploads'): Promise<string> {
     const fileExtension = file.originalname.split('.').pop();
     const fileName = `${folder}/${uuidv4()}.${fileExtension}`;
 
@@ -142,7 +138,7 @@ export class S3Service {
   /**
    * Validate file size (max 5MB for logos)
    */
-  validateFileSize(file: Express.Multer.File, maxSizeMB: number = 5): boolean {
+  validateFileSize(file: Express.Multer.File, maxSizeMB = 5): boolean {
     const maxSizeBytes = maxSizeMB * 1024 * 1024;
     return file.size <= maxSizeBytes;
   }

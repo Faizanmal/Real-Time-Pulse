@@ -10,11 +10,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { AnnotationsService } from './annotations.service';
-import {
-  CreateAnnotationDto,
-  UpdateAnnotationDto,
-  ReplyAnnotationDto,
-} from './dto/annotation.dto';
+import { CreateAnnotationDto, UpdateAnnotationDto, ReplyAnnotationDto } from './dto/annotation.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('annotations')
@@ -33,11 +29,7 @@ export class AnnotationsController {
   }
 
   @Put(':id')
-  async update(
-    @Request() req,
-    @Param('id') id: string,
-    @Body() dto: UpdateAnnotationDto,
-  ) {
+  async update(@Request() req, @Param('id') id: string, @Body() dto: UpdateAnnotationDto) {
     return this.annotationsService.update(id, req.user.userId, dto);
   }
 
@@ -47,11 +39,7 @@ export class AnnotationsController {
   }
 
   @Post(':id/reply')
-  async reply(
-    @Request() req,
-    @Param('id') id: string,
-    @Body() dto: ReplyAnnotationDto,
-  ) {
+  async reply(@Request() req, @Param('id') id: string, @Body() dto: ReplyAnnotationDto) {
     return this.annotationsService.reply(id, req.user.userId, dto);
   }
 }

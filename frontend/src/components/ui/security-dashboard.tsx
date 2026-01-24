@@ -13,7 +13,6 @@ import React, {
   useContext,
   useState,
   useCallback,
-  useEffect,
   ReactNode,
   useMemo,
 } from 'react';
@@ -200,8 +199,8 @@ const SAMPLE_SECURITY_SCORE: SecurityScore = {
 };
 
 export function SecurityProvider({ children }: { children: ReactNode }) {
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [events, setEvents] = useState<SecurityEvent[]>([]);
+  const [sessions, setSessions] = useState<Session[]>(SAMPLE_SESSIONS);
+  const [events, setEvents] = useState<SecurityEvent[]>(SAMPLE_EVENTS);
   const [securityScore, _setSecurityScore] = useState<SecurityScore>(SAMPLE_SECURITY_SCORE);
   const [isLoading, setIsLoading] = useState(false);
   const [twoFactorSettings, setTwoFactorSettings] = useState<TwoFactorSettings>({
@@ -211,16 +210,7 @@ export function SecurityProvider({ children }: { children: ReactNode }) {
     lastVerified: new Date(),
   });
 
-  useEffect(() => {
-    // Set initial lastVerified date after mount or keep it null until loaded
-    setTwoFactorSettings(prev => ({ ...prev, lastVerified: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7) }));
-  }, []);
 
-  useEffect(() => {
-    // Simulate loading
-    setSessions(SAMPLE_SESSIONS);
-    setEvents(SAMPLE_EVENTS);
-  }, []);
 
   const terminateSession = useCallback(async (sessionId: string) => {
     setIsLoading(true);

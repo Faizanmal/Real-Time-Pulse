@@ -10,11 +10,7 @@ import { CacheModule } from '../cache/cache.module';
 @Module({
   imports: [PrismaModule, CacheModule, ScheduleModule.forRoot()],
   controllers: [PipelineController],
-  providers: [
-    PipelineService,
-    PipelineExecutorService,
-    PipelineConnectorService,
-  ],
+  providers: [PipelineService, PipelineExecutorService, PipelineConnectorService],
   exports: [PipelineService, PipelineExecutorService],
 })
 export class PipelineModule {}

@@ -26,8 +26,7 @@ export interface RestorePoint {
 @Injectable()
 export class BackupService {
   private readonly logger = new Logger(BackupService.name);
-  private readonly encryptionKey =
-    process.env.BACKUP_ENCRYPTION_KEY || crypto.randomBytes(32);
+  private readonly encryptionKey = process.env.BACKUP_ENCRYPTION_KEY || crypto.randomBytes(32);
   private readonly algorithm = 'aes-256-gcm';
 
   constructor(private prisma: PrismaService) {}
@@ -67,10 +66,7 @@ export class BackupService {
       const encrypted = this.encrypt(compressed);
 
       // Calculate checksum
-      const checksum = crypto
-        .createHash('sha256')
-        .update(encrypted.encrypted)
-        .digest('hex');
+      const checksum = crypto.createHash('sha256').update(encrypted.encrypted).digest('hex');
 
       // Store backup metadata in database
       const _backup = await this.prisma.$executeRaw`
@@ -257,11 +253,7 @@ export class BackupService {
     authTag: Buffer;
   } {
     const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv(
-      this.algorithm,
-      Buffer.from(this.encryptionKey),
-      iv,
-    );
+    const cipher = crypto.createCipheriv(this.algorithm, Buffer.from(this.encryptionKey), iv);
 
     const encrypted = Buffer.concat([cipher.update(data), cipher.final()]);
     const authTag = cipher.getAuthTag();
@@ -272,11 +264,7 @@ export class BackupService {
   /**
    * Decrypt data
    */
-  private decrypt(data: {
-    encrypted: Buffer;
-    iv: Buffer;
-    authTag: Buffer;
-  }): Buffer {
+  private decrypt(data: { encrypted: Buffer; iv: Buffer; authTag: Buffer }): Buffer {
     const decipher = crypto.createDecipheriv(
       this.algorithm,
       Buffer.from(this.encryptionKey),

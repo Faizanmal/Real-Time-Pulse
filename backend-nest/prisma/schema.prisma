@@ -44,6 +44,9 @@ model User {
   failedLoginCount  Int      @default(0)
   lockedUntil       DateTime?
 
+  // Billing
+  stripeCustomerId String? @unique
+
   // Multi-tenant relationship
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -63,6 +66,7 @@ model User {
   scheduledReports   ScheduledReport[]
   webhooks           Webhook[]
   comments           Comment[]
+  resolvedComments   Comment[] @relation("CommentResolvedBy")
   workspaceMembers   WorkspaceMember[]
   sessions           UserSession[]
   auditLogs          AuditLog[]       @relation("UserAuditLogs")
@@ -82,6 +86,7 @@ model User {
   annotations       Annotation[]
   commentReactions   CommentReaction[]
   sentWorkspaceInvites WorkspaceInvite[] @relation("WorkspaceInviteInvitedBy")
+  acceptedWorkspaceInvites WorkspaceInvite[] @relation("WorkspaceInviteAcceptedBy")
   operationLogs        OperationLog[]
 
   @@index([workspaceId])
@@ -89,6 +94,7 @@ model User {
   @@index([googleId])
   @@index([githubId])
   @@index([firebaseUid])
+  @@index([stripeCustomerId])
   @@map("users")
 }
 
@@ -222,6 +228,7 @@ model Subscription {
 
   @@index([workspaceId])
   @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
   @@map("subscriptions")
 }
 
@@ -711,6 +718,7 @@ model WorkspaceMember {
   invitedBy  String?
   invitedAt  DateTime  @default(now())
   acceptedAt DateTime?
+  joinedAt   DateTime?
 
   // Status
   status MemberStatus @default(PENDING)
@@ -1184,6 +1192,9 @@ model Comment {
   authorId String
   author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
+  resolvedById String?
+  resolvedBy   User?   @relation("CommentResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+
   // Content
   content  String   @db.Text
   type     CommentType @default(COMMENT) // COMMENT, PIN, FLAG, etc.
@@ -1201,6 +1212,7 @@ model Comment {
   isEdited  Boolean   @default(false)
   isDeleted Boolean   @default(false)
   resolved  Boolean   @default(false)
+  resolvedAt   DateTime?
   editedAt  DateTime?
 
   // Timestamps
@@ -2148,6 +2160,7 @@ model GDPRDataRequest {
   // Request Details
   requestType     GDPRRequestType
   status          GDPRRequestStatus @default(PENDING)
+  metadata        Json? // Additional request metadata
   
   // Processing
   submittedAt     DateTime @default(now())
@@ -3358,6 +3371,7 @@ model Template {
   title       String
   description String?
   category    String?
+  industry    String? // Industry category
   tags        String[]
   data        Json     // Template configuration
   previewImage String?
@@ -3433,10 +3447,13 @@ model AuthorEarning {
   templateId String?
   template   Template? @relation(fields: [templateId], references: [id], onDelete: SetNull)
 
+  purchaseId String? // Reference to purchase that generated this earning
+
   amount    Float
   currency  String    @default("USD")
   type      String    // purchase, subscription, etc.
   earnedAt  DateTime  @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([authorId])
   @@map("author_earnings")
@@ -3476,6 +3493,7 @@ model WhiteLabelConfig {
   primaryColor    String?
   secondaryColor  String?
   accentColor     String?
+  branding        Json? // Additional branding config
 
   // Custom domain
   customDomain    String? @unique
@@ -3485,6 +3503,7 @@ model WhiteLabelConfig {
   // Email branding
   emailFromName   String?
   emailFromEmail  String?
+  email           Json? // Additional email config
 
   // Portal settings
   portalTitle     String?
@@ -3512,6 +3531,10 @@ model CustomDomainRequest {
   verifiedAt  DateTime?
   rejectedAt  DateTime?
   rejectReason String?
+
+  // SSL and DNS
+  sslStatus   String? // pending, active, failed
+  dnsRecords  Json?   // DNS records for verification
 
   @@unique([workspaceId, domain])
   @@index([workspaceId])
@@ -3682,6 +3705,11 @@ model UsageRecord {
   periodStart DateTime?
   periodEnd   DateTime?
 
+  // Additional fields for billing
+  organizationId String?
+  quantity Float?
+  metricId String?
+
   @@index([workspaceId])
   @@index([metric])
   @@index([recordedAt])
@@ -3702,6 +3730,9 @@ model Invoice {
   dueAt       DateTime?
   paidAt      DateTime?
 
+  // Additional fields
+  organizationId String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -3719,6 +3750,11 @@ model UsageAlert {
   threshold   Float
   currentValue Float
   isActive    Boolean  @default(true)
+
+  // Additional fields
+  thresholdType String?
+  lastTriggeredAt DateTime?
+  enabled Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -3757,6 +3793,11 @@ model UsageTotal {
   metric    String   // 'api_calls', 'storage_gb', etc.
   total     Float
   period    String   // 'monthly', 'yearly', etc.
+
+  // Additional fields
+  organizationId String?
+  metricId String?
+  updatedAt DateTime?
 
   calculatedAt DateTime @default(now())
 
@@ -3820,6 +3861,9 @@ model WorkspaceInvite {
 
   invitedById String
   invitedBy   User     @relation("WorkspaceInviteInvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  acceptedById String?
+  acceptedBy   User?     @relation("WorkspaceInviteAcceptedBy", fields: [acceptedById], references: [id], onDelete: SetNull)
 
   expiresAt DateTime?
   acceptedAt DateTime?

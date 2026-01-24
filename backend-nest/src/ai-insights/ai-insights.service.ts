@@ -32,11 +32,7 @@ export class AIInsightsService {
   /**
    * Get all insights for a workspace
    */
-  async getWorkspaceInsights(
-    workspaceId: string,
-    status?: string,
-    type?: string,
-  ) {
+  async getWorkspaceInsights(workspaceId: string, status?: string, type?: string) {
     return this.prisma.aIInsight.findMany({
       where: {
         workspaceId,
@@ -104,8 +100,7 @@ export class AIInsightsService {
     // Anomaly Detection: Check for stale data
     const staleWidgets = portal.widgets.filter((widget) => {
       if (!widget.lastRefreshedAt) return true;
-      const hoursSinceRefresh =
-        (Date.now() - widget.lastRefreshedAt.getTime()) / (1000 * 60 * 60);
+      const hoursSinceRefresh = (Date.now() - widget.lastRefreshedAt.getTime()) / (1000 * 60 * 60);
       return hoursSinceRefresh > 24;
     });
 
@@ -167,13 +162,7 @@ export class AIInsightsService {
         severity: 'HIGH' as InsightSeverity,
         confidence: 1.0,
         data: {
-          availableIntegrations: [
-            'Asana',
-            'Google Analytics',
-            'Harvest',
-            'GitHub',
-            'Jira',
-          ],
+          availableIntegrations: ['Asana', 'Google Analytics', 'Harvest', 'GitHub', 'Jira'],
         },
         recommendations: {
           actions: [
@@ -287,15 +276,14 @@ export class AIInsightsService {
       .map((w) => ({
         widgetId: w.id,
         name: w.name,
-        lastRefresh: w.lastRefreshedAt!,
+        lastRefresh: w.lastRefreshedAt,
         interval: w.refreshInterval,
       }));
 
     // Predict potential data staleness
     const now = new Date();
     const staleRiskWidgets = widgetRefreshTimes.filter((w) => {
-      const hoursSinceRefresh =
-        (now.getTime() - w.lastRefresh.getTime()) / (1000 * 60 * 60);
+      const hoursSinceRefresh = (now.getTime() - w.lastRefresh.getTime()) / (1000 * 60 * 60);
       const expectedRefreshes = hoursSinceRefresh / (w.interval / 3600);
       return expectedRefreshes > 1.5; // 50% overdue
     });
@@ -325,8 +313,7 @@ export class AIInsightsService {
     const daysSinceCreation = Math.floor(
       (now.getTime() - portal.createdAt.getTime()) / (1000 * 60 * 60 * 24),
     );
-    const widgetGrowthRate =
-      portal.widgets.length / Math.max(daysSinceCreation, 1);
+    const widgetGrowthRate = portal.widgets.length / Math.max(daysSinceCreation, 1);
 
     if (widgetGrowthRate < 0.1 && daysSinceCreation > 7) {
       insights.push({
@@ -374,10 +361,7 @@ export class AIInsightsService {
    * Natural language query processing
    * Uses OpenAI for intelligent data querying
    */
-  async processNaturalLanguageQuery(
-    workspaceId: string,
-    query: NaturalLanguageQuery,
-  ) {
+  async processNaturalLanguageQuery(workspaceId: string, query: NaturalLanguageQuery) {
     // If OpenAI is not configured, use basic keyword matching
     if (!this.openAiApiKey) {
       return this.processBasicQuery(workspaceId, query);
@@ -385,10 +369,7 @@ export class AIInsightsService {
 
     try {
       // Gather context about the workspace
-      const context = await this.gatherWorkspaceContext(
-        workspaceId,
-        query.portalId,
-      );
+      const context = await this.gatherWorkspaceContext(workspaceId, query.portalId);
 
       // Call OpenAI API
       const response = await this.callOpenAI(query.query, context);
@@ -408,18 +389,12 @@ export class AIInsightsService {
   /**
    * Basic keyword-based query processing
    */
-  private async processBasicQuery(
-    workspaceId: string,
-    query: NaturalLanguageQuery,
-  ) {
+  private async processBasicQuery(workspaceId: string, query: NaturalLanguageQuery) {
     const lowercaseQuery = query.query.toLowerCase();
     const results: any[] = [];
 
     // Portal queries
-    if (
-      lowercaseQuery.includes('portal') ||
-      lowercaseQuery.includes('dashboard')
-    ) {
+    if (lowercaseQuery.includes('portal') || lowercaseQuery.includes('dashboard')) {
       const portals = await this.prisma.portal.findMany({
         where: { workspaceId },
         select: {
@@ -439,10 +414,7 @@ export class AIInsightsService {
     }
 
     // Widget queries
-    if (
-      lowercaseQuery.includes('widget') ||
-      lowercaseQuery.includes('component')
-    ) {
+    if (lowercaseQuery.includes('widget') || lowercaseQuery.includes('component')) {
       const widgets = await this.prisma.widget.findMany({
         where: {
           portal: { workspaceId },
@@ -465,10 +437,7 @@ export class AIInsightsService {
     }
 
     // Integration queries
-    if (
-      lowercaseQuery.includes('integration') ||
-      lowercaseQuery.includes('connect')
-    ) {
+    if (lowercaseQuery.includes('integration') || lowercaseQuery.includes('connect')) {
       const integrations = await this.prisma.integration.findMany({
         where: { workspaceId },
         select: {
@@ -512,17 +481,16 @@ export class AIInsightsService {
       lowercaseQuery.includes('metric') ||
       lowercaseQuery.includes('overview')
     ) {
-      const [portalCount, widgetCount, integrationCount, alertCount] =
-        await Promise.all([
-          this.prisma.portal.count({ where: { workspaceId } }),
-          this.prisma.widget.count({
-            where: { portal: { workspaceId } },
-          }),
-          this.prisma.integration.count({ where: { workspaceId } }),
-          this.prisma.alert.count({
-            where: { workspaceId, isActive: true },
-          }),
-        ]);
+      const [portalCount, widgetCount, integrationCount, alertCount] = await Promise.all([
+        this.prisma.portal.count({ where: { workspaceId } }),
+        this.prisma.widget.count({
+          where: { portal: { workspaceId } },
+        }),
+        this.prisma.integration.count({ where: { workspaceId } }),
+        this.prisma.alert.count({
+          where: { workspaceId, isActive: true },
+        }),
+      ]);
 
       results.push({
         type: 'stats',
@@ -548,31 +516,30 @@ export class AIInsightsService {
    * Gather context for AI queries
    */
   private async gatherWorkspaceContext(workspaceId: string, portalId?: string) {
-    const [workspace, portals, integrations, recentInsights] =
-      await Promise.all([
-        this.prisma.workspace.findUnique({
-          where: { id: workspaceId },
-          select: { name: true, createdAt: true },
-        }),
-        this.prisma.portal.findMany({
-          where: { workspaceId },
-          select: {
-            id: true,
-            name: true,
-            _count: { select: { widgets: true } },
-          },
-          take: 10,
-        }),
-        this.prisma.integration.findMany({
-          where: { workspaceId },
-          select: { provider: true, status: true },
-        }),
-        this.prisma.aIInsight.findMany({
-          where: { workspaceId, status: { not: 'DISMISSED' } },
-          select: { type: true, title: true, severity: true },
-          take: 5,
-        }),
-      ]);
+    const [workspace, portals, integrations, recentInsights] = await Promise.all([
+      this.prisma.workspace.findUnique({
+        where: { id: workspaceId },
+        select: { name: true, createdAt: true },
+      }),
+      this.prisma.portal.findMany({
+        where: { workspaceId },
+        select: {
+          id: true,
+          name: true,
+          _count: { select: { widgets: true } },
+        },
+        take: 10,
+      }),
+      this.prisma.integration.findMany({
+        where: { workspaceId },
+        select: { provider: true, status: true },
+      }),
+      this.prisma.aIInsight.findMany({
+        where: { workspaceId, status: { not: 'DISMISSED' } },
+        select: { type: true, title: true, severity: true },
+        take: 5,
+      }),
+    ]);
 
     return {
       workspace,

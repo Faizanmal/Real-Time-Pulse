@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Patch,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Query } from '@nestjs/common';
 import { DataHealthService } from './data-health.service';
 import { HealthMonitorService } from './health-monitor.service';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -54,14 +46,8 @@ export class DataHealthController {
 
   @Get('workspace/:workspaceId/metrics')
   @ApiOperation({ summary: 'Get health metrics for workspace' })
-  async getHealthMetrics(
-    @Param('workspaceId') workspaceId: string,
-    @Query('days') days?: string,
-  ) {
-    return this.dataHealthService.getHealthMetrics(
-      workspaceId,
-      days ? parseInt(days) : 7,
-    );
+  async getHealthMetrics(@Param('workspaceId') workspaceId: string, @Query('days') days?: string) {
+    return this.dataHealthService.getHealthMetrics(workspaceId, days ? parseInt(days) : 7);
   }
 
   @Patch(':healthId/settings')

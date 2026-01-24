@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Patch,
-  Delete,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Delete, Query } from '@nestjs/common';
 import { ProfitabilityService } from './profitability.service';
 import { ProjectService } from './project.service';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -215,9 +206,6 @@ export class ProfitabilityController {
     @Param('workspaceId') workspaceId: string,
     @Query('period') period?: string,
   ) {
-    return this.profitabilityService.getProfitabilitySummary(
-      workspaceId,
-      period,
-    );
+    return this.profitabilityService.getProfitabilitySummary(workspaceId, period);
   }
 }

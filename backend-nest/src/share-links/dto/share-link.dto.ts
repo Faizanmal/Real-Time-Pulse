@@ -1,12 +1,5 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-import {
-  IsString,
-  IsOptional,
-  IsBoolean,
-  IsNumber,
-  IsDateString,
-  Min,
-} from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsNumber, IsDateString, Min } from 'class-validator';
 
 export class CreateShareLinkDto {
   @ApiProperty({ description: 'Portal ID to create share link for' })

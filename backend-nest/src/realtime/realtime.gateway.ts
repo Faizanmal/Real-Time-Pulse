@@ -53,9 +53,7 @@ interface PresenceInfo {
   pingInterval: 25000,
 })
 @Injectable()
-export class RealtimeGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
+export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
@@ -101,9 +99,7 @@ export class RealtimeGateway
       const ip = client.handshake.address || 'unknown';
       const count = this.ipConnectionCounts.get(ip) || 0;
       if (count >= this.MAX_CONNECTIONS_PER_IP) {
-        this.logger.warn(
-          `Client ${client.id} rejected: Too many connections from IP ${ip}`,
-        );
+        this.logger.warn(`Client ${client.id} rejected: Too many connections from IP ${ip}`);
         client.emit('error', { message: 'Too many connections from your IP' });
         client.disconnect();
         return;
@@ -143,8 +139,9 @@ export class RealtimeGateway
       });
 
       this.logger.log(`Client connected: ${client.id} (User: ${userId})`);
-    } catch (error) {
-      this.logger.error(`Connection failed: ${error.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Connection failed: ${message}`);
       client.emit('error', { message: 'Authentication failed' });
       client.disconnect();
     }
@@ -163,10 +160,7 @@ export class RealtimeGateway
       this.userSockets.get(userId)?.delete(client.id);
 
       // If user has no more active connections/tabs, mark as offline
-      if (
-        !this.userSockets.get(userId) ||
-        this.userSockets.get(userId)?.size === 0
-      ) {
+      if (!this.userSockets.get(userId) || this.userSockets.get(userId)?.size === 0) {
         this.userSockets.delete(userId);
         await this.updatePresence(workspaceId, userId, 'offline');
 
@@ -204,12 +198,7 @@ export class RealtimeGateway
 
     await client.join(`portal:${data.portalId}`);
 
-    await this.updatePresence(
-      metadata.workspaceId,
-      metadata.userId,
-      'online',
-      data.portalId,
-    );
+    await this.updatePresence(metadata.workspaceId, metadata.userId, 'online', data.portalId);
 
     client.to(`portal:${data.portalId}`).emit('portal:viewer:joined', {
       userId: metadata.userId,
@@ -290,7 +279,7 @@ export class RealtimeGateway
   async handleSelectionChange(
     @ConnectedSocket() client: Socket,
     @MessageBody()
-    data: { portalId: string; widgetId?: string; selection: any },
+    data: { portalId: string; widgetId?: string; selection: unknown },
   ): Promise<void> {
     const metadata = this.connections.get(client.id);
     if (!metadata) return;
@@ -342,50 +331,48 @@ export class RealtimeGateway
   // BROADCAST METHODS (Service-facing)
   // ============================================
 
-  broadcastToWorkspace(workspaceId: string, event: string, data: any): void {
+  broadcastToWorkspace(workspaceId: string, event: string, data: unknown): void {
     this.server
       .to(`workspace:${workspaceId}`)
-      .emit(event, { ...data, timestamp: new Date() });
+      .emit(event, { ...(data as object), timestamp: new Date() });
   }
 
-  broadcastToPortal(portalId: string, event: string, data: any): void {
+  broadcastToPortal(portalId: string, event: string, data: unknown): void {
     this.server
       .to(`portal:${portalId}`)
-      .emit(event, { ...data, timestamp: new Date() });
+      .emit(event, { ...(data as object), timestamp: new Date() });
   }
 
-  broadcastToWidget(widgetId: string, event: string, data: any): void {
+  broadcastToWidget(widgetId: string, event: string, data: unknown): void {
     this.server
       .to(`widget:${widgetId}`)
-      .emit(event, { ...data, timestamp: new Date() });
+      .emit(event, { ...(data as object), timestamp: new Date() });
   }
 
-  broadcastToUser(userId: string, event: string, data: any): void {
-    this.server
-      .to(`user:${userId}`)
-      .emit(event, { ...data, timestamp: new Date() });
+  broadcastToUser(userId: string, event: string, data: unknown): void {
+    this.server.to(`user:${userId}`).emit(event, { ...(data as object), timestamp: new Date() });
   }
 
-  broadcastToAll(event: string, data: any): void {
-    this.server.emit(event, { ...data, timestamp: new Date() });
+  broadcastToAll(event: string, data: unknown): void {
+    this.server.emit(event, { ...(data as object), timestamp: new Date() });
   }
 
-  emitWidgetUpdate(widgetId: string, data: any): void {
+  emitWidgetUpdate(widgetId: string, data: unknown): void {
     this.broadcastToWidget(widgetId, 'widget:data:updated', { widgetId, data });
   }
 
-  emitPortalLayoutUpdate(portalId: string, layout: any): void {
+  emitPortalLayoutUpdate(portalId: string, layout: unknown): void {
     this.broadcastToPortal(portalId, 'portal:layout:updated', {
       portalId,
       layout,
     });
   }
 
-  emitAlert(workspaceId: string, alert: any): void {
+  emitAlert(workspaceId: string, alert: unknown): void {
     this.broadcastToWorkspace(workspaceId, 'alert:triggered', alert);
   }
 
-  emitInsight(workspaceId: string, insight: any): void {
+  emitInsight(workspaceId: string, insight: unknown): void {
     this.broadcastToWorkspace(workspaceId, 'insight:generated', insight);
   }
 
@@ -403,7 +390,7 @@ export class RealtimeGateway
       this.presence.set(workspaceId, new Map());
     }
 
-    const workspacePresence = this.presence.get(workspaceId)!;
+    const workspacePresence = this.presence.get(workspaceId);
 
     if (status === 'offline') {
       workspacePresence.delete(userId);
@@ -442,9 +429,7 @@ export class RealtimeGateway
     for (const socketId of room) {
       const metadata = this.connections.get(socketId);
       if (metadata) {
-        const presence = this.presence
-          .get(metadata.workspaceId)
-          ?.get(metadata.userId);
+        const presence = this.presence.get(metadata.workspaceId)?.get(metadata.userId);
         if (presence) viewers.push(presence);
       }
     }
@@ -459,9 +444,7 @@ export class RealtimeGateway
     return client.handshake.auth?.token || null;
   }
 
-  private async verifyToken(
-    token: string,
-  ): Promise<{ userId: string; workspaceId: string }> {
+  private async verifyToken(token: string): Promise<{ userId: string; workspaceId: string }> {
     try {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: this.configService.get('jwt.secret'),

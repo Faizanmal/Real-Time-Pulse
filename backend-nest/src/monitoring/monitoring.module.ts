@@ -21,6 +21,6 @@ import { AlertingService } from './alerting.service';
     AlertingService,
     // TraceService,
   ],
-  exports: [MonitoringService, AlertingService, /* TraceService */],
+  exports: [MonitoringService, AlertingService /* TraceService */],
 })
 export class MonitoringModule {}

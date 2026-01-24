@@ -1,12 +1,5 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-import {
-  IsString,
-  IsOptional,
-  IsBoolean,
-  IsEnum,
-  IsArray,
-  IsObject,
-} from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsEnum, IsArray, IsObject } from 'class-validator';
 import { TemplateCategory, WidgetType } from '@prisma/client';
 
 // ============================================
@@ -57,9 +50,7 @@ export class CreateWidgetTemplateDto {
   tags?: string[];
 }
 
-export class UpdateWidgetTemplateDto extends PartialType(
-  CreateWidgetTemplateDto,
-) {}
+export class UpdateWidgetTemplateDto extends PartialType(CreateWidgetTemplateDto) {}
 
 // ============================================
 // Portal Template DTOs
@@ -109,9 +100,7 @@ export class CreatePortalTemplateDto {
   tags?: string[];
 }
 
-export class UpdatePortalTemplateDto extends PartialType(
-  CreatePortalTemplateDto,
-) {}
+export class UpdatePortalTemplateDto extends PartialType(CreatePortalTemplateDto) {}
 
 // ============================================
 // Create Portal From Template DTO

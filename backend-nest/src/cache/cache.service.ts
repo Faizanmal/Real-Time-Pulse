@@ -32,21 +32,14 @@ export class CacheService {
   /**
    * Generate cache key for integration data
    */
-  private getIntegrationDataKey(
-    integrationId: string,
-    endpoint: string,
-  ): string {
+  private getIntegrationDataKey(integrationId: string, endpoint: string): string {
     return `${this.CACHE_PREFIX}integration:${integrationId}:${endpoint}`;
   }
 
   /**
    * Cache workspace data
    */
-  async cacheWorkspace(
-    workspaceId: string,
-    data: any,
-    ttl?: number,
-  ): Promise<void> {
+  async cacheWorkspace(workspaceId: string, data: any, ttl?: number): Promise<void> {
     const key = this.getWorkspaceKey(workspaceId);
     await this.redis.setJSON(key, data, ttl || this.DEFAULT_TTL);
   }
@@ -78,11 +71,7 @@ export class CacheService {
   /**
    * Cache widget data
    */
-  async cacheWidgetData(
-    widgetId: string,
-    data: any,
-    ttl?: number,
-  ): Promise<void> {
+  async cacheWidgetData(widgetId: string, data: any, ttl?: number): Promise<void> {
     const key = this.getWidgetDataKey(widgetId);
     await this.redis.setJSON(key, data, ttl || this.DEFAULT_TTL);
   }
@@ -111,10 +100,7 @@ export class CacheService {
   /**
    * Get cached integration data
    */
-  async getIntegrationData<T>(
-    integrationId: string,
-    endpoint: string,
-  ): Promise<T | null> {
+  async getIntegrationData<T>(integrationId: string, endpoint: string): Promise<T | null> {
     const key = this.getIntegrationDataKey(integrationId, endpoint);
     return this.redis.getJSON<T>(key);
   }

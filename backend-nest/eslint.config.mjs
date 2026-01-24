@@ -21,6 +21,7 @@ export default tseslint.config(
       parserOptions: {
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
+        allowDefaultProject: true,
       },
     },
   },
@@ -37,8 +38,15 @@ export default tseslint.config(
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       '@typescript-eslint/require-await': 'off',
-      '@typescript-eslint/await-thenable': 'off',
+      '@typescript-eslint/await-thenable': 'error',
       '@typescript-eslint/unbound-method': 'off',
+      // Additional rules for better code quality
+      'prefer-const': 'error',
+      '@typescript-eslint/no-inferrable-types': 'warn',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/no-magic-numbers': ['off', { ignore: [0, 1, -1] }],
+      '@typescript-eslint/no-duplicate-enum-values': 'error',
+      '@typescript-eslint/prefer-enum-initializers': 'warn',
     },
   },
 );

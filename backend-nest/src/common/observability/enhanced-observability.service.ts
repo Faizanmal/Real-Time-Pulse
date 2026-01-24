@@ -160,15 +160,7 @@ export class EnhancedObservabilityService implements OnModuleInit {
     level: LogEntry['level'],
     message: string,
     context?: Partial<
-      Omit<
-        LogEntry,
-        | 'timestamp'
-        | 'level'
-        | 'message'
-        | 'service'
-        | 'version'
-        | 'environment'
-      >
+      Omit<LogEntry, 'timestamp' | 'level' | 'message' | 'service' | 'version' | 'environment'>
     >,
   ): void {
     const entry: LogEntry = {
@@ -216,11 +208,7 @@ export class EnhancedObservabilityService implements OnModuleInit {
     this.log('warn', message, { metadata: context });
   }
 
-  error(
-    message: string,
-    error?: Error,
-    context?: Record<string, unknown>,
-  ): void {
+  error(message: string, error?: Error, context?: Record<string, unknown>): void {
     this.log('error', message, {
       metadata: context,
       error: error
@@ -245,11 +233,7 @@ export class EnhancedObservabilityService implements OnModuleInit {
   /**
    * Increment a counter metric
    */
-  incrementCounter(
-    name: string,
-    labels: Record<string, string> = {},
-    value = 1,
-  ): void {
+  incrementCounter(name: string, labels: Record<string, string> = {}, value = 1): void {
     const key = this.getMetricKey(name, labels);
     const current = this.counters.get(key) || 0;
     this.counters.set(key, current + value);
@@ -258,11 +242,7 @@ export class EnhancedObservabilityService implements OnModuleInit {
   /**
    * Set a gauge metric
    */
-  setGauge(
-    name: string,
-    value: number,
-    labels: Record<string, string> = {},
-  ): void {
+  setGauge(name: string, value: number, labels: Record<string, string> = {}): void {
     const key = this.getMetricKey(name, labels);
     this.counters.set(key, value);
   }
@@ -270,11 +250,7 @@ export class EnhancedObservabilityService implements OnModuleInit {
   /**
    * Record a histogram value (for timing, sizes, etc.)
    */
-  recordHistogram(
-    name: string,
-    value: number,
-    labels: Record<string, string> = {},
-  ): void {
+  recordHistogram(name: string, value: number, labels: Record<string, string> = {}): void {
     const key = this.getMetricKey(name, labels);
     const values = this.histograms.get(key) || [];
     values.push(value);
@@ -343,8 +319,7 @@ export class EnhancedObservabilityService implements OnModuleInit {
       httpRequestDuration: {
         avg:
           sortedDurations.length > 0
-            ? sortedDurations.reduce((a, b) => a + b, 0) /
-              sortedDurations.length
+            ? sortedDurations.reduce((a, b) => a + b, 0) / sortedDurations.length
             : 0,
         p50: this.getPercentile(sortedDurations, 50),
         p95: this.getPercentile(sortedDurations, 95),
@@ -500,9 +475,7 @@ export class EnhancedObservabilityService implements OnModuleInit {
    * Get error reports
    */
   getErrorReports(limit = 50): ErrorReport[] {
-    return [...this.errorBuffer]
-      .sort((a, b) => b.occurrences - a.occurrences)
-      .slice(0, limit);
+    return [...this.errorBuffer].sort((a, b) => b.occurrences - a.occurrences).slice(0, limit);
   }
 
   /**

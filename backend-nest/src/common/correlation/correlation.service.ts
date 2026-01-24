@@ -46,10 +46,7 @@ export class CorrelationService {
   /**
    * Run a function within a correlation context
    */
-  run<T>(
-    context: Partial<CorrelationContext>,
-    fn: () => T | Promise<T>,
-  ): T | Promise<T> {
+  run<T>(context: Partial<CorrelationContext>, fn: () => T | Promise<T>): T | Promise<T> {
     const fullContext: CorrelationContext = {
       correlationId: context.correlationId || uuidv4(),
       spanId: uuidv4().substring(0, 16),
@@ -128,15 +125,14 @@ export class CorrelationService {
   /**
    * Mark request as complete and update metrics
    */
-  completeRequest(success: boolean = true): void {
+  completeRequest(success = true): void {
     const context = this.getContext();
     if (context) {
       const duration = Date.now() - context.startTime;
 
       this.metrics.activeRequests--;
       this.metrics.responseTimeSum += duration;
-      this.metrics.avgResponseTime =
-        this.metrics.responseTimeSum / this.metrics.totalRequests;
+      this.metrics.avgResponseTime = this.metrics.responseTimeSum / this.metrics.totalRequests;
 
       if (duration > 5000) {
         this.metrics.slowRequests++;

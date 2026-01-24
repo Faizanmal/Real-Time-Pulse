@@ -14,10 +14,7 @@ export class SemanticSearchService {
   /**
    * Rerank search results using semantic similarity
    */
-  async rerank(
-    query: string,
-    results: SearchResult[],
-  ): Promise<SearchResult[]> {
+  async rerank(query: string, results: SearchResult[]): Promise<SearchResult[]> {
     if (!this.openAiApiKey || results.length === 0) {
       return results;
     }
@@ -30,17 +27,13 @@ export class SemanticSearchService {
       }
 
       // Get embeddings for result texts
-      const resultTexts = results.map(
-        (r) => `${r.title} ${r.description || ''}`,
-      );
+      const resultTexts = results.map((r) => `${r.title} ${r.description || ''}`);
       const resultEmbeddings = await this.getEmbeddings(resultTexts);
 
       // Calculate semantic similarity scores
       const scoredResults = results.map((result, index) => {
         const embedding = resultEmbeddings[index];
-        const semanticScore = embedding
-          ? this.cosineSimilarity(queryEmbedding, embedding)
-          : 0;
+        const semanticScore = embedding ? this.cosineSimilarity(queryEmbedding, embedding) : 0;
 
         // Combine with original relevance score (70% semantic, 30% keyword)
         const combinedScore = semanticScore * 0.7 + result.relevanceScore * 0.3;
@@ -179,7 +172,7 @@ export class SemanticSearchService {
       if (match) {
         const daysBack = daysGroup ? parseInt(match[daysGroup], 10) : days;
         const fromDate = new Date();
-        fromDate.setDate(fromDate.getDate() - daysBack!);
+        fromDate.setDate(fromDate.getDate() - daysBack);
         result.filters.dateRange = { from: fromDate };
         break;
       }

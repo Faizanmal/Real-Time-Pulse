@@ -18,16 +18,7 @@ export interface ConversationMessage {
 }
 
 export interface ChartSuggestion {
-  type:
-    | 'bar'
-    | 'line'
-    | 'pie'
-    | 'scatter'
-    | 'area'
-    | 'radar'
-    | '3d-scatter'
-    | '3d-bar'
-    | 'globe';
+  type: 'bar' | 'line' | 'pie' | 'scatter' | 'area' | 'radar' | '3d-scatter' | '3d-bar' | 'globe';
   title: string;
   dataQuery: string;
   config: Record<string, any>;
@@ -80,10 +71,7 @@ export class ConversationalAIService {
   /**
    * Process a natural language query and return insights
    */
-  async processQuery(
-    query: string,
-    context: ConversationContext,
-  ): Promise<NLQueryResult> {
+  async processQuery(query: string, context: ConversationContext): Promise<NLQueryResult> {
     try {
       // Analyze query intent
       const intent = await this.analyzeQueryIntent(query, context);
@@ -92,22 +80,14 @@ export class ConversationalAIService {
       const dataContext = await this.buildDataContext(context);
 
       // Generate response based on intent
-      const response = await this.generateResponse(
-        query,
-        intent,
-        dataContext,
-        context,
-      );
+      const response = await this.generateResponse(query, intent, dataContext, context);
 
       // Log conversation for future reference
       await this.logConversation(query, response, context);
 
       return response;
     } catch (error) {
-      this.logger.error(
-        `Error processing query: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error(`Error processing query: ${error.message}`, error.stack);
       return {
         success: false,
         interpretation: 'I encountered an error processing your request.',
@@ -123,14 +103,7 @@ export class ConversationalAIService {
     query: string,
     context: ConversationContext,
   ): Promise<{
-    type:
-      | 'data_query'
-      | 'comparison'
-      | 'trend'
-      | 'forecast'
-      | 'explanation'
-      | 'action'
-      | 'general';
+    type: 'data_query' | 'comparison' | 'trend' | 'forecast' | 'explanation' | 'action' | 'general';
     entities: string[];
     timeRange?: { start: Date; end: Date };
     metrics?: string[];
@@ -225,13 +198,7 @@ Respond in JSON format only.`;
    */
   private getProviderSchema(provider: string): string[] {
     const schemas: Record<string, string[]> = {
-      GOOGLE_ANALYTICS: [
-        'pageViews',
-        'sessions',
-        'users',
-        'bounceRate',
-        'avgSessionDuration',
-      ],
+      GOOGLE_ANALYTICS: ['pageViews', 'sessions', 'users', 'bounceRate', 'avgSessionDuration'],
       HUBSPOT: ['contacts', 'deals', 'companies', 'emails', 'revenue'],
       SALESFORCE: ['leads', 'opportunities', 'accounts', 'contacts', 'revenue'],
       SHOPIFY: ['orders', 'products', 'customers', 'revenue', 'inventory'],
@@ -319,10 +286,7 @@ Respond in this JSON format:
   /**
    * Call the preferred LLM (OpenAI or Anthropic)
    */
-  private async callLLM(
-    systemPrompt: string,
-    userMessage: string,
-  ): Promise<string> {
+  private async callLLM(systemPrompt: string, userMessage: string): Promise<string> {
     if (this.preferredModel === 'anthropic' && this.anthropic) {
       const response = await this.anthropic.messages.create({
         model: 'claude-sonnet-4-20250514',
@@ -413,27 +377,20 @@ Respond in this JSON format:
       description: insight.description,
       severity: this.mapSeverity(insight.severity),
       actionable: true,
-      suggestedAction:
-        (insight.recommendations as any)?.actions?.[0] || undefined,
+      suggestedAction: (insight.recommendations as any)?.actions?.[0] || undefined,
     }));
 
     // Add generated insights if we have AI capabilities
     if (this.openai || this.anthropic) {
-      const generatedInsights =
-        await this.generateProactiveInsights(workspaceId);
+      const generatedInsights = await this.generateProactiveInsights(workspaceId);
       insights.push(...generatedInsights);
     }
 
     return { insights: insights.slice(0, 5) };
   }
 
-  private mapInsightType(
-    type: string,
-  ): 'anomaly' | 'trend' | 'opportunity' | 'warning' {
-    const mapping: Record<
-      string,
-      'anomaly' | 'trend' | 'opportunity' | 'warning'
-    > = {
+  private mapInsightType(type: string): 'anomaly' | 'trend' | 'opportunity' | 'warning' {
+    const mapping: Record<string, 'anomaly' | 'trend' | 'opportunity' | 'warning'> = {
       ANOMALY: 'anomaly',
       TREND: 'trend',
       PATTERN: 'trend',
@@ -588,11 +545,7 @@ Return JSON with: story (narrative paragraph), highlights (array of positive poi
   /**
    * Answer a question about specific data
    */
-  async askAboutData(
-    question: string,
-    data: any,
-    _context: ConversationContext,
-  ): Promise<string> {
+  async askAboutData(question: string, data: any, _context: ConversationContext): Promise<string> {
     const dataPreview = JSON.stringify(data).substring(0, 2000);
 
     const prompt = `The user is asking about this data:
@@ -602,9 +555,6 @@ Question: ${question}
 
 Provide a clear, concise answer based on the data.`;
 
-    return this.callLLM(
-      'You are a data analyst helping users understand their data.',
-      prompt,
-    );
+    return this.callLLM('You are a data analyst helping users understand their data.', prompt);
   }
 }

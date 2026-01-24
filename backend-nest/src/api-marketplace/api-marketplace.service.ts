@@ -164,9 +164,7 @@ export class ApiMarketplaceService implements OnModuleInit {
             name: 'Get Account',
             method: 'GET',
             path: '/services/data/v57.0/sobjects/Account/{id}',
-            parameters: [
-              { name: 'id', type: 'path', dataType: 'string', required: true },
-            ],
+            parameters: [{ name: 'id', type: 'path', dataType: 'string', required: true }],
           },
         ],
         configSchema: {
@@ -432,11 +430,7 @@ export class ApiMarketplaceService implements OnModuleInit {
     ];
 
     // Save built-in connectors
-    await this.cache.set(
-      'marketplace:connectors',
-      JSON.stringify(builtInConnectors),
-      86400 * 365,
-    );
+    await this.cache.set('marketplace:connectors', JSON.stringify(builtInConnectors), 86400 * 365);
   }
 
   /**
@@ -448,9 +442,7 @@ export class ApiMarketplaceService implements OnModuleInit {
     verified?: boolean;
   }): Promise<MarketplaceConnector[]> {
     const connectorsJson = await this.cache.get('marketplace:connectors');
-    let connectors: MarketplaceConnector[] = connectorsJson
-      ? JSON.parse(connectorsJson)
-      : [];
+    let connectors: MarketplaceConnector[] = connectorsJson ? JSON.parse(connectorsJson) : [];
 
     if (options?.category) {
       connectors = connectors.filter((c) => c.category === options.category);
@@ -475,9 +467,7 @@ export class ApiMarketplaceService implements OnModuleInit {
   /**
    * Get connector by ID
    */
-  async getConnector(
-    connectorId: string,
-  ): Promise<MarketplaceConnector | null> {
+  async getConnector(connectorId: string): Promise<MarketplaceConnector | null> {
     const connectors = await this.getMarketplaceConnectors();
     return connectors.find((c) => c.id === connectorId) || null;
   }
@@ -510,9 +500,7 @@ export class ApiMarketplaceService implements OnModuleInit {
     // Save installed connector
     const key = `installed_connectors:${workspaceId}`;
     const installedJson = await this.cache.get(key);
-    const installedList: InstalledConnector[] = installedJson
-      ? JSON.parse(installedJson)
-      : [];
+    const installedList: InstalledConnector[] = installedJson ? JSON.parse(installedJson) : [];
     installedList.push(installed);
 
     await this.cache.set(key, JSON.stringify(installedList), 86400 * 365);
@@ -526,9 +514,7 @@ export class ApiMarketplaceService implements OnModuleInit {
   /**
    * Get installed connectors for workspace
    */
-  async getInstalledConnectors(
-    workspaceId: string,
-  ): Promise<InstalledConnector[]> {
+  async getInstalledConnectors(workspaceId: string): Promise<InstalledConnector[]> {
     const key = `installed_connectors:${workspaceId}`;
     const installedJson = await this.cache.get(key);
     return installedJson ? JSON.parse(installedJson) : [];
@@ -537,15 +523,10 @@ export class ApiMarketplaceService implements OnModuleInit {
   /**
    * Uninstall connector
    */
-  async uninstallConnector(
-    workspaceId: string,
-    installationId: string,
-  ): Promise<void> {
+  async uninstallConnector(workspaceId: string, installationId: string): Promise<void> {
     const key = `installed_connectors:${workspaceId}`;
     const installedJson = await this.cache.get(key);
-    const installedList: InstalledConnector[] = installedJson
-      ? JSON.parse(installedJson)
-      : [];
+    const installedList: InstalledConnector[] = installedJson ? JSON.parse(installedJson) : [];
 
     const filtered = installedList.filter((i) => i.id !== installationId);
     await this.cache.set(key, JSON.stringify(filtered), 86400 * 365);
@@ -561,9 +542,7 @@ export class ApiMarketplaceService implements OnModuleInit {
   ): Promise<InstalledConnector | null> {
     const key = `installed_connectors:${workspaceId}`;
     const installedJson = await this.cache.get(key);
-    const installedList: InstalledConnector[] = installedJson
-      ? JSON.parse(installedJson)
-      : [];
+    const installedList: InstalledConnector[] = installedJson ? JSON.parse(installedJson) : [];
 
     const index = installedList.findIndex((i) => i.id === installationId);
     if (index === -1) return null;
@@ -603,34 +582,22 @@ export class ApiMarketplaceService implements OnModuleInit {
     };
 
     const connectorsJson = await this.cache.get('marketplace:connectors');
-    const connectors: MarketplaceConnector[] = connectorsJson
-      ? JSON.parse(connectorsJson)
-      : [];
+    const connectors: MarketplaceConnector[] = connectorsJson ? JSON.parse(connectorsJson) : [];
     connectors.push(newConnector);
 
-    await this.cache.set(
-      'marketplace:connectors',
-      JSON.stringify(connectors),
-      86400 * 365,
-    );
+    await this.cache.set('marketplace:connectors', JSON.stringify(connectors), 86400 * 365);
 
     return newConnector;
   }
 
   private async incrementDownloads(connectorId: string): Promise<void> {
     const connectorsJson = await this.cache.get('marketplace:connectors');
-    const connectors: MarketplaceConnector[] = connectorsJson
-      ? JSON.parse(connectorsJson)
-      : [];
+    const connectors: MarketplaceConnector[] = connectorsJson ? JSON.parse(connectorsJson) : [];
 
     const index = connectors.findIndex((c) => c.id === connectorId);
     if (index !== -1) {
       connectors[index].downloads++;
-      await this.cache.set(
-        'marketplace:connectors',
-        JSON.stringify(connectors),
-        86400 * 365,
-      );
+      await this.cache.set('marketplace:connectors', JSON.stringify(connectors), 86400 * 365);
     }
   }
 }

@@ -169,18 +169,18 @@ export class AlertingService implements OnModuleInit {
    */
   private async getMetricValue(metric: string): Promise<number> {
     const metrics = this.monitoringService.getMetrics();
-    
+
     // Check counters
     for (const [key, value] of Object.entries(metrics.counters)) {
       if (key.startsWith(metric)) {
-        return value as number;
+        return value;
       }
     }
-    
+
     // Check gauges
     for (const [key, value] of Object.entries(metrics.gauges)) {
       if (key.startsWith(metric)) {
-        return value as number;
+        return value;
       }
     }
 
@@ -414,7 +414,7 @@ export class AlertingService implements OnModuleInit {
   /**
    * Send email alert
    */
-  private async sendEmailAlert(alert: any) {
+  private async sendEmailAlert(_alert: any) {
     const alertEmails = this.configService.get<string>('monitoring.alertEmails');
     if (!alertEmails) return;
 
@@ -518,7 +518,7 @@ export class AlertingService implements OnModuleInit {
   /**
    * Get alert history
    */
-  getAlertHistory(limit: number = 100): any[] {
+  getAlertHistory(limit = 100): any[] {
     return this.alertHistory.slice(-limit);
   }
 }

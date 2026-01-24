@@ -26,11 +26,7 @@ export class ApiKeysService {
   /**
    * Create a new API key
    */
-  async createApiKey(
-    userId: string,
-    workspaceId: string,
-    dto: CreateApiKeyDto,
-  ) {
+  async createApiKey(userId: string, workspaceId: string, dto: CreateApiKeyDto) {
     const { key, hash, prefix } = this.generateApiKey();
 
     const apiKey = await this.prisma.apiKey.create({
@@ -216,9 +212,7 @@ export class ApiKeysService {
   /**
    * Validate an API key and return the associated workspace
    */
-  async validateApiKey(
-    apiKey: string,
-  ): Promise<{ workspaceId: string; scopes: string[] } | null> {
+  async validateApiKey(apiKey: string): Promise<{ workspaceId: string; scopes: string[] } | null> {
     const hash = crypto.createHash('sha256').update(apiKey).digest('hex');
 
     const key = await this.prisma.apiKey.findFirst({

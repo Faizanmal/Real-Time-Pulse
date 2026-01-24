@@ -45,18 +45,11 @@ export class EnhancedComplianceService {
   }
 
   // Compliance Assessments
-  async createAssessment(
-    workspaceId: string,
-    frameworkId: string,
-    assessedBy: string,
-  ) {
+  async createAssessment(workspaceId: string, frameworkId: string, assessedBy: string) {
     const framework = await this.getFramework(frameworkId);
 
     // Perform assessment
-    const assessmentResults = await this.performAssessment(
-      workspaceId,
-      framework,
-    );
+    const assessmentResults = await this.performAssessment(workspaceId, framework);
 
     return this.prisma.complianceAssessment.create({
       data: {
@@ -68,9 +61,7 @@ export class EnhancedComplianceService {
         gaps: assessmentResults.gaps,
         recommendations: assessmentResults.recommendations,
         assessedBy,
-        nextAssessmentDue: this.calculateNextAssessment(
-          framework.auditSchedule || undefined,
-        ),
+        nextAssessmentDue: this.calculateNextAssessment(framework.auditSchedule || undefined),
       },
       include: {
         framework: true,
@@ -274,14 +265,10 @@ export class EnhancedComplianceService {
 
     const recentAssessment = assessments[0];
     const criticalIncidents = incidents.filter(
-      (i) =>
-        i.severity === IncidentSeverity.CRITICAL &&
-        i.status !== IncidentStatus.CLOSED,
+      (i) => i.severity === IncidentSeverity.CRITICAL && i.status !== IncidentStatus.CLOSED,
     );
     const openIncidents = incidents.filter(
-      (i) =>
-        i.status !== IncidentStatus.CLOSED &&
-        i.status !== IncidentStatus.RESOLVED,
+      (i) => i.status !== IncidentStatus.CLOSED && i.status !== IncidentStatus.RESOLVED,
     );
 
     const sensitiveData = mappings.filter(
@@ -293,8 +280,7 @@ export class EnhancedComplianceService {
     return {
       overview: {
         complianceScore: recentAssessment?.score || 0,
-        complianceStatus:
-          recentAssessment?.status || ComplianceStatus.NOT_ASSESSED,
+        complianceStatus: recentAssessment?.status || ComplianceStatus.NOT_ASSESSED,
         lastAssessment: recentAssessment?.assessedAt,
         nextAssessment: recentAssessment?.nextAssessmentDue,
       },

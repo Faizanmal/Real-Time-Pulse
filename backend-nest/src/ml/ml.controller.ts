@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-} from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
 import { MLModelService } from './ml-model.service';
 import { CausalInferenceService } from './causal-inference.service';
 
@@ -33,13 +25,7 @@ export class MLController {
     @Body()
     body: {
       name: string;
-      type:
-        | 'classification'
-        | 'regression'
-        | 'clustering'
-        | 'timeseries'
-        | 'anomaly'
-        | 'nlp';
+      type: 'classification' | 'regression' | 'clustering' | 'timeseries' | 'anomaly' | 'nlp';
       framework: 'sklearn' | 'tensorflow' | 'pytorch' | 'xgboost' | 'custom';
       features: string[];
       target?: string;
@@ -118,9 +104,7 @@ export class MLController {
   }
 
   @Post('causal/graphs')
-  async createCausalGraph(
-    @Body() body: { name: string; variables: any[]; edges: any[] },
-  ) {
+  async createCausalGraph(@Body() body: { name: string; variables: any[]; edges: any[] }) {
     return this.causalService.createCausalGraph(body);
   }
 

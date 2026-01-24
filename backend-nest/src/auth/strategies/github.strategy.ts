@@ -25,17 +25,13 @@ export class GitHubStrategy extends PassportStrategy(Strategy, 'github') {
     const clientSecret = configService.get<string>('oauth.github.clientSecret');
 
     if (!clientID || !clientSecret) {
-      console.warn(
-        'GitHub OAuth credentials not provided. GitHub authentication will not work.',
-      );
+      console.warn('GitHub OAuth credentials not provided. GitHub authentication will not work.');
     }
 
     super({
       clientID: clientID || 'MISSING_CLIENT_ID',
       clientSecret: clientSecret || 'MISSING_CLIENT_SECRET',
-      callbackURL: configService.get<string>(
-        'oauth.github.callbackUrl',
-      ) as string,
+      callbackURL: configService.get<string>('oauth.github.callbackUrl'),
       scope: ['user:email', 'read:user'],
     });
   }

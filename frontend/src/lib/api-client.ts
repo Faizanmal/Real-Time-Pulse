@@ -300,7 +300,7 @@ export const dataHealthApi = {
     return response.data;
   },
 
-  getMetrics: async (workspaceId: string, days: number = 7) => {
+  getMetrics: async (workspaceId: string, days = 7) => {
     const response = await apiClient.get(`/data-health/workspace/${workspaceId}/metrics`, {
       params: { days },
     });
@@ -370,7 +370,7 @@ export const dataValidationApi = {
     return response.data;
   },
 
-  getStats: async (workspaceId: string, days: number = 7) => {
+  getStats: async (workspaceId: string, days = 7) => {
     const response = await apiClient.get(`/data-validation/violations/workspace/${workspaceId}/stats`, {
       params: { days },
     });
@@ -503,14 +503,14 @@ export const analyticsApi = {
     return response.data;
   },
 
-  getMetrics: async (workspaceId: string, metricType: string, period: string = '7d') => {
+  getMetrics: async (workspaceId: string, metricType: string, period = '7d') => {
     const response = await apiClient.get(`/analytics/metrics/${workspaceId}`, {
       params: { metricType, period },
     });
     return response.data;
   },
 
-  getTrends: async (workspaceId: string, period: string = '30d') => {
+  getTrends: async (workspaceId: string, period = '30d') => {
     const response = await apiClient.get(`/analytics/trends/${workspaceId}`, {
       params: { period },
     });
@@ -538,7 +538,7 @@ export const aiInsightsApi = {
     return response.data;
   },
 
-  getAnomalies: async (workspaceId: string, days: number = 7) => {
+  getAnomalies: async (workspaceId: string, days = 7) => {
     const response = await apiClient.get(`/ai-insights/anomalies/${workspaceId}`, {
       params: { days },
     });

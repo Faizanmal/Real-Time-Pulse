@@ -140,8 +140,7 @@ export class AlertsService {
   private evaluateCondition(condition: any, currentValue: any): boolean {
     const { metric, operator, threshold } = condition;
 
-    const value =
-      typeof currentValue === 'object' ? currentValue[metric] : currentValue;
+    const value = typeof currentValue === 'object' ? currentValue[metric] : currentValue;
 
     switch (operator) {
       case '>':

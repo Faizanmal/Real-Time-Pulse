@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  OnModuleInit,
-  OnModuleDestroy,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -51,15 +46,7 @@ interface StreamAggregation {
   groupBy?: string[];
   aggregations: {
     field: string;
-    function:
-      | 'count'
-      | 'sum'
-      | 'avg'
-      | 'min'
-      | 'max'
-      | 'first'
-      | 'last'
-      | 'collect';
+    function: 'count' | 'sum' | 'avg' | 'min' | 'max' | 'first' | 'last' | 'collect';
     alias: string;
   }[];
 }
@@ -105,9 +92,7 @@ export class StreamProcessingService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     // Initialize Kafka connection
-    this.kafkaBrokers = process.env.KAFKA_BROKERS?.split(',') || [
-      'localhost:9092',
-    ];
+    this.kafkaBrokers = process.env.KAFKA_BROKERS?.split(',') || ['localhost:9092'];
     await this.initializeKafka();
 
     // Load existing stream configs
@@ -128,9 +113,7 @@ export class StreamProcessingService implements OnModuleInit, OnModuleDestroy {
     try {
       // In production, use actual Kafka client like kafkajs
       this.kafkaConnected = true;
-      this.logger.log(
-        `Connected to Kafka brokers: ${this.kafkaBrokers.join(', ')}`,
-      );
+      this.logger.log(`Connected to Kafka brokers: ${this.kafkaBrokers.join(', ')}`);
     } catch (error) {
       this.logger.error('Failed to connect to Kafka:', error);
     }
@@ -167,10 +150,7 @@ export class StreamProcessingService implements OnModuleInit, OnModuleDestroy {
     return stream;
   }
 
-  async updateStream(
-    id: string,
-    updates: Partial<StreamConfig>,
-  ): Promise<StreamConfig> {
+  async updateStream(id: string, updates: Partial<StreamConfig>): Promise<StreamConfig> {
     const stream = this.streams.get(id);
     if (!stream) throw new Error(`Stream ${id} not found`);
 
@@ -327,10 +307,7 @@ export class StreamProcessingService implements OnModuleInit, OnModuleDestroy {
         timestamp: new Date(),
       });
     } catch (error) {
-      this.logger.error(
-        `Error processing message in stream ${stream.id}:`,
-        error,
-      );
+      this.logger.error(`Error processing message in stream ${stream.id}:`, error);
       if (metrics) {
         metrics.errorsCount++;
       }
@@ -398,9 +375,7 @@ export class StreamProcessingService implements OnModuleInit, OnModuleDestroy {
   private mapTransform(data: any, config: Record<string, any>): any {
     const result: any = {};
 
-    for (const [targetField, sourceExpr] of Object.entries(
-      config.mappings || {},
-    )) {
+    for (const [targetField, sourceExpr] of Object.entries(config.mappings || {})) {
       if (typeof sourceExpr === 'string' && sourceExpr.startsWith('$')) {
         result[targetField] = this.getNestedValue(data, sourceExpr.slice(1));
       } else {
@@ -419,10 +394,7 @@ export class StreamProcessingService implements OnModuleInit, OnModuleDestroy {
     return this.evaluateCondition(data, condition);
   }
 
-  private async enrichTransform(
-    data: any,
-    config: Record<string, any>,
-  ): Promise<any> {
+  private async enrichTransform(data: any, config: Record<string, any>): Promise<any> {
     const enriched = { ...data };
 
     // Lookup enrichment from database or API
@@ -479,14 +451,11 @@ export class StreamProcessingService implements OnModuleInit, OnModuleDestroy {
 
     for (const aggConfig of stream.aggregations || []) {
       // Get or create current window
-      let currentWindow = windows.find(
-        (w) => now >= w.startTime && now < w.endTime,
-      );
+      let currentWindow = windows.find((w) => now >= w.startTime && now < w.endTime);
 
       if (!currentWindow) {
         // Create new window
-        const windowStart =
-          Math.floor(now / aggConfig.windowSize) * aggConfig.windowSize;
+        const windowStart = Math.floor(now / aggConfig.windowSize) * aggConfig.windowSize;
         currentWindow = {
           id: `window-${windowStart}`,
           startTime: windowStart,
@@ -505,16 +474,10 @@ export class StreamProcessingService implements OnModuleInit, OnModuleDestroy {
       currentWindow.events.push(data);
 
       // Calculate running aggregation
-      currentWindow.aggregatedResults = this.calculateAggregation(
-        currentWindow.events,
-        aggConfig,
-      );
+      currentWindow.aggregatedResults = this.calculateAggregation(currentWindow.events, aggConfig);
 
       // Check if window should be emitted
-      if (
-        now >= currentWindow.endTime &&
-        !currentWindow.aggregatedResults?._emitted
-      ) {
+      if (now >= currentWindow.endTime && !currentWindow.aggregatedResults?._emitted) {
         this.emitWindowResult(stream, currentWindow, aggConfig);
         currentWindow.aggregatedResults._emitted = true;
       }
@@ -523,22 +486,17 @@ export class StreamProcessingService implements OnModuleInit, OnModuleDestroy {
     this.windows.set(stream.id, windows);
   }
 
-  private calculateAggregation(
-    events: any[],
-    config: StreamAggregation,
-  ): Record<string, any> {
+  private calculateAggregation(events: any[], config: StreamAggregation): Record<string, any> {
     const groups = new Map<string, any[]>();
 
     // Group events
     if (config.groupBy?.length) {
       for (const event of events) {
-        const key = config.groupBy
-          .map((f) => this.getNestedValue(event, f))
-          .join('::');
+        const key = config.groupBy.map((f) => this.getNestedValue(event, f)).join('::');
         if (!groups.has(key)) {
           groups.set(key, []);
         }
-        groups.get(key)!.push(event);
+        groups.get(key).push(event);
       }
     } else {
       groups.set('_all', events);
@@ -558,9 +516,7 @@ export class StreamProcessingService implements OnModuleInit, OnModuleDestroy {
       }
 
       for (const agg of config.aggregations) {
-        const values = groupEvents.map((e) =>
-          this.getNestedValue(e, agg.field),
-        );
+        const values = groupEvents.map((e) => this.getNestedValue(e, agg.field));
         const numericValues = values.filter((v) => typeof v === 'number');
 
         switch (agg.function) {
@@ -599,11 +555,7 @@ export class StreamProcessingService implements OnModuleInit, OnModuleDestroy {
     return results;
   }
 
-  private emitWindowResult(
-    stream: StreamConfig,
-    window: StreamWindow,
-    config: StreamAggregation,
-  ) {
+  private emitWindowResult(stream: StreamConfig, window: StreamWindow, config: StreamAggregation) {
     const result = {
       streamId: stream.id,
       windowId: window.id,
@@ -615,9 +567,7 @@ export class StreamProcessingService implements OnModuleInit, OnModuleDestroy {
     };
 
     this.eventEmitter.emit('stream.window.completed', result);
-    this.logger.debug(
-      `Window completed: ${window.id}, events: ${window.events.length}`,
-    );
+    this.logger.debug(`Window completed: ${window.id}, events: ${window.events.length}`);
   }
 
   private async sendToSinks(stream: StreamConfig, data: any) {

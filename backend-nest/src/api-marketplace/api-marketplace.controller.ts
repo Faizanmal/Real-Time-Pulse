@@ -10,13 +10,7 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiMarketplaceService } from './api-marketplace.service';
 import { CustomEndpointService } from './custom-endpoint.service';
@@ -49,8 +43,7 @@ export class ApiMarketplaceController {
     return this.marketplaceService.getMarketplaceConnectors({
       category,
       search,
-      verified:
-        verified === 'true' ? true : verified === 'false' ? false : undefined,
+      verified: verified === 'true' ? true : verified === 'false' ? false : undefined,
     });
   }
 
@@ -93,14 +86,8 @@ export class ApiMarketplaceController {
   @Delete('installed/:installationId')
   @ApiOperation({ summary: 'Uninstall connector' })
   @ApiParam({ name: 'installationId', description: 'Installation ID' })
-  async uninstallConnector(
-    @Request() req: any,
-    @Param('installationId') installationId: string,
-  ) {
-    await this.marketplaceService.uninstallConnector(
-      req.user.workspaceId,
-      installationId,
-    );
+  async uninstallConnector(@Request() req: any, @Param('installationId') installationId: string) {
+    await this.marketplaceService.uninstallConnector(req.user.workspaceId, installationId);
     return { success: true };
   }
 
@@ -160,10 +147,7 @@ export class ApiMarketplaceController {
   @Get('endpoints/:endpointId')
   @ApiOperation({ summary: 'Get endpoint by ID' })
   @ApiParam({ name: 'endpointId', description: 'Endpoint ID' })
-  async getEndpoint(
-    @Request() req: any,
-    @Param('endpointId') endpointId: string,
-  ) {
+  async getEndpoint(@Request() req: any, @Param('endpointId') endpointId: string) {
     return this.endpointService.getEndpoint(req.user.workspaceId, endpointId);
   }
 
@@ -175,20 +159,13 @@ export class ApiMarketplaceController {
     @Param('endpointId') endpointId: string,
     @Body() dto: any,
   ) {
-    return this.endpointService.updateEndpoint(
-      req.user.workspaceId,
-      endpointId,
-      dto,
-    );
+    return this.endpointService.updateEndpoint(req.user.workspaceId, endpointId, dto);
   }
 
   @Delete('endpoints/:endpointId')
   @ApiOperation({ summary: 'Delete endpoint' })
   @ApiParam({ name: 'endpointId', description: 'Endpoint ID' })
-  async deleteEndpoint(
-    @Request() req: any,
-    @Param('endpointId') endpointId: string,
-  ) {
+  async deleteEndpoint(@Request() req: any, @Param('endpointId') endpointId: string) {
     await this.endpointService.deleteEndpoint(req.user.workspaceId, endpointId);
     return { success: true };
   }
@@ -196,40 +173,22 @@ export class ApiMarketplaceController {
   @Post('endpoints/:endpointId/activate')
   @ApiOperation({ summary: 'Activate endpoint' })
   @ApiParam({ name: 'endpointId', description: 'Endpoint ID' })
-  async activateEndpoint(
-    @Request() req: any,
-    @Param('endpointId') endpointId: string,
-  ) {
-    return this.endpointService.activateEndpoint(
-      req.user.workspaceId,
-      endpointId,
-    );
+  async activateEndpoint(@Request() req: any, @Param('endpointId') endpointId: string) {
+    return this.endpointService.activateEndpoint(req.user.workspaceId, endpointId);
   }
 
   @Post('endpoints/:endpointId/deactivate')
   @ApiOperation({ summary: 'Deactivate endpoint' })
   @ApiParam({ name: 'endpointId', description: 'Endpoint ID' })
-  async deactivateEndpoint(
-    @Request() req: any,
-    @Param('endpointId') endpointId: string,
-  ) {
-    return this.endpointService.deactivateEndpoint(
-      req.user.workspaceId,
-      endpointId,
-    );
+  async deactivateEndpoint(@Request() req: any, @Param('endpointId') endpointId: string) {
+    return this.endpointService.deactivateEndpoint(req.user.workspaceId, endpointId);
   }
 
   @Post('endpoints/:endpointId/regenerate-key')
   @ApiOperation({ summary: 'Regenerate API key' })
   @ApiParam({ name: 'endpointId', description: 'Endpoint ID' })
-  async regenerateApiKey(
-    @Request() req: any,
-    @Param('endpointId') endpointId: string,
-  ) {
-    const apiKey = await this.endpointService.regenerateApiKey(
-      req.user.workspaceId,
-      endpointId,
-    );
+  async regenerateApiKey(@Request() req: any, @Param('endpointId') endpointId: string) {
+    const apiKey = await this.endpointService.regenerateApiKey(req.user.workspaceId, endpointId);
     return { apiKey };
   }
 
@@ -241,11 +200,7 @@ export class ApiMarketplaceController {
     @Param('endpointId') endpointId: string,
     @Body() params: Record<string, any>,
   ) {
-    return this.endpointService.executeEndpoint(
-      req.user.workspaceId,
-      endpointId,
-      params,
-    );
+    return this.endpointService.executeEndpoint(req.user.workspaceId, endpointId, params);
   }
 
   @Get('endpoints/:endpointId/stats')
@@ -292,14 +247,8 @@ export class ApiMarketplaceController {
 
   @Post('builder/code-samples')
   @ApiOperation({ summary: 'Generate code samples' })
-  generateCodeSamples(
-    @Body() dto: { endpoint: any; baseUrl: string; apiKey?: string },
-  ) {
-    return this.builderService.generateCodeSamples(
-      dto.endpoint,
-      dto.baseUrl,
-      dto.apiKey,
-    );
+  generateCodeSamples(@Body() dto: { endpoint: any; baseUrl: string; apiKey?: string }) {
+    return this.builderService.generateCodeSamples(dto.endpoint, dto.baseUrl, dto.apiKey);
   }
 
   @Get('builder/data-sources')

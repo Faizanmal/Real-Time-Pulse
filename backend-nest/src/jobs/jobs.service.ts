@@ -41,10 +41,7 @@ export class JobsService {
   /**
    * Add email to queue
    */
-  async queueEmail(
-    data: EmailJobData,
-    options?: { delay?: number; priority?: number },
-  ) {
+  async queueEmail(data: EmailJobData, options?: { delay?: number; priority?: number }) {
     try {
       const job = await this.emailQueue.add('send-email', data, {
         delay: options?.delay || 0,
@@ -88,21 +85,14 @@ export class JobsService {
   async queueDataSync(data: DataSyncJobData) {
     try {
       // Prevent duplicate sync jobs for the same integration
-      const existingJobs = await this.dataSyncQueue.getJobs([
-        'waiting',
-        'active',
-      ]);
+      const existingJobs = await this.dataSyncQueue.getJobs(['waiting', 'active']);
 
       const duplicate = existingJobs.find(
-        (job: any) =>
-          (job.data as { integrationId: string }).integrationId ===
-          data.integrationId,
+        (job: any) => (job.data as { integrationId: string }).integrationId === data.integrationId,
       );
 
       if (duplicate) {
-        this.logger.warn(
-          `Data sync job already exists for integration: ${data.integrationId}`,
-        );
+        this.logger.warn(`Data sync job already exists for integration: ${data.integrationId}`);
         return duplicate;
       }
 
@@ -212,10 +202,7 @@ export class JobsService {
   /**
    * Clean old jobs
    */
-  async cleanOldJobs(
-    queueName: keyof typeof QUEUE_NAMES,
-    olderThan: number = 24 * 60 * 60 * 1000,
-  ) {
+  async cleanOldJobs(queueName: keyof typeof QUEUE_NAMES, olderThan: number = 24 * 60 * 60 * 1000) {
     const queue = this.getQueue(queueName);
     await queue.clean(olderThan, 'completed');
     await queue.clean(olderThan, 'failed');

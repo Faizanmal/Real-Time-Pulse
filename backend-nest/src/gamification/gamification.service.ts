@@ -75,15 +75,11 @@ export class GamificationService {
       // Broadcast to workspace (social)
       const user = await this.prisma.user.findUnique({ where: { id: userId } });
       if (user) {
-        this.realtimeGateway.broadcastToWorkspace(
-          user.workspaceId,
-          'gamification:user_level_up',
-          {
-            userId: user.id,
-            userName: user.firstName,
-            level: newLevel,
-          },
-        );
+        this.realtimeGateway.broadcastToWorkspace(user.workspaceId, 'gamification:user_level_up', {
+          userId: user.id,
+          userName: user.firstName,
+          level: newLevel,
+        });
       }
     }
 

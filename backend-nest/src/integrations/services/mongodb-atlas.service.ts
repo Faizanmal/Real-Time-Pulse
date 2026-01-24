@@ -18,9 +18,7 @@ export class MongoDBAtlasService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  private getHeaders(
-    integration: MongoDBAtlasIntegration,
-  ): Record<string, string> {
+  private getHeaders(integration: MongoDBAtlasIntegration): Record<string, string> {
     const credentials = Buffer.from(
       `${integration.accessToken}:${integration.refreshToken}`,
     ).toString('base64');
@@ -34,10 +32,9 @@ export class MongoDBAtlasService {
   async testConnection(integration: MongoDBAtlasIntegration): Promise<boolean> {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(
-          `${this.baseUrl}/groups/${integration.settings.projectId}`,
-          { headers: this.getHeaders(integration) },
-        ),
+        this.httpService.get(`${this.baseUrl}/groups/${integration.settings.projectId}`, {
+          headers: this.getHeaders(integration),
+        }),
       );
       return response.status === 200;
     } catch (error) {
@@ -77,10 +74,9 @@ export class MongoDBAtlasService {
   ): Promise<unknown> {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(
-          `${this.baseUrl}/groups/${integration.settings.projectId}/clusters`,
-          { headers: this.getHeaders(integration) },
-        ),
+        this.httpService.get(`${this.baseUrl}/groups/${integration.settings.projectId}/clusters`, {
+          headers: this.getHeaders(integration),
+        }),
       );
 
       return response.data.results || [];
@@ -95,8 +91,7 @@ export class MongoDBAtlasService {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const clusterName =
-        (params?.clusterName as string) || integration.settings.clusterName;
+      const clusterName = (params?.clusterName as string) || integration.settings.clusterName;
 
       if (!clusterName) {
         throw new Error('Cluster name is required');
@@ -121,8 +116,7 @@ export class MongoDBAtlasService {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const clusterName =
-        (params?.clusterName as string) || integration.settings.clusterName;
+      const clusterName = (params?.clusterName as string) || integration.settings.clusterName;
       const databaseName = params?.databaseName as string;
 
       if (!clusterName || !databaseName) {
@@ -148,8 +142,7 @@ export class MongoDBAtlasService {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const clusterName =
-        (params?.clusterName as string) || integration.settings.clusterName;
+      const clusterName = (params?.clusterName as string) || integration.settings.clusterName;
       const granularity = (params?.granularity as string) || 'PT1M';
       const period = (params?.period as string) || 'PT1H';
 
@@ -204,13 +197,10 @@ export class MongoDBAtlasService {
       };
 
       const response = await firstValueFrom(
-        this.httpService.get(
-          `${this.baseUrl}/groups/${integration.settings.projectId}/alerts`,
-          {
-            headers: this.getHeaders(integration),
-            params: queryParams,
-          },
-        ),
+        this.httpService.get(`${this.baseUrl}/groups/${integration.settings.projectId}/alerts`, {
+          headers: this.getHeaders(integration),
+          params: queryParams,
+        }),
       );
 
       return response.data.results || [];
@@ -225,8 +215,7 @@ export class MongoDBAtlasService {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const clusterName =
-        (params?.clusterName as string) || integration.settings.clusterName;
+      const clusterName = (params?.clusterName as string) || integration.settings.clusterName;
       const logName = (params?.logName as string) || 'mongodb';
 
       if (!clusterName) {
@@ -272,8 +261,7 @@ export class MongoDBAtlasService {
       const latestMetrics: Record<string, unknown> = {};
       metricsArray.forEach((metric: any) => {
         if (metric.dataPoints && metric.dataPoints.length > 0) {
-          latestMetrics[metric.name] =
-            metric.dataPoints[metric.dataPoints.length - 1].value;
+          latestMetrics[metric.name] = metric.dataPoints[metric.dataPoints.length - 1].value;
         }
       });
 

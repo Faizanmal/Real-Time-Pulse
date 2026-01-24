@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence, useAnimationControls } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
@@ -143,7 +143,7 @@ export function DataUpdateFlash({
 }: DataUpdateFlashProps) {
     const [isFlashing, setIsFlashing] = useState(false);
     const [displayValue, setDisplayValue] = useState(value);
-    const prevValueRef = useRef(value);
+    const [prevValue, setPrevValue] = useState(value);
 
     const formatValue = useCallback(
         (val: string | number) => {
@@ -164,33 +164,32 @@ export function DataUpdateFlash({
     );
 
     useEffect(() => {
-        if (value !== prevValueRef.current) {
+        if (value !== prevValue) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setIsFlashing(true);
             setDisplayValue(value);
             const timer = setTimeout(() => setIsFlashing(false), 1000);
-            prevValueRef.current = value;
+            setPrevValue(value);
             return () => clearTimeout(timer);
         }
-    }, [value]);
+    }, [value, prevValue]);
 
-    const [direction, setDirection] = useState("neutral");
-
-    useEffect(() => {
+    const direction = useMemo(() => {
         const current = typeof value === "number" ? value : parseFloat(String(value));
         const prev =
             previousValue !== undefined
                 ? typeof previousValue === "number"
                     ? previousValue
                     : parseFloat(String(previousValue))
-                : typeof prevValueRef.current === "number"
-                    ? prevValueRef.current
-                    : parseFloat(String(prevValueRef.current));
+                : typeof prevValue === "number"
+                    ? prevValue
+                    : parseFloat(String(prevValue));
 
-        if (isNaN(current) || isNaN(prev)) setDirection("neutral");
-        else if (current > prev) setDirection("up");
-        else if (current < prev) setDirection("down");
-        else setDirection("neutral");
-    }, [value, previousValue]);
+        if (isNaN(current) || isNaN(prev)) return "neutral";
+        else if (current > prev) return "up";
+        else if (current < prev) return "down";
+        else return "neutral";
+    }, [value, previousValue, prevValue]);
 
     const effectiveFlashColor =
         flashColor === "auto"

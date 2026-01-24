@@ -30,10 +30,7 @@ export class PipelineExecutorService {
   /**
    * Execute a pipeline
    */
-  async execute(
-    pipeline: Pipeline,
-    options?: { dryRun?: boolean },
-  ): Promise<ExecutionResult> {
+  async execute(pipeline: Pipeline, options?: { dryRun?: boolean }): Promise<ExecutionResult> {
     const context: ExecutionContext = {
       data: new Map(),
       errors: [],
@@ -47,18 +44,13 @@ export class PipelineExecutorService {
 
     try {
       // Build execution order (topological sort)
-      const executionOrder = this.buildExecutionOrder(
-        pipeline.nodes,
-        pipeline.edges,
-      );
+      const executionOrder = this.buildExecutionOrder(pipeline.nodes, pipeline.edges);
 
-      this.logger.log(
-        `Executing pipeline ${pipeline.id} with ${executionOrder.length} nodes`,
-      );
+      this.logger.log(`Executing pipeline ${pipeline.id} with ${executionOrder.length} nodes`);
 
       // Execute nodes in order
       for (const nodeId of executionOrder) {
-        const node = pipeline.nodes.find((n) => n.id === nodeId)!;
+        const node = pipeline.nodes.find((n) => n.id === nodeId);
         await this.executeNode(node, pipeline.edges, context, options?.dryRun);
       }
 
@@ -141,10 +133,7 @@ export class PipelineExecutorService {
   /**
    * Execute source node
    */
-  private async executeSourceNode(
-    node: PipelineNode,
-    dryRun?: boolean,
-  ): Promise<any[]> {
+  private async executeSourceNode(node: PipelineNode, dryRun?: boolean): Promise<any[]> {
     const { connectorType, ...config } = node.config;
 
     if (dryRun) {
@@ -158,10 +147,7 @@ export class PipelineExecutorService {
   /**
    * Execute transform node
    */
-  private async executeTransformNode(
-    node: PipelineNode,
-    inputData: any[],
-  ): Promise<any[]> {
+  private async executeTransformNode(node: PipelineNode, inputData: any[]): Promise<any[]> {
     const { transformType, ...config } = node.config;
 
     switch (transformType) {
@@ -205,9 +191,7 @@ export class PipelineExecutorService {
     const { conditions, logic = 'and' } = node.config;
 
     const filtered = inputData.filter((row) => {
-      const results = conditions.map((cond: any) =>
-        this.evaluateCondition(row, cond),
-      );
+      const results = conditions.map((cond: any) => this.evaluateCondition(row, cond));
 
       if (logic === 'and') {
         return results.every(Boolean);
@@ -254,9 +238,7 @@ export class PipelineExecutorService {
 
       case 'left':
         for (const leftRow of leftData) {
-          const matches = rightData.filter(
-            (r) => r[rightKey] === leftRow[leftKey],
-          );
+          const matches = rightData.filter((r) => r[rightKey] === leftRow[leftKey]);
           if (matches.length > 0) {
             for (const match of matches) {
               result.push({ ...leftRow, ...match });
@@ -269,9 +251,7 @@ export class PipelineExecutorService {
 
       case 'right':
         for (const rightRow of rightData) {
-          const matches = leftData.filter(
-            (l) => l[leftKey] === rightRow[rightKey],
-          );
+          const matches = leftData.filter((l) => l[leftKey] === rightRow[rightKey]);
           if (matches.length > 0) {
             for (const match of matches) {
               result.push({ ...match, ...rightRow });
@@ -313,10 +293,7 @@ export class PipelineExecutorService {
   /**
    * Execute aggregate node
    */
-  private async executeAggregateNode(
-    node: PipelineNode,
-    inputData: any[],
-  ): Promise<any[]> {
+  private async executeAggregateNode(node: PipelineNode, inputData: any[]): Promise<any[]> {
     const { groupBy, aggregations } = node.config;
 
     if (!groupBy || groupBy.length === 0) {
@@ -336,7 +313,7 @@ export class PipelineExecutorService {
       if (!groups.has(key)) {
         groups.set(key, []);
       }
-      groups.get(key)!.push(row);
+      groups.get(key).push(row);
     }
 
     // Compute aggregations for each group
@@ -373,9 +350,7 @@ export class PipelineExecutorService {
     const { connectorType, ...config } = node.config;
 
     if (dryRun) {
-      this.logger.log(
-        `[DRY RUN] Would write ${inputData.length} rows to ${connectorType}`,
-      );
+      this.logger.log(`[DRY RUN] Would write ${inputData.length} rows to ${connectorType}`);
       return;
     }
 
@@ -385,10 +360,7 @@ export class PipelineExecutorService {
   /**
    * Build execution order using topological sort
    */
-  private buildExecutionOrder(
-    nodes: PipelineNode[],
-    edges: PipelineEdge[],
-  ): string[] {
+  private buildExecutionOrder(nodes: PipelineNode[], edges: PipelineEdge[]): string[] {
     const inDegree = new Map<string, number>();
     const adjacency = new Map<string, string[]>();
 
@@ -400,7 +372,7 @@ export class PipelineExecutorService {
 
     // Build adjacency list and in-degree count
     for (const edge of edges) {
-      adjacency.get(edge.source)!.push(edge.target);
+      adjacency.get(edge.source).push(edge.target);
       inDegree.set(edge.target, (inDegree.get(edge.target) || 0) + 1);
     }
 
@@ -415,7 +387,7 @@ export class PipelineExecutorService {
     // Process nodes
     const order: string[] = [];
     while (queue.length > 0) {
-      const nodeId = queue.shift()!;
+      const nodeId = queue.shift();
       order.push(nodeId);
 
       for (const neighbor of adjacency.get(nodeId) || []) {
@@ -438,10 +410,7 @@ export class PipelineExecutorService {
       const newRow: any = {};
       for (const mapping of mappings) {
         if (mapping.expression) {
-          newRow[mapping.target] = this.evaluateExpression(
-            row,
-            mapping.expression,
-          );
+          newRow[mapping.target] = this.evaluateExpression(row, mapping.expression);
         } else {
           newRow[mapping.target] = row[mapping.source];
         }
@@ -482,10 +451,7 @@ export class PipelineExecutorService {
     return data.map((row) => {
       const newRow = { ...row };
       for (const derivation of derivations) {
-        newRow[derivation.field] = this.evaluateExpression(
-          row,
-          derivation.expression,
-        );
+        newRow[derivation.field] = this.evaluateExpression(row, derivation.expression);
       }
       return newRow;
     });
@@ -649,9 +615,7 @@ export class PipelineExecutorService {
    * Compute aggregation
    */
   private computeAggregation(data: any[], agg: any): any {
-    const values = data
-      .map((row) => row[agg.field])
-      .filter((v) => v !== undefined && v !== null);
+    const values = data.map((row) => row[agg.field]).filter((v) => v !== undefined && v !== null);
 
     switch (agg.function) {
       case 'count':

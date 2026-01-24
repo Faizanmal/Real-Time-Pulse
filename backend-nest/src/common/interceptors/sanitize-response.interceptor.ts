@@ -1,10 +1,4 @@
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { DataProtectionService } from '../services/data-protection.service';
@@ -29,13 +23,7 @@ export class SanitizeResponseInterceptor implements NestInterceptor {
   ];
 
   // Fields to mask in responses
-  private readonly MASK_FIELDS = [
-    'email',
-    'phone',
-    'ssn',
-    'creditCard',
-    'bankAccount',
-  ];
+  private readonly MASK_FIELDS = ['email', 'phone', 'ssn', 'creditCard', 'bankAccount'];
 
   constructor(private readonly dataProtectionService: DataProtectionService) {}
 
@@ -57,22 +45,14 @@ export class SanitizeResponseInterceptor implements NestInterceptor {
 
       for (const [key, value] of Object.entries(data)) {
         // Skip fields that should be removed
-        if (
-          this.REMOVE_FIELDS.some((f) =>
-            key.toLowerCase().includes(f.toLowerCase()),
-          )
-        ) {
+        if (this.REMOVE_FIELDS.some((f) => key.toLowerCase().includes(f.toLowerCase()))) {
           continue;
         }
 
         // Mask certain fields
-        if (
-          this.MASK_FIELDS.some((f) => key.toLowerCase() === f.toLowerCase())
-        ) {
+        if (this.MASK_FIELDS.some((f) => key.toLowerCase() === f.toLowerCase())) {
           sanitized[key] =
-            typeof value === 'string'
-              ? this.dataProtectionService.mask(value)
-              : value;
+            typeof value === 'string' ? this.dataProtectionService.mask(value) : value;
           continue;
         }
 

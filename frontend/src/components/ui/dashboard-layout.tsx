@@ -13,7 +13,6 @@ import React, {
   useContext,
   useState,
   useCallback,
-  useEffect,
   ReactNode,
 } from 'react';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
@@ -134,29 +133,36 @@ const DashboardContext = createContext<DashboardContextValue | null>(null);
 const STORAGE_KEY = 'pulse_dashboard_layouts';
 
 function DashboardLayoutProvider({ children }: { children: ReactNode }) {
-  const [layouts, setLayouts] = useState<DashboardLayout[]>(DEFAULT_LAYOUTS);
-  const [currentLayoutId, setCurrentLayoutId] = useState('default');
-  const [isEditing, setIsEditing] = useState(false);
-
-  const layout = layouts.find(l => l.id === currentLayoutId) || layouts[0];
-
-  // Load from localStorage
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
+  const [layouts, setLayouts] = useState<DashboardLayout[]>(() => {
+    if (typeof window === 'undefined') return DEFAULT_LAYOUTS;
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const data = JSON.parse(saved);
-        setLayouts(data.layouts || DEFAULT_LAYOUTS);
-        setCurrentLayoutId(data.currentLayoutId || 'default');
+        return data.layouts || DEFAULT_LAYOUTS;
       }
     } catch {
       // Use defaults
     }
-  }, []);
+    return DEFAULT_LAYOUTS;
+  });
+  const [currentLayoutId, setCurrentLayoutId] = useState(() => {
+    if (typeof window === 'undefined') return 'default';
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const data = JSON.parse(saved);
+        return data.currentLayoutId || 'default';
+      }
+    } catch {
+      // Use defaults
+    }
+    return 'default';
+  });
+  const [isEditing, setIsEditing] = useState(false);
 
-  // Save to localStorage
+  // Get current layout
+  const layout = layouts.find(l => l.id === currentLayoutId) || layouts[0];
   const saveToStorage = useCallback(() => {
     if (typeof window === 'undefined') return;
     
@@ -192,16 +198,16 @@ function DashboardLayoutProvider({ children }: { children: ReactNode }) {
 
   const addWidget = useCallback((widget: Omit<WidgetConfig, 'id' | 'order'>) => {
     const id = `widget-${Date.now()}`;
-    const order = layout.widgets.length;
     
     setLayouts(prev => prev.map(l => {
       if (l.id !== currentLayoutId) return l;
+      const order = l.widgets.length;
       return {
         ...l,
         widgets: [...l.widgets, { ...widget, id, order }],
       };
     }));
-  }, [currentLayoutId, layout.widgets.length]);
+  }, [currentLayoutId]);
 
   const reorderWidgets = useCallback((widgets: WidgetConfig[]) => {
     setLayouts(prev => prev.map(l => {

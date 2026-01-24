@@ -5,7 +5,7 @@
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AuthModule } from './auth.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
@@ -16,7 +16,7 @@ import {
   createMockRedisService,
   createTestUser,
   randomEmail,
-} from '../../test/test-utils';
+} from '../common/testing/test-utils';
 
 describe('AuthController (Integration)', () => {
   let app: INestApplication;
@@ -154,12 +154,10 @@ describe('AuthController (Integration)', () => {
       prismaService.user.findUnique.mockResolvedValue(testUser);
       prismaService.session.create.mockResolvedValue({ id: 'session-id' });
 
-      const response = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({
-          email: 'test@example.com',
-          password: 'correctpassword',
-        });
+      const response = await request(app.getHttpServer()).post('/api/v1/auth/login').send({
+        email: 'test@example.com',
+        password: 'correctpassword',
+      });
 
       expect(response.headers['set-cookie']).toBeDefined();
     });
@@ -213,9 +211,7 @@ describe('AuthController (Integration)', () => {
     });
 
     it('should return 401 without token', async () => {
-      await request(app.getHttpServer())
-        .get('/api/v1/auth/me')
-        .expect(401);
+      await request(app.getHttpServer()).get('/api/v1/auth/me').expect(401);
     });
   });
 });

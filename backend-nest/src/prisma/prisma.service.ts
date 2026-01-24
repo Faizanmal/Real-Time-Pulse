@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  OnModuleInit,
-  OnModuleDestroy,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
@@ -16,10 +11,7 @@ import { Pool } from 'pg';
  * - Transaction helpers
  */
 @Injectable()
-export class PrismaService
-  extends PrismaClient
-  implements OnModuleInit, OnModuleDestroy
-{
+export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
   private queryCount = 0;
   private slowQueryThreshold = 1000; // 1 second
@@ -39,10 +31,7 @@ export class PrismaService
     });
 
     // Setup query logging in development
-    if (
-      process.env.NODE_ENV === 'development' ||
-      process.env.LOG_QUERIES === 'true'
-    ) {
+    if (process.env.NODE_ENV === 'development' || process.env.LOG_QUERIES === 'true') {
       this.setupQueryLogging();
     }
 
@@ -177,9 +166,7 @@ export class PrismaService
           });
 
           // Exponential backoff
-          await new Promise((resolve) =>
-            setTimeout(resolve, Math.pow(2, attempt) * 100),
-          );
+          await new Promise((resolve) => setTimeout(resolve, Math.pow(2, attempt) * 100));
           continue;
         }
 
@@ -234,10 +221,7 @@ export class PrismaService
    * Hard delete - permanently remove soft-deleted records
    * Use with caution!
    */
-  async hardDelete(
-    model: string,
-    where: Record<string, unknown>,
-  ): Promise<number> {
+  async hardDelete(model: string, where: Record<string, unknown>): Promise<number> {
     const modelKey = model.toLowerCase() as keyof PrismaClient;
     const prismaModel = this[modelKey] as any;
 
@@ -265,10 +249,7 @@ export class PrismaService
   /**
    * Restore soft-deleted record
    */
-  async restore(
-    model: string,
-    where: Record<string, unknown>,
-  ): Promise<number> {
+  async restore(model: string, where: Record<string, unknown>): Promise<number> {
     const modelKey = model.toLowerCase() as keyof PrismaClient;
     const prismaModel = this[modelKey] as any;
 

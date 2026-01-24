@@ -1,10 +1,4 @@
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
@@ -25,19 +19,10 @@ export class CacheableInterceptor implements NestInterceptor {
     private cacheService: CacheService,
   ) {}
 
-  async intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Promise<Observable<unknown>> {
-    const cacheConfig = this.reflector.get<CacheConfig>(
-      CACHE_METADATA_KEY,
-      context.getHandler(),
-    );
+  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<unknown>> {
+    const cacheConfig = this.reflector.get<CacheConfig>(CACHE_METADATA_KEY, context.getHandler());
 
-    const invalidateKeys = this.reflector.get<string[]>(
-      INVALIDATE_CACHE_KEY,
-      context.getHandler(),
-    );
+    const invalidateKeys = this.reflector.get<string[]>(INVALIDATE_CACHE_KEY, context.getHandler());
 
     // Handle cache invalidation
     if (invalidateKeys && invalidateKeys.length > 0) {
@@ -74,14 +59,8 @@ export class CacheableInterceptor implements NestInterceptor {
       tap((result) => {
         void (async () => {
           try {
-            await this.cacheService.set(
-              cacheKey,
-              JSON.stringify(result),
-              cacheConfig.ttlSeconds,
-            );
-            this.logger.debug(
-              `Cached: ${cacheKey} for ${cacheConfig.ttlSeconds}s`,
-            );
+            await this.cacheService.set(cacheKey, JSON.stringify(result), cacheConfig.ttlSeconds);
+            this.logger.debug(`Cached: ${cacheKey} for ${cacheConfig.ttlSeconds}s`);
           } catch (error) {
             this.logger.warn(`Cache write error: ${error}`);
           }
@@ -100,9 +79,7 @@ export class CacheableInterceptor implements NestInterceptor {
     const prefix = config.keyPrefix || `${controller}:${handler}`;
 
     let scopeKey = '';
-    const user = request.user as
-      | { id?: string; workspaceId?: string }
-      | undefined;
+    const user = request.user as { id?: string; workspaceId?: string } | undefined;
 
     switch (config.scope) {
       case 'user':
@@ -132,14 +109,9 @@ export class CacheableInterceptor implements NestInterceptor {
     return crypto.createHash('md5').update(str).digest('hex').substring(0, 8);
   }
 
-  private async invalidateCaches(
-    patterns: string[],
-    context: ExecutionContext,
-  ): Promise<void> {
+  private async invalidateCaches(patterns: string[], context: ExecutionContext): Promise<void> {
     const request = context.switchToHttp().getRequest();
-    const user = request.user as
-      | { id?: string; workspaceId?: string }
-      | undefined;
+    const user = request.user as { id?: string; workspaceId?: string } | undefined;
 
     for (const pattern of patterns) {
       // Replace placeholders in pattern

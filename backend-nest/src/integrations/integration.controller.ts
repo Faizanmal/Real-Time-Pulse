@@ -9,12 +9,7 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiResponse,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { IntegrationService } from './integration.service';
 import type { IntegrationConfig } from './integration.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -56,10 +51,7 @@ export class IntegrationController {
   @Put(':id')
   @ApiOperation({ summary: 'Update integration settings' })
   @ApiResponse({ status: 200, description: 'Integration updated successfully' })
-  async updateIntegration(
-    @Param('id') id: string,
-    @Body() settings: Record<string, any>,
-  ) {
+  async updateIntegration(@Param('id') id: string, @Body() settings: Record<string, any>) {
     return this.integrationService.updateIntegration(id, settings);
   }
 
@@ -73,10 +65,7 @@ export class IntegrationController {
   @Post(':id/sync')
   @ApiOperation({ summary: 'Trigger data sync for an integration' })
   @ApiResponse({ status: 200, description: 'Sync triggered successfully' })
-  async triggerSync(
-    @Param('id') id: string,
-    @Body() body: { syncType?: 'full' | 'incremental' },
-  ) {
+  async triggerSync(@Param('id') id: string, @Body() body: { syncType?: 'full' | 'incremental' }) {
     return this.integrationService.triggerSync(id, body.syncType);
   }
 

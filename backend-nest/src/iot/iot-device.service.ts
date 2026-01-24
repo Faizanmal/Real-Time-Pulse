@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -197,10 +192,7 @@ export class IoTDeviceService {
   /**
    * Receive telemetry data from device
    */
-  async receiveTelemetry(
-    deviceId: string,
-    telemetry: Record<string, any>,
-  ): Promise<void> {
+  async receiveTelemetry(deviceId: string, telemetry: Record<string, any>): Promise<void> {
     const device = this.deviceCache.get(deviceId);
     if (device) {
       device.telemetry = { ...device.telemetry, ...telemetry };
@@ -224,10 +216,7 @@ export class IoTDeviceService {
   /**
    * Check telemetry against thresholds and generate alerts
    */
-  private async checkThresholds(
-    deviceId: string,
-    telemetry: Record<string, any>,
-  ): Promise<void> {
+  private async checkThresholds(deviceId: string, telemetry: Record<string, any>): Promise<void> {
     const thresholds = await this.prisma.ioTThreshold.findMany({
       where: { deviceId, enabled: true },
     });
@@ -377,12 +366,11 @@ export class IoTDeviceService {
     const buckets = new Map<number, DeviceMetric[]>();
 
     for (const metric of data) {
-      const bucketKey =
-        Math.floor(metric.timestamp.getTime() / bucketMs) * bucketMs;
+      const bucketKey = Math.floor(metric.timestamp.getTime() / bucketMs) * bucketMs;
       if (!buckets.has(bucketKey)) {
         buckets.set(bucketKey, []);
       }
-      buckets.get(bucketKey)!.push(metric);
+      buckets.get(bucketKey).push(metric);
     }
 
     return Array.from(buckets.entries()).map(([bucketTime, metrics]) => {

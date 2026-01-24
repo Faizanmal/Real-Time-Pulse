@@ -49,10 +49,7 @@ export class CommandBus {
   constructor(private readonly moduleRef: ModuleRef) {}
 
   // Register a command handler
-  register<T extends ICommand>(
-    commandType: string,
-    handler: Type<ICommandHandler<T>>,
-  ): void {
+  register<T extends ICommand>(commandType: string, handler: Type<ICommandHandler<T>>): void {
     this.handlers.set(commandType, handler);
     this.logger.log(`Registered command handler for: ${commandType}`);
   }
@@ -64,12 +61,9 @@ export class CommandBus {
   }
 
   // Execute a command
-  async execute<T extends ICommand, R = void>(
-    command: T,
-  ): Promise<CommandResult<R>> {
+  async execute<T extends ICommand, R = void>(command: T): Promise<CommandResult<R>> {
     const startTime = Date.now();
-    const correlationId =
-      command.metadata?.correlationId || this.generateCorrelationId();
+    const correlationId = command.metadata?.correlationId || this.generateCorrelationId();
 
     this.logger.log({
       message: `Executing command: ${command.commandType}`,
@@ -83,13 +77,10 @@ export class CommandBus {
         const handlerType = this.handlers.get(command.commandType);
 
         if (!handlerType) {
-          throw new Error(
-            `No handler found for command: ${command.commandType}`,
-          );
+          throw new Error(`No handler found for command: ${command.commandType}`);
         }
 
-        const handler =
-          await this.moduleRef.resolve<ICommandHandler<T, R>>(handlerType);
+        const handler = await this.moduleRef.resolve<ICommandHandler<T, R>>(handlerType);
         return handler.execute(command);
       };
 
@@ -165,9 +156,7 @@ export class LoggingMiddleware implements ICommandMiddleware {
 
     try {
       const result = await next();
-      this.logger.debug(
-        `[SUCCESS] ${command.commandType} (${Date.now() - start}ms)`,
-      );
+      this.logger.debug(`[SUCCESS] ${command.commandType} (${Date.now() - start}ms)`);
       return result;
     } catch (error) {
       this.logger.error(
@@ -210,8 +199,8 @@ export class RetryMiddleware implements ICommandMiddleware {
   private readonly logger = new Logger(RetryMiddleware.name);
 
   constructor(
-    private readonly maxRetries: number = 3,
-    private readonly delay: number = 1000,
+    private readonly maxRetries = 3,
+    private readonly delay = 1000,
   ) {}
 
   async handle(command: ICommand, next: () => Promise<any>): Promise<any> {
@@ -232,7 +221,7 @@ export class RetryMiddleware implements ICommandMiddleware {
       }
     }
 
-    throw lastError!;
+    throw lastError;
   }
 
   private sleep(ms: number): Promise<void> {
@@ -242,14 +231,11 @@ export class RetryMiddleware implements ICommandMiddleware {
 
 // Rate Limiting Middleware
 export class RateLimitMiddleware implements ICommandMiddleware {
-  private readonly counters = new Map<
-    string,
-    { count: number; resetAt: number }
-  >();
+  private readonly counters = new Map<string, { count: number; resetAt: number }>();
 
   constructor(
-    private readonly limit: number = 100,
-    private readonly windowMs: number = 60000,
+    private readonly limit = 100,
+    private readonly windowMs = 60000,
   ) {}
 
   async handle(command: ICommand, next: () => Promise<any>): Promise<any> {

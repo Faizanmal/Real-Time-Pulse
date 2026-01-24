@@ -10,20 +10,11 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ShareLinksService } from './share-links.service';
 import { RequestUser } from '../common/interfaces/auth.interface';
-import {
-  CreateShareLinkDto,
-  UpdateShareLinkDto,
-  AccessShareLinkDto,
-} from './dto/share-link.dto';
+import { CreateShareLinkDto, UpdateShareLinkDto, AccessShareLinkDto } from './dto/share-link.dto';
 
 @ApiTags('Share Links')
 @Controller('share-links')
@@ -39,15 +30,8 @@ export class ShareLinksController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create a share link' })
   @ApiResponse({ status: 201, description: 'Share link created successfully' })
-  async create(
-    @Request() req: { user: RequestUser },
-    @Body() dto: CreateShareLinkDto,
-  ) {
-    return this.shareLinksService.create(
-      req.user.workspaceId,
-      req.user.id,
-      dto,
-    );
+  async create(@Request() req: { user: RequestUser }, @Body() dto: CreateShareLinkDto) {
+    return this.shareLinksService.create(req.user.workspaceId, req.user.id, dto);
   }
 
   @Get()
@@ -55,10 +39,7 @@ export class ShareLinksController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all share links' })
   @ApiResponse({ status: 200, description: 'Returns all share links' })
-  async findAll(
-    @Request() req: { user: RequestUser },
-    @Query('portalId') portalId?: string,
-  ) {
+  async findAll(@Request() req: { user: RequestUser }, @Query('portalId') portalId?: string) {
     return this.shareLinksService.findAll(req.user.workspaceId, portalId);
   }
 
@@ -98,10 +79,7 @@ export class ShareLinksController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Regenerate share link token' })
   @ApiResponse({ status: 200, description: 'Token regenerated successfully' })
-  async regenerateToken(
-    @Request() req: { user: RequestUser },
-    @Param('id') id: string,
-  ) {
+  async regenerateToken(@Request() req: { user: RequestUser }, @Param('id') id: string) {
     return this.shareLinksService.regenerateToken(id, req.user.workspaceId);
   }
 
@@ -122,10 +100,7 @@ export class ShareLinksController {
   @Post('public/:token/access')
   @ApiOperation({ summary: 'Access a shared portal' })
   @ApiResponse({ status: 200, description: 'Returns the shared portal data' })
-  async accessSharedPortal(
-    @Param('token') token: string,
-    @Body() dto: AccessShareLinkDto,
-  ) {
+  async accessSharedPortal(@Param('token') token: string, @Body() dto: AccessShareLinkDto) {
     return this.shareLinksService.accessSharedPortal(token, dto.password);
   }
 }

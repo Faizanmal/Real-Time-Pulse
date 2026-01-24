@@ -66,11 +66,7 @@ export interface RiskMetrics {
 
 export interface SOXControl {
   id: string;
-  category:
-    | 'access'
-    | 'change_management'
-    | 'operations'
-    | 'financial_reporting';
+  category: 'access' | 'change_management' | 'operations' | 'financial_reporting';
   name: string;
   description: string;
   frequency: 'continuous' | 'daily' | 'weekly' | 'monthly' | 'quarterly';
@@ -198,9 +194,7 @@ export class FinanceSolutionService {
     return transaction;
   }
 
-  private async calculateTransactionRisk(
-    data: Partial<FinancialTransaction>,
-  ): Promise<number> {
+  private async calculateTransactionRisk(data: Partial<FinancialTransaction>): Promise<number> {
     let riskScore = 0;
 
     // High value transactions
@@ -227,9 +221,7 @@ export class FinanceSolutionService {
     return Math.min(riskScore, 1);
   }
 
-  private async createFraudAlert(
-    transaction: FinancialTransaction,
-  ): Promise<FraudAlert> {
+  private async createFraudAlert(transaction: FinancialTransaction): Promise<FraudAlert> {
     const indicators: string[] = [];
 
     if (transaction.amount > 100000) {
@@ -256,10 +248,7 @@ export class FinanceSolutionService {
 
   // Trading Operations
   async placeOrder(
-    data: Omit<
-      TradingOrder,
-      'id' | 'status' | 'filledQuantity' | 'createdAt' | 'updatedAt'
-    >,
+    data: Omit<TradingOrder, 'id' | 'status' | 'filledQuantity' | 'createdAt' | 'updatedAt'>,
   ): Promise<TradingOrder> {
     const id = `order-${Date.now()}`;
 
@@ -277,7 +266,7 @@ export class FinanceSolutionService {
     // Simulate order execution
     await this.executeOrder(id);
 
-    return this.orders.get(id)!;
+    return this.orders.get(id);
   }
 
   private async executeOrder(orderId: string): Promise<void> {
@@ -316,9 +305,7 @@ export class FinanceSolutionService {
 
   // Portfolio Management
   async getPortfolio(accountId: string): Promise<Portfolio> {
-    let portfolio = Array.from(this.portfolios.values()).find(
-      (p) => p.accountId === accountId,
-    );
+    let portfolio = Array.from(this.portfolios.values()).find((p) => p.accountId === accountId);
 
     if (!portfolio) {
       portfolio = {
@@ -347,8 +334,7 @@ export class FinanceSolutionService {
       // Simulate price update
       position.currentPrice = position.avgCost * (0.9 + Math.random() * 0.2);
       position.marketValue = position.quantity * position.currentPrice;
-      position.unrealizedPnL =
-        position.marketValue - position.quantity * position.avgCost;
+      position.unrealizedPnL = position.marketValue - position.quantity * position.avgCost;
       position.percentChange =
         ((position.currentPrice - position.avgCost) / position.avgCost) * 100;
 
@@ -407,10 +393,7 @@ export class FinanceSolutionService {
     return Array.from(this.soxControls.values());
   }
 
-  async testSOXControl(
-    controlId: string,
-    evidence: string[],
-  ): Promise<SOXControl> {
+  async testSOXControl(controlId: string, evidence: string[]): Promise<SOXControl> {
     const control = this.soxControls.get(controlId);
     if (!control) throw new Error(`Control ${controlId} not found`);
 
@@ -449,18 +432,11 @@ export class FinanceSolutionService {
   }> {
     const controls = Array.from(this.soxControls.values());
 
-    const effectiveControls = controls.filter(
-      (c) => c.status === 'effective',
-    ).length;
-    const deficientControls = controls.filter(
-      (c) => c.status === 'deficient',
-    ).length;
-    const materialWeaknesses = controls.filter(
-      (c) => c.status === 'material_weakness',
-    ).length;
+    const effectiveControls = controls.filter((c) => c.status === 'effective').length;
+    const deficientControls = controls.filter((c) => c.status === 'deficient').length;
+    const materialWeaknesses = controls.filter((c) => c.status === 'material_weakness').length;
 
-    let overallStatus: 'compliant' | 'attention_needed' | 'non_compliant' =
-      'compliant';
+    let overallStatus: 'compliant' | 'attention_needed' | 'non_compliant' = 'compliant';
     if (materialWeaknesses > 0) {
       overallStatus = 'non_compliant';
     } else if (deficientControls > 0) {
@@ -479,10 +455,7 @@ export class FinanceSolutionService {
 
   // Audit Trail
   private logAuditTrail(
-    entry: Omit<
-      AuditTrail,
-      'id' | 'timestamp' | 'userId' | 'ipAddress' | 'approved'
-    >,
+    entry: Omit<AuditTrail, 'id' | 'timestamp' | 'userId' | 'ipAddress' | 'approved'>,
   ): void {
     const auditEntry: AuditTrail = {
       ...entry,
@@ -508,11 +481,9 @@ export class FinanceSolutionService {
     endDate?: string;
   }): Promise<AuditTrail[]> {
     return this.auditTrail.filter((entry) => {
-      if (filters.entityType && entry.entityType !== filters.entityType)
-        return false;
+      if (filters.entityType && entry.entityType !== filters.entityType) return false;
       if (filters.entityId && entry.entityId !== filters.entityId) return false;
-      if (filters.startDate && entry.timestamp < filters.startDate)
-        return false;
+      if (filters.startDate && entry.timestamp < filters.startDate) return false;
       if (filters.endDate && entry.timestamp > filters.endDate) return false;
       return true;
     });

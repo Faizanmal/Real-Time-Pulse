@@ -16,10 +16,7 @@ export class ExportService {
   /**
    * Export portal to PDF
    */
-  async exportPortalToPDF(
-    portalId: string,
-    workspaceId: string,
-  ): Promise<Buffer> {
+  async exportPortalToPDF(portalId: string, workspaceId: string): Promise<Buffer> {
     const portal = await this.prisma.portal.findFirst({
       where: { id: portalId, workspaceId },
       include: {
@@ -46,10 +43,7 @@ export class ExportService {
       doc.on('error', reject);
 
       // Header
-      doc
-        .fontSize(24)
-        .fillColor('#3B82F6')
-        .text(portal.name, { align: 'center' });
+      doc.fontSize(24).fillColor('#3B82F6').text(portal.name, { align: 'center' });
       doc.moveDown();
 
       // Metadata
@@ -63,10 +57,7 @@ export class ExportService {
       doc.moveDown(2);
 
       // Widgets
-      doc
-        .fontSize(18)
-        .fillColor('#000000')
-        .text('Widgets', { underline: true });
+      doc.fontSize(18).fillColor('#000000').text('Widgets', { underline: true });
       doc.moveDown();
 
       portal.widgets.forEach((widget, index) => {
@@ -79,15 +70,11 @@ export class ExportService {
         if (widget.integration) {
           doc.text(`Integration: ${widget.integration.provider}`);
         }
-        doc.text(
-          `Last Refreshed: ${widget.lastRefreshedAt?.toLocaleString() || 'Never'}`,
-        );
+        doc.text(`Last Refreshed: ${widget.lastRefreshedAt?.toLocaleString() || 'Never'}`);
 
         // Widget config preview
         doc.fontSize(9).fillColor('#999999');
-        doc.text(
-          `Config: ${JSON.stringify(widget.config).substring(0, 100)}...`,
-        );
+        doc.text(`Config: ${JSON.stringify(widget.config).substring(0, 100)}...`);
         doc.moveDown();
       });
 
@@ -109,10 +96,7 @@ export class ExportService {
   /**
    * Export portal to CSV
    */
-  async exportPortalToCSV(
-    portalId: string,
-    workspaceId: string,
-  ): Promise<Buffer> {
+  async exportPortalToCSV(portalId: string, workspaceId: string): Promise<Buffer> {
     const portal = await this.prisma.portal.findFirst({
       where: { id: portalId, workspaceId },
       include: {
@@ -161,10 +145,7 @@ export class ExportService {
   /**
    * Export portal to Excel
    */
-  async exportPortalToExcel(
-    portalId: string,
-    workspaceId: string,
-  ): Promise<Uint8Array> {
+  async exportPortalToExcel(portalId: string, workspaceId: string): Promise<Uint8Array> {
     const portal = await this.prisma.portal.findFirst({
       where: { id: portalId, workspaceId },
       include: {
@@ -343,8 +324,7 @@ export class ExportService {
 
         return {
           buffer: (await workbook.xlsx.writeBuffer()) as unknown as Uint8Array,
-          contentType:
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           extension: 'xlsx',
         };
       }

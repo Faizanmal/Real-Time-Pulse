@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
 import { StreamProcessingService } from './stream-processing.service';
 import { CEPEngineService } from './cep-engine.service';
 
@@ -90,13 +81,7 @@ export class StreamingController {
       name: string;
       description?: string;
       pattern: {
-        type:
-          | 'sequence'
-          | 'absence'
-          | 'frequency'
-          | 'correlation'
-          | 'threshold'
-          | 'trend';
+        type: 'sequence' | 'absence' | 'frequency' | 'correlation' | 'threshold' | 'trend';
         conditions: any[];
         withinWindow?: number;
         minOccurrences?: number;
@@ -105,13 +90,7 @@ export class StreamingController {
       };
       timeWindow: number;
       action: {
-        type:
-          | 'alert'
-          | 'email'
-          | 'webhook'
-          | 'aggregate'
-          | 'trigger_flow'
-          | 'emit';
+        type: 'alert' | 'email' | 'webhook' | 'aggregate' | 'trigger_flow' | 'emit';
         config: any;
       };
       enabled?: boolean;
@@ -172,17 +151,13 @@ export class StreamingController {
         description: 'Track user clicks, page views, and interactions',
         config: {
           topics: ['user-events'],
-          filters: [
-            { field: 'eventType', operator: 'neq', value: 'heartbeat' },
-          ],
+          filters: [{ field: 'eventType', operator: 'neq', value: 'heartbeat' }],
           aggregations: [
             {
               windowType: 'tumbling',
               windowSize: 60000,
               groupBy: ['userId'],
-              aggregations: [
-                { field: 'eventType', function: 'count', alias: 'eventCount' },
-              ],
+              aggregations: [{ field: 'eventType', function: 'count', alias: 'eventCount' }],
             },
           ],
         },
@@ -218,9 +193,7 @@ export class StreamingController {
               ],
             },
           ],
-          sinks: [
-            { type: 'websocket', config: { channel: 'metrics-dashboard' } },
-          ],
+          sinks: [{ type: 'websocket', config: { channel: 'metrics-dashboard' } }],
         },
       },
     ];

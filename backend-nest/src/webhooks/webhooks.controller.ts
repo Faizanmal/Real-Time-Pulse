@@ -28,10 +28,7 @@ export class WebhooksController {
    */
   @Post()
   @ApiOperation({ summary: 'Create webhook' })
-  async create(
-    @CurrentUser() user: RequestUser,
-    @Body() dto: CreateWebhookDto,
-  ) {
+  async create(@CurrentUser() user: RequestUser, @Body() dto: CreateWebhookDto) {
     return this.webhooksService.create(user.workspaceId, user.id, dto);
   }
 
@@ -81,10 +78,7 @@ export class WebhooksController {
    */
   @Get(':id/deliveries')
   @ApiOperation({ summary: 'Get webhook delivery history' })
-  async getDeliveries(
-    @Param('id') id: string,
-    @CurrentUser() user: RequestUser,
-  ) {
+  async getDeliveries(@Param('id') id: string, @CurrentUser() user: RequestUser) {
     return this.webhooksService.getDeliveries(id, user.workspaceId);
   }
 
@@ -102,10 +96,7 @@ export class WebhooksController {
    */
   @Post(':id/regenerate-secret')
   @ApiOperation({ summary: 'Regenerate webhook secret' })
-  async regenerateSecret(
-    @Param('id') id: string,
-    @CurrentUser() user: RequestUser,
-  ) {
+  async regenerateSecret(@Param('id') id: string, @CurrentUser() user: RequestUser) {
     return this.webhooksService.regenerateSecret(id, user.workspaceId);
   }
 }

@@ -73,10 +73,7 @@ export class QueryBus {
   constructor(private readonly moduleRef: ModuleRef) {}
 
   // Register a query handler
-  register<T extends IQuery>(
-    queryType: string,
-    handler: Type<IQueryHandler<T>>,
-  ): void {
+  register<T extends IQuery>(queryType: string, handler: Type<IQueryHandler<T>>): void {
     this.handlers.set(queryType, handler);
     this.logger.log(`Registered query handler for: ${queryType}`);
   }
@@ -90,8 +87,7 @@ export class QueryBus {
   // Execute a query
   async execute<T extends IQuery, R = any>(query: T): Promise<QueryResult<R>> {
     const startTime = Date.now();
-    const correlationId =
-      query.metadata?.correlationId || this.generateCorrelationId();
+    const correlationId = query.metadata?.correlationId || this.generateCorrelationId();
 
     this.logger.debug({
       message: `Executing query: ${query.queryType}`,
@@ -121,8 +117,7 @@ export class QueryBus {
           throw new Error(`No handler found for query: ${query.queryType}`);
         }
 
-        const handler =
-          await this.moduleRef.resolve<IQueryHandler<T, R>>(handlerType);
+        const handler = await this.moduleRef.resolve<IQueryHandler<T, R>>(handlerType);
         return handler.execute(query);
       };
 
@@ -188,7 +183,7 @@ export class QueryBus {
     return null;
   }
 
-  private setCache(key: string, data: any, ttlMs: number = 60000): void {
+  private setCache(key: string, data: any, ttlMs = 60000): void {
     this.cache.set(key, {
       data,
       expiresAt: Date.now() + ttlMs,
@@ -219,7 +214,7 @@ export class PerformanceMiddleware implements IQueryMiddleware {
   private readonly logger = new Logger(PerformanceMiddleware.name);
   private readonly slowQueryThreshold: number;
 
-  constructor(slowQueryThreshold: number = 1000) {
+  constructor(slowQueryThreshold = 1000) {
     this.slowQueryThreshold = slowQueryThreshold;
   }
 
@@ -229,9 +224,7 @@ export class PerformanceMiddleware implements IQueryMiddleware {
     const duration = Date.now() - start;
 
     if (duration > this.slowQueryThreshold) {
-      this.logger.warn(
-        `Slow query detected: ${query.queryType} took ${duration}ms`,
-      );
+      this.logger.warn(`Slow query detected: ${query.queryType} took ${duration}ms`);
     }
 
     return result;
@@ -284,10 +277,7 @@ export class TransformMiddleware implements IQueryMiddleware {
     this.transformers = transformers || new Map();
   }
 
-  registerTransformer(
-    queryType: string,
-    transformer: (data: any) => any,
-  ): void {
+  registerTransformer(queryType: string, transformer: (data: any) => any): void {
     this.transformers.set(queryType, transformer);
   }
 

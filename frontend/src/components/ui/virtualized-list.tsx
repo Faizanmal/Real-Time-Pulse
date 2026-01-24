@@ -252,12 +252,12 @@ interface UseLazyLoadOptions {
  */
 export function useLazyLoad(options: UseLazyLoadOptions = {}) {
   const { threshold = 0.1, rootMargin = '100px', triggerOnce = true } = options;
-  const elementRef = useRef<HTMLElement>(null);
+  const ComponentRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
-    const element = elementRef.current;
+    const element = ComponentRef.current;
     if (!element) return;
 
     const observer = new IntersectionObserver(
@@ -281,7 +281,7 @@ export function useLazyLoad(options: UseLazyLoadOptions = {}) {
     return () => observer.disconnect();
   }, [threshold, rootMargin, triggerOnce]);
 
-  return { ref: elementRef, isVisible, hasLoaded };
+  return { ref: ComponentRef, isVisible, hasLoaded };
 }
 
 /**

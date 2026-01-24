@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { Prisma } from '@prisma/client';
@@ -27,16 +22,7 @@ export interface ConditionalFormat {
   name: string;
   condition: {
     field: string;
-    operator:
-      | '>'
-      | '<'
-      | '>='
-      | '<='
-      | '=='
-      | '!='
-      | 'contains'
-      | 'startsWith'
-      | 'endsWith';
+    operator: '>' | '<' | '>=' | '<=' | '==' | '!=' | 'contains' | 'startsWith' | 'endsWith';
     value: string | number | boolean;
   };
   style: {
@@ -121,13 +107,9 @@ export class WidgetCustomizationService {
   /**
    * Get widget customization
    */
-  async getCustomization(
-    widgetId: string,
-  ): Promise<WidgetCustomization | null> {
+  async getCustomization(widgetId: string): Promise<WidgetCustomization | null> {
     // Check cache first
-    const cached = await this.cacheService.get(
-      `${this.CUSTOMIZATION_PREFIX}${widgetId}`,
-    );
+    const cached = await this.cacheService.get(`${this.CUSTOMIZATION_PREFIX}${widgetId}`);
     if (cached) {
       return JSON.parse(cached);
     }
@@ -186,13 +168,12 @@ export class WidgetCustomizationService {
 
     // Merge with existing customization
     const existingConfig = widget.config as Record<string, unknown>;
-    const existingCustomization =
-      (existingConfig?.customization as WidgetCustomization) || {
-        widgetId,
-        style: {},
-        conditionalFormats: [],
-        dataTransformations: [],
-      };
+    const existingCustomization = (existingConfig?.customization as WidgetCustomization) || {
+      widgetId,
+      style: {},
+      conditionalFormats: [],
+      dataTransformations: [],
+    };
 
     const mergedCustomization: WidgetCustomization = {
       ...existingCustomization,
@@ -203,11 +184,9 @@ export class WidgetCustomizationService {
         ...customization.style,
       },
       conditionalFormats:
-        customization.conditionalFormats ??
-        existingCustomization.conditionalFormats,
+        customization.conditionalFormats ?? existingCustomization.conditionalFormats,
       dataTransformations:
-        customization.dataTransformations ??
-        existingCustomization.dataTransformations,
+        customization.dataTransformations ?? existingCustomization.dataTransformations,
     };
 
     // Update widget config
@@ -275,9 +254,7 @@ export class WidgetCustomizationService {
       throw new NotFoundException('Widget customization not found');
     }
 
-    const formatIndex = customization.conditionalFormats.findIndex(
-      (f) => f.id === formatId,
-    );
+    const formatIndex = customization.conditionalFormats.findIndex((f) => f.id === formatId);
     if (formatIndex === -1) {
       throw new NotFoundException('Conditional format not found');
     }
@@ -310,9 +287,7 @@ export class WidgetCustomizationService {
       throw new NotFoundException('Widget customization not found');
     }
 
-    const formats = customization.conditionalFormats.filter(
-      (f) => f.id !== formatId,
-    );
+    const formats = customization.conditionalFormats.filter((f) => f.id !== formatId);
 
     await this.saveCustomization(widgetId, workspaceId, {
       conditionalFormats: formats,
@@ -360,9 +335,7 @@ export class WidgetCustomizationService {
       throw new NotFoundException('Widget customization not found');
     }
 
-    const index = customization.dataTransformations.findIndex(
-      (t) => t.id === transformationId,
-    );
+    const index = customization.dataTransformations.findIndex((t) => t.id === transformationId);
     if (index === -1) {
       throw new NotFoundException('Data transformation not found');
     }
@@ -407,10 +380,7 @@ export class WidgetCustomizationService {
   /**
    * Apply data transformations to data
    */
-  applyTransformations(
-    data: any[],
-    transformations: DataTransformation[],
-  ): any[] {
+  applyTransformations(data: any[], transformations: DataTransformation[]): any[] {
     let result = [...data];
 
     for (const transform of transformations.sort((a, b) => a.order - b.order)) {
@@ -422,10 +392,7 @@ export class WidgetCustomizationService {
           result = this.applyMap(result, transform.config as MapConfig);
           break;
         case 'aggregate':
-          result = this.applyAggregate(
-            result,
-            transform.config as AggregateConfig,
-          );
+          result = this.applyAggregate(result, transform.config as AggregateConfig);
           break;
         case 'sort':
           result = this.applySort(result, transform.config as SortConfig);
@@ -434,10 +401,7 @@ export class WidgetCustomizationService {
           result = this.applyLimit(result, transform.config as LimitConfig);
           break;
         case 'custom':
-          result = this.applyCustom(
-            result,
-            transform.config as Record<string, unknown>,
-          );
+          result = this.applyCustom(result, transform.config as Record<string, unknown>);
           break;
       }
     }
@@ -493,10 +457,7 @@ export class WidgetCustomizationService {
   /**
    * Evaluate condition
    */
-  private evaluateCondition(
-    value: unknown,
-    condition: ConditionalFormat['condition'],
-  ): boolean {
+  private evaluateCondition(value: unknown, condition: ConditionalFormat['condition']): boolean {
     const { operator, value: conditionValue } = condition;
 
     switch (operator) {
@@ -513,11 +474,11 @@ export class WidgetCustomizationService {
       case '!=':
         return value != conditionValue;
       case 'contains':
-        return String(value).includes(String(conditionValue));
+        return (value as string).includes(conditionValue as string);
       case 'startsWith':
-        return String(value).startsWith(String(conditionValue));
+        return (value as string).startsWith(conditionValue as string);
       case 'endsWith':
-        return String(value).endsWith(String(conditionValue));
+        return (value as string).endsWith(conditionValue as string);
       default:
         return false;
     }
@@ -538,10 +499,7 @@ export class WidgetCustomizationService {
     });
   }
 
-  private applyMap(
-    data: Record<string, unknown>[],
-    config: MapConfig,
-  ): Record<string, unknown>[] {
+  private applyMap(data: Record<string, unknown>[], config: MapConfig): Record<string, unknown>[] {
     const { fields } = config;
     if (!fields) return data;
     return data.map((item) => {
@@ -562,9 +520,9 @@ export class WidgetCustomizationService {
     if (groupBy) {
       const groups = new Map<string, Record<string, unknown>[]>();
       for (const item of data) {
-        const key = String(item[groupBy]);
+        const key = item[groupBy] as string;
         if (!groups.has(key)) groups.set(key, []);
-        groups.get(key)!.push(item);
+        groups.get(key).push(item);
       }
 
       return Array.from(groups.entries()).map(([key, items]) => {
@@ -600,9 +558,7 @@ export class WidgetCustomizationService {
       case 'sum':
         return values.reduce((a, b) => a + b, 0);
       case 'avg':
-        return values.length > 0
-          ? values.reduce((a, b) => a + b, 0) / values.length
-          : 0;
+        return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
       case 'min':
         return values.length > 0 ? Math.min(...values) : 0;
       case 'max':
@@ -650,14 +606,10 @@ export class WidgetCustomizationService {
     switch (customType) {
       case 'percentOfTotal': {
         const field = customConfig?.field as string;
-        const total = data.reduce(
-          (sum, item) => sum + (Number(item[field]) || 0),
-          0,
-        );
+        const total = data.reduce((sum, item) => sum + (Number(item[field]) || 0), 0);
         return data.map((item) => ({
           ...item,
-          [`${field}_percent`]:
-            total > 0 ? ((Number(item[field]) || 0) / total) * 100 : 0,
+          [`${field}_percent`]: total > 0 ? ((Number(item[field]) || 0) / total) * 100 : 0,
         }));
       }
       case 'runningTotal': {

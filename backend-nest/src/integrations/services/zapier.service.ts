@@ -17,16 +17,14 @@ interface WebhookTrigger {
   id: string;
   workspaceId: string;
   name: string;
-  events: string;
-  targetUrl: string;
-  secret: string;
-  filters?: Record<string, any>;
+  events: string[];
+  url: string;
+  secret?: string;
   isActive: boolean;
   headers?: Record<string, string>;
-  retryConfig?: {
-    maxRetries: number;
-    backoffMs: number;
-  };
+  maxRetries?: number;
+  retryDelay?: number; // seconds
+  timeoutSeconds?: number;
 }
 
 interface TriggerEvent {
@@ -74,41 +72,44 @@ export class ZapierIntegrationService {
     data: {
       name: string;
       events: string;
-      targetUrl: string;
+      url: string;
       filters?: Record<string, any>;
       headers?: Record<string, string>;
     },
   ): Promise<WebhookTrigger> {
-    if (!this.supportedEvents.includes(data.event)) {
-      throw new BadRequestException(`Unsupported events: ${data.event}. Supported: ${this.supportedEvents.join(', ')}`);
+    if (!this.supportedEvents.includes(data.events)) {
+      throw new BadRequestException(
+        `Unsupported events: ${data.events}. Supported: ${this.supportedEvents.join(', ')}`,
+      );
     }
 
     // Validate URL
     try {
-      new URL(data.targetUrl);
+      new URL(data.url);
     } catch {
       throw new BadRequestException('Invalid target URL');
     }
 
-    const webhook = await this.prisma.webhook.create({
+    const webhook = await (this.prisma as any).webhook.create({
       data: {
         id: uuidv4(),
         workspaceId,
         name: data.name,
-        events: data.event,
-        targetUrl: data.targetUrl,
+        events: [data.events],
+        url: data.url,
         secret: this.generateSecret(),
-        filters: data.filters || {},
         headers: data.headers || {},
         isActive: true,
-        retryConfig: {
-          maxRetries: 3,
-          backoffMs: 1000,
-        },
-      },
+        maxRetries: 3,
+        retryDelay: 60, // seconds
+        timeoutSeconds: 30,
+      } as any,
     });
 
-    this.logger.log(`Webhook created: ${webhook.id} for event ${data.event}`, 'ZapierIntegrationService');
+    this.logger.log(
+      `Webhook created: ${webhook.id} for event ${data.events}`,
+      'ZapierIntegrationService',
+    );
     return webhook as unknown as WebhookTrigger;
   }
 
@@ -119,10 +120,12 @@ export class ZapierIntegrationService {
     webhookId: string,
     data: Partial<{
       name: string;
-      targetUrl: string;
-      filters: Record<string, any>;
+      url: string;
       headers: Record<string, string>;
       isActive: boolean;
+      maxRetries?: number;
+      retryDelay?: number;
+      timeoutSeconds?: number;
     }>,
   ): Promise<WebhookTrigger> {
     const webhook = await this.prisma.webhook.update({
@@ -161,16 +164,28 @@ export class ZapierIntegrationService {
       { events: 'dashboard.deleted', description: 'Triggered when a dashboard is deleted' },
       { events: 'widget.created', description: 'Triggered when a new widget is added' },
       { events: 'widget.updated', description: 'Triggered when a widget is configured' },
-      { events: 'widget.data_changed', description: 'Triggered when widget data changes significantly' },
+      {
+        events: 'widget.data_changed',
+        description: 'Triggered when widget data changes significantly',
+      },
       { events: 'alert.triggered', description: 'Triggered when an alert condition is met' },
       { events: 'alert.resolved', description: 'Triggered when an alert condition is resolved' },
       { events: 'report.generated', description: 'Triggered when a scheduled report is generated' },
       { events: 'user.joined_workspace', description: 'Triggered when a user joins a workspace' },
       { events: 'user.left_workspace', description: 'Triggered when a user leaves a workspace' },
-      { events: 'metric.threshold_exceeded', description: 'Triggered when a metric exceeds its threshold' },
+      {
+        events: 'metric.threshold_exceeded',
+        description: 'Triggered when a metric exceeds its threshold',
+      },
       { events: 'metric.anomaly_detected', description: 'Triggered when an anomaly is detected' },
-      { events: 'integration.connected', description: 'Triggered when an integration is connected' },
-      { events: 'integration.disconnected', description: 'Triggered when an integration is disconnected' },
+      {
+        events: 'integration.connected',
+        description: 'Triggered when an integration is connected',
+      },
+      {
+        events: 'integration.disconnected',
+        description: 'Triggered when an integration is disconnected',
+      },
       { events: 'comment.created', description: 'Triggered when a comment is added' },
       { events: 'annotation.created', description: 'Triggered when an annotation is created' },
     ];
@@ -182,20 +197,20 @@ export class ZapierIntegrationService {
   async triggerEvent(events: TriggerEvent): Promise<void> {
     const webhooks = await this.prisma.webhook.findMany({
       where: {
-        workspaceId: event.workspaceId,
-        events: event.type,
+        workspaceId: events.workspaceId,
+        events: { has: events.type },
         isActive: true,
       },
     });
 
     for (const webhook of webhooks) {
-      // Check filters
-      if (!this.matchesFilters(event.data, (webhook as any).filters)) {
+      // Check filters (schema no longer stores filters by default)
+      if (!this.matchesFilters(events.data, (webhook as any).filters || {})) {
         continue;
       }
 
       // Queue webhook delivery
-      await this.deliverWebhook(webhook as unknown as WebhookTrigger, event);
+      await this.deliverWebhook(webhook as unknown as WebhookTrigger, events);
     }
   }
 
@@ -205,10 +220,10 @@ export class ZapierIntegrationService {
   private async deliverWebhook(webhook: WebhookTrigger, events: TriggerEvent): Promise<void> {
     const payload = {
       id: uuidv4(),
-      events: event.type,
-      timestamp: event.timestamp.toISOString(),
-      workspaceId: event.workspaceId,
-      data: event.data,
+      events: events.type,
+      timestamp: events.timestamp.toISOString(),
+      workspaceId: events.workspaceId,
+      data: events.data,
     };
 
     const signature = this.generateSignature(JSON.stringify(payload), webhook.secret);
@@ -217,40 +232,47 @@ export class ZapierIntegrationService {
       'Content-Type': 'application/json',
       'X-Webhook-Id': webhook.id,
       'X-Webhook-Signature': signature,
-      'X-Webhook-Timestamp': event.timestamp.toISOString(),
+      'X-Webhook-Timestamp': events.timestamp.toISOString(),
       'User-Agent': 'RealTimePulse-Webhook/1.0',
       ...webhook.headers,
     };
 
-    const retryConfig = webhook.retryConfig || { maxRetries: 3, backoffMs: 1000 };
+    const maxRetries = webhook.maxRetries ?? 3;
+    const retryDelay = webhook.retryDelay ?? 60; // seconds
+    const timeoutSeconds = webhook.timeoutSeconds ?? 30;
+
     let attempt = 0;
     let lastError: Error | null = null;
 
-    while (attempt <= retryConfig.maxRetries) {
+    while (attempt <= maxRetries) {
       try {
         const response = await firstValueFrom(
-          this.httpService.post(webhook.targetUrl, payload, {
+          this.httpService.post(webhook.url, payload, {
             headers,
-            timeout: 30000,
+            timeout: timeoutSeconds * 1000,
           }),
         );
 
-        // Log successful delivery
+        // Log successful delivery using schema fields
         await this.logDelivery(webhook.id, {
-          success: true,
-          statusCode: response.status,
-          attempt: attempt + 1,
-          timestamp: new Date(),
+          event: events.type,
+          payload,
+          attempts: attempt + 1,
+          status: 'SUCCESS',
+          responseCode: response.status,
         });
 
-        this.logger.debug(`Webhook delivered: ${webhook.id} -> ${webhook.targetUrl}`, 'ZapierIntegrationService');
+        this.logger.debug(
+          `Webhook delivered: ${webhook.id} -> ${webhook.url}`,
+          'ZapierIntegrationService',
+        );
         return;
       } catch (error: any) {
         lastError = error;
         attempt++;
 
-        if (attempt <= retryConfig.maxRetries) {
-          const delay = retryConfig.backoffMs * Math.pow(2, attempt - 1);
+        if (attempt <= maxRetries) {
+          const delay = retryDelay * 1000 * Math.pow(2, attempt - 1);
           await this.sleep(delay);
         }
       }
@@ -258,10 +280,11 @@ export class ZapierIntegrationService {
 
     // Log failed delivery
     await this.logDelivery(webhook.id, {
-      success: false,
+      event: events.type,
+      payload,
+      attempts: attempt,
+      status: 'FAILED',
       error: lastError?.message || 'Unknown error',
-      attempt: attempt,
-      timestamp: new Date(),
     });
 
     this.logger.error(
@@ -273,7 +296,9 @@ export class ZapierIntegrationService {
   /**
    * Test webhook endpoint
    */
-  async testWebhook(webhookId: string): Promise<{ success: boolean; statusCode?: number; error?: string }> {
+  async testWebhook(
+    webhookId: string,
+  ): Promise<{ success: boolean; statusCode?: number; error?: string }> {
     const webhook = await this.prisma.webhook.findUnique({ where: { id: webhookId } });
     if (!webhook) throw new BadRequestException('Webhook not found');
 
@@ -287,7 +312,7 @@ export class ZapierIntegrationService {
 
     try {
       const response = await firstValueFrom(
-        this.httpService.post((webhook as any).targetUrl, testPayload, {
+        this.httpService.post(webhook.url, testPayload, {
           headers: {
             'Content-Type': 'application/json',
             'X-Webhook-Test': 'true',
@@ -340,7 +365,7 @@ export class ZapierIntegrationService {
 
     for (const [key, value] of Object.entries(filters)) {
       const dataValue = this.getNestedValue(data, key);
-      
+
       if (typeof value === 'object' && value !== null) {
         // Handle operators
         if (value.$eq !== undefined && dataValue !== value.$eq) return false;
@@ -351,7 +376,8 @@ export class ZapierIntegrationService {
         if (value.$lte !== undefined && dataValue > value.$lte) return false;
         if (value.$in !== undefined && !value.$in.includes(dataValue)) return false;
         if (value.$nin !== undefined && value.$nin.includes(dataValue)) return false;
-        if (value.$contains !== undefined && !String(dataValue).includes(value.$contains)) return false;
+        if (value.$contains !== undefined && !String(dataValue).includes(value.$contains))
+          return false;
       } else if (dataValue !== value) {
         return false;
       }
@@ -372,12 +398,31 @@ export class ZapierIntegrationService {
     return crypto.createHmac('sha256', secret).update(payload).digest('hex');
   }
 
-  private async logDelivery(webhookId: string, log: any): Promise<void> {
+  private async logDelivery(
+    webhookId: string,
+    log: {
+      event?: string;
+      payload?: any;
+      attempts?: number;
+      status?: 'PENDING' | 'SUCCESS' | 'FAILED' | 'RETRYING';
+      responseCode?: number;
+      responseBody?: string;
+      responseTime?: number;
+      error?: string;
+    },
+  ): Promise<void> {
     await this.prisma.webhookDelivery.create({
       data: {
         id: uuidv4(),
         webhookId,
-        ...log,
+        event: log.event ?? 'unknown',
+        payload: log.payload ?? {},
+        attempts: log.attempts ?? 0,
+        status: (log.status as any) ?? 'PENDING',
+        responseCode: log.responseCode ?? null,
+        responseBody: log.responseBody ?? null,
+        responseTime: log.responseTime ?? null,
+        error: log.error ?? null,
       },
     });
   }

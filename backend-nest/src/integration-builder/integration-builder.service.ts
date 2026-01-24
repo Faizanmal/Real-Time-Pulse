@@ -145,10 +145,7 @@ export class IntegrationBuilderService {
   /**
    * Configure OAuth2 authentication
    */
-  async setupOAuth2(
-    integrationId: string,
-    oauth2Config: OAuth2Config,
-  ): Promise<string> {
+  async setupOAuth2(integrationId: string, oauth2Config: OAuth2Config): Promise<string> {
     // Generate authorization URL
     const authParams = new URLSearchParams({
       client_id: oauth2Config.clientId,
@@ -405,15 +402,10 @@ export class IntegrationBuilderService {
 
     for (const [path, pathItem] of Object.entries(spec.paths)) {
       for (const [method, operation] of Object.entries(pathItem)) {
-        if (
-          ['get', 'post', 'put', 'delete', 'patch'].includes(
-            method.toLowerCase(),
-          )
-        ) {
+        if (['get', 'post', 'put', 'delete', 'patch'].includes(method.toLowerCase())) {
           endpoints.push({
             id: `endpoint_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-            name:
-              (operation as any).summary || `${method.toUpperCase()} ${path}`,
+            name: (operation as any).summary || `${method.toUpperCase()} ${path}`,
             method: method.toUpperCase(),
             path,
             headers: {},
@@ -478,10 +470,7 @@ export class IntegrationBuilderService {
   /**
    * Refresh OAuth2 access token
    */
-  private async refreshAccessToken(
-    integrationId: string,
-    refreshToken: string,
-  ): Promise<string> {
+  private async refreshAccessToken(integrationId: string, refreshToken: string): Promise<string> {
     const integration = await this.getIntegration(integrationId);
     const oauth2Config = integration.authConfig as OAuth2Config;
 
@@ -515,10 +504,7 @@ export class IntegrationBuilderService {
   /**
    * Apply data transformation
    */
-  private applyTransformation(
-    data: any,
-    transformation: DataTransformation,
-  ): any {
+  private applyTransformation(data: any, transformation: DataTransformation): any {
     switch (transformation.transformation) {
       case 'map':
         return this.mapTransformation(data, transformation);
@@ -533,10 +519,7 @@ export class IntegrationBuilderService {
     }
   }
 
-  private mapTransformation(
-    data: any,
-    transformation: DataTransformation,
-  ): any {
+  private mapTransformation(data: any, transformation: DataTransformation): any {
     if (Array.isArray(data)) {
       return data.map((item) => ({
         ...item,
@@ -549,10 +532,7 @@ export class IntegrationBuilderService {
     };
   }
 
-  private filterTransformation(
-    data: any,
-    transformation: DataTransformation,
-  ): any {
+  private filterTransformation(data: any, transformation: DataTransformation): any {
     if (!Array.isArray(data)) return data;
 
     const { condition, value } = transformation.config;
@@ -573,10 +553,7 @@ export class IntegrationBuilderService {
     });
   }
 
-  private aggregateTransformation(
-    data: any,
-    transformation: DataTransformation,
-  ): any {
+  private aggregateTransformation(data: any, transformation: DataTransformation): any {
     if (!Array.isArray(data)) return data;
 
     const { operation } = transformation.config;
@@ -598,20 +575,14 @@ export class IntegrationBuilderService {
     }
   }
 
-  private calculateTransformation(
-    data: any,
-    transformation: DataTransformation,
-  ): any {
+  private calculateTransformation(data: any, transformation: DataTransformation): any {
     const { expression } = transformation.config;
     // Simple expression evaluation (in production, use a proper expression parser)
     try {
       if (Array.isArray(data)) {
         return data.map((item) => ({
           ...item,
-          [transformation.targetField]: this.evaluateExpression(
-            expression,
-            item,
-          ),
+          [transformation.targetField]: this.evaluateExpression(expression, item),
         }));
       }
       return {
@@ -628,7 +599,7 @@ export class IntegrationBuilderService {
     // Simple variable replacement (in production, use a safer expression evaluator)
     let result = expression;
     for (const [key, value] of Object.entries(context)) {
-      result = result.replace(new RegExp(`\\$${key}`, 'g'), String(value));
+      result = result.replace(new RegExp(`\\$${key}`, 'g'), value as string);
     }
     // Evaluate simple arithmetic (use with caution)
     try {

@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Puzzle, Plus, Play, Settings } from 'lucide-react';
-import { toast } from 'sonner';
 
 interface IntegrationBuilderProps {
   workspaceId: string;
@@ -20,36 +19,18 @@ export function IntegrationBuilder({ workspaceId }: IntegrationBuilderProps) {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [showBuilder, setShowBuilder] = useState(false);
 
-  const loadIntegrations = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/integration-builder/integrations?workspaceId=${workspaceId}`);
-      const data = await response.json();
-      setIntegrations(data);
-    } catch (error) {
-      console.error('Failed to load integrations', error);
-    }
-  }, [workspaceId]);
-
-  const testIntegration = async (integrationId: string, endpointId: string) => {
-    try {
-      const response = await fetch(`/api/integration-builder/integrations/${integrationId}/test/${endpointId}`, {
-        method: 'POST',
-      });
-      const result = await response.json();
-      if (result.success) {
-        toast.success('Test successful!');
-      } else {
-        toast.error('Test failed');
-      }
-    } catch (error) {
-      console.error('Test failed', error);
-      toast.error('Test failed');
-    }
-  };
-
   useEffect(() => {
+    const loadIntegrations = async () => {
+      try {
+        const response = await fetch(`/api/integration-builder/integrations?workspaceId=${workspaceId}`);
+        const data = await response.json();
+        setIntegrations(data);
+      } catch (error) {
+        console.error('Failed to load integrations', error);
+      }
+    };
     loadIntegrations();
-  }, [loadIntegrations]);
+  }, [workspaceId]);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
@@ -93,7 +74,6 @@ export function IntegrationBuilder({ workspaceId }: IntegrationBuilderProps) {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => testIntegration(integration.id, integration.endpoints[0]?.id)}
                   className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                   title="Test Integration"
                 >

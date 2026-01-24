@@ -19,9 +19,7 @@ export class GoogleAdsService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  private getHeaders(
-    integration: GoogleAdsIntegration,
-  ): Record<string, string> {
+  private getHeaders(integration: GoogleAdsIntegration): Record<string, string> {
     return {
       Authorization: `Bearer ${integration.accessToken}`,
       'developer-token': integration.settings.developerToken,
@@ -39,8 +37,7 @@ export class GoogleAdsService {
         this.httpService.post(
           `${this.baseUrl}/customers/${customerId}/googleAds:searchStream`,
           {
-            query:
-              'SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1',
+            query: 'SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1',
           },
           { headers: this.getHeaders(integration) },
         ),
@@ -325,13 +322,10 @@ export class GoogleAdsService {
     });
 
     const totalSpend = totalCostMicros / 1000000;
-    const ctr =
-      totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+    const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
     const avgCpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
-    const avgCpm =
-      totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
-    const costPerConversion =
-      totalConversions > 0 ? totalSpend / totalConversions : 0;
+    const avgCpm = totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
+    const costPerConversion = totalConversions > 0 ? totalSpend / totalConversions : 0;
 
     return {
       summary: {

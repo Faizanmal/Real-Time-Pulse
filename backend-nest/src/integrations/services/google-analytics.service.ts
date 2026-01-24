@@ -15,14 +15,11 @@ export class GoogleAnalyticsService {
     try {
       // Test by fetching account summaries
       const response = await firstValueFrom(
-        this.httpService.get(
-          'https://analyticsadmin.googleapis.com/v1beta/accountSummaries',
-          {
-            headers: {
-              Authorization: `Bearer ${integration.accessToken as string}`,
-            },
+        this.httpService.get('https://analyticsadmin.googleapis.com/v1beta/accountSummaries', {
+          headers: {
+            Authorization: `Bearer ${integration.accessToken as string}`,
           },
-        ),
+        }),
       );
       return response.status === 200;
     } catch (error) {
@@ -31,11 +28,7 @@ export class GoogleAnalyticsService {
     }
   }
 
-  async fetchData(
-    integration: Integration,
-    dataType: string,
-    params?: unknown,
-  ): Promise<unknown> {
+  async fetchData(integration: Integration, dataType: string, params?: unknown): Promise<unknown> {
     const headers = {
       Authorization: `Bearer ${integration.accessToken as string}`,
     };
@@ -65,16 +58,13 @@ export class GoogleAnalyticsService {
           {
             dateRanges: [
               {
-                startDate:
-                  (params as { startDate?: string }).startDate || '30daysAgo',
+                startDate: (params as { startDate?: string }).startDate || '30daysAgo',
 
                 endDate: (params as { endDate?: string }).endDate || 'today',
               },
             ],
 
-            dimensions: (params as { dimensions?: unknown }).dimensions || [
-              { name: 'date' },
-            ],
+            dimensions: (params as { dimensions?: unknown }).dimensions || [{ name: 'date' }],
 
             metrics: (params as { metrics?: unknown }).metrics || [
               { name: 'activeUsers' },
@@ -93,10 +83,7 @@ export class GoogleAnalyticsService {
     }
   }
 
-  private async fetchRealtimeData(
-    headers: any,
-    params?: unknown,
-  ): Promise<unknown> {
+  private async fetchRealtimeData(headers: any, params?: unknown): Promise<unknown> {
     try {
       const propertyId = (params as { propertyId?: string }).propertyId;
 
@@ -113,10 +100,7 @@ export class GoogleAnalyticsService {
 
       return response.data;
     } catch (error) {
-      this.logger.error(
-        'Failed to fetch Google Analytics realtime data',
-        error,
-      );
+      this.logger.error('Failed to fetch Google Analytics realtime data', error);
       throw error;
     }
   }
@@ -124,10 +108,9 @@ export class GoogleAnalyticsService {
   private async fetchProperties(headers: any): Promise<unknown> {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(
-          'https://analyticsadmin.googleapis.com/v1beta/properties',
-          { headers },
-        ),
+        this.httpService.get('https://analyticsadmin.googleapis.com/v1beta/properties', {
+          headers,
+        }),
       );
 
       return response.data.properties;

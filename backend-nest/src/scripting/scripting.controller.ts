@@ -9,13 +9,7 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiParam,
-  ApiBody,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ScriptingService } from './scripting.service';
 import type { ScriptVersion } from './scripting.service';
@@ -61,11 +55,7 @@ export class ScriptingController {
   @ApiOperation({ summary: 'Create a new script' })
   @ApiBody({ type: CreateScriptDto })
   async createScript(@Request() req: any, @Body() dto: CreateScriptDto) {
-    return this.scriptingService.createScript(
-      req.user.workspaceId,
-      req.user.id,
-      dto,
-    );
+    return this.scriptingService.createScript(req.user.workspaceId, req.user.id, dto);
   }
 
   @Get('scripts')
@@ -90,12 +80,7 @@ export class ScriptingController {
     @Param('scriptId') scriptId: string,
     @Body() dto: UpdateScriptDto,
   ) {
-    return this.scriptingService.updateScript(
-      req.user.workspaceId,
-      scriptId,
-      req.user.id,
-      dto,
-    );
+    return this.scriptingService.updateScript(req.user.workspaceId, scriptId, req.user.id, dto);
   }
 
   @Delete('scripts/:scriptId')
@@ -114,11 +99,7 @@ export class ScriptingController {
     @Param('scriptId') scriptId: string,
     @Body() dto: ExecuteScriptDto,
   ) {
-    return this.scriptingService.executeScript(
-      req.user.workspaceId,
-      scriptId,
-      dto,
-    );
+    return this.scriptingService.executeScript(req.user.workspaceId, scriptId, dto);
   }
 
   @Post('validate')
@@ -135,10 +116,7 @@ export class ScriptingController {
     @Request() req: any,
     @Param('scriptId') scriptId: string,
   ): Promise<ScriptVersion[]> {
-    return this.scriptingService.getScriptVersions(
-      req.user.workspaceId,
-      scriptId,
-    );
+    return this.scriptingService.getScriptVersions(req.user.workspaceId, scriptId);
   }
 
   @Post('scripts/:scriptId/rollback/:version')

@@ -13,33 +13,25 @@ export class AnalyticsService {
    * Get workspace dashboard overview
    */
   async getDashboardOverview(workspaceId: string) {
-    const [
-      portals,
-      widgets,
-      integrations,
-      activeAlerts,
-      recentInsights,
-      subscription,
-    ] = await Promise.all([
-      this.prisma.portal.count({ where: { workspaceId } }),
-      this.prisma.widget.count({ where: { portal: { workspaceId } } }),
-      this.prisma.integration.findMany({
-        where: { workspaceId },
-        select: { provider: true, status: true, lastSyncedAt: true },
-      }),
-      this.prisma.alert.count({ where: { workspaceId, isActive: true } }),
-      this.prisma.aIInsight.count({
-        where: { workspaceId, status: { not: 'DISMISSED' } },
-      }),
-      this.prisma.subscription.findUnique({
-        where: { workspaceId },
-        select: { plan: true, status: true, maxPortals: true, maxUsers: true },
-      }),
-    ]);
+    const [portals, widgets, integrations, activeAlerts, recentInsights, subscription] =
+      await Promise.all([
+        this.prisma.portal.count({ where: { workspaceId } }),
+        this.prisma.widget.count({ where: { portal: { workspaceId } } }),
+        this.prisma.integration.findMany({
+          where: { workspaceId },
+          select: { provider: true, status: true, lastSyncedAt: true },
+        }),
+        this.prisma.alert.count({ where: { workspaceId, isActive: true } }),
+        this.prisma.aIInsight.count({
+          where: { workspaceId, status: { not: 'DISMISSED' } },
+        }),
+        this.prisma.subscription.findUnique({
+          where: { workspaceId },
+          select: { plan: true, status: true, maxPortals: true, maxUsers: true },
+        }),
+      ]);
 
-    const activeIntegrations = integrations.filter(
-      (i) => i.status === 'ACTIVE',
-    ).length;
+    const activeIntegrations = integrations.filter((i) => i.status === 'ACTIVE').length;
 
     return {
       overview: {
@@ -151,8 +143,7 @@ export class AnalyticsService {
         if (!acc[dateKey]) {
           acc[dateKey] = {};
         }
-        acc[dateKey][metric.metricType] =
-          (acc[dateKey][metric.metricType] || 0) + metric.value;
+        acc[dateKey][metric.metricType] = (acc[dateKey][metric.metricType] || 0) + metric.value;
         return acc;
       },
       {} as Record<string, Record<string, number>>,
@@ -227,8 +218,7 @@ export class AnalyticsService {
     const now = new Date();
     const staleWidgets = widgets.filter((w) => {
       if (!w.lastRefreshedAt) return true;
-      const hoursSinceRefresh =
-        (now.getTime() - w.lastRefreshedAt.getTime()) / (1000 * 60 * 60);
+      const hoursSinceRefresh = (now.getTime() - w.lastRefreshedAt.getTime()) / (1000 * 60 * 60);
       return hoursSinceRefresh > 24;
     });
 
@@ -244,9 +234,7 @@ export class AnalyticsService {
       },
     });
 
-    const failedIntegrations = integrations.filter(
-      (i) => i.status === 'ERROR' || i.lastSyncError,
-    );
+    const failedIntegrations = integrations.filter((i) => i.status === 'ERROR' || i.lastSyncError);
 
     // Report execution stats
     const recentReports = await this.prisma.reportRun.findMany({
@@ -324,10 +312,7 @@ export class AnalyticsService {
         ...notif,
         type: 'notification' as const,
       })),
-    ].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return feed.slice(0, limit);
   }
@@ -362,9 +347,7 @@ export class AnalyticsService {
     const recentViews = recentPortalViews._sum.value || 0;
     const previousViews = previousPortalViews._sum.value || 0;
     const viewsChange =
-      previousViews > 0
-        ? ((recentViews - previousViews) / previousViews) * 100
-        : 0;
+      previousViews > 0 ? ((recentViews - previousViews) / previousViews) * 100 : 0;
 
     // Most viewed portals
     const topPortals = await this.prisma.usageMetric.groupBy({
@@ -381,9 +364,7 @@ export class AnalyticsService {
     });
 
     // Get portal names for top portals
-    const portalIds = topPortals
-      .map((p) => p.portalId)
-      .filter((id): id is string => id !== null);
+    const portalIds = topPortals.map((p) => p.portalId).filter((id): id is string => id !== null);
     const portals = await this.prisma.portal.findMany({
       where: { id: { in: portalIds } },
       select: { id: true, name: true },
@@ -400,7 +381,7 @@ export class AnalyticsService {
       },
       topPortals: topPortals.map((p) => ({
         portalId: p.portalId,
-        name: portalMap.get(p.portalId!) || 'Unknown',
+        name: portalMap.get(p.portalId) || 'Unknown',
         views: p._sum.value,
       })),
     };
@@ -474,9 +455,7 @@ export class AnalyticsService {
   /**
    * Calculate metric summary
    */
-  private calculateMetricSummary(
-    metrics: { metricType: UsageMetricType; value: number }[],
-  ) {
+  private calculateMetricSummary(metrics: { metricType: UsageMetricType; value: number }[]) {
     const byType = metrics.reduce(
       (acc, m) => {
         if (!acc[m.metricType]) {

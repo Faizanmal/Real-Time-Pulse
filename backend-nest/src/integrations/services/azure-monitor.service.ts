@@ -20,9 +20,7 @@ export class AzureMonitorService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  private getHeaders(
-    integration: AzureMonitorIntegration,
-  ): Record<string, string> {
+  private getHeaders(integration: AzureMonitorIntegration): Record<string, string> {
     return {
       Authorization: `Bearer ${integration.accessToken}`,
       'Content-Type': 'application/json',
@@ -173,8 +171,7 @@ export class AzureMonitorService {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const resourceGroup =
-        (params?.resourceGroup as string) || integration.settings.resourceGroup;
+      const resourceGroup = (params?.resourceGroup as string) || integration.settings.resourceGroup;
 
       let url = `${this.managementUrl}/subscriptions/${integration.settings.subscriptionId}`;
       if (resourceGroup) {
@@ -214,8 +211,7 @@ export class AzureMonitorService {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const resourceGroup =
-        (params?.resourceGroup as string) || integration.settings.resourceGroup;
+      const resourceGroup = (params?.resourceGroup as string) || integration.settings.resourceGroup;
 
       let url = `${this.managementUrl}/subscriptions/${integration.settings.subscriptionId}`;
       if (resourceGroup) {
@@ -253,8 +249,7 @@ export class AzureMonitorService {
   ): Promise<unknown> {
     try {
       const startTime =
-        (params?.startTime as string) ||
-        new Date(Date.now() - 86400000).toISOString();
+        (params?.startTime as string) || new Date(Date.now() - 86400000).toISOString();
       const endTime = (params?.endTime as string) || new Date().toISOString();
 
       const filter = `eventTimestamp ge '${startTime}' and eventTimestamp le '${endTime}'`;
@@ -374,13 +369,12 @@ export class AzureMonitorService {
     _params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const [resources, alertRules, actionGroups, activityLog] =
-        await Promise.all([
-          this.fetchResources(integration, {}),
-          this.fetchAlertRules(integration, {}),
-          this.fetchActionGroups(integration, {}),
-          this.fetchActivityLog(integration, {}),
-        ]);
+      const [resources, alertRules, actionGroups, activityLog] = await Promise.all([
+        this.fetchResources(integration, {}),
+        this.fetchAlertRules(integration, {}),
+        this.fetchActionGroups(integration, {}),
+        this.fetchActivityLog(integration, {}),
+      ]);
 
       const resourcesArray = (resources as any).resources || [];
       const rulesArray = (alertRules as any).alertRules || [];
@@ -423,12 +417,10 @@ export class AzureMonitorService {
           .sort((a, b) => b[1] - a[1])
           .slice(0, 10)
           .map(([type, count]) => ({ type, count })),
-        alertsBySeverity: Object.entries(alertsBySeverity).map(
-          ([severity, count]) => ({
-            severity: parseInt(severity),
-            count,
-          }),
-        ),
+        alertsBySeverity: Object.entries(alertsBySeverity).map(([severity, count]) => ({
+          severity: parseInt(severity),
+          count,
+        })),
         recentActivity: eventsArray.slice(0, 10).map((e: any) => ({
           operation: e.operationName,
           status: e.status,
@@ -478,8 +470,7 @@ export class AzureMonitorService {
               evaluationFrequency: data.evaluationFrequency,
               windowSize: data.windowSize,
               criteria: {
-                'odata.type':
-                  'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria',
+                'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria',
                 allOf: [
                   {
                     criterionType: 'StaticThresholdCriterion',

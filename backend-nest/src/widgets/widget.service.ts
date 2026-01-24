@@ -10,11 +10,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { IntegrationService } from '../integrations/integration.service';
-import {
-  CreateWidgetDto,
-  UpdateWidgetDto,
-  WidgetResponseDto,
-} from './dto/widget.dto';
+import { CreateWidgetDto, UpdateWidgetDto, WidgetResponseDto } from './dto/widget.dto';
 
 @Injectable()
 export class WidgetService {
@@ -30,10 +26,7 @@ export class WidgetService {
   /**
    * Create a new widget
    */
-  async create(
-    workspaceId: string,
-    dto: CreateWidgetDto,
-  ): Promise<WidgetResponseDto> {
+  async create(workspaceId: string, dto: CreateWidgetDto): Promise<WidgetResponseDto> {
     // Verify portal exists and belongs to workspace
 
     const portal = await (this.prisma as any).portal.findUnique({
@@ -94,10 +87,7 @@ export class WidgetService {
   /**
    * Get all widgets for a portal
    */
-  async findAllByPortal(
-    portalId: string,
-    workspaceId: string,
-  ): Promise<WidgetResponseDto[]> {
+  async findAllByPortal(portalId: string, workspaceId: string): Promise<WidgetResponseDto[]> {
     // Verify portal exists and belongs to workspace
 
     const portal = await (this.prisma as any).portal.findUnique({
@@ -132,10 +122,7 @@ export class WidgetService {
   /**
    * Get widget by ID
    */
-  async findOne(
-    widgetId: string,
-    workspaceId: string,
-  ): Promise<WidgetResponseDto> {
+  async findOne(widgetId: string, workspaceId: string): Promise<WidgetResponseDto> {
     const widget = await (this.prisma as any).widget.findUnique({
       where: { id: widgetId },
       include: {
@@ -278,11 +265,7 @@ export class WidgetService {
       const dataType = this.getDataTypeForWidget(widget.type, widget.config);
       const params = this.getParamsForWidget(widget.config);
 
-      data = await this.integrationService.fetchData(
-        widget.integration.id,
-        dataType,
-        params,
-      );
+      data = await this.integrationService.fetchData(widget.integration.id, dataType, params);
 
       // Transform data based on widget type
       data = this.transformDataForWidget(widget.type, data, widget.config);
@@ -366,11 +349,7 @@ export class WidgetService {
   /**
    * Transform raw integration data for widget display
    */
-  private transformDataForWidget(
-    widgetType: string,
-    rawData: any,
-    config: any,
-  ): any {
+  private transformDataForWidget(widgetType: string, rawData: any, config: any): any {
     if (!rawData) return this.getFallbackData(widgetType);
 
     // If raw data is an array, process it
@@ -408,10 +387,7 @@ export class WidgetService {
   /**
    * Generate summary statistics for widget data
    */
-  private generateSummary(
-    widgetType: string,
-    items: any[],
-  ): Record<string, any> {
+  private generateSummary(widgetType: string, items: any[]): Record<string, any> {
     const summary: Record<string, any> = {
       total: items.length,
     };
@@ -422,9 +398,7 @@ export class WidgetService {
       ).length;
       summary.pending = summary.total - summary.completed;
       summary.completionRate =
-        summary.total > 0
-          ? Math.round((summary.completed / summary.total) * 100)
-          : 0;
+        summary.total > 0 ? Math.round((summary.completed / summary.total) * 100) : 0;
     }
 
     if (widgetType.includes('HOURS') || widgetType.includes('TIME')) {

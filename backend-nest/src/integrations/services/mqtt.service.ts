@@ -34,10 +34,7 @@ interface MqttConnectionPool {
     string,
     { qos: 0 | 1 | 2; callback?: (topic: string, message: Buffer) => void }
   >;
-  messageBuffer: Map<
-    string,
-    { topic: string; message: string; timestamp: number }[]
-  >;
+  messageBuffer: Map<string, { topic: string; message: string; timestamp: number }[]>;
 }
 
 @Injectable()
@@ -61,9 +58,7 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
     return `${integration.settings.brokerUrl}_${integration.settings.clientId || 'default'}`;
   }
 
-  private async getClient(
-    integration: MqttIntegration,
-  ): Promise<MqttConnectionPool> {
+  private async getClient(integration: MqttIntegration): Promise<MqttConnectionPool> {
     const key = this.getConnectionKey(integration);
     let pool = this.connectionPool.get(key);
 
@@ -101,14 +96,10 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
       }
 
       if (integration.settings.tls) {
-        options.rejectUnauthorized =
-          integration.settings.tls.rejectUnauthorized ?? true;
-        if (integration.settings.tls.ca)
-          options.ca = integration.settings.tls.ca;
-        if (integration.settings.tls.cert)
-          options.cert = integration.settings.tls.cert;
-        if (integration.settings.tls.key)
-          options.key = integration.settings.tls.key;
+        options.rejectUnauthorized = integration.settings.tls.rejectUnauthorized ?? true;
+        if (integration.settings.tls.ca) options.ca = integration.settings.tls.ca;
+        if (integration.settings.tls.cert) options.cert = integration.settings.tls.cert;
+        if (integration.settings.tls.key) options.key = integration.settings.tls.key;
       }
 
       const client = mqtt.connect(integration.settings.brokerUrl, options);
@@ -121,8 +112,8 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
 
       client.on('connect', () => {
         this.logger.log(`MQTT connected to ${integration.settings.brokerUrl}`);
-        this.connectionPool.set(key, pool!);
-        resolve(pool!);
+        this.connectionPool.set(key, pool);
+        resolve(pool);
       });
 
       client.on('error', (error) => {
@@ -135,15 +126,11 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
       });
 
       client.on('close', () => {
-        this.logger.warn(
-          `MQTT connection closed: ${integration.settings.brokerUrl}`,
-        );
+        this.logger.warn(`MQTT connection closed: ${integration.settings.brokerUrl}`);
       });
 
       client.on('reconnect', () => {
-        this.logger.log(
-          `MQTT reconnecting to ${integration.settings.brokerUrl}`,
-        );
+        this.logger.log(`MQTT reconnecting to ${integration.settings.brokerUrl}`);
       });
     });
   }
@@ -160,7 +147,7 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
       pool.messageBuffer.set(topic, []);
     }
 
-    const buffer = pool.messageBuffer.get(topic)!;
+    const buffer = pool.messageBuffer.get(topic);
     buffer.push({ topic, message: messageStr, timestamp });
 
     // Limit buffer size
@@ -211,9 +198,7 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
     }
   }
 
-  private async getConnectionStatus(
-    integration: MqttIntegration,
-  ): Promise<unknown> {
+  private async getConnectionStatus(integration: MqttIntegration): Promise<unknown> {
     try {
       const pool = await this.getClient(integration);
 
@@ -233,9 +218,7 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
     }
   }
 
-  private async getSubscriptions(
-    integration: MqttIntegration,
-  ): Promise<unknown> {
+  private async getSubscriptions(integration: MqttIntegration): Promise<unknown> {
     const key = this.getConnectionKey(integration);
     const pool = this.connectionPool.get(key);
 
@@ -276,8 +259,7 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
     }
 
     // Return messages from all topics
-    const allMessages: { topic: string; message: string; timestamp: number }[] =
-      [];
+    const allMessages: { topic: string; message: string; timestamp: number }[] = [];
 
     for (const [, messages] of pool.messageBuffer) {
       allMessages.push(...messages);
@@ -411,10 +393,7 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
       topicStats.push({
         topic,
         messageCount: messages.length,
-        lastMessage:
-          messages.length > 0
-            ? messages[messages.length - 1].timestamp
-            : undefined,
+        lastMessage: messages.length > 0 ? messages[messages.length - 1].timestamp : undefined,
       });
     }
 
@@ -485,9 +464,7 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
       retain?: boolean;
     }[],
   ): Promise<unknown> {
-    const results = await Promise.allSettled(
-      messages.map((msg) => this.publish(integration, msg)),
-    );
+    const results = await Promise.allSettled(messages.map((msg) => this.publish(integration, msg)));
 
     const successful = results.filter((r) => r.status === 'fulfilled').length;
     const failed = results.filter((r) => r.status === 'rejected').length;

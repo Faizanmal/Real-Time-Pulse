@@ -166,8 +166,7 @@ export class VoiceControlService {
     if (lowerTarget.includes('project')) return 'project';
     if (lowerTarget.includes('report')) return 'report';
     if (lowerTarget.includes('alert')) return 'alert';
-    if (lowerTarget.includes('chart') || lowerTarget.includes('graph'))
-      return 'widget';
+    if (lowerTarget.includes('chart') || lowerTarget.includes('graph')) return 'widget';
     if (lowerTarget.includes('status')) return 'status';
     if (lowerTarget.includes('budget')) return 'budget';
 
@@ -425,24 +424,18 @@ export class VoiceControlService {
 
     if (params.includes('daily')) return 'daily';
     if (params.includes('weekly') || params.includes('week')) return 'weekly';
-    if (params.includes('monthly') || params.includes('month'))
-      return 'monthly';
-    if (params.includes('quarterly') || params.includes('quarter'))
-      return 'quarterly';
+    if (params.includes('monthly') || params.includes('month')) return 'monthly';
+    if (params.includes('quarterly') || params.includes('quarter')) return 'quarterly';
     if (params.includes('yearly') || params.includes('year')) return 'yearly';
 
     return 'weekly';
   }
 
   private parseAlertCondition(condition: string): string {
-    if (condition.includes('budget') || condition.includes('cost'))
-      return 'budget';
-    if (condition.includes('delay') || condition.includes('overdue'))
-      return 'timeline';
-    if (condition.includes('error') || condition.includes('fail'))
-      return 'error';
-    if (condition.includes('threshold') || condition.includes('limit'))
-      return 'threshold';
+    if (condition.includes('budget') || condition.includes('cost')) return 'budget';
+    if (condition.includes('delay') || condition.includes('overdue')) return 'timeline';
+    if (condition.includes('error') || condition.includes('fail')) return 'error';
+    if (condition.includes('threshold') || condition.includes('limit')) return 'threshold';
 
     return 'custom';
   }
@@ -475,7 +468,7 @@ export class VoiceControlService {
   /**
    * Get command history for user
    */
-  async getCommandHistory(userId: string, limit: number = 10) {
+  async getCommandHistory(userId: string, limit = 10) {
     return await this.prisma.$queryRaw<any[]>`
       SELECT * FROM voice_command_history
       WHERE user_id = ${userId}
@@ -487,12 +480,7 @@ export class VoiceControlService {
   /**
    * Save command to history
    */
-  async saveCommandHistory(
-    userId: string,
-    command: string,
-    intent: string,
-    success: boolean,
-  ) {
+  async saveCommandHistory(userId: string, command: string, intent: string, success: boolean) {
     await this.prisma.$executeRaw`
       INSERT INTO voice_command_history (user_id, command, intent, success, created_at)
       VALUES (${userId}, ${command}, ${intent}, ${success}, ${new Date()})

@@ -29,12 +29,7 @@ export interface ScalingEvent {
 }
 
 export interface LoadBalancerConfig {
-  algorithm:
-    | 'round_robin'
-    | 'least_connections'
-    | 'weighted'
-    | 'ip_hash'
-    | 'random';
+  algorithm: 'round_robin' | 'least_connections' | 'weighted' | 'ip_hash' | 'random';
   healthCheck: {
     path: string;
     interval: number;
@@ -203,30 +198,19 @@ export class HorizontalScalingService implements OnModuleInit {
       // Check cooldown
       const lastScale = this.lastScaleTime.get(policy.id);
       if (lastScale) {
-        const cooldownEnd = new Date(
-          lastScale.getTime() + policy.threshold.cooldownPeriod * 1000,
-        );
+        const cooldownEnd = new Date(lastScale.getTime() + policy.threshold.cooldownPeriod * 1000);
         if (new Date() < cooldownEnd) continue;
       }
 
       // Evaluate thresholds
-      if (
-        metricValue > policy.threshold.scaleUp &&
-        this.currentReplicas < policy.maxReplicas
-      ) {
-        const newReplicas = Math.min(
-          this.currentReplicas + policy.scalingStep,
-          policy.maxReplicas,
-        );
+      if (metricValue > policy.threshold.scaleUp && this.currentReplicas < policy.maxReplicas) {
+        const newReplicas = Math.min(this.currentReplicas + policy.scalingStep, policy.maxReplicas);
         await this.scaleUp(policy, newReplicas, metrics);
       } else if (
         metricValue < policy.threshold.scaleDown &&
         this.currentReplicas > policy.minReplicas
       ) {
-        const newReplicas = Math.max(
-          this.currentReplicas - policy.scalingStep,
-          policy.minReplicas,
-        );
+        const newReplicas = Math.max(this.currentReplicas - policy.scalingStep, policy.minReplicas);
         await this.scaleDown(policy, newReplicas, metrics);
       }
     }
@@ -282,9 +266,7 @@ export class HorizontalScalingService implements OnModuleInit {
     await this.executeScale(targetReplicas);
 
     this.currentReplicas = targetReplicas;
-    this.logger.log(
-      `Scaled DOWN to ${targetReplicas} replicas: ${event.reason}`,
-    );
+    this.logger.log(`Scaled DOWN to ${targetReplicas} replicas: ${event.reason}`);
 
     this.eventEmitter.emit('scaling.scale_down', event);
   }
@@ -306,23 +288,14 @@ export class HorizontalScalingService implements OnModuleInit {
     }, this.lbConfig.healthCheck.interval);
   }
 
-  private async checkInstanceHealth(
-    service: string,
-    instance: ServiceInstance,
-  ) {
+  private async checkInstanceHealth(service: string, instance: ServiceInstance) {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(
-        () => controller.abort(),
-        this.lbConfig.healthCheck.timeout,
-      );
+      const timeout = setTimeout(() => controller.abort(), this.lbConfig.healthCheck.timeout);
 
-      await fetch(
-        `http://${instance.host}:${instance.port}${this.lbConfig.healthCheck.path}`,
-        {
-          signal: controller.signal,
-        },
-      );
+      await fetch(`http://${instance.host}:${instance.port}${this.lbConfig.healthCheck.path}`, {
+        signal: controller.signal,
+      });
 
       clearTimeout(timeout);
       instance.healthy = true;
@@ -361,9 +334,7 @@ export class HorizontalScalingService implements OnModuleInit {
   }
 
   private leastConnections(instances: ServiceInstance[]): ServiceInstance {
-    return instances.reduce((min, inst) =>
-      inst.connections < min.connections ? inst : min,
-    );
+    return instances.reduce((min, inst) => (inst.connections < min.connections ? inst : min));
   }
 
   private weightedSelection(instances: ServiceInstance[]): ServiceInstance {
@@ -378,10 +349,7 @@ export class HorizontalScalingService implements OnModuleInit {
     return instances[instances.length - 1];
   }
 
-  private ipHash(
-    instances: ServiceInstance[],
-    clientId: string,
-  ): ServiceInstance {
+  private ipHash(instances: ServiceInstance[], clientId: string): ServiceInstance {
     let hash = 0;
     for (let i = 0; i < clientId.length; i++) {
       hash = (hash << 5) - hash + clientId.charCodeAt(i);
@@ -391,9 +359,7 @@ export class HorizontalScalingService implements OnModuleInit {
   }
 
   // Policy Management
-  async createPolicy(
-    policy: Omit<ScalingPolicy, 'id'>,
-  ): Promise<ScalingPolicy> {
+  async createPolicy(policy: Omit<ScalingPolicy, 'id'>): Promise<ScalingPolicy> {
     const newPolicy: ScalingPolicy = {
       ...policy,
       id: `policy-${Date.now()}`,
@@ -405,10 +371,7 @@ export class HorizontalScalingService implements OnModuleInit {
     return newPolicy;
   }
 
-  async updatePolicy(
-    id: string,
-    updates: Partial<ScalingPolicy>,
-  ): Promise<ScalingPolicy> {
+  async updatePolicy(id: string, updates: Partial<ScalingPolicy>): Promise<ScalingPolicy> {
     const policy = this.policies.get(id);
     if (!policy) throw new Error(`Policy ${id} not found`);
 
@@ -429,19 +392,13 @@ export class HorizontalScalingService implements OnModuleInit {
   }
 
   private async persistPolicies() {
-    await this.redis.set(
-      'scaling:policies',
-      JSON.stringify(Array.from(this.policies.values())),
-    );
+    await this.redis.set('scaling:policies', JSON.stringify(Array.from(this.policies.values())));
   }
 
   // Instance Management
   registerInstance(
     service: string,
-    instance: Omit<
-      ServiceInstance,
-      'healthy' | 'connections' | 'lastHealthCheck'
-    >,
+    instance: Omit<ServiceInstance, 'healthy' | 'connections' | 'lastHealthCheck'>,
   ) {
     if (!this.instances.has(service)) {
       this.instances.set(service, []);
@@ -454,10 +411,8 @@ export class HorizontalScalingService implements OnModuleInit {
       lastHealthCheck: new Date(),
     };
 
-    this.instances.get(service)!.push(newInstance);
-    this.logger.log(
-      `Registered instance ${instance.id} for service ${service}`,
-    );
+    this.instances.get(service).push(newInstance);
+    this.logger.log(`Registered instance ${instance.id} for service ${service}`);
   }
 
   deregisterInstance(service: string, instanceId: string) {
@@ -466,9 +421,7 @@ export class HorizontalScalingService implements OnModuleInit {
       const idx = instances.findIndex((i) => i.id === instanceId);
       if (idx !== -1) {
         instances.splice(idx, 1);
-        this.logger.log(
-          `Deregistered instance ${instanceId} from service ${service}`,
-        );
+        this.logger.log(`Deregistered instance ${instanceId} from service ${service}`);
       }
     }
   }

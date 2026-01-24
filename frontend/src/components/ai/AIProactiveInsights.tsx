@@ -143,7 +143,7 @@ export function AIProactiveInsights({
               onClick={() => setExpandedId(isExpanded ? null : index.toString())}
             >
               <div className="flex items-start gap-3">
-                <Icon className={cn('w-5 h-5 mt-0.5 flex-shrink-0', typeColors[insight.type])} />
+                <Icon className={cn('w-5 h-5 mt-0.5 shrink-0', typeColors[insight.type])} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h4 className="font-medium text-white text-sm truncate">{insight.title}</h4>

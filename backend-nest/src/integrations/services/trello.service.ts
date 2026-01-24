@@ -28,11 +28,7 @@ export class TrelloService {
     }
   }
 
-  async fetchData(
-    integration: Integration,
-    dataType: string,
-    params?: unknown,
-  ): Promise<unknown> {
+  async fetchData(integration: Integration, dataType: string, params?: unknown): Promise<unknown> {
     const authParams = {
       key: process.env.TRELLO_API_KEY,
       token: integration.accessToken as string,
@@ -74,10 +70,7 @@ export class TrelloService {
     }
   }
 
-  private async fetchLists(
-    authParams: any,
-    params?: unknown,
-  ): Promise<unknown> {
+  private async fetchLists(authParams: any, params?: unknown): Promise<unknown> {
     try {
       const boardId = (params as { boardId?: string })?.boardId;
       if (!boardId) {
@@ -100,10 +93,7 @@ export class TrelloService {
     }
   }
 
-  private async fetchCards(
-    authParams: any,
-    params?: unknown,
-  ): Promise<unknown> {
+  private async fetchCards(authParams: any, params?: unknown): Promise<unknown> {
     try {
       const boardId = (params as { boardId?: string })?.boardId;
       const listId = (params as { listId?: string })?.listId;
@@ -121,8 +111,7 @@ export class TrelloService {
         this.httpService.get(url, {
           params: {
             ...authParams,
-            fields:
-              'name,desc,due,dueComplete,labels,members,url,dateLastActivity',
+            fields: 'name,desc,due,dueComplete,labels,members,url,dateLastActivity',
             members: true,
             member_fields: 'fullName,avatarUrl',
           },
@@ -135,10 +124,7 @@ export class TrelloService {
     }
   }
 
-  private async fetchMembers(
-    authParams: any,
-    params?: unknown,
-  ): Promise<unknown> {
+  private async fetchMembers(authParams: any, params?: unknown): Promise<unknown> {
     try {
       const boardId = (params as { boardId?: string })?.boardId;
       if (!boardId) {

@@ -150,11 +150,7 @@ export class DataValidationService {
     });
   }
 
-  async resolveViolation(
-    violationId: string,
-    resolvedBy: string,
-    notes?: string,
-  ) {
+  async resolveViolation(violationId: string, resolvedBy: string, notes?: string) {
     return this.prisma.dataValidationViolation.update({
       where: { id: violationId },
       data: {
@@ -166,7 +162,7 @@ export class DataValidationService {
     });
   }
 
-  async getViolationStats(workspaceId: string, days: number = 7) {
+  async getViolationStats(workspaceId: string, days = 7) {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 

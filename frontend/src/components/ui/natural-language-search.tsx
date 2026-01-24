@@ -69,19 +69,22 @@ export function NaturalLanguageInput({
     const [isFocused, setIsFocused] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
-    const [hasVoiceSupport, setHasVoiceSupport] = useState(false);
+    const hasVoiceSupport = (() => {
+        if (typeof window === "undefined") return false;
+        const SpeechRecognitionAPI = (window as unknown as { SpeechRecognition?: new () => unknown; webkitSpeechRecognition?: new () => unknown }).SpeechRecognition
+            || (window as unknown as { webkitSpeechRecognition?: new () => unknown }).webkitSpeechRecognition;
+        return !!SpeechRecognitionAPI;
+    })();
     const inputRef = useRef<HTMLInputElement>(null);
     const recognitionRef = useRef<unknown>(null);
 
     // Voice recognition setup
     useEffect(() => {
-        if (typeof window !== "undefined") {
-            // Check for speech recognition support
+        if (typeof window !== "undefined" && hasVoiceSupport) {
             const SpeechRecognitionAPI = (window as unknown as { SpeechRecognition?: new () => unknown; webkitSpeechRecognition?: new () => unknown }).SpeechRecognition
                 || (window as unknown as { webkitSpeechRecognition?: new () => unknown }).webkitSpeechRecognition;
 
             if (SpeechRecognitionAPI) {
-                setHasVoiceSupport(true);
                 const recognition = new SpeechRecognitionAPI() as {
                     continuous: boolean;
                     interimResults: boolean;
@@ -110,7 +113,7 @@ export function NaturalLanguageInput({
                 recognitionRef.current = recognition;
             }
         }
-    }, [onVoiceInput]);
+    }, [onVoiceInput, hasVoiceSupport]);
 
     const toggleVoice = useCallback(() => {
         const recognition = recognitionRef.current as {
@@ -159,7 +162,7 @@ export function NaturalLanguageInput({
                     )}
                 >
                     {/* AI Icon */}
-                    <div className="flex-shrink-0">
+                    <div className="shrink-0">
                         <motion.div
                             animate={isLoading ? { rotate: 360 } : { rotate: 0 }}
                             transition={isLoading ? { duration: 1, repeat: Infinity, ease: "linear" } : {}}
@@ -553,7 +556,7 @@ interface QuickInsightsBarProps {
 export function QuickInsightsBar({ insights, className }: QuickInsightsBarProps) {
     return (
         <div className={cn("flex items-center gap-2 overflow-x-auto py-2", className)}>
-            <span className="flex-shrink-0 text-sm text-gray-500">
+            <span className="shrink-0 text-sm text-gray-500">
                 <Sparkles className="inline h-4 w-4 mr-1" />
                 AI Insights:
             </span>
@@ -564,7 +567,7 @@ export function QuickInsightsBar({ insights, className }: QuickInsightsBarProps)
                     whileTap={{ scale: 0.98 }}
                     onClick={insight.onClick}
                     className={cn(
-                        "flex-shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
+                        "shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
                         insight.type === "positive" && "bg-green-100 text-green-700 hover:bg-green-200",
                         insight.type === "negative" && "bg-red-100 text-red-700 hover:bg-red-200",
                         insight.type === "neutral" && "bg-gray-100 text-gray-700 hover:bg-gray-200",

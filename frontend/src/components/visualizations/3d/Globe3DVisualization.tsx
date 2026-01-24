@@ -36,7 +36,7 @@ export interface Globe3DVisualizationProps {
 }
 
 // Convert lat/lng to 3D position on sphere
-function latLngToVector3(lat: number, lng: number, radius: number = 1): THREE.Vector3 {
+function latLngToVector3(lat: number, lng: number, radius = 1): THREE.Vector3 {
   const phi = (90 - lat) * (Math.PI / 180);
   const theta = (lng + 180) * (Math.PI / 180);
   
@@ -51,8 +51,8 @@ function latLngToVector3(lat: number, lng: number, radius: number = 1): THREE.Ve
 function createArc(
   from: THREE.Vector3,
   to: THREE.Vector3,
-  segments: number = 50,
-  height: number = 0.2
+  segments = 50,
+  height = 0.2
 ): THREE.Vector3[] {
   const points: THREE.Vector3[] = [];
   

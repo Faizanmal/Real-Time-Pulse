@@ -1,23 +1,7 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Query,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Query, UseGuards, Request } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import {
-  FederatedSearchService,
-  SearchOptions,
-} from './federated-search.service';
+import { FederatedSearchService, SearchOptions } from './federated-search.service';
 import { SemanticSearchService } from './semantic-search.service';
 
 @ApiTags('Federated Search')
@@ -84,14 +68,9 @@ export class FederatedSearchController {
 
   @Post('natural')
   @ApiOperation({ summary: 'Natural language search' })
-  async naturalLanguageSearch(
-    @Request() req: any,
-    @Body() dto: { query: string },
-  ) {
+  async naturalLanguageSearch(@Request() req: any, @Body() dto: { query: string }) {
     // Parse natural language query
-    const parsed = await this.semanticService.parseNaturalLanguageQuery(
-      dto.query,
-    );
+    const parsed = await this.semanticService.parseNaturalLanguageQuery(dto.query);
 
     // Perform search with extracted filters
     const results = await this.searchService.search(req.user.workspaceId, {
@@ -122,10 +101,7 @@ export class FederatedSearchController {
   @Get('recent')
   @ApiOperation({ summary: 'Get recent searches' })
   async getRecentSearches(@Request() req: any) {
-    return this.searchService.getRecentSearches(
-      req.user.workspaceId,
-      req.user.id,
-    );
+    return this.searchService.getRecentSearches(req.user.workspaceId, req.user.id);
   }
 
   @Get('analytics')

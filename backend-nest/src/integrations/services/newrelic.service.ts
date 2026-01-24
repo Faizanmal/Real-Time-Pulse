@@ -19,9 +19,7 @@ export class NewRelicService {
 
   private getBaseUrl(integration: NewRelicIntegration): string {
     const region = integration.settings.region || 'us';
-    return region === 'eu'
-      ? 'https://api.eu.newrelic.com'
-      : 'https://api.newrelic.com';
+    return region === 'eu' ? 'https://api.eu.newrelic.com' : 'https://api.newrelic.com';
   }
 
   private getGraphQLUrl(integration: NewRelicIntegration): string {
@@ -96,15 +94,12 @@ export class NewRelicService {
   ): Promise<unknown> {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(
-          `${this.getBaseUrl(integration)}/v2/applications.json`,
-          {
-            headers: this.getHeaders(integration),
-            params: {
-              'filter[name]': params?.name,
-            },
+        this.httpService.get(`${this.getBaseUrl(integration)}/v2/applications.json`, {
+          headers: this.getHeaders(integration),
+          params: {
+            'filter[name]': params?.name,
           },
-        ),
+        }),
       );
 
       return response.data.applications || [];
@@ -119,15 +114,12 @@ export class NewRelicService {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const appId =
-        (params?.applicationId as string) || integration.settings.applicationId;
+      const appId = (params?.applicationId as string) || integration.settings.applicationId;
       if (!appId) {
         throw new Error('Application ID is required');
       }
 
-      const from =
-        (params?.from as string) ||
-        new Date(Date.now() - 3600000).toISOString();
+      const from = (params?.from as string) || new Date(Date.now() - 3600000).toISOString();
       const to = (params?.to as string) || new Date().toISOString();
 
       const query = `{
@@ -324,8 +316,7 @@ export class NewRelicService {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const appId =
-        (params?.applicationId as string) || integration.settings.applicationId;
+      const appId = (params?.applicationId as string) || integration.settings.applicationId;
       const since = (params?.since as string) || '1 day ago';
 
       const query = `{
@@ -404,8 +395,7 @@ export class NewRelicService {
       return {
         summary: {
           totalTransactions: data.transactionCount?.results?.[0]?.count || 0,
-          averageDuration:
-            data.avgDuration?.results?.[0]?.['average.duration'] || 0,
+          averageDuration: data.avgDuration?.results?.[0]?.['average.duration'] || 0,
           errorRate: data.errorRate?.results?.[0]?.result || 0,
           apdexScore: data.apdex?.results?.[0]?.apdex || 0,
           period: since,

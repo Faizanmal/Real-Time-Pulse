@@ -1,10 +1,7 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 
 export class BusinessException extends HttpException {
-  constructor(
-    message: string,
-    statusCode: HttpStatus = HttpStatus.BAD_REQUEST,
-  ) {
+  constructor(message: string, statusCode: HttpStatus = HttpStatus.BAD_REQUEST) {
     super(
       {
         success: false,
@@ -18,9 +15,7 @@ export class BusinessException extends HttpException {
 
 export class NotFoundException extends HttpException {
   constructor(resource: string, id?: string) {
-    const message = id
-      ? `${resource} with id '${id}' not found`
-      : `${resource} not found`;
+    const message = id ? `${resource} with id '${id}' not found` : `${resource} not found`;
 
     super(
       {
@@ -34,7 +29,7 @@ export class NotFoundException extends HttpException {
 }
 
 export class UnauthorizedException extends HttpException {
-  constructor(message: string = 'Unauthorized access') {
+  constructor(message = 'Unauthorized access') {
     super(
       {
         success: false,
@@ -47,7 +42,7 @@ export class UnauthorizedException extends HttpException {
 }
 
 export class ForbiddenException extends HttpException {
-  constructor(message: string = 'Access forbidden') {
+  constructor(message = 'Access forbidden') {
     super(
       {
         success: false,
@@ -74,7 +69,7 @@ export class ValidationException extends HttpException {
 }
 
 export class RateLimitException extends HttpException {
-  constructor(message: string = 'Too many requests') {
+  constructor(message = 'Too many requests') {
     super(
       {
         success: false,

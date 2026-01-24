@@ -6,7 +6,7 @@ import { useVoiceCommands } from '@/hooks/useVoiceCommands';
 interface VoiceCommand {
   intent: string;
   action: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   confidence: number;
 }
 
@@ -23,7 +23,7 @@ interface VoiceControlContextType {
   startListening: () => void;
   stopListening: () => void;
   speak: (text: string) => void;
-  registerCommandHandler: (action: string, handler: (params: Record<string, any>) => void) => void;
+  registerCommandHandler: (action: string, handler: (params: Record<string, unknown>) => void) => void;
   unregisterCommandHandler: (action: string) => void;
 }
 
@@ -32,7 +32,7 @@ const VoiceControlContext = createContext<VoiceControlContextType | null>(null);
 export function VoiceControlProvider({ children }: { children: React.ReactNode }) {
   const [isEnabled, setIsEnabled] = useState(false);
   const [lastCommand, setLastCommand] = useState<VoiceCommand | null>(null);
-  const [commandHandlers, setCommandHandlers] = useState<Record<string, (params: Record<string, any>) => void>>({});
+  const [commandHandlers, setCommandHandlers] = useState<Record<string, (params: Record<string, unknown>) => void>>({});
 
   const handleVoiceResult = useCallback(
     async (transcript: string, isFinal: boolean) => {
@@ -101,7 +101,7 @@ export function VoiceControlProvider({ children }: { children: React.ReactNode }
   }, [stop]);
 
   const registerCommandHandler = useCallback(
-    (action: string, handler: (params: Record<string, any>) => void) => {
+    (action: string, handler: (params: Record<string, unknown>) => void) => {
       setCommandHandlers((prev) => ({ ...prev, [action]: handler }));
     },
     []

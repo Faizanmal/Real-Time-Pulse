@@ -90,9 +90,7 @@ describe('ReportGeneratorService', () => {
   describe('generateAndSendReport', () => {
     it('should generate and send report', async () => {
       await service.generateAndSendReport('report-1');
-      expect(clientReportService.getReportById).toHaveBeenCalledWith(
-        'report-1',
-      );
+      expect(clientReportService.getReportById).toHaveBeenCalledWith('report-1');
       expect(clientReportService.updateReport).toHaveBeenCalled();
       expect(emailService.sendEmail).toHaveBeenCalled();
     });

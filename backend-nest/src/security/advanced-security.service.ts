@@ -176,15 +176,10 @@ export class AdvancedSecurityService {
   /**
    * Get rate limit headers for response
    */
-  getRateLimitHeaders(result: {
-    remaining: number;
-    resetAt: Date;
-  }): Record<string, string> {
+  getRateLimitHeaders(result: { remaining: number; resetAt: Date }): Record<string, string> {
     return {
       'X-RateLimit-Remaining': result.remaining.toString(),
-      'X-RateLimit-Reset': Math.floor(
-        result.resetAt.getTime() / 1000,
-      ).toString(),
+      'X-RateLimit-Reset': Math.floor(result.resetAt.getTime() / 1000).toString(),
     };
   }
 
@@ -223,14 +218,8 @@ export class AdvancedSecurityService {
 
       if (remaining <= 0) {
         // Block the identifier
-        const blockUntil =
-          Date.now() + this.bruteForceConfig.blockSeconds * 1000;
-        await client.set(
-          blockKey,
-          blockUntil.toString(),
-          'EX',
-          this.bruteForceConfig.blockSeconds,
-        );
+        const blockUntil = Date.now() + this.bruteForceConfig.blockSeconds * 1000;
+        await client.set(blockKey, blockUntil.toString(), 'EX', this.bruteForceConfig.blockSeconds);
 
         this.logger.warn(`Brute force protection triggered for ${identifier}`);
 
@@ -328,9 +317,7 @@ export class AdvancedSecurityService {
         scope,
         expiresAt: expiresAt?.toISOString(),
       },
-      expiresAt
-        ? Math.floor((expiresAt.getTime() - Date.now()) / 1000)
-        : 86400 * 30,
+      expiresAt ? Math.floor((expiresAt.getTime() - Date.now()) / 1000) : 86400 * 30,
     );
 
     this.logger.log(`API key created for workspace ${workspaceId}`);
@@ -403,12 +390,7 @@ export class AdvancedSecurityService {
           error: 'Insufficient permissions: write required',
         };
       }
-      if (
-        requiredScope === 'read' &&
-        !scope.read &&
-        !scope.write &&
-        !scope.admin
-      ) {
+      if (requiredScope === 'read' && !scope.read && !scope.write && !scope.admin) {
         return {
           valid: false,
           error: 'Insufficient permissions: read required',
@@ -416,11 +398,7 @@ export class AdvancedSecurityService {
       }
 
       // Check resource access
-      if (
-        resource &&
-        scope.resources.length > 0 &&
-        !scope.resources.includes(resource)
-      ) {
+      if (resource && scope.resources.length > 0 && !scope.resources.includes(resource)) {
         return { valid: false, error: `No access to resource: ${resource}` };
       }
 
@@ -587,9 +565,7 @@ export class AdvancedSecurityService {
 
       // Log critical activities
       if (activity.severity === 'critical' || activity.severity === 'high') {
-        const user = userId
-          ? await this.prisma.user.findUnique({ where: { id: userId } })
-          : null;
+        const user = userId ? await this.prisma.user.findUnique({ where: { id: userId } }) : null;
 
         this.logger.warn(`Suspicious activity detected: ${activity.type}`, {
           userId,
@@ -622,10 +598,7 @@ export class AdvancedSecurityService {
   /**
    * Get suspicious activities for a user/IP
    */
-  async getSuspiciousActivities(
-    identifier: string,
-    limit = 50,
-  ): Promise<SuspiciousActivity[]> {
+  async getSuspiciousActivities(identifier: string, limit = 50): Promise<SuspiciousActivity[]> {
     const key = `${this.SUSPICIOUS_ACTIVITY_PREFIX}${identifier}`;
 
     try {
@@ -730,34 +703,25 @@ export class AdvancedSecurityService {
       where: { workspaceId },
       select: { twoFactorEnabled: true },
     });
-    const twoFactorRate =
-      users.filter((u) => u.twoFactorEnabled).length / users.length;
+    const twoFactorRate = users.filter((u) => u.twoFactorEnabled).length / users.length;
     factors.push({
       name: '2FA Adoption',
       score: Math.round(twoFactorRate * 25),
       maxScore: 25,
-      recommendation:
-        twoFactorRate < 1 ? 'Enable 2FA for all users' : undefined,
+      recommendation: twoFactorRate < 1 ? 'Enable 2FA for all users' : undefined,
     });
 
     // Check API key usage
     const apiKeys = await this.prisma.apiKey.findMany({
       where: { workspaceId, revokedAt: null },
     });
-    const expiredKeys = apiKeys.filter(
-      (k) => k.expiresAt && k.expiresAt < new Date(),
-    );
+    const expiredKeys = apiKeys.filter((k) => k.expiresAt && k.expiresAt < new Date());
     factors.push({
       name: 'API Key Hygiene',
-      score:
-        expiredKeys.length === 0
-          ? 20
-          : Math.max(0, 20 - expiredKeys.length * 5),
+      score: expiredKeys.length === 0 ? 20 : Math.max(0, 20 - expiredKeys.length * 5),
       maxScore: 20,
       recommendation:
-        expiredKeys.length > 0
-          ? `Revoke ${expiredKeys.length} expired API keys`
-          : undefined,
+        expiredKeys.length > 0 ? `Revoke ${expiredKeys.length} expired API keys` : undefined,
     });
 
     // Check recent suspicious activities
@@ -770,9 +734,7 @@ export class AdvancedSecurityService {
       score: Math.max(0, 25 - highSeverityIncidents * 5),
       maxScore: 25,
       recommendation:
-        highSeverityIncidents > 0
-          ? 'Review and address recent security incidents'
-          : undefined,
+        highSeverityIncidents > 0 ? 'Review and address recent security incidents' : undefined,
     });
 
     // Check password policy compliance (assuming we track this)

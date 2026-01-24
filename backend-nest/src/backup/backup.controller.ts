@@ -8,9 +8,7 @@ export class BackupController {
   constructor(private readonly backupService: BackupService) {}
 
   @Post()
-  async createBackup(
-    @Body() body: { type?: 'full' | 'incremental'; description?: string },
-  ) {
+  async createBackup(@Body() body: { type?: 'full' | 'incremental'; description?: string }) {
     return await this.backupService.createBackup(body.type, body.description);
   }
 

@@ -37,8 +37,7 @@ export class BackupService implements OnModuleInit {
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
   ) {
-    this.BACKUP_DIR =
-      this.configService.get<string>('backup.directory') || './backups';
+    this.BACKUP_DIR = this.configService.get<string>('backup.directory') || './backups';
   }
 
   async onModuleInit() {
@@ -84,10 +83,7 @@ export class BackupService implements OnModuleInit {
   private async saveBackupMetadata(): Promise<void> {
     try {
       const metadataPath = path.join(this.BACKUP_DIR, this.METADATA_FILE);
-      fs.writeFileSync(
-        metadataPath,
-        JSON.stringify(this.backupMetadata, null, 2),
-      );
+      fs.writeFileSync(metadataPath, JSON.stringify(this.backupMetadata, null, 2));
     } catch (error) {
       this.logger.error('Failed to save backup metadata', error);
     }
@@ -105,9 +101,7 @@ export class BackupService implements OnModuleInit {
   /**
    * Create a backup
    */
-  async createBackup(
-    type: 'full' | 'incremental' = 'full',
-  ): Promise<BackupMetadata | null> {
+  async createBackup(type: 'full' | 'incremental' = 'full'): Promise<BackupMetadata | null> {
     const backupId = crypto.randomUUID();
     const timestamp = new Date();
     const fileName = `backup-${type}-${timestamp.toISOString().replace(/[:.]/g, '-')}.json`;
@@ -122,8 +116,7 @@ export class BackupService implements OnModuleInit {
       tables: [],
       status: 'pending',
       storagePath: filePath,
-      retentionDays:
-        this.configService.get<number>('backup.retentionDays') || 30,
+      retentionDays: this.configService.get<number>('backup.retentionDays') || 30,
     };
 
     try {
@@ -216,11 +209,7 @@ export class BackupService implements OnModuleInit {
     const { iv, tag, data } = JSON.parse(encryptedData);
     const key = this.getBackupKey();
 
-    const decipher = crypto.createDecipheriv(
-      'aes-256-gcm',
-      key,
-      Buffer.from(iv, 'hex'),
-    );
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'hex'));
     decipher.setAuthTag(Buffer.from(tag, 'hex'));
 
     let decrypted = decipher.update(data, 'hex', 'utf8');
@@ -233,9 +222,7 @@ export class BackupService implements OnModuleInit {
    * Get backup encryption key
    */
   private getBackupKey(): Buffer {
-    const key =
-      this.configService.get<string>('app.encryptionKey') ||
-      'default-backup-key';
+    const key = this.configService.get<string>('app.encryptionKey') || 'default-backup-key';
     return crypto.pbkdf2Sync(key, 'backup-salt', 100000, 32, 'sha256');
   }
 
@@ -290,8 +277,7 @@ export class BackupService implements OnModuleInit {
    */
   listBackups(): BackupMetadata[] {
     return this.backupMetadata.sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
     );
   }
 
@@ -332,9 +318,7 @@ export class BackupService implements OnModuleInit {
       const tablesToRestore = options.tables || Object.keys(backupData);
 
       if (dryRun) {
-        this.logger.log(
-          `Dry run: Would restore tables: ${tablesToRestore.join(', ')}`,
-        );
+        this.logger.log(`Dry run: Would restore tables: ${tablesToRestore.join(', ')}`);
         return {
           success: true,
           message: `Dry run successful. Would restore ${tablesToRestore.length} tables.`,
@@ -344,9 +328,7 @@ export class BackupService implements OnModuleInit {
 
       // WARNING: Actual restore is dangerous and should be done carefully
       // This is a simplified implementation
-      this.logger.warn(
-        'Starting actual restore - this is a destructive operation',
-      );
+      this.logger.warn('Starting actual restore - this is a destructive operation');
 
       for (const table of tablesToRestore) {
         const data = backupData[table];
@@ -382,9 +364,7 @@ export class BackupService implements OnModuleInit {
     const toDelete: string[] = [];
 
     for (const metadata of this.backupMetadata) {
-      const age =
-        (now.getTime() - new Date(metadata.timestamp).getTime()) /
-        (1000 * 60 * 60 * 24);
+      const age = (now.getTime() - new Date(metadata.timestamp).getTime()) / (1000 * 60 * 60 * 24);
 
       if (age > metadata.retentionDays) {
         toDelete.push(metadata.id);
@@ -414,9 +394,7 @@ export class BackupService implements OnModuleInit {
         fs.unlinkSync(metadata.storagePath);
       }
 
-      this.backupMetadata = this.backupMetadata.filter(
-        (m) => m.id !== backupId,
-      );
+      this.backupMetadata = this.backupMetadata.filter((m) => m.id !== backupId);
       await this.saveBackupMetadata();
 
       this.logger.log(`Deleted backup: ${backupId}`);
@@ -440,17 +418,9 @@ export class BackupService implements OnModuleInit {
     const totalSize = this.backupMetadata.reduce((sum, m) => sum + m.size, 0);
     const lastBackup =
       this.backupMetadata.length > 0
-        ? new Date(
-            Math.max(
-              ...this.backupMetadata.map((m) =>
-                new Date(m.timestamp).getTime(),
-              ),
-            ),
-          )
+        ? new Date(Math.max(...this.backupMetadata.map((m) => new Date(m.timestamp).getTime())))
         : null;
-    const failedBackups = this.backupMetadata.filter(
-      (m) => m.status === 'failed',
-    ).length;
+    const failedBackups = this.backupMetadata.filter((m) => m.status === 'failed').length;
 
     // Calculate next scheduled backup (2 AM)
     const now = new Date();

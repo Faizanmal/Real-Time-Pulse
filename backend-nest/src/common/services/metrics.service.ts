@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleInit,
-  OnModuleDestroy,
-} from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { CacheService } from '../../cache/cache.service';
 
 export interface MetricPoint {
@@ -59,10 +54,7 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
 
   onModuleInit(): void {
     // Start periodic aggregation
-    this.aggregationTimer = setInterval(
-      () => this.aggregateMetrics(),
-      this.AGGREGATION_INTERVAL,
-    );
+    this.aggregationTimer = setInterval(() => this.aggregateMetrics(), this.AGGREGATION_INTERVAL);
     this.logger.log('Metrics service initialized');
   }
 
@@ -93,11 +85,7 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
   /**
    * Record a counter metric (incremental)
    */
-  recordCounter(
-    name: string,
-    value: number,
-    tags: Record<string, string> = {},
-  ): void {
+  recordCounter(name: string, value: number, tags: Record<string, string> = {}): void {
     const key = this.generateMetricKey(name, tags);
     const bucket = this.getOrCreateBucket(key);
     bucket.count += value;
@@ -107,11 +95,7 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
   /**
    * Record a gauge metric (point-in-time value)
    */
-  recordGauge(
-    name: string,
-    value: number,
-    tags: Record<string, string> = {},
-  ): void {
+  recordGauge(name: string, value: number, tags: Record<string, string> = {}): void {
     const key = this.generateMetricKey(name, tags);
     const bucket = this.getOrCreateBucket(key);
     bucket.values = [value]; // Gauge only keeps the latest value
@@ -124,11 +108,7 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
   /**
    * Record a histogram metric (distribution)
    */
-  recordHistogram(
-    name: string,
-    value: number,
-    tags: Record<string, string> = {},
-  ): void {
+  recordHistogram(name: string, value: number, tags: Record<string, string> = {}): void {
     const key = this.generateMetricKey(name, tags);
     const bucket = this.getOrCreateBucket(key);
     bucket.values.push(value);
@@ -146,10 +126,7 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
   /**
    * Get metric summary
    */
-  getMetricSummary(
-    name: string,
-    tags: Record<string, string> = {},
-  ): MetricSummary | null {
+  getMetricSummary(name: string, tags: Record<string, string> = {}): MetricSummary | null {
     const key = this.generateMetricKey(name, tags);
     const bucket = this.metricBuckets.get(key);
 
@@ -175,7 +152,7 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
   /**
    * Get all request metrics for the last N minutes
    */
-  getRecentRequestMetrics(minutes: number = 5): RequestMetric[] {
+  getRecentRequestMetrics(minutes = 5): RequestMetric[] {
     const cutoff = new Date(Date.now() - minutes * 60 * 1000);
     return this.requestMetrics.filter((m) => m.timestamp >= cutoff);
   }
@@ -216,10 +193,7 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
   /**
    * Get error rate by endpoint
    */
-  getErrorRates(): Record<
-    string,
-    { total: number; errors: number; errorRate: number }
-  > {
+  getErrorRates(): Record<string, { total: number; errors: number; errorRate: number }> {
     const grouped: Record<string, { total: number; errors: number }> = {};
 
     for (const metric of this.requestMetrics) {
@@ -233,10 +207,7 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
       }
     }
 
-    const result: Record<
-      string,
-      { total: number; errors: number; errorRate: number }
-    > = {};
+    const result: Record<string, { total: number; errors: number; errorRate: number }> = {};
     for (const [key, stats] of Object.entries(grouped)) {
       result[key] = {
         ...stats,
@@ -272,9 +243,7 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
   private aggregateMetrics(): void {
     // Clean up old request metrics
     const cutoff = new Date(Date.now() - this.RETENTION_HOURS * 60 * 60 * 1000);
-    this.requestMetrics = this.requestMetrics.filter(
-      (m) => m.timestamp >= cutoff,
-    );
+    this.requestMetrics = this.requestMetrics.filter((m) => m.timestamp >= cutoff);
 
     // Persist current metrics to cache
     void this.persistMetrics();
@@ -310,13 +279,10 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
         values: [],
       });
     }
-    return this.metricBuckets.get(key)!;
+    return this.metricBuckets.get(key);
   }
 
-  private generateMetricKey(
-    name: string,
-    tags: Record<string, string>,
-  ): string {
+  private generateMetricKey(name: string, tags: Record<string, string>): string {
     const tagStr = Object.entries(tags)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([k, v]) => `${k}=${v}`)
@@ -327,10 +293,7 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
   private normalizePath(path: string): string {
     // Replace UUIDs and IDs with placeholders
     return path
-      .replace(
-        /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
-        ':id',
-      )
+      .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, ':id')
       .replace(/\/\d+/g, '/:id')
       .split('?')[0]; // Remove query string
   }

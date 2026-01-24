@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { ETLPipelineService, ETLNode, ETLEdge } from './etl-pipeline.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -70,11 +60,7 @@ export class ETLController {
    * Update a pipeline
    */
   @Put('pipelines/:id')
-  async updatePipeline(
-    @Param('id') id: string,
-    @Body() dto: UpdatePipelineDto,
-    @Req() req: any,
-  ) {
+  async updatePipeline(@Param('id') id: string, @Body() dto: UpdatePipelineDto, @Req() req: any) {
     return this.etlService.updatePipeline(id, req.user.workspaceId, dto);
   }
 
@@ -98,10 +84,7 @@ export class ETLController {
    * Get execution history for a pipeline
    */
   @Get('pipelines/:id/history')
-  async getExecutionHistory(
-    @Param('id') id: string,
-    @Query('limit') limit: string,
-  ) {
+  async getExecutionHistory(@Param('id') id: string, @Query('limit') limit: string) {
     return this.etlService.getExecutionHistory(id, parseInt(limit, 10) || 10);
   }
 

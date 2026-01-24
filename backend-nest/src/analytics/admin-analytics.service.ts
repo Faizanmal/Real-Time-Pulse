@@ -252,11 +252,7 @@ export class AdminAnalyticsService {
       },
     };
 
-    await this.cacheService.set(
-      cacheKey,
-      JSON.stringify(metrics),
-      this.CACHE_TTL,
-    );
+    await this.cacheService.set(cacheKey, JSON.stringify(metrics), this.CACHE_TTL);
     return metrics;
   }
 
@@ -317,8 +313,7 @@ export class AdminAnalyticsService {
     });
 
     const totalSubscribers = subscriptions.length;
-    const churnRate =
-      totalSubscribers > 0 ? (cancelledCount / totalSubscribers) * 100 : 0;
+    const churnRate = totalSubscribers > 0 ? (cancelledCount / totalSubscribers) * 100 : 0;
 
     // Get growth data for last 6 months
     const growth: RevenueMetrics['growth'] = [];
@@ -352,9 +347,7 @@ export class AdminAnalyticsService {
       arr: mrr * 12,
       churnRate: parseFloat(churnRate.toFixed(2)),
       averageRevenuePerUser:
-        totalSubscribers > 0
-          ? parseFloat((mrr / totalSubscribers).toFixed(2))
-          : 0,
+        totalSubscribers > 0 ? parseFloat((mrr / totalSubscribers).toFixed(2)) : 0,
       byPlan: Object.entries(byPlan).map(([plan, data]) => ({
         plan,
         count: (data as { count: number; revenue: number }).count,
@@ -363,11 +356,7 @@ export class AdminAnalyticsService {
       growth,
     };
 
-    await this.cacheService.set(
-      cacheKey,
-      JSON.stringify(metrics),
-      this.CACHE_TTL,
-    );
+    await this.cacheService.set(cacheKey, JSON.stringify(metrics), this.CACHE_TTL);
     return metrics;
   }
 
@@ -427,15 +416,9 @@ export class AdminAnalyticsService {
       select: { provider: true, status: true },
     });
 
-    const healthyIntegrations = integrations.filter(
-      (i) => i.status === 'ACTIVE',
-    ).length;
-    const failingIntegrations = integrations.filter(
-      (i) => i.status === 'ERROR',
-    );
-    const failingProviders = failingIntegrations.map(
-      (i) => i.provider,
-    ) as string[];
+    const healthyIntegrations = integrations.filter((i) => i.status === 'ACTIVE').length;
+    const failingIntegrations = integrations.filter((i) => i.status === 'ERROR');
+    const failingProviders = failingIntegrations.map((i) => i.provider) as string[];
 
     // Alert status
     const [criticalAlerts, unresolvedAlerts] = await Promise.all([
@@ -554,9 +537,7 @@ export class AdminAnalyticsService {
 
     // Retention calculation
     const calculateRetention = async (days: number): Promise<number> => {
-      const cohortStart = new Date(
-        now.getTime() - (days + 7) * 24 * 60 * 60 * 1000,
-      );
+      const cohortStart = new Date(now.getTime() - (days + 7) * 24 * 60 * 60 * 1000);
       const cohortEnd = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 
       const cohortUsers = await this.prisma.user.findMany({
@@ -572,9 +553,7 @@ export class AdminAnalyticsService {
         (u) => u.lastLoginAt && new Date(u.lastLoginAt) >= cohortEnd,
       ).length;
 
-      return parseFloat(
-        ((retainedUsers / cohortUsers.length) * 100).toFixed(1),
-      );
+      return parseFloat(((retainedUsers / cohortUsers.length) * 100).toFixed(1));
     };
 
     const [day1Retention, day7Retention, day30Retention] = await Promise.all([
@@ -589,8 +568,7 @@ export class AdminAnalyticsService {
       monthlyActiveUsers: mau,
       sessionStats: {
         avgSessionDuration: 15.5, // Would need session tracking for real data
-        avgSessionsPerUser:
-          mau > 0 ? parseFloat(((wau / mau) * 4).toFixed(1)) : 0,
+        avgSessionsPerUser: mau > 0 ? parseFloat(((wau / mau) * 4).toFixed(1)) : 0,
         bounceRate: 25, // Would need analytics integration
       },
       topFeatures,
@@ -601,11 +579,7 @@ export class AdminAnalyticsService {
       },
     };
 
-    await this.cacheService.set(
-      cacheKey,
-      JSON.stringify(metrics),
-      this.CACHE_TTL,
-    );
+    await this.cacheService.set(cacheKey, JSON.stringify(metrics), this.CACHE_TTL);
     return metrics;
   }
 

@@ -4,14 +4,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 export interface Equipment {
   id: string;
   name: string;
-  type:
-    | 'cnc'
-    | 'press'
-    | 'conveyor'
-    | 'robot'
-    | 'assembly'
-    | 'packaging'
-    | 'quality';
+  type: 'cnc' | 'press' | 'conveyor' | 'robot' | 'assembly' | 'packaging' | 'quality';
   location: string;
   status: 'running' | 'idle' | 'maintenance' | 'fault' | 'offline';
   metrics: EquipmentMetrics;
@@ -188,10 +181,7 @@ export class ManufacturingSolutionService {
     return Array.from(this.equipment.values());
   }
 
-  async updateEquipmentStatus(
-    id: string,
-    status: Equipment['status'],
-  ): Promise<Equipment> {
+  async updateEquipmentStatus(id: string, status: Equipment['status']): Promise<Equipment> {
     const eq = this.equipment.get(id);
     if (!eq) throw new Error(`Equipment ${id} not found`);
 
@@ -209,10 +199,7 @@ export class ManufacturingSolutionService {
     return eq;
   }
 
-  async updateEquipmentMetrics(
-    id: string,
-    metrics: Partial<EquipmentMetrics>,
-  ): Promise<Equipment> {
+  async updateEquipmentMetrics(id: string, metrics: Partial<EquipmentMetrics>): Promise<Equipment> {
     const eq = this.equipment.get(id);
     if (!eq) throw new Error(`Equipment ${id} not found`);
 
@@ -223,8 +210,7 @@ export class ManufacturingSolutionService {
     };
 
     // Recalculate OEE
-    eq.metrics.oee =
-      eq.metrics.availability * eq.metrics.performance * eq.metrics.quality;
+    eq.metrics.oee = eq.metrics.availability * eq.metrics.performance * eq.metrics.quality;
 
     // Check for alerts
     await this.checkEquipmentAlerts(eq);
@@ -338,8 +324,7 @@ export class ManufacturingSolutionService {
   }> {
     const equipmentList = Array.from(this.equipment.values());
     const avgOEE =
-      equipmentList.reduce((sum, eq) => sum + eq.metrics.oee, 0) /
-      equipmentList.length;
+      equipmentList.reduce((sum, eq) => sum + eq.metrics.oee, 0) / equipmentList.length;
 
     return {
       overallOEE: avgOEE,
@@ -359,10 +344,7 @@ export class ManufacturingSolutionService {
 
   // Production Orders
   async createProductionOrder(
-    data: Omit<
-      ProductionOrder,
-      'id' | 'completedQuantity' | 'defectQuantity' | 'status'
-    >,
+    data: Omit<ProductionOrder, 'id' | 'completedQuantity' | 'defectQuantity' | 'status'>,
   ): Promise<ProductionOrder> {
     const id = `po-${Date.now()}`;
 
@@ -375,9 +357,7 @@ export class ManufacturingSolutionService {
     };
 
     this.productionOrders.set(id, order);
-    this.logger.log(
-      `Created production order: ${order.productName} x ${order.quantity}`,
-    );
+    this.logger.log(`Created production order: ${order.productName} x ${order.quantity}`);
 
     return order;
   }
@@ -406,17 +386,13 @@ export class ManufacturingSolutionService {
     return order;
   }
 
-  async getProductionOrders(
-    status?: ProductionOrder['status'],
-  ): Promise<ProductionOrder[]> {
+  async getProductionOrders(status?: ProductionOrder['status']): Promise<ProductionOrder[]> {
     const orders = Array.from(this.productionOrders.values());
     return status ? orders.filter((o) => o.status === status) : orders;
   }
 
   // Predictive Maintenance
-  async runPredictiveMaintenance(
-    equipmentId: string,
-  ): Promise<PredictiveMaintenanceResult> {
+  async runPredictiveMaintenance(equipmentId: string): Promise<PredictiveMaintenanceResult> {
     const eq = this.equipment.get(equipmentId);
     if (!eq) throw new Error(`Equipment ${equipmentId} not found`);
 
@@ -535,9 +511,7 @@ export class ManufacturingSolutionService {
     defectsByType: Record<string, number>;
     trend: { timestamp: string; yield: number }[];
   }> {
-    const data = lineId
-      ? this.qualityData.filter((d) => d.lineId === lineId)
-      : this.qualityData;
+    const data = lineId ? this.qualityData.filter((d) => d.lineId === lineId) : this.qualityData;
 
     if (data.length === 0) {
       return {
@@ -608,9 +582,7 @@ export class ManufacturingSolutionService {
     }
 
     const avgEfficiency =
-      data.length > 0
-        ? data.reduce((sum, d) => sum + d.efficiency, 0) / data.length
-        : 0.85;
+      data.length > 0 ? data.reduce((sum, d) => sum + d.efficiency, 0) / data.length : 0.85;
 
     return {
       totalConsumption: totalEnergy,

@@ -119,7 +119,7 @@ export class BigQueryService {
   private async waitForJob(
     integration: BigQueryIntegration,
     jobId: string,
-    maxRetries: number = 60,
+    maxRetries = 60,
   ): Promise<unknown> {
     for (let i = 0; i < maxRetries; i++) {
       const response = await firstValueFrom(
@@ -169,9 +169,7 @@ export class BigQueryService {
     };
   }
 
-  private async fetchDatasets(
-    integration: BigQueryIntegration,
-  ): Promise<unknown> {
+  private async fetchDatasets(integration: BigQueryIntegration): Promise<unknown> {
     try {
       const response = await firstValueFrom(
         this.httpService.get(
@@ -199,8 +197,7 @@ export class BigQueryService {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const datasetId =
-        (params?.datasetId as string) || integration.settings.defaultDataset;
+      const datasetId = (params?.datasetId as string) || integration.settings.defaultDataset;
       if (!datasetId) {
         throw new Error('Dataset ID is required');
       }
@@ -232,8 +229,7 @@ export class BigQueryService {
     params?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const datasetId =
-        (params?.datasetId as string) || integration.settings.defaultDataset;
+      const datasetId = (params?.datasetId as string) || integration.settings.defaultDataset;
       const tableId = params?.tableId as string;
 
       if (!datasetId || !tableId) {
@@ -274,17 +270,14 @@ export class BigQueryService {
       const stateFilter = (params?.stateFilter as string) || 'done';
 
       const response = await firstValueFrom(
-        this.httpService.get(
-          `${this.baseUrl}/projects/${integration.settings.projectId}/jobs`,
-          {
-            headers: this.getHeaders(integration),
-            params: {
-              maxResults,
-              stateFilter,
-              projection: 'full',
-            },
+        this.httpService.get(`${this.baseUrl}/projects/${integration.settings.projectId}/jobs`, {
+          headers: this.getHeaders(integration),
+          params: {
+            maxResults,
+            stateFilter,
+            projection: 'full',
           },
-        ),
+        }),
       );
 
       return (
@@ -331,9 +324,7 @@ export class BigQueryService {
       let failedJobs = 0;
 
       jobsArray.forEach((job: any) => {
-        totalBytesProcessed += parseInt(
-          job.statistics?.totalBytesProcessed || '0',
-        );
+        totalBytesProcessed += parseInt(job.statistics?.totalBytesProcessed || '0');
         if (job.state === 'DONE' && !job.status?.errorResult) {
           successfulJobs++;
         } else if (job.status?.errorResult) {
@@ -365,14 +356,9 @@ export class BigQueryService {
           recentJobs: totalJobs,
           successfulJobs,
           failedJobs,
-          successRate:
-            totalJobs > 0
-              ? ((successfulJobs / totalJobs) * 100).toFixed(2)
-              : '0',
+          successRate: totalJobs > 0 ? ((successfulJobs / totalJobs) * 100).toFixed(2) : '0',
           totalBytesProcessed,
-          totalGBProcessed: (totalBytesProcessed / 1024 / 1024 / 1024).toFixed(
-            2,
-          ),
+          totalGBProcessed: (totalBytesProcessed / 1024 / 1024 / 1024).toFixed(2),
         },
         datasetStats,
         recentQueries: jobsArray.slice(0, 10).map((job: any) => ({
@@ -382,8 +368,7 @@ export class BigQueryService {
           bytesProcessed: job.statistics?.totalBytesProcessed,
           duration:
             job.statistics?.endTime && job.statistics?.startTime
-              ? parseInt(job.statistics.endTime) -
-                parseInt(job.statistics.startTime)
+              ? parseInt(job.statistics.endTime) - parseInt(job.statistics.startTime)
               : null,
         })),
       };

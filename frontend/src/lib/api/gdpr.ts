@@ -81,7 +81,7 @@ export const gdprApi = {
   },
 
   getConsents: async (
-    workspaceId: string = 'current',
+    workspaceId = 'current',
     options?: { type?: string; status?: string; limit?: number }
   ): Promise<GdprConsent[]> => {
     const response = await apiClient.get<GdprConsent[]>(`/gdpr/consents/workspace/${workspaceId}`, { params: options });
@@ -108,7 +108,7 @@ export const gdprApi = {
   },
 
   getDataRequests: async (
-    workspaceId: string = 'current',
+    workspaceId = 'current',
     options?: { type?: string; status?: string; limit?: number }
   ): Promise<GdprDataRequest[]> => {
     const response = await apiClient.get<GdprDataRequest[]>(`/gdpr/requests/workspace/${workspaceId}`, { params: options });
@@ -154,7 +154,7 @@ export const gdprApi = {
   },
 
   getComplianceReports: async (
-    workspaceId: string = 'current',
+    workspaceId = 'current',
     limit?: number
   ): Promise<GdprComplianceReport[]> => {
     const response = await apiClient.get<GdprComplianceReport[]>(`/gdpr/compliance/reports/workspace/${workspaceId}`, {

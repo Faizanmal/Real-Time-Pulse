@@ -3,19 +3,13 @@
  * Provides Teams channel integration with adaptive cards and bot messaging
  */
 
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { LoggingService } from '../../common/logger/logging.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CacheService } from '../../cache/cache.service';
 import { firstValueFrom } from 'rxjs';
-
-interface TeamsMessage {
-  channelId?: string;
-  webhookUrl?: string;
-  card: any;
-}
 
 @Injectable()
 export class TeamsIntegrationService {
@@ -131,7 +125,10 @@ export class TeamsIntegrationService {
         }),
       );
     } catch (error) {
-      this.logger.error(`Failed to send Teams webhook message: ${error}`, 'TeamsIntegrationService');
+      this.logger.error(
+        `Failed to send Teams webhook message: ${error}`,
+        'TeamsIntegrationService',
+      );
       throw error;
     }
   }
@@ -150,7 +147,7 @@ export class TeamsIntegrationService {
     },
   ): Promise<void> {
     const integration = await this.getIntegration(workspaceId);
-    if (!integration?.metadata?.webhookUrl) return;
+    if (!(integration as any)?.metadata?.webhookUrl) return;
 
     const severityColors = {
       info: 'accent',
@@ -189,14 +186,14 @@ export class TeamsIntegrationService {
     }
 
     if (alertData.dashboardUrl) {
-      (card.actions as any[]).push({
+      card.actions.push({
         type: 'Action.OpenUrl',
         title: 'View Dashboard',
         url: alertData.dashboardUrl,
       });
     }
 
-    await this.sendWebhookMessage(integration.settings.webhookUrl, card);
+    await this.sendWebhookMessage((integration.settings as any).webhookUrl, card);
   }
 
   /**
@@ -212,7 +209,7 @@ export class TeamsIntegrationService {
     },
   ): Promise<void> {
     const integration = await this.getIntegration(workspaceId);
-    if (!integration?.metadata?.webhookUrl) return;
+    if (!(integration as any)?.metadata?.webhookUrl) return;
 
     const card = {
       type: 'AdaptiveCard',
@@ -226,9 +223,7 @@ export class TeamsIntegrationService {
         },
         {
           type: 'FactSet',
-          facts: [
-            { title: 'Period', value: reportData.period },
-          ],
+          facts: [{ title: 'Period', value: reportData.period }],
         },
         {
           type: 'TextBlock',
@@ -245,7 +240,7 @@ export class TeamsIntegrationService {
       ],
     };
 
-    await this.sendWebhookMessage(integration.settings.webhookUrl, card);
+    await this.sendWebhookMessage((integration.settings as any).webhookUrl, card);
   }
 
   /**

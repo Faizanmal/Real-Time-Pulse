@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 
 // Types
 interface Template {
@@ -72,7 +73,7 @@ export function TemplateCard({
     >
       {/* Preview Image */}
       <div className="relative aspect-video bg-gray-100 dark:bg-gray-700 overflow-hidden">
-        <img
+        <Image
           src={template.previewImage || '/placeholder-template.png'}
           alt={template.name}
           className={`w-full h-full object-cover transition-transform duration-300 ${
@@ -152,7 +153,7 @@ export function TemplateCard({
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 overflow-hidden">
               {template.author.avatarUrl ? (
-                <img
+                <Image
                   src={template.author.avatarUrl}
                   alt={template.author.name}
                   className="w-full h-full object-cover"
@@ -334,7 +335,7 @@ export function TemplatePreviewModal({
         <div className="flex-1 overflow-y-auto p-6">
           {activeTab === 'preview' && (
             <div className="space-y-4">
-              <img
+              <Image
                 src={template.previewImage || '/placeholder-template.png'}
                 alt={template.name}
                 className="w-full rounded-lg"
@@ -389,7 +390,7 @@ export function TemplatePreviewModal({
               <div className="flex items-center gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
                   {template.author.avatarUrl ? (
-                    <img
+                    <Image
                       src={template.author.avatarUrl}
                       alt={template.author.name}
                       className="w-full h-full object-cover"

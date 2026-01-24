@@ -34,10 +34,7 @@ export class ScriptSandboxService {
     options: SandboxOptions = {},
   ): Promise<SandboxResult> {
     const startTime = Date.now();
-    const timeout = Math.min(
-      options.timeout || this.DEFAULT_TIMEOUT,
-      this.MAX_TIMEOUT,
-    );
+    const timeout = Math.min(options.timeout || this.DEFAULT_TIMEOUT, this.MAX_TIMEOUT);
 
     try {
       // Validate code before execution
@@ -116,9 +113,7 @@ export class ScriptSandboxService {
 
     for (const pattern of dangerousPatterns) {
       if (pattern.test(code)) {
-        throw new BadRequestException(
-          `Code contains prohibited pattern: ${pattern.source}`,
-        );
+        throw new BadRequestException(`Code contains prohibited pattern: ${pattern.source}`);
       }
     }
 
@@ -131,9 +126,7 @@ export class ScriptSandboxService {
   /**
    * Create a safe sandbox context with limited globals
    */
-  private createSandboxContext(
-    userContext: Record<string, any>,
-  ): Record<string, any> {
+  private createSandboxContext(userContext: Record<string, any>): Record<string, any> {
     // Safe math functions
     const safeMath = {
       abs: Math.abs,
@@ -190,8 +183,7 @@ export class ScriptSandboxService {
       log: (...args: any[]) => this.logger.debug(`[Script] ${args.join(' ')}`),
       info: (...args: any[]) => this.logger.debug(`[Script] ${args.join(' ')}`),
       warn: (...args: any[]) => this.logger.warn(`[Script] ${args.join(' ')}`),
-      error: (...args: any[]) =>
-        this.logger.error(`[Script] ${args.join(' ')}`),
+      error: (...args: any[]) => this.logger.error(`[Script] ${args.join(' ')}`),
     };
 
     return {
@@ -268,10 +260,7 @@ export class ScriptSandboxService {
   /**
    * Validate and transform user input
    */
-  validateInput(
-    input: any,
-    schema: Record<string, any>,
-  ): { valid: boolean; errors: string[] } {
+  validateInput(input: any, schema: Record<string, any>): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
     for (const [key, rules] of Object.entries(schema)) {

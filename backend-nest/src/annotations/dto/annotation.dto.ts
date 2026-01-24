@@ -1,11 +1,4 @@
-import {
-  IsString,
-  IsOptional,
-  IsEnum,
-  IsBoolean,
-  IsNumber,
-  IsObject,
-} from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsBoolean, IsNumber, IsObject } from 'class-validator';
 
 export enum AnnotationType {
   COMMENT = 'COMMENT',

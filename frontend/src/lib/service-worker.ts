@@ -7,10 +7,18 @@
 
 declare const self: ServiceWorkerGlobalScope;
 
+interface PendingRequest {
+  id: string;
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  body?: string;
+}
+
 // Extend NotificationOptions to include vibrate, actions, and renotify
 interface ExtendedNotificationOptions extends NotificationOptions {
   vibrate?: number[];
-  actions?: any[];
+  actions?: unknown[];
   renotify?: boolean;
 }
 
@@ -19,7 +27,7 @@ interface SyncEvent extends ExtendableEvent {
   readonly tag: string;
 }
 
-declare var SyncEvent: {
+declare const SyncEvent: {
   prototype: SyncEvent;
   new(type: string, eventInitDict?: ExtendableEventInit): SyncEvent;
 };
@@ -157,6 +165,7 @@ async function handleApiRequest(request: Request): Promise<Response> {
     return response;
   } catch (error) {
     // Fallback to cache
+    console.error('[SW] API fetch failed, serving from cache if available:', error);
     const cached = await caches.match(request);
     if (cached) {
       // Check if cache is still valid
@@ -197,6 +206,7 @@ async function handleStaticRequest(request: Request): Promise<Response> {
     }
     return response;
   } catch (error) {
+    console.error('[SW] Static fetch failed, serving from cache if available:', error);
     return new Response('Asset not available offline', { status: 404 });
   }
 }
@@ -213,6 +223,7 @@ async function handleNavigationRequest(request: Request): Promise<Response> {
     
     return response;
   } catch (error) {
+    console.error('[SW] Navigation fetch failed, serving offline page:', error);
     // Try to return cached page
     const cached = await caches.match(request);
     if (cached) {
@@ -396,6 +407,7 @@ async function refreshCache(request: Request, cacheName: string): Promise<void> 
       cache.put(request, response);
     }
   } catch (error) {
+    console.error('[SW] Failed to refresh cache:', error);
     // Ignore errors during background refresh
   }
 }
@@ -435,16 +447,16 @@ async function getCacheSize(): Promise<number> {
 }
 
 // IndexedDB helpers for pending requests
-async function getPendingRequests(): Promise<any[]> {
+async function getPendingRequests(): Promise<PendingRequest[]> {
   // Implementation would use IndexedDB
   return [];
 }
 
-async function removePendingRequest(id: string): Promise<void> {
+async function removePendingRequest(__id: string): Promise<void> {
   // Implementation would use IndexedDB
 }
 
-async function getStoredAnalytics(): Promise<any[]> {
+async function getStoredAnalytics(): Promise<unknown[]> {
   // Implementation would use IndexedDB
   return [];
 }

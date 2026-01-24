@@ -120,12 +120,7 @@ export class AdvancedAiService {
     }
 
     // Process query (integrate with OpenAI/Anthropic)
-    const response = await this.processQuery(
-      model,
-      query,
-      workspaceId,
-      portalId,
-    );
+    const response = await this.processQuery(model, query, workspaceId, portalId);
 
     // Save query
     return this.prisma.aIQuery.create({
@@ -145,11 +140,7 @@ export class AdvancedAiService {
     });
   }
 
-  async generateSQLFromNaturalLanguage(
-    workspaceId: string,
-    userId: string,
-    query: string,
-  ) {
+  async generateSQLFromNaturalLanguage(workspaceId: string, userId: string, query: string) {
     const models = await this.getModels(workspaceId, AIModelType.NLP);
     const model = models[0];
 
@@ -205,11 +196,7 @@ export class AdvancedAiService {
     }
 
     // Run forecasting algorithm
-    const forecast = await this.runForecasting(
-      model,
-      data.historicalData,
-      data.forecastPeriods,
-    );
+    const forecast = await this.runForecasting(model, data.historicalData, data.forecastPeriods);
 
     return this.prisma.aIPrediction.create({
       data: {
@@ -233,10 +220,7 @@ export class AdvancedAiService {
       timeSeries: Array<{ timestamp: Date; value: number }>;
     },
   ) {
-    const models = await this.getModels(
-      workspaceId,
-      AIModelType.ANOMALY_DETECTION,
-    );
+    const models = await this.getModels(workspaceId, AIModelType.ANOMALY_DETECTION);
     const model = models[0];
 
     if (!model) {
@@ -254,10 +238,7 @@ export class AdvancedAiService {
 
   // Recommendations
   async generateRecommendations(workspaceId: string, portalId: string) {
-    const models = await this.getModels(
-      workspaceId,
-      AIModelType.RECOMMENDATION,
-    );
+    const models = await this.getModels(workspaceId, AIModelType.RECOMMENDATION);
     const model = models[0];
 
     if (!model) {
@@ -265,11 +246,7 @@ export class AdvancedAiService {
       return this.getDefaultRecommendations(workspaceId, portalId);
     }
 
-    const recommendations = await this.runRecommendationEngine(
-      model,
-      workspaceId,
-      portalId,
-    );
+    const recommendations = await this.runRecommendationEngine(model, workspaceId, portalId);
 
     return recommendations;
   }
@@ -292,21 +269,13 @@ export class AdvancedAiService {
     };
   }
 
-  private async processQuery(
-    model: any,
-    query: string,
-    _workspaceId: string,
-    _portalId?: string,
-  ) {
+  private async processQuery(model: any, query: string, _workspaceId: string, _portalId?: string) {
     // Simulate NLP processing
     // In production, use OpenAI GPT-4, Claude, etc.
 
     const answer = {
       text: `Analysis for: ${query}`,
-      insights: [
-        'Insight 1 based on your data',
-        'Insight 2 with recommendations',
-      ],
+      insights: ['Insight 1 based on your data', 'Insight 2 with recommendations'],
       visualizations: [],
     };
 
@@ -339,9 +308,7 @@ export class AdvancedAiService {
     }> = [];
     const values = historicalData.map((d) => d.value);
     const avgGrowth =
-      values.length > 1
-        ? (values[values.length - 1] - values[0]) / values.length
-        : 0;
+      values.length > 1 ? (values[values.length - 1] - values[0]) / values.length : 0;
 
     let lastValue = values[values.length - 1];
 
@@ -395,19 +362,12 @@ export class AdvancedAiService {
     return anomalies;
   }
 
-  private async runRecommendationEngine(
-    model: any,
-    workspaceId: string,
-    portalId: string,
-  ) {
+  private async runRecommendationEngine(model: any, workspaceId: string, portalId: string) {
     // Simulate recommendation engine
     return this.getDefaultRecommendations(workspaceId, portalId);
   }
 
-  private async getDefaultRecommendations(
-    workspaceId: string,
-    portalId: string,
-  ) {
+  private async getDefaultRecommendations(workspaceId: string, portalId: string) {
     // Get portal data
     const portal = await this.prisma.portal.findUnique({
       where: { id: portalId },
@@ -432,8 +392,7 @@ export class AdvancedAiService {
       recommendations.push({
         type: 'ADD_WIDGETS',
         title: 'Add more widgets',
-        description:
-          'Your dashboard has few widgets. Consider adding more visualizations.',
+        description: 'Your dashboard has few widgets. Consider adding more visualizations.',
         priority: 'MEDIUM',
       });
     }
@@ -441,8 +400,7 @@ export class AdvancedAiService {
     // Check for data freshness
     const staleWidgets = portal.widgets.filter((w) => {
       if (!w.lastRefreshedAt) return true;
-      const hoursSinceRefresh =
-        (Date.now() - w.lastRefreshedAt.getTime()) / (1000 * 60 * 60);
+      const hoursSinceRefresh = (Date.now() - w.lastRefreshedAt.getTime()) / (1000 * 60 * 60);
       return hoursSinceRefresh > 24;
     });
 

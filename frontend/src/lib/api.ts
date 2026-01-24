@@ -378,7 +378,7 @@ export const meetingsAPI = {
     return response.data;
   },
 
-  getAnalytics: async (days: number = 30): Promise<AnalyticsData> => {
+  getAnalytics: async (days = 30): Promise<AnalyticsData> => {
     const response = await apiClient.get('/meetings/analytics/', {
       params: { days }
     });

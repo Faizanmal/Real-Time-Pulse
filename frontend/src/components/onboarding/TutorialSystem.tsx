@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback, createContext, useContext } from 'react';
 
 interface TutorialStep {
   id: string;
@@ -182,15 +182,10 @@ const TUTORIALS: Tutorial[] = [
 export function TutorialProvider({ children }: { children: React.ReactNode }) {
   const [activeTutorial, setActiveTutorial] = useState<Tutorial | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [completedTutorials, setCompletedTutorials] = useState<string[]>([]);
-
-  // Load completed tutorials from localStorage
-  useEffect(() => {
+  const [completedTutorials, setCompletedTutorials] = useState<string[]>(() => {
     const saved = localStorage.getItem('completedTutorials');
-    if (saved) {
-      setCompletedTutorials(JSON.parse(saved));
-    }
-  }, []);
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // Save completed tutorials
   useEffect(() => {
@@ -210,6 +205,15 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
     setCurrentStepIndex(0);
   }, []);
 
+  const markAsCompleted = useCallback((tutorialId: string) => {
+    setCompletedTutorials((prev) => {
+      if (!prev.includes(tutorialId)) {
+        return [...prev, tutorialId];
+      }
+      return prev;
+    });
+  }, []);
+
   const nextStep = useCallback(() => {
     if (activeTutorial && currentStepIndex < activeTutorial.steps.length - 1) {
       setCurrentStepIndex((prev) => prev + 1);
@@ -220,7 +224,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
       }
       endTutorial();
     }
-  }, [activeTutorial, currentStepIndex]);
+  }, [activeTutorial, currentStepIndex, endTutorial, markAsCompleted]);
 
   const previousStep = useCallback(() => {
     if (currentStepIndex > 0) {
@@ -231,15 +235,6 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
   const skipTutorial = useCallback(() => {
     endTutorial();
   }, [endTutorial]);
-
-  const markAsCompleted = useCallback((tutorialId: string) => {
-    setCompletedTutorials((prev) => {
-      if (!prev.includes(tutorialId)) {
-        return [...prev, tutorialId];
-      }
-      return prev;
-    });
-  }, []);
 
   return (
     <TutorialContext.Provider
@@ -291,11 +286,12 @@ function TutorialOverlay({ tutorial, currentStep, onNext, onPrevious, onSkip }: 
   const step = tutorial.steps[currentStep];
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (step.target) {
       const element = document.querySelector(step.target);
       if (element) {
         const rect = element.getBoundingClientRect();
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setTargetRect(rect);
         
         // Scroll element into view
@@ -351,7 +347,7 @@ function TutorialOverlay({ tutorial, currentStep, onNext, onPrevious, onSkip }: 
   };
 
   return (
-    <div className="fixed inset-0 z-[9999]">
+    <div className="fixed inset-0 z-9999">
       {/* Overlay with spotlight */}
       <div className="absolute inset-0 bg-black/50">
         {targetRect && (

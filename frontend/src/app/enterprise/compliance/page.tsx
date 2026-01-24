@@ -204,15 +204,15 @@ export default function ComplianceCenterPage() {
                     <h3 className="text-lg font-semibold mb-4">How it works</h3>
                     <ul className="space-y-4 text-sm text-slate-600 dark:text-slate-400">
                         <li className="flex gap-3">
-                            <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center flex-shrink-0 font-bold">1</div>
+                            <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 font-bold">1</div>
                             <p>Every action in the workspace creates an immutable audit entry that is cryptographically hashed.</p>
                         </li>
                         <li className="flex gap-3">
-                            <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center flex-shrink-0 font-bold">2</div>
+                            <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 font-bold">2</div>
                             <p>Entries are grouped into blocks (Merkle Trees) and chained together using SHA-256 hashing.</p>
                         </li>
                         <li className="flex gap-3">
-                            <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center flex-shrink-0 font-bold">3</div>
+                            <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 font-bold">3</div>
                             <p>Any tampering with past data breaks the cryptographic chain, making it immediately detectable.</p>
                         </li>
                     </ul>

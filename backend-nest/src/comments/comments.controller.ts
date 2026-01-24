@@ -10,12 +10,7 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CommentsService } from './comments.service';
 import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
@@ -70,11 +65,7 @@ export class CommentsController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update a comment' })
   @ApiResponse({ status: 200, description: 'Comment updated successfully' })
-  async update(
-    @Request() req: any,
-    @Param('id') id: string,
-    @Body() dto: UpdateCommentDto,
-  ) {
+  async update(@Request() req: any, @Param('id') id: string, @Body() dto: UpdateCommentDto) {
     return this.commentsService.update(id, req.user.id, dto);
   }
 

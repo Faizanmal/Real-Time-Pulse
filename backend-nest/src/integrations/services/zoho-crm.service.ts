@@ -89,13 +89,10 @@ export class ZohoCRMService {
       };
 
       const response = await firstValueFrom(
-        this.httpService.get(
-          `${this.getBaseUrl(integration)}/crm/v5/${module}`,
-          {
-            headers: this.getHeaders(integration),
-            params: queryParams,
-          },
-        ),
+        this.httpService.get(`${this.getBaseUrl(integration)}/crm/v5/${module}`, {
+          headers: this.getHeaders(integration),
+          params: queryParams,
+        }),
       );
 
       return response.data.data || [];
@@ -153,10 +150,9 @@ export class ZohoCRMService {
   ): Promise<unknown> {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(
-          `${this.getBaseUrl(integration)}/crm/v5/settings/modules`,
-          { headers: this.getHeaders(integration) },
-        ),
+        this.httpService.get(`${this.getBaseUrl(integration)}/crm/v5/settings/modules`, {
+          headers: this.getHeaders(integration),
+        }),
       );
 
       return response.data.modules || [];
@@ -195,14 +191,10 @@ export class ZohoCRMService {
       const wonDeals = dealsArray.filter(
         (deal) => deal.Stage === 'Closed Won' || deal.Stage === 'Closed-Won',
       );
-      const wonDealValue = wonDeals.reduce(
-        (sum, deal) => sum + (parseFloat(deal.Amount) || 0),
-        0,
-      );
+      const wonDealValue = wonDeals.reduce((sum, deal) => sum + (parseFloat(deal.Amount) || 0), 0);
 
       // Stage breakdown
-      const stageBreakdown: Record<string, { count: number; value: number }> =
-        {};
+      const stageBreakdown: Record<string, { count: number; value: number }> = {};
       dealsArray.forEach((deal) => {
         const stage = deal.Stage || 'Unknown';
         if (!stageBreakdown[stage]) {
@@ -239,13 +231,10 @@ export class ZohoCRMService {
   ): Promise<unknown> {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(
-          `${this.getBaseUrl(integration)}/crm/v5/${module}/search`,
-          {
-            headers: this.getHeaders(integration),
-            params: { criteria },
-          },
-        ),
+        this.httpService.get(`${this.getBaseUrl(integration)}/crm/v5/${module}/search`, {
+          headers: this.getHeaders(integration),
+          params: { criteria },
+        }),
       );
 
       return response.data.data || [];
@@ -256,10 +245,7 @@ export class ZohoCRMService {
   }
 
   // COQL (CRM Object Query Language) support
-  async executeCoql(
-    integration: ZohoCRMIntegration,
-    query: string,
-  ): Promise<unknown> {
+  async executeCoql(integration: ZohoCRMIntegration, query: string): Promise<unknown> {
     try {
       const response = await firstValueFrom(
         this.httpService.post(

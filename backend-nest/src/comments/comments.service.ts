@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
 import { EmailService } from '../email/email.service';
@@ -105,10 +100,7 @@ export class CommentsService {
   /**
    * Notify users mentioned in a comment
    */
-  private async notifyMentionedUsers(
-    comment: any,
-    userIds: string[],
-  ): Promise<void> {
+  private async notifyMentionedUsers(comment: any, userIds: string[]): Promise<void> {
     try {
       const mentionedUsers = await this.prisma.user.findMany({
         where: { id: { in: userIds } },
@@ -138,19 +130,14 @@ export class CommentsService {
             context: {
               recipientName: user.firstName || user.email.split('@')[0],
               authorName:
-                comment.author?.firstName ||
-                comment.author?.email?.split('@')[0] ||
-                'Someone',
+                comment.author?.firstName || comment.author?.email?.split('@')[0] || 'Someone',
               portalName: portal?.name || 'a portal',
               commentContent: comment.content.substring(0, 200),
               commentUrl: `${process.env.FRONTEND_URL}/portal/${comment.portalId}#comment-${comment.id}`,
             },
           });
         } catch (emailError) {
-          this.logger.error(
-            `Failed to send mention email to ${user.email}:`,
-            emailError,
-          );
+          this.logger.error(`Failed to send mention email to ${user.email}:`, emailError);
         }
       }
     } catch (error) {
@@ -161,10 +148,7 @@ export class CommentsService {
   /**
    * Notify parent comment author of reply
    */
-  private async notifyCommentReply(
-    comment: any,
-    parentId: string,
-  ): Promise<void> {
+  private async notifyCommentReply(comment: any, parentId: string): Promise<void> {
     try {
       const parentComment = await this.prisma.comment.findUnique({
         where: { id: parentId },
@@ -183,16 +167,12 @@ export class CommentsService {
       });
 
       // Send WebSocket notification
-      this.notificationsGateway.notifyUser(
-        parentComment.authorId,
-        'comment:reply',
-        {
-          commentId: comment.id,
-          parentId,
-          portalId: comment.portalId,
-          author: comment.author,
-        },
-      );
+      this.notificationsGateway.notifyUser(parentComment.authorId, 'comment:reply', {
+        commentId: comment.id,
+        parentId,
+        portalId: comment.portalId,
+        author: comment.author,
+      });
 
       // Send email notification
       await this.emailService.sendEmail({
@@ -200,13 +180,9 @@ export class CommentsService {
         subject: `New reply to your comment on ${portal?.name || 'a portal'}`,
         template: 'comment-reply',
         context: {
-          recipientName:
-            parentComment.author.firstName ||
-            parentComment.author.email.split('@')[0],
+          recipientName: parentComment.author.firstName || parentComment.author.email.split('@')[0],
           authorName:
-            comment.author?.firstName ||
-            comment.author?.email?.split('@')[0] ||
-            'Someone',
+            comment.author?.firstName || comment.author?.email?.split('@')[0] || 'Someone',
           portalName: portal?.name || 'a portal',
           originalComment: parentComment.content.substring(0, 100),
           replyContent: comment.content.substring(0, 200),
@@ -240,12 +216,7 @@ export class CommentsService {
       throw new NotFoundException('Portal not found');
     }
 
-    const {
-      widgetId,
-      includeReplies = true,
-      limit = 50,
-      offset = 0,
-    } = options || {};
+    const { widgetId, includeReplies = true, limit = 50, offset = 0 } = options || {};
 
     // Get top-level comments (no parent)
     const comments = await this.prisma.comment.findMany({
@@ -423,11 +394,7 @@ export class CommentsService {
       where: { id: userId, workspaceId },
     });
 
-    if (
-      comment.authorId !== userId &&
-      user?.role !== 'OWNER' &&
-      user?.role !== 'ADMIN'
-    ) {
+    if (comment.authorId !== userId && user?.role !== 'OWNER' && user?.role !== 'ADMIN') {
       throw new ForbiddenException('You cannot delete this comment');
     }
 

@@ -23,19 +23,14 @@ interface AuthenticatedSocket extends Socket {
   },
   namespace: '/notifications',
 })
-export class NotificationsGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
-{
+export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
   private readonly logger = new Logger(NotificationsGateway.name);
   private userSockets: Map<string, Set<string>> = new Map(); // userId -> Set of socket IDs
   private ipConnectionCounts: Map<string, number> = new Map();
-  private MAX_CONNECTIONS_PER_IP = parseInt(
-    process.env.WS_MAX_CONNECTIONS_PER_IP || '50',
-    10,
-  );
+  private MAX_CONNECTIONS_PER_IP = parseInt(process.env.WS_MAX_CONNECTIONS_PER_IP || '50', 10);
 
   constructor(private readonly jwtService: JwtService) {}
 
@@ -46,13 +41,10 @@ export class NotificationsGateway
       const authData = client.handshake.auth as any;
       const authHeader = client.handshake.headers.authorization;
 
-      const token =
-        (authData.token as string | undefined) || authHeader?.split(' ')[1];
+      const token = (authData.token as string | undefined) || authHeader?.split(' ')[1];
 
       if (!token) {
-        this.logger.warn(
-          `Client ${client.id} connection rejected: No token provided`,
-        );
+        this.logger.warn(`Client ${client.id} connection rejected: No token provided`);
         client.emit('error', { message: 'Authentication required' });
         client.disconnect();
         return;
@@ -83,14 +75,12 @@ export class NotificationsGateway
       if (!this.userSockets.has(userId)) {
         this.userSockets.set(userId, new Set());
       }
-      this.userSockets.get(userId)!.add(client.id);
+      this.userSockets.get(userId).add(client.id);
 
       // Join workspace room
       void client.join(`workspace:${workspaceId}`);
 
-      this.logger.log(
-        `Client connected: ${client.id} (User: ${(client as any).userId as string})`,
-      );
+      this.logger.log(`Client connected: ${client.id} (User: ${(client as any).userId as string})`);
 
       // Send connection acknowledgment
       client.emit('connected', {
@@ -128,9 +118,7 @@ export class NotificationsGateway
     @MessageBody() data: { portalId: string },
   ) {
     void client.join(`portal:${data.portalId}`);
-    this.logger.log(
-      `Client ${client.id} subscribed to portal ${data.portalId}`,
-    );
+    this.logger.log(`Client ${client.id} subscribed to portal ${data.portalId}`);
     return { success: true, portalId: data.portalId };
   }
 
@@ -140,20 +128,14 @@ export class NotificationsGateway
     @MessageBody() data: { portalId: string },
   ) {
     void client.leave(`portal:${data.portalId}`);
-    this.logger.log(
-      `Client ${client.id} unsubscribed from portal ${data.portalId}`,
-    );
+    this.logger.log(`Client ${client.id} unsubscribed from portal ${data.portalId}`);
     return { success: true, portalId: data.portalId };
   }
 
   /**
    * Notify a specific user
    */
-  notifyUser(
-    userId: string,
-    event: string,
-    data: Record<string, unknown>,
-  ): void {
+  notifyUser(userId: string, event: string, data: Record<string, unknown>): void {
     const socketIds = this.userSockets.get(userId);
     if (socketIds) {
       socketIds.forEach((socketId) => {
@@ -166,25 +148,15 @@ export class NotificationsGateway
   /**
    * Notify all users in a workspace
    */
-  notifyWorkspace(
-    workspaceId: string,
-    event: string,
-    data: Record<string, unknown>,
-  ): void {
+  notifyWorkspace(workspaceId: string, event: string, data: Record<string, unknown>): void {
     this.server.to(`workspace:${workspaceId}`).emit(event, data);
-    this.logger.debug(
-      `Notification sent to workspace ${workspaceId}: ${event}`,
-    );
+    this.logger.debug(`Notification sent to workspace ${workspaceId}: ${event}`);
   }
 
   /**
    * Notify all users subscribed to a portal
    */
-  notifyPortal(
-    portalId: string,
-    event: string,
-    data: Record<string, unknown>,
-  ): void {
+  notifyPortal(portalId: string, event: string, data: Record<string, unknown>): void {
     this.server.to(`portal:${portalId}`).emit(event, data);
     this.logger.debug(`Notification sent to portal ${portalId}: ${event}`);
   }

@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -24,13 +19,7 @@ export interface ETLPipelineConfig {
 
 export interface ETLNode {
   id: string;
-  type:
-    | 'source'
-    | 'transform'
-    | 'filter'
-    | 'aggregate'
-    | 'join'
-    | 'destination';
+  type: 'source' | 'transform' | 'filter' | 'aggregate' | 'join' | 'destination';
   name: string;
   config: Record<string, any>;
   position: { x: number; y: number };
@@ -52,10 +41,7 @@ export interface ETLExecution {
   completedAt?: Date;
   rowsProcessed: number;
   errors: string[];
-  nodeStats: Record<
-    string,
-    { processed: number; errors: number; duration: number }
-  >;
+  nodeStats: Record<string, { processed: number; errors: number; duration: number }>;
 }
 
 export interface TransformationResult {
@@ -126,15 +112,11 @@ export class ETLPipelineService {
     const destinations = nodes.filter((n) => n.type === 'destination');
 
     if (sources.length === 0) {
-      throw new BadRequestException(
-        'Pipeline must have at least one source node',
-      );
+      throw new BadRequestException('Pipeline must have at least one source node');
     }
 
     if (destinations.length === 0) {
-      throw new BadRequestException(
-        'Pipeline must have at least one destination node',
-      );
+      throw new BadRequestException('Pipeline must have at least one destination node');
     }
 
     // Check that all edges reference valid nodes
@@ -167,7 +149,7 @@ export class ETLPipelineService {
     }
 
     for (const edge of edges) {
-      adjacency.get(edge.source)!.push(edge.target);
+      adjacency.get(edge.source).push(edge.target);
     }
 
     const dfs = (nodeId: string): boolean => {
@@ -218,10 +200,7 @@ export class ETLPipelineService {
   /**
    * Get a single pipeline
    */
-  async getPipeline(
-    pipelineId: string,
-    workspaceId: string,
-  ): Promise<ETLPipelineConfig> {
+  async getPipeline(pipelineId: string, workspaceId: string): Promise<ETLPipelineConfig> {
     const pipeline = await this.prisma.eTLPipeline.findFirst({
       where: { id: pipelineId, workspaceId },
     });
@@ -296,10 +275,7 @@ export class ETLPipelineService {
   /**
    * Execute a pipeline
    */
-  async executePipeline(
-    pipelineId: string,
-    workspaceId: string,
-  ): Promise<ETLExecution> {
+  async executePipeline(pipelineId: string, workspaceId: string): Promise<ETLExecution> {
     const pipeline = await this.getPipeline(pipelineId, workspaceId);
 
     const execution: ETLExecution = {
@@ -316,10 +292,7 @@ export class ETLPipelineService {
 
     // Run in background
     this.runPipeline(pipeline, execution).catch((error) => {
-      this.logger.error(
-        `Pipeline execution failed: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error(`Pipeline execution failed: ${error.message}`, error.stack);
       execution.status = 'failed';
       execution.errors.push(error.message);
       execution.completedAt = new Date();
@@ -331,10 +304,7 @@ export class ETLPipelineService {
   /**
    * Run pipeline execution
    */
-  private async runPipeline(
-    pipeline: ETLPipelineConfig,
-    execution: ETLExecution,
-  ): Promise<void> {
+  private async runPipeline(pipeline: ETLPipelineConfig, execution: ETLExecution): Promise<void> {
     const nodeOutputs = new Map<string, any[]>();
 
     // Sort nodes topologically
@@ -345,11 +315,7 @@ export class ETLPipelineService {
 
       try {
         // Get input data from predecessor nodes
-        const inputData = this.getNodeInput(
-          node.id,
-          pipeline.edges,
-          nodeOutputs,
-        );
+        const inputData = this.getNodeInput(node.id, pipeline.edges, nodeOutputs);
 
         // Process node
         const output = await this.processNode(node, inputData);
@@ -364,9 +330,7 @@ export class ETLPipelineService {
         execution.rowsProcessed += output.metadata.outputRows;
 
         if (output.metadata.errors.length > 0) {
-          execution.errors.push(
-            ...output.metadata.errors.map((e) => `${node.name}: ${e}`),
-          );
+          execution.errors.push(...output.metadata.errors.map((e) => `${node.name}: ${e}`));
         }
 
         this.eventEmitter.emit('etl.node.complete', {
@@ -418,7 +382,7 @@ export class ETLPipelineService {
 
     for (const edge of edges) {
       inDegree.set(edge.target, (inDegree.get(edge.target) || 0) + 1);
-      adjacency.get(edge.source)!.push(edge.target);
+      adjacency.get(edge.source).push(edge.target);
     }
 
     const queue = nodes.filter((n) => inDegree.get(n.id) === 0);
@@ -426,13 +390,13 @@ export class ETLPipelineService {
     const nodeMap = new Map(nodes.map((n) => [n.id, n]));
 
     while (queue.length > 0) {
-      const node = queue.shift()!;
+      const node = queue.shift();
       result.push(node);
 
       for (const neighbor of adjacency.get(node.id) || []) {
-        inDegree.set(neighbor, inDegree.get(neighbor)! - 1);
+        inDegree.set(neighbor, inDegree.get(neighbor) - 1);
         if (inDegree.get(neighbor) === 0) {
-          queue.push(nodeMap.get(neighbor)!);
+          queue.push(nodeMap.get(neighbor));
         }
       }
     }
@@ -443,11 +407,7 @@ export class ETLPipelineService {
   /**
    * Get input data for a node from its predecessors
    */
-  private getNodeInput(
-    nodeId: string,
-    edges: ETLEdge[],
-    outputs: Map<string, any[]>,
-  ): any[] {
+  private getNodeInput(nodeId: string, edges: ETLEdge[], outputs: Map<string, any[]>): any[] {
     const incomingEdges = edges.filter((e) => e.target === nodeId);
 
     if (incomingEdges.length === 0) {
@@ -465,10 +425,7 @@ export class ETLPipelineService {
   /**
    * Process a single node
    */
-  private async processNode(
-    node: ETLNode,
-    inputData: any[],
-  ): Promise<TransformationResult> {
+  private async processNode(node: ETLNode, inputData: any[]): Promise<TransformationResult> {
     switch (node.type) {
       case 'source':
         return this.processSourceNode(node);
@@ -490,9 +447,7 @@ export class ETLPipelineService {
   /**
    * Process source node - fetch data from source
    */
-  private async processSourceNode(
-    node: ETLNode,
-  ): Promise<TransformationResult> {
+  private async processSourceNode(node: ETLNode): Promise<TransformationResult> {
     const config = node.config;
     let data: any[] = [];
 
@@ -551,16 +506,10 @@ export class ETLPipelineService {
               delete row[transform.field];
               break;
             case 'map':
-              row[transform.field] = this.evaluateExpression(
-                transform.expression,
-                row,
-              );
+              row[transform.field] = this.evaluateExpression(transform.expression, row);
               break;
             case 'convert':
-              row[transform.field] = this.convertType(
-                row[transform.field],
-                transform.toType,
-              );
+              row[transform.field] = this.convertType(row[transform.field], transform.toType);
               break;
             case 'extract':
               row[transform.targetField] = this.extractValue(
@@ -574,9 +523,7 @@ export class ETLPipelineService {
                 .join(transform.separator || '');
               break;
             case 'split': {
-              const parts = String(row[transform.field]).split(
-                transform.separator,
-              );
+              const parts = String(row[transform.field]).split(transform.separator);
               transform.targetFields.forEach((f: string, idx: number) => {
                 row[f] = parts[idx];
               });
@@ -605,10 +552,7 @@ export class ETLPipelineService {
   /**
    * Process filter node - filter rows
    */
-  private async processFilterNode(
-    node: ETLNode,
-    inputData: any[],
-  ): Promise<TransformationResult> {
+  private async processFilterNode(node: ETLNode, inputData: any[]): Promise<TransformationResult> {
     const config = node.config;
     const filteredData = inputData.filter((row) => {
       return config.conditions.every((condition: any) => {
@@ -672,7 +616,7 @@ export class ETLPipelineService {
       if (!groups.has(key)) {
         groups.set(key, []);
       }
-      groups.get(key)!.push(row);
+      groups.get(key).push(row);
     }
 
     // Aggregate each group
@@ -686,16 +630,11 @@ export class ETLPipelineService {
 
       // Apply aggregations
       for (const agg of config.aggregations) {
-        const values = rows
-          .map((r) => r[agg.field])
-          .filter((v) => v !== null && v !== undefined);
+        const values = rows.map((r) => r[agg.field]).filter((v) => v !== null && v !== undefined);
 
         switch (agg.operation) {
           case 'sum':
-            result[agg.alias || `${agg.field}_sum`] = values.reduce(
-              (a, b) => a + b,
-              0,
-            );
+            result[agg.alias || `${agg.field}_sum`] = values.reduce((a, b) => a + b, 0);
             break;
           case 'avg':
             result[agg.alias || `${agg.field}_avg`] =
@@ -717,8 +656,7 @@ export class ETLPipelineService {
             result[agg.alias || `${agg.field}_first`] = values[0];
             break;
           case 'last':
-            result[agg.alias || `${agg.field}_last`] =
-              values[values.length - 1];
+            result[agg.alias || `${agg.field}_last`] = values[values.length - 1];
             break;
         }
       }
@@ -740,10 +678,7 @@ export class ETLPipelineService {
   /**
    * Process join node - join datasets
    */
-  private async processJoinNode(
-    node: ETLNode,
-    inputData: any[],
-  ): Promise<TransformationResult> {
+  private async processJoinNode(node: ETLNode, inputData: any[]): Promise<TransformationResult> {
     // For simplicity, this expects concatenated input with a marker
     // In practice, you'd need separate inputs
     // const config = node.config;
@@ -871,10 +806,7 @@ export class ETLPipelineService {
   /**
    * Get execution history for a pipeline
    */
-  async getExecutionHistory(
-    pipelineId: string,
-    limit = 10,
-  ): Promise<ETLExecution[]> {
+  async getExecutionHistory(pipelineId: string, limit = 10): Promise<ETLExecution[]> {
     const executions = await this.prisma.eTLExecution.findMany({
       where: { pipelineId },
       orderBy: { startedAt: 'desc' },

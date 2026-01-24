@@ -21,8 +21,7 @@ export default registerAs('observability', () => ({
       enabled: true,
       exporter: process.env.OTEL_TRACES_EXPORTER || 'jaeger', // jaeger | zipkin | otlp
       endpoint:
-        process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT ||
-        'http://localhost:14268/api/traces',
+        process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT || 'http://localhost:14268/api/traces',
       samplingRatio: parseFloat(process.env.OTEL_SAMPLING_RATIO || '1.0'),
       propagators: ['tracecontext', 'baggage', 'b3'],
     },
@@ -32,21 +31,15 @@ export default registerAs('observability', () => ({
       enabled: true,
       exporter: process.env.OTEL_METRICS_EXPORTER || 'prometheus', // prometheus | otlp
       endpoint:
-        process.env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT ||
-        'http://localhost:4318/v1/metrics',
-      exportIntervalMillis: parseInt(
-        process.env.OTEL_METRICS_EXPORT_INTERVAL || '60000',
-        10,
-      ),
+        process.env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT || 'http://localhost:4318/v1/metrics',
+      exportIntervalMillis: parseInt(process.env.OTEL_METRICS_EXPORT_INTERVAL || '60000', 10),
     },
 
     // Logs
     logs: {
       enabled: true,
       exporter: process.env.OTEL_LOGS_EXPORTER || 'otlp',
-      endpoint:
-        process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT ||
-        'http://localhost:4318/v1/logs',
+      endpoint: process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT || 'http://localhost:4318/v1/logs',
     },
 
     // Resource Attributes
@@ -146,9 +139,7 @@ export default registerAs('observability', () => ({
     enabled: process.env.JAEGER_ENABLED === 'true',
     agentHost: process.env.JAEGER_AGENT_HOST || 'localhost',
     agentPort: parseInt(process.env.JAEGER_AGENT_PORT || '6832', 10),
-    collectorEndpoint:
-      process.env.JAEGER_COLLECTOR_ENDPOINT ||
-      'http://localhost:14268/api/traces',
+    collectorEndpoint: process.env.JAEGER_COLLECTOR_ENDPOINT || 'http://localhost:14268/api/traces',
     samplerType: process.env.JAEGER_SAMPLER_TYPE || 'probabilistic',
     samplerParam: parseFloat(process.env.JAEGER_SAMPLER_PARAM || '1.0'),
     logSpans: process.env.NODE_ENV !== 'production',
@@ -205,12 +196,8 @@ export default registerAs('observability', () => ({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV,
     release: process.env.npm_package_version,
-    tracesSampleRate: parseFloat(
-      process.env.SENTRY_TRACES_SAMPLE_RATE || '1.0',
-    ),
-    profilesSampleRate: parseFloat(
-      process.env.SENTRY_PROFILES_SAMPLE_RATE || '1.0',
-    ),
+    tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || '1.0'),
+    profilesSampleRate: parseFloat(process.env.SENTRY_PROFILES_SAMPLE_RATE || '1.0'),
     attachStacktrace: true,
     integrations: ['http', 'express', 'prisma', 'redis'],
     beforeSend: (event: any) => {
@@ -229,9 +216,7 @@ export default registerAs('observability', () => ({
 
     elasticsearch: {
       enabled: process.env.ELASTICSEARCH_ENABLED === 'true',
-      nodes: (process.env.ELASTICSEARCH_NODES || 'http://localhost:9200').split(
-        ',',
-      ),
+      nodes: (process.env.ELASTICSEARCH_NODES || 'http://localhost:9200').split(','),
       index: process.env.ELASTICSEARCH_INDEX || 'pulse-logs',
       auth: {
         username: process.env.ELASTICSEARCH_USERNAME,

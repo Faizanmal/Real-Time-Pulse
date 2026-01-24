@@ -290,7 +290,7 @@ export function TimeTravelSlider({
                                 key={index}
                                 onClick={() => onChange(actualIndex)}
                                 className={cn(
-                                    "flex-shrink-0 rounded-lg border-2 p-2 transition-all",
+                                    "shrink-0 rounded-lg border-2 p-2 transition-all",
                                     actualIndex === currentIndex
                                         ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
                                         : "border-transparent hover:border-gray-300"

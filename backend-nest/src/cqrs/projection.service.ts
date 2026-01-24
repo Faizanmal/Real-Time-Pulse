@@ -79,11 +79,8 @@ export class ProjectionService implements OnModuleInit {
   }
 
   // Start a single projection
-  private async startProjection(
-    name: string,
-    projection: IProjection,
-  ): Promise<void> {
-    const status = this.projectionStatus.get(name)!;
+  private async startProjection(name: string, projection: IProjection): Promise<void> {
+    const status = this.projectionStatus.get(name);
     status.state = 'running';
 
     while (this.isRunning) {
@@ -132,7 +129,7 @@ export class ProjectionService implements OnModuleInit {
       throw new Error(`Projection ${projectionName} not found`);
     }
 
-    const status = this.projectionStatus.get(projectionName)!;
+    const status = this.projectionStatus.get(projectionName);
     status.state = 'rebuilding';
     status.lastProcessedPosition = 0;
     status.eventsProcessed = 0;
@@ -168,9 +165,7 @@ export class ProjectionService implements OnModuleInit {
       status.lastProcessedPosition = events[events.length - 1].version;
       offset += batchSize;
 
-      this.logger.debug(
-        `Rebuilt ${status.eventsProcessed} events for ${projectionName}`,
-      );
+      this.logger.debug(`Rebuilt ${status.eventsProcessed} events for ${projectionName}`);
     }
 
     status.state = 'running';
@@ -180,7 +175,7 @@ export class ProjectionService implements OnModuleInit {
   // Get projection status
   getStatus(projectionName?: string): ProjectionStatus | ProjectionStatus[] {
     if (projectionName) {
-      return this.projectionStatus.get(projectionName)!;
+      return this.projectionStatus.get(projectionName);
     }
     return Array.from(this.projectionStatus.values());
   }
@@ -195,13 +190,7 @@ export class ProjectionService implements OnModuleInit {
 // Portal Summary Projection
 export class PortalSummaryProjection implements IProjection {
   name = 'PortalSummary';
-  eventTypes = [
-    'PortalCreated',
-    'PortalUpdated',
-    'PortalDeleted',
-    'WidgetAdded',
-    'WidgetRemoved',
-  ];
+  eventTypes = ['PortalCreated', 'PortalUpdated', 'PortalDeleted', 'WidgetAdded', 'WidgetRemoved'];
 
   private readonly logger = new Logger(PortalSummaryProjection.name);
   private summaries = new Map<string, any>();
@@ -303,8 +292,7 @@ export class WorkspaceAnalyticsProjection implements IProjection {
 
     stats.totalEvents++;
     stats.lastActivity = event.timestamp;
-    stats.eventsByType[event.eventType] =
-      (stats.eventsByType[event.eventType] || 0) + 1;
+    stats.eventsByType[event.eventType] = (stats.eventsByType[event.eventType] || 0) + 1;
 
     // Update counters based on event type
     if (event.eventType === 'PortalCreated') stats.totalPortals++;
@@ -376,8 +364,6 @@ export class UserActivityProjection implements IProjection {
   }
 
   getActiveUsers(since: Date): any[] {
-    return Array.from(this.activities.values()).filter(
-      (a) => a.lastSeen >= since,
-    );
+    return Array.from(this.activities.values()).filter((a) => a.lastSeen >= since);
   }
 }

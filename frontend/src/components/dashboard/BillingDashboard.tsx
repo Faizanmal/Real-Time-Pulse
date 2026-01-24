@@ -389,7 +389,7 @@ function PlanCard({ plan, isCurrentPlan, onSelect }: PlanCardProps) {
       <ul className="space-y-2 mb-6">
         {plan.features.slice(0, 5).map((feature, i) => (
           <li key={i} className="flex items-center gap-2 text-sm">
-            <Check className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+            <Check className="h-4 w-4 text-emerald-500 shrink-0" />
             {feature}
           </li>
         ))}

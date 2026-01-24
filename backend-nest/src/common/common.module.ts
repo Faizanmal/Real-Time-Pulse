@@ -18,14 +18,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 
 @Global()
 @Module({
-  imports: [
-    HttpModule,
-    ConfigModule,
-    CacheModule,
-    AuditModule,
-    PrismaModule,
-    NotificationsModule,
-  ],
+  imports: [HttpModule, ConfigModule, CacheModule, AuditModule, PrismaModule, NotificationsModule],
   providers: [
     EncryptionService,
     S3Service,

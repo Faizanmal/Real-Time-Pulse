@@ -25,10 +25,7 @@ export class RetryService {
    * @param fn - The async function to execute
    * @param options - Retry configuration
    */
-  async withRetry<T>(
-    fn: () => Promise<T>,
-    options?: Partial<RetryOptions>,
-  ): Promise<T> {
+  async withRetry<T>(fn: () => Promise<T>, options?: Partial<RetryOptions>): Promise<T> {
     const opts = { ...DEFAULT_OPTIONS, ...options };
     let lastError: Error | null = null;
 
@@ -103,15 +100,13 @@ export class RetryService {
   async withRetryParallel<T>(
     operations: Array<() => Promise<T>>,
     options?: Partial<RetryOptions>,
-    concurrency: number = 5,
+    concurrency = 5,
   ): Promise<PromiseSettledResult<T>[]> {
     const chunks = this.chunkArray(operations, concurrency);
     const results: PromiseSettledResult<T>[] = [];
 
     for (const chunk of chunks) {
-      const chunkResults = await Promise.allSettled(
-        chunk.map((op) => this.withRetry(op, options)),
-      );
+      const chunkResults = await Promise.allSettled(chunk.map((op) => this.withRetry(op, options)));
       results.push(...chunkResults);
     }
 
@@ -167,8 +162,7 @@ export class RetryService {
 
   private calculateDelay(attempt: number, opts: RetryOptions): number {
     // Exponential backoff
-    const exponentialDelay =
-      opts.initialDelayMs * Math.pow(opts.backoffMultiplier, attempt - 1);
+    const exponentialDelay = opts.initialDelayMs * Math.pow(opts.backoffMultiplier, attempt - 1);
 
     // Add jitter (±25% randomization)
     const jitter = exponentialDelay * 0.25 * (Math.random() * 2 - 1);

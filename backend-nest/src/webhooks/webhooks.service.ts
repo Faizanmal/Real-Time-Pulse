@@ -125,11 +125,7 @@ export class WebhooksService {
   /**
    * Trigger webhook with event
    */
-  async triggerWebhook(
-    workspaceId: string,
-    event: string,
-    payload: any,
-  ): Promise<void> {
+  async triggerWebhook(workspaceId: string, event: string, payload: any): Promise<void> {
     const webhooks = await this.prisma.webhook.findMany({
       where: {
         workspaceId,
@@ -140,9 +136,7 @@ export class WebhooksService {
       },
     });
 
-    await Promise.all(
-      webhooks.map((webhook) => this.deliverWebhook(webhook, event, payload)),
-    );
+    await Promise.all(webhooks.map((webhook) => this.deliverWebhook(webhook, event, payload)));
   }
 
   /**
@@ -160,11 +154,7 @@ export class WebhooksService {
 
     try {
       const timestamp = Date.now();
-      const signature = this.generateSignature(
-        webhook.secret,
-        timestamp,
-        payload,
-      );
+      const signature = this.generateSignature(webhook.secret, timestamp, payload);
 
       const headers = {
         'Content-Type': 'application/json',
@@ -278,11 +268,7 @@ export class WebhooksService {
   /**
    * Generate webhook signature
    */
-  private generateSignature(
-    secret: string,
-    timestamp: number,
-    payload: any,
-  ): string {
+  private generateSignature(secret: string, timestamp: number, payload: any): string {
     const data = `${timestamp}.${JSON.stringify(payload)}`;
     return crypto.createHmac('sha256', secret).update(data).digest('hex');
   }
@@ -290,20 +276,8 @@ export class WebhooksService {
   /**
    * Verify webhook signature
    */
-  verifySignature(
-    secret: string,
-    signature: string,
-    timestamp: number,
-    payload: any,
-  ): boolean {
-    const expectedSignature = this.generateSignature(
-      secret,
-      timestamp,
-      payload,
-    );
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSignature),
-    );
+  verifySignature(secret: string, signature: string, timestamp: number, payload: any): boolean {
+    const expectedSignature = this.generateSignature(secret, timestamp, payload);
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
   }
 }

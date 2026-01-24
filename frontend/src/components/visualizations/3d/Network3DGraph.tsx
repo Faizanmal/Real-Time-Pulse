@@ -47,7 +47,7 @@ const categoryColors = [
 function forceDirectedLayout(
   nodes: NetworkNode[],
   edges: NetworkEdge[],
-  iterations: number = 50
+  iterations = 50
 ): Map<string, { x: number; y: number; z: number }> {
   const positions = new Map<string, { x: number; y: number; z: number }>();
   

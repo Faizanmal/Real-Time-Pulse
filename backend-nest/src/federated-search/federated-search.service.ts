@@ -81,9 +81,7 @@ export class FederatedSearchService {
     // Perform parallel searches across all sources
     const searchPromises = sourcesToSearch.map((source) =>
       this.searchSource(workspaceId, source, query, options).catch((error) => {
-        this.logger.error(
-          `Search failed for source ${source.id}: ${error.message}`,
-        );
+        this.logger.error(`Search failed for source ${source.id}: ${error.message}`);
         return [];
       }),
     );
@@ -241,19 +239,14 @@ export class FederatedSearchService {
         });
 
         for (const user of users) {
-          const name =
-            [user.firstName, user.lastName].filter(Boolean).join(' ') ||
-            user.email;
+          const name = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
           results.push({
             id: user.id,
             type: 'user',
             source: 'users',
             title: name,
             description: user.email,
-            relevanceScore: this.calculateRelevance(searchTerms, [
-              name,
-              user.email,
-            ]),
+            relevanceScore: this.calculateRelevance(searchTerms, [name, user.email]),
             metadata: {
               role: user.role,
               avatar: user.avatar,
@@ -409,14 +402,14 @@ export class FederatedSearchService {
         if (!groupedByPortal.has(portalId)) {
           groupedByPortal.set(portalId, []);
         }
-        groupedByPortal.get(portalId)!.push(result);
+        groupedByPortal.get(portalId).push(result);
       }
 
       // Group by type
       if (!groupedByType.has(result.type)) {
         groupedByType.set(result.type, []);
       }
-      groupedByType.get(result.type)!.push(result);
+      groupedByType.get(result.type).push(result);
     }
 
     // Find portal-based correlations
@@ -486,11 +479,7 @@ export class FederatedSearchService {
   /**
    * Get search suggestions
    */
-  async getSuggestions(
-    workspaceId: string,
-    prefix: string,
-    limit: number = 10,
-  ): Promise<string[]> {
+  async getSuggestions(workspaceId: string, prefix: string, limit = 10): Promise<string[]> {
     const suggestions: string[] = [];
 
     // Get portal names
@@ -522,11 +511,7 @@ export class FederatedSearchService {
   /**
    * Get recent searches
    */
-  async getRecentSearches(
-    workspaceId: string,
-    userId: string,
-    limit: number = 10,
-  ): Promise<string[]> {
+  async getRecentSearches(workspaceId: string, userId: string, limit = 10): Promise<string[]> {
     const key = `recent_searches:${workspaceId}:${userId}`;
     const json = await this.cache.get(key);
     const searches: string[] = json ? JSON.parse(json) : [];
@@ -536,17 +521,11 @@ export class FederatedSearchService {
   /**
    * Log search for analytics and recent searches
    */
-  private async logSearch(
-    workspaceId: string,
-    query: string,
-    _resultCount: number,
-  ): Promise<void> {
+  private async logSearch(workspaceId: string, query: string, _resultCount: number): Promise<void> {
     // Log to analytics (simplified)
     const statsKey = `search_stats:${workspaceId}`;
     const statsJson = await this.cache.get(statsKey);
-    const stats = statsJson
-      ? JSON.parse(statsJson)
-      : { totalSearches: 0, queries: {} };
+    const stats = statsJson ? JSON.parse(statsJson) : { totalSearches: 0, queries: {} };
 
     stats.totalSearches++;
     stats.queries[query] = (stats.queries[query] || 0) + 1;
@@ -563,9 +542,7 @@ export class FederatedSearchService {
   }> {
     const statsKey = `search_stats:${workspaceId}`;
     const statsJson = await this.cache.get(statsKey);
-    const stats = statsJson
-      ? JSON.parse(statsJson)
-      : { totalSearches: 0, queries: {} };
+    const stats = statsJson ? JSON.parse(statsJson) : { totalSearches: 0, queries: {} };
 
     const topQueries = Object.entries(stats.queries as Record<string, number>)
       .sort(([, a], [, b]) => b - a)

@@ -53,11 +53,23 @@ export class DatabaseOptimizerService implements OnModuleInit {
       // User sessions
       { table: 'Session', columns: ['userId', 'expiresAt'], name: 'idx_session_user_expires' },
       // Audit logs
-      { table: 'AuditLog', columns: ['userId', 'action', 'createdAt'], name: 'idx_audit_user_action_created' },
+      {
+        table: 'AuditLog',
+        columns: ['userId', 'action', 'createdAt'],
+        name: 'idx_audit_user_action_created',
+      },
       // Notifications
-      { table: 'Notification', columns: ['userId', 'read', 'createdAt'], name: 'idx_notification_user_read_created' },
+      {
+        table: 'Notification',
+        columns: ['userId', 'read', 'createdAt'],
+        name: 'idx_notification_user_read_created',
+      },
       // Integration data
-      { table: 'IntegrationData', columns: ['integrationId', 'fetchedAt'], name: 'idx_integration_data_fetched' },
+      {
+        table: 'IntegrationData',
+        columns: ['integrationId', 'fetchedAt'],
+        name: 'idx_integration_data_fetched',
+      },
       // Comments
       { table: 'Comment', columns: ['widgetId', 'createdAt'], name: 'idx_comment_widget_created' },
       // Share links
@@ -76,10 +88,10 @@ export class DatabaseOptimizerService implements OnModuleInit {
   private async createIndexIfNotExists(
     table: string,
     columns: string[],
-    name: string
+    name: string,
   ): Promise<void> {
-    const columnList = columns.map(c => `"${c}"`).join(', ');
-    
+    const columnList = columns.map((c) => `"${c}"`).join(', ');
+
     try {
       await this.prisma.$executeRawUnsafe(`
         CREATE INDEX CONCURRENTLY IF NOT EXISTS "${name}" 
@@ -106,21 +118,19 @@ export class DatabaseOptimizerService implements OnModuleInit {
       where?: Record<string, unknown>;
       orderBy?: Record<string, 'asc' | 'desc'>;
       include?: Record<string, boolean | Record<string, unknown>>;
-    }
+    },
   ): Promise<{ items: T[]; nextCursor: string | null; hasMore: boolean }> {
     const take = options.take || 20;
-    const cursorObj = options.cursor 
-      ? { id: options.cursor }
-      : undefined;
+    const cursorObj = options.cursor ? { id: options.cursor } : undefined;
 
-    const items = await (this.prisma as Record<string, any>)[model].findMany({
+    const items = (await (this.prisma as Record<string, any>)[model].findMany({
       take: take + 1,
       skip: cursorObj ? 1 : 0,
       cursor: cursorObj,
       where: options.where,
       orderBy: options.orderBy || { createdAt: 'desc' },
       include: options.include,
-    }) as T[];
+    })) as T[];
 
     const hasMore = items.length > take;
     if (hasMore) {
@@ -135,11 +145,11 @@ export class DatabaseOptimizerService implements OnModuleInit {
   /**
    * Batch upsert for bulk operations
    */
-  async batchUpsert<T>(
+  async batchUpsert<T extends Record<string, unknown>>(
     model: string,
     data: T[],
     uniqueKey: string | string[],
-    batchSize: number = 100
+    batchSize = 100,
   ): Promise<number> {
     let processed = 0;
     const batches = this.chunkArray(data, batchSize);
@@ -148,7 +158,7 @@ export class DatabaseOptimizerService implements OnModuleInit {
       await Promise.all(
         batch.map((item: Record<string, unknown>) => {
           const where = Array.isArray(uniqueKey)
-            ? Object.fromEntries(uniqueKey.map(k => [k, item[k]]))
+            ? Object.fromEntries(uniqueKey.map((k) => [k, item[k]]))
             : { [uniqueKey]: item[uniqueKey] };
 
           return (this.prisma as Record<string, any>)[model].upsert({
@@ -156,7 +166,7 @@ export class DatabaseOptimizerService implements OnModuleInit {
             update: item,
             create: item,
           });
-        })
+        }),
       );
       processed += batch.length;
     }
@@ -170,7 +180,7 @@ export class DatabaseOptimizerService implements OnModuleInit {
   async countWithCache(
     model: string,
     where: Record<string, unknown>,
-    cacheKey?: string
+    _cacheKey?: string,
   ): Promise<number> {
     // Direct count for now - can add cache integration
     return (this.prisma as Record<string, any>)[model].count({ where });
@@ -189,7 +199,7 @@ export class DatabaseOptimizerService implements OnModuleInit {
       _min?: Record<string, boolean>;
       _max?: Record<string, boolean>;
       groupBy?: string[];
-    }
+    },
   ): Promise<unknown> {
     if (options.groupBy) {
       return (this.prisma as Record<string, any>)[model].groupBy({
@@ -220,23 +230,27 @@ export class DatabaseOptimizerService implements OnModuleInit {
    */
   async analyzeQuery(query: string): Promise<QueryAnalysis> {
     const startTime = Date.now();
-    
+
     try {
       const explainResult = await this.prisma.$queryRawUnsafe<unknown[]>(
-        `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${query}`
+        `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${query}`,
       );
 
       const executionTime = Date.now() - startTime;
-      const plan = (explainResult[0] as Record<string, unknown>)?.['QUERY PLAN'] as Record<string, unknown>[];
-      
+      const plan = (explainResult[0] as Record<string, unknown>)?.['QUERY PLAN'] as Record<
+        string,
+        unknown
+      >[];
+
       const recommendations: string[] = [];
       let indexUsed = false;
       let rowsAffected = 0;
 
       if (plan && plan.length > 0) {
-        const planDetails = plan[0] as Record<string, unknown>;
-        rowsAffected = (planDetails['Plan'] as Record<string, unknown>)?.['Actual Rows'] as number || 0;
-        
+        const planDetails = plan[0];
+        rowsAffected =
+          ((planDetails['Plan'] as Record<string, unknown>)?.['Actual Rows'] as number) || 0;
+
         // Check for sequential scans on large tables
         const nodeType = (planDetails['Plan'] as Record<string, unknown>)?.['Node Type'] as string;
         if (nodeType === 'Seq Scan') {
@@ -293,10 +307,12 @@ export class DatabaseOptimizerService implements OnModuleInit {
 
       if (tableMatch && whereMatch) {
         const table = tableMatch[1];
-        const columns = whereMatch.map(w => {
-          const match = w.match(/WHERE\s+(\w+)\s*=/i);
-          return match ? match[1] : '';
-        }).filter(Boolean);
+        const columns = whereMatch
+          .map((w) => {
+            const match = w.match(/WHERE\s+(\w+)\s*=/i);
+            return match ? match[1] : '';
+          })
+          .filter(Boolean);
 
         if (columns.length > 0) {
           recommendations.push({
@@ -316,13 +332,15 @@ export class DatabaseOptimizerService implements OnModuleInit {
    * Get table statistics
    */
   async getTableStats(): Promise<TableStats[]> {
-    const result = await this.prisma.$queryRaw<Array<{
-      relname: string;
-      n_live_tup: bigint;
-      pg_total_relation_size: bigint;
-      idx_count: bigint;
-      last_analyze: Date;
-    }>>`
+    const result = await this.prisma.$queryRaw<
+      Array<{
+        relname: string;
+        n_live_tup: bigint;
+        pg_total_relation_size: bigint;
+        idx_count: bigint;
+        last_analyze: Date;
+      }>
+    >`
       SELECT 
         c.relname,
         s.n_live_tup,
@@ -336,7 +354,7 @@ export class DatabaseOptimizerService implements OnModuleInit {
       LIMIT 20
     `;
 
-    return result.map(row => ({
+    return result.map((row) => ({
       name: row.relname,
       rowCount: Number(row.n_live_tup),
       sizeBytes: Number(row.pg_total_relation_size),
@@ -357,7 +375,7 @@ export class DatabaseOptimizerService implements OnModuleInit {
     try {
       // Get tables that need analysis
       const tables = await this.getTableStats();
-      
+
       for (const table of tables) {
         // Analyze tables that haven't been analyzed recently
         const hoursSinceAnalyze = table.lastAnalyzed
@@ -393,7 +411,7 @@ export class DatabaseOptimizerService implements OnModuleInit {
 
     try {
       // Delete expired sessions
-      const deletedSessions = await this.prisma.session.deleteMany({
+      const deletedSessions = await this.prisma.userSession.deleteMany({
         where: { expiresAt: { lt: now } },
       });
       this.logger.log(`Deleted ${deletedSessions.count} expired sessions`);
@@ -401,10 +419,7 @@ export class DatabaseOptimizerService implements OnModuleInit {
       // Delete old notifications (read ones older than 30 days)
       const deletedNotifications = await this.prisma.notification.deleteMany({
         where: {
-          AND: [
-            { read: true },
-            { createdAt: { lt: thirtyDaysAgo } },
-          ],
+          AND: [{ read: true }, { createdAt: { lt: thirtyDaysAgo } }],
         },
       });
       this.logger.log(`Deleted ${deletedNotifications.count} old notifications`);
@@ -419,10 +434,7 @@ export class DatabaseOptimizerService implements OnModuleInit {
       // Delete expired share links
       const deletedShareLinks = await this.prisma.shareLink.deleteMany({
         where: {
-          AND: [
-            { expiresAt: { not: null } },
-            { expiresAt: { lt: now } },
-          ],
+          AND: [{ expiresAt: { not: null } }, { expiresAt: { lt: now } }],
         },
       });
       this.logger.log(`Deleted ${deletedShareLinks.count} expired share links`);
@@ -440,7 +452,7 @@ export class DatabaseOptimizerService implements OnModuleInit {
    */
   recordQueryExecution(queryHash: string, executionTime: number): void {
     const existing = this.queryStats.get(queryHash);
-    
+
     if (existing) {
       const newCount = existing.count + 1;
       const newTotalTime = existing.totalTime + executionTime;
@@ -459,8 +471,7 @@ export class DatabaseOptimizerService implements OnModuleInit {
 
     // Keep only top 1000 queries
     if (this.queryStats.size > 1000) {
-      const sorted = Array.from(this.queryStats.entries())
-        .sort((a, b) => b[1].count - a[1].count);
+      const sorted = Array.from(this.queryStats.entries()).sort((a, b) => b[1].count - a[1].count);
       this.queryStats = new Map(sorted.slice(0, 1000));
     }
   }

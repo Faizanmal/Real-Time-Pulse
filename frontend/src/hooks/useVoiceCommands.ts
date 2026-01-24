@@ -17,10 +17,10 @@ interface SpeechRecognition extends EventTarget {
   start(): void;
   stop(): void;
   abort(): void;
-  onstart: ((this: SpeechRecognition, ev: Event) => any) | null;
-  onend: ((this: SpeechRecognition, ev: Event) => any) | null;
-  onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => any) | null;
-  onerror: ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => any) | null;
+  onstart: ((this: SpeechRecognition, ev: Event) => unknown) | null;
+  onend: ((this: SpeechRecognition, ev: Event) => unknown) | null;
+  onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => unknown) | null;
+  onerror: ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => unknown) | null;
 }
 
 interface SpeechRecognitionEvent extends Event {
@@ -51,19 +51,19 @@ interface SpeechRecognitionAlternative {
   readonly confidence: number;
 }
 
-declare var SpeechRecognition: {
+declare const SpeechRecognition: {
   prototype: SpeechRecognition;
   new (): SpeechRecognition;
 };
 
-declare var SpeechRecognitionEvent: {
+declare const SpeechRecognitionEvent: {
   prototype: SpeechRecognitionEvent;
-  new (type: string, eventInitDict?: any): SpeechRecognitionEvent;
+  new (type: string, eventInitDict?: unknown): SpeechRecognitionEvent;
 };
 
-declare var SpeechRecognitionErrorEvent: {
+declare const SpeechRecognitionErrorEvent: {
   prototype: SpeechRecognitionErrorEvent;
-  new (type: string, eventInitDict?: any): SpeechRecognitionErrorEvent;
+  new (type: string, eventInitDict?: unknown): SpeechRecognitionErrorEvent;
 };
 
 interface VoiceCommandHookReturn {
@@ -97,7 +97,11 @@ export function useVoiceCommands(options: VoiceCommandOptions = {}): VoiceComman
     onEnd,
   } = options;
 
-  const [isSupported, setIsSupported] = useState(false);
+  const isSupported = (() => {
+    const SpeechRecognitionConstructor =
+      (window as unknown as { SpeechRecognition?: typeof SpeechRecognition }).SpeechRecognition || (window as unknown as { webkitSpeechRecognition?: typeof SpeechRecognition }).webkitSpeechRecognition;
+    return !!SpeechRecognitionConstructor;
+  })();
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -107,12 +111,11 @@ export function useVoiceCommands(options: VoiceCommandOptions = {}): VoiceComman
   const synthesisRef = useRef<SpeechSynthesis | null>(null);
 
   useEffect(() => {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognitionConstructor =
+      (window as unknown as { SpeechRecognition?: typeof SpeechRecognition }).SpeechRecognition || (window as unknown as { webkitSpeechRecognition?: typeof SpeechRecognition }).webkitSpeechRecognition;
 
-    if (SpeechRecognition) {
-      setIsSupported(true);
-      const recognition = new SpeechRecognition();
+    if (SpeechRecognitionConstructor) {
+      const recognition = new SpeechRecognitionConstructor();
       recognition.continuous = continuous;
       recognition.interimResults = interimResults;
       recognition.lang = language;
@@ -182,6 +185,7 @@ export function useVoiceCommands(options: VoiceCommandOptions = {}): VoiceComman
       try {
         recognitionRef.current.start();
       } catch (e) {
+        console.warn('Speech recognition already started', e);
         // Already started
       }
     }
@@ -246,7 +250,7 @@ function getErrorMessage(error: string): string {
 interface ParsedCommand {
   intent: string;
   action: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   confidence: number;
 }
 

@@ -14,13 +14,7 @@ export interface CEPRule {
 }
 
 interface CEPPattern {
-  type:
-    | 'sequence'
-    | 'absence'
-    | 'frequency'
-    | 'correlation'
-    | 'threshold'
-    | 'trend';
+  type: 'sequence' | 'absence' | 'frequency' | 'correlation' | 'threshold' | 'trend';
   conditions: CEPCondition[];
   withinWindow?: number;
   minOccurrences?: number;
@@ -125,14 +119,11 @@ export class CEPEngineService {
       this.eventBuffer.set(bufferKey, []);
     }
 
-    const buffer = this.eventBuffer.get(bufferKey)!;
+    const buffer = this.eventBuffer.get(bufferKey);
     buffer.push(event);
 
     // Trim buffer based on max window
-    const maxWindow = Math.max(
-      ...Array.from(this.rules.values()).map((r) => r.timeWindow),
-      300000,
-    );
+    const maxWindow = Math.max(...Array.from(this.rules.values()).map((r) => r.timeWindow), 300000);
     const cutoff = Date.now() - maxWindow;
     const trimmed = buffer.filter((e) => e.timestamp > cutoff);
     this.eventBuffer.set(bufferKey, trimmed);
@@ -149,11 +140,7 @@ export class CEPEngineService {
     }
   }
 
-  private async evaluateRule(
-    rule: CEPRule,
-    newEvent: CEPEvent,
-    buffer: CEPEvent[],
-  ) {
+  private async evaluateRule(rule: CEPRule, newEvent: CEPEvent, buffer: CEPEvent[]) {
     // Get events within this rule's time window
     const windowCutoff = Date.now() - rule.timeWindow;
     const windowedEvents = buffer.filter((e) => e.timestamp > windowCutoff);
@@ -198,7 +185,7 @@ export class CEPEngineService {
     if (!this.partialMatches.has(partialKey)) {
       this.partialMatches.set(partialKey, []);
     }
-    const partials = this.partialMatches.get(partialKey)!;
+    const partials = this.partialMatches.get(partialKey);
 
     // Check if new event matches any condition
     for (let i = 0; i < conditions.length; i++) {
@@ -216,8 +203,7 @@ export class CEPEngineService {
         } else {
           // Continue existing sequences
           for (const partial of partials) {
-            const lastMatchedIdx =
-              partial.matchedConditions[partial.matchedConditions.length - 1];
+            const lastMatchedIdx = partial.matchedConditions[partial.matchedConditions.length - 1];
             if (lastMatchedIdx === i - 1) {
               partial.matchedConditions.push(i);
               partial.matchedEvents.push(newEvent);
@@ -228,9 +214,7 @@ export class CEPEngineService {
     }
 
     // Check for complete matches
-    const complete = partials.find(
-      (p) => p.matchedConditions.length === conditions.length,
-    );
+    const complete = partials.find((p) => p.matchedConditions.length === conditions.length);
     if (complete) {
       // Remove this partial match
       this.partialMatches.set(
@@ -288,9 +272,7 @@ export class CEPEngineService {
     const { conditions, minOccurrences, maxOccurrences } = rule.pattern;
 
     for (const condition of conditions) {
-      const matchingEvents = events.filter((e) =>
-        this.matchesCondition(e, condition),
-      );
+      const matchingEvents = events.filter((e) => this.matchesCondition(e, condition));
       const count = matchingEvents.length;
 
       if (minOccurrences !== undefined && count < minOccurrences) {
@@ -335,14 +317,12 @@ export class CEPEngineService {
     const groups = new Map<string, CEPEvent[]>();
 
     for (const event of events) {
-      const key = correlationFields
-        .map((f) => this.getNestedValue(event.data, f))
-        .join('::');
+      const key = correlationFields.map((f) => this.getNestedValue(event.data, f)).join('::');
 
       if (!groups.has(key)) {
         groups.set(key, []);
       }
-      groups.get(key)!.push(event);
+      groups.get(key).push(event);
     }
 
     // Check if any group has all required conditions matched
@@ -377,7 +357,7 @@ export class CEPEngineService {
       const matchingEvents = events.filter((e) => {
         if (condition.eventType && e.type !== condition.eventType) return false;
 
-        const value = this.getNestedValue(e.data, condition.field!);
+        const value = this.getNestedValue(e.data, condition.field);
 
         switch (condition.operator) {
           case 'gt':
@@ -407,10 +387,7 @@ export class CEPEngineService {
     return null;
   }
 
-  private async matchTrendPattern(
-    rule: CEPRule,
-    events: CEPEvent[],
-  ): Promise<PatternMatch | null> {
+  private async matchTrendPattern(rule: CEPRule, events: CEPEvent[]): Promise<PatternMatch | null> {
     const { conditions } = rule.pattern;
 
     for (const condition of conditions) {
@@ -424,7 +401,7 @@ export class CEPEngineService {
       if (matchingEvents.length < 3) continue;
 
       const values = matchingEvents
-        .map((e) => this.getNestedValue(e.data, condition.field!) as number)
+        .map((e) => this.getNestedValue(e.data, condition.field) as number)
         .filter((v) => typeof v === 'number');
 
       if (values.length < 3) continue;
@@ -619,10 +596,7 @@ export class CEPEngineService {
   }
 
   private cleanupExpiredBuffers() {
-    const maxWindow = Math.max(
-      ...Array.from(this.rules.values()).map((r) => r.timeWindow),
-      300000,
-    );
+    const maxWindow = Math.max(...Array.from(this.rules.values()).map((r) => r.timeWindow), 300000);
     const cutoff = Date.now() - maxWindow;
 
     for (const [key, buffer] of this.eventBuffer.entries()) {
@@ -646,8 +620,7 @@ export class CEPEngineService {
 
   getStats() {
     return {
-      activeRules: Array.from(this.rules.values()).filter((r) => r.enabled)
-        .length,
+      activeRules: Array.from(this.rules.values()).filter((r) => r.enabled).length,
       totalRules: this.rules.size,
       bufferedEvents: Array.from(this.eventBuffer.values()).reduce(
         (acc, buf) => acc + buf.length,

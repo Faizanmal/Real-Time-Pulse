@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useLayoutEffect, useState, useCallback } from 'react';
 
 interface ServiceWorkerState {
   isSupported: boolean;
@@ -21,19 +21,16 @@ interface UseServiceWorkerReturn extends ServiceWorkerState {
 }
 
 export function useServiceWorker(): UseServiceWorkerReturn {
-  const [state, setState] = useState<ServiceWorkerState>({
-    isSupported: false,
+  const [state, setState] = useState<ServiceWorkerState>(() => ({
+    isSupported: 'serviceWorker' in navigator,
     isInstalled: false,
     isOnline: true,
     updateAvailable: false,
     registration: null,
-  });
+  }));
 
-  useEffect(() => {
-    const isSupported = 'serviceWorker' in navigator;
-    setState((s) => ({ ...s, isSupported }));
-
-    if (!isSupported) return;
+  useLayoutEffect(() => {
+    if (!state.isSupported) return;
 
     // Register service worker
     const registerSW = async () => {
@@ -77,13 +74,14 @@ export function useServiceWorker(): UseServiceWorkerReturn {
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setState((s) => ({ ...s, isOnline: navigator.onLine }));
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []);
+  }, [state.isSupported]);
 
   const update = useCallback(async () => {
     if (state.registration?.waiting) {

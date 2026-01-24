@@ -27,11 +27,7 @@ export class AsanaService {
     }
   }
 
-  async fetchData(
-    integration: Integration,
-    dataType: string,
-    params?: unknown,
-  ): Promise<unknown> {
+  async fetchData(integration: Integration, dataType: string, params?: unknown): Promise<unknown> {
     const headers = {
       Authorization: `Bearer ${integration.accessToken as string}`,
     };
@@ -51,10 +47,7 @@ export class AsanaService {
     }
   }
 
-  private async fetchProjects(
-    headers: any,
-    params?: unknown,
-  ): Promise<unknown> {
+  private async fetchProjects(headers: any, params?: unknown): Promise<unknown> {
     try {
       const response = await firstValueFrom(
         this.httpService.get(`${this.baseUrl}/projects`, {
@@ -81,8 +74,7 @@ export class AsanaService {
           params: {
             project: (params as { projectGid?: string }).projectGid,
 
-            completed_since:
-              (params as { completedSince?: string }).completedSince || 'now',
+            completed_since: (params as { completedSince?: string }).completedSince || 'now',
           },
         }),
       );

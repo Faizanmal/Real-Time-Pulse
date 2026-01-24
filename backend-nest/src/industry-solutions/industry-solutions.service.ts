@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { IndustryType } from '@prisma/client';
 
@@ -94,11 +90,7 @@ export class IndustrySolutionsService {
   }
 
   // Update compliance status for a deployment
-  async updateComplianceStatus(
-    deploymentId: string,
-    workspaceId: string,
-    complianceStatus: any,
-  ) {
+  async updateComplianceStatus(deploymentId: string, workspaceId: string, complianceStatus: any) {
     const deployment = await this.prisma.industryDeployment.findFirst({
       where: {
         id: deploymentId,
@@ -143,16 +135,11 @@ export class IndustrySolutionsService {
     });
 
     // Deploy template
-    const deployment = await this.deployTemplate(
-      template.id,
-      workspaceId,
-      portal.id,
-      {
-        hipaaCompliant: true,
-        encryptionEnabled: true,
-        auditLoggingEnabled: true,
-      },
-    );
+    const deployment = await this.deployTemplate(template.id, workspaceId, portal.id, {
+      hipaaCompliant: true,
+      encryptionEnabled: true,
+      auditLoggingEnabled: true,
+    });
 
     return {
       portal,
@@ -169,8 +156,7 @@ export class IndustrySolutionsService {
     const template = await this.getTemplate(templateId);
 
     // Calculate new average rating (simple average for now)
-    const newRating =
-      template.rating === 0 ? rating : (template.rating + rating) / 2;
+    const newRating = template.rating === 0 ? rating : (template.rating + rating) / 2;
 
     return this.prisma.industryTemplate.update({
       where: { id: templateId },
@@ -200,9 +186,7 @@ export class IndustrySolutionsService {
       deployment,
       complianceStatus: deployment.complianceStatus,
       lastCheck: deployment.lastComplianceCheck,
-      recommendations: this.getComplianceRecommendations(
-        deployment.template.industry,
-      ),
+      recommendations: this.getComplianceRecommendations(deployment.template.industry),
     };
   }
 

@@ -16,7 +16,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 /**
  * Focus trap hook for modal dialogs and overlays
  */
-export function useFocusTrap(isActive: boolean = true) {
+export function useFocusTrap(isActive = true) {
   const containerRef = useRef<HTMLElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
 
@@ -190,14 +190,13 @@ export function useRovingTabIndex<T extends HTMLElement>(
  * Hook to detect user's motion preference
  */
 export function useReducedMotion(): boolean {
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  });
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReducedMotion(mediaQuery.matches);
-
     const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     mediaQuery.addEventListener('change', handler);
     return () => mediaQuery.removeEventListener('change', handler);
@@ -355,15 +354,13 @@ export function formatShortcut(shortcut: Omit<ShortcutConfig, 'handler'>): strin
  * Hook to detect high contrast mode
  */
 export function useHighContrastMode(): boolean {
-  const [isHighContrast, setIsHighContrast] = useState(false);
+  const [isHighContrast, setIsHighContrast] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(forced-colors: active)').matches;
+  });
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    // Check for forced-colors media query (Windows High Contrast Mode)
     const mediaQuery = window.matchMedia('(forced-colors: active)');
-    setIsHighContrast(mediaQuery.matches);
-
     const handler = (e: MediaQueryListEvent) => setIsHighContrast(e.matches);
     mediaQuery.addEventListener('change', handler);
     return () => mediaQuery.removeEventListener('change', handler);

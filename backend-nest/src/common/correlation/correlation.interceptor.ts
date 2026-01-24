@@ -6,13 +6,7 @@
  * Automatically adds correlation context to all HTTP requests.
  */
 
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
 import { Observable, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { CorrelationService } from './correlation.service';
@@ -29,9 +23,7 @@ export class CorrelationInterceptor implements NestInterceptor {
 
     // Extract correlation ID from headers or generate new one
     const correlationId =
-      request.headers['x-correlation-id'] ||
-      request.headers['x-request-id'] ||
-      undefined;
+      request.headers['x-correlation-id'] || request.headers['x-request-id'] || undefined;
 
     const traceId = request.headers['x-trace-id'] || undefined;
     const parentSpanId = request.headers['x-span-id'] || undefined;
@@ -69,13 +61,9 @@ export class CorrelationInterceptor implements NestInterceptor {
 
                 // Log successful request
                 this.logger.log(
-                  this.correlationService.createLogEntry(
-                    'info',
-                    'Request completed',
-                    {
-                      statusCode: response.statusCode,
-                    },
-                  ),
+                  this.correlationService.createLogEntry('info', 'Request completed', {
+                    statusCode: response.statusCode,
+                  }),
                 );
 
                 subscriber.next(data);
@@ -86,15 +74,11 @@ export class CorrelationInterceptor implements NestInterceptor {
 
                 // Log error with correlation context
                 this.logger.error(
-                  this.correlationService.createLogEntry(
-                    'error',
-                    'Request failed',
-                    {
-                      error: error.message,
-                      stack: error.stack,
-                      statusCode: error.status || 500,
-                    },
-                  ),
+                  this.correlationService.createLogEntry('error', 'Request failed', {
+                    error: error.message,
+                    stack: error.stack,
+                    statusCode: error.status || 500,
+                  }),
                 );
 
                 subscriber.error(error);

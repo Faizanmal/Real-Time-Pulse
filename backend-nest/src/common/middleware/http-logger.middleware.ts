@@ -14,9 +14,7 @@ export class HttpLoggerMiddleware implements NestMiddleware {
     const startTime = Date.now();
 
     // Log request
-    this.logger.log(
-      `➡️  ${method} ${originalUrl} - ${ip} - ${userAgent} [${requestId}]`,
-    );
+    this.logger.log(`➡️  ${method} ${originalUrl} - ${ip} - ${userAgent} [${requestId}]`);
 
     // Log response
     res.on('finish', () => {
@@ -24,8 +22,7 @@ export class HttpLoggerMiddleware implements NestMiddleware {
       const contentLength = res.get('content-length') || '0';
       const responseTime = Date.now() - startTime;
 
-      const logLevel =
-        statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'log';
+      const logLevel = statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'log';
       const emoji = statusCode >= 500 ? '❌' : statusCode >= 400 ? '⚠️' : '✅';
 
       this.logger[logLevel](

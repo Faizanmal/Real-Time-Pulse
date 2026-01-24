@@ -43,8 +43,7 @@ expect.extend({
    * Check if a value is a valid UUID
    */
   toBeValidUUID(received: string) {
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const pass = uuidRegex.test(received);
 
     return {

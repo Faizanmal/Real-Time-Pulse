@@ -133,17 +133,12 @@ export class ReportQueueProcessor {
       }
 
       default:
-        this.logger.warn(
-          `Unknown report type: ${reportType as any}, returning empty data`,
-        );
+        this.logger.warn(`Unknown report type: ${reportType as any}, returning empty data`);
         return [];
     }
   }
 
-  private async generateReport(
-    data: unknown[],
-    format: string,
-  ): Promise<Buffer> {
+  private async generateReport(data: unknown[], format: string): Promise<Buffer> {
     switch (format?.toLowerCase()) {
       case 'csv':
         return this.generateCSV(data);
@@ -173,8 +168,7 @@ export class ReportQueueProcessor {
       const values = headers.map((header) => {
         const val = (row as Record<string, unknown>)[header];
         if (val === null || val === undefined) return '';
-        if (typeof val === 'object')
-          return JSON.stringify(val).replace(/,/g, ';');
+        if (typeof val === 'object') return JSON.stringify(val).replace(/,/g, ';');
         return String(val as any).replace(/,/g, ';');
       });
       csvRows.push(values.join(','));
@@ -235,9 +229,7 @@ export class ReportQueueProcessor {
       // Title
       doc.fontSize(20).text('Report', { align: 'center' });
       doc.moveDown();
-      doc
-        .fontSize(10)
-        .text(`Generated: ${new Date().toISOString()}`, { align: 'center' });
+      doc.fontSize(10).text(`Generated: ${new Date().toISOString()}`, { align: 'center' });
       doc.moveDown(2);
 
       if (data.length === 0) {

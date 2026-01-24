@@ -113,9 +113,7 @@ export class SecurityService {
    * Get security settings for a workspace
    */
   async getSecuritySettings(workspaceId: string): Promise<SecuritySettings> {
-    const cached = await this.cacheService.get(
-      `${this.SETTINGS_PREFIX}${workspaceId}`,
-    );
+    const cached = await this.cacheService.get(`${this.SETTINGS_PREFIX}${workspaceId}`);
 
     if (cached) {
       try {
@@ -165,16 +163,11 @@ export class SecurityService {
   /**
    * Validate password against policy
    */
-  validatePassword(
-    password: string,
-    policy: PasswordPolicy,
-  ): { valid: boolean; errors: string[] } {
+  validatePassword(password: string, policy: PasswordPolicy): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
     if (password.length < policy.minLength) {
-      errors.push(
-        `Password must be at least ${policy.minLength} characters long`,
-      );
+      errors.push(`Password must be at least ${policy.minLength} characters long`);
     }
 
     if (policy.requireUppercase && !/[A-Z]/.test(password)) {
@@ -204,9 +197,7 @@ export class SecurityService {
     newPassword: string,
     preventReuse: number,
   ): Promise<boolean> {
-    const cached = await this.cacheService.get(
-      `${this.PASSWORD_HISTORY_PREFIX}${userId}`,
-    );
+    const cached = await this.cacheService.get(`${this.PASSWORD_HISTORY_PREFIX}${userId}`);
     const history: string[] = cached ? JSON.parse(cached) : [];
 
     for (const oldHash of history.slice(0, preventReuse)) {
@@ -221,13 +212,8 @@ export class SecurityService {
   /**
    * Add password to history
    */
-  async addPasswordToHistory(
-    userId: string,
-    passwordHash: string,
-  ): Promise<void> {
-    const cached = await this.cacheService.get(
-      `${this.PASSWORD_HISTORY_PREFIX}${userId}`,
-    );
+  async addPasswordToHistory(userId: string, passwordHash: string): Promise<void> {
+    const cached = await this.cacheService.get(`${this.PASSWORD_HISTORY_PREFIX}${userId}`);
     const history: string[] = cached ? JSON.parse(cached) : [];
 
     history.unshift(passwordHash);
@@ -251,11 +237,7 @@ export class SecurityService {
     attempts.unshift(attempt);
     const recentAttempts = attempts.slice(0, 100); // Keep last 100 attempts
 
-    await this.cacheService.set(
-      cacheKey,
-      JSON.stringify(recentAttempts),
-      7 * 24 * 60 * 60,
-    ); // 7 days
+    await this.cacheService.set(cacheKey, JSON.stringify(recentAttempts), 7 * 24 * 60 * 60); // 7 days
 
     // Check for brute force
     if (!attempt.success) {
@@ -290,9 +272,7 @@ export class SecurityService {
     const attempts: LoginAttempt[] = cached ? JSON.parse(cached) : [];
 
     const recentFailures = attempts.filter(
-      (a) =>
-        !a.success &&
-        new Date(a.timestamp).getTime() > Date.now() - 15 * 60 * 1000, // Last 15 minutes
+      (a) => !a.success && new Date(a.timestamp).getTime() > Date.now() - 15 * 60 * 1000, // Last 15 minutes
     );
 
     if (recentFailures.length >= 5) {
@@ -315,9 +295,7 @@ export class SecurityService {
         });
       }
 
-      this.logger.warn(
-        `Account ${userId} locked due to brute force attempt from IP ${ip}`,
-      );
+      this.logger.warn(`Account ${userId} locked due to brute force attempt from IP ${ip}`);
     }
   }
 
@@ -426,20 +404,14 @@ export class SecurityService {
    * Get active sessions for a user
    */
   async getActiveSessions(userId: string): Promise<any[]> {
-    const cached = await this.cacheService.get(
-      `${this.SESSIONS_PREFIX}${userId}`,
-    );
+    const cached = await this.cacheService.get(`${this.SESSIONS_PREFIX}${userId}`);
     return cached ? JSON.parse(cached) : [];
   }
 
   /**
    * Terminate session
    */
-  async terminateSession(
-    userId: string,
-    sessionId: string,
-    adminUserId?: string,
-  ): Promise<void> {
+  async terminateSession(userId: string, sessionId: string, adminUserId?: string): Promise<void> {
     const sessions = await this.getActiveSessions(userId);
     const updatedSessions = sessions.filter((s: any) => s.id !== sessionId);
 
@@ -465,10 +437,7 @@ export class SecurityService {
   /**
    * Terminate all sessions for a user
    */
-  async terminateAllSessions(
-    userId: string,
-    adminUserId?: string,
-  ): Promise<void> {
+  async terminateAllSessions(userId: string, adminUserId?: string): Promise<void> {
     await this.cacheService.del(`${this.SESSIONS_PREFIX}${userId}`);
 
     await this.auditService.log({
@@ -489,7 +458,7 @@ export class SecurityService {
   /**
    * Generate secure random token
    */
-  generateSecureToken(length: number = 32): string {
+  generateSecureToken(length = 32): string {
     return crypto.randomBytes(length).toString('hex');
   }
 

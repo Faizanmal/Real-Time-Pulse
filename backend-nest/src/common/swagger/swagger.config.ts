@@ -10,11 +10,7 @@ export function setupSwagger(app: INestApplication): void {
         'automatically pull data from tools like Asana, Google Analytics, and Harvest.',
     )
     .setVersion('1.0')
-    .setContact(
-      'Portal Support',
-      'https://portal.example.com',
-      'support@portal.example.com',
-    )
+    .setContact('Portal Support', 'https://portal.example.com', 'support@portal.example.com')
     .setLicense('MIT', 'https://opensource.org/licenses/MIT')
     .addBearerAuth(
       {

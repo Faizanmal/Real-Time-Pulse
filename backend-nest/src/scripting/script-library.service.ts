@@ -33,7 +33,7 @@ export class ScriptLibraryService {
       mod: (a: number, b: number) => a % b,
 
       // Rounding
-      round: (n: number, decimals: number = 0) =>
+      round: (n: number, decimals = 0) =>
         Math.round(n * Math.pow(10, decimals)) / Math.pow(10, decimals),
       ceil: Math.ceil,
       floor: Math.floor,
@@ -64,19 +64,15 @@ export class ScriptLibraryService {
       // Min/Max
       min: (...args: number[]) => Math.min(...args),
       max: (...args: number[]) => Math.max(...args),
-      clamp: (value: number, min: number, max: number) =>
-        Math.min(Math.max(value, min), max),
+      clamp: (value: number, min: number, max: number) => Math.min(Math.max(value, min), max),
 
       // Random
       random: () => Math.random(),
-      randomInt: (min: number, max: number) =>
-        Math.floor(Math.random() * (max - min + 1)) + min,
-      randomFloat: (min: number, max: number) =>
-        Math.random() * (max - min) + min,
+      randomInt: (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min,
+      randomFloat: (min: number, max: number) => Math.random() * (max - min) + min,
 
       // Percentage
-      percentage: (value: number, total: number) =>
-        total !== 0 ? (value / total) * 100 : 0,
+      percentage: (value: number, total: number) => (total !== 0 ? (value / total) * 100 : 0),
       percentageChange: (oldValue: number, newValue: number) =>
         oldValue !== 0 ? ((newValue - oldValue) / oldValue) * 100 : 0,
 
@@ -93,14 +89,8 @@ export class ScriptLibraryService {
     return {
       // Creation
       now: () => new Date(),
-      create: (
-        year: number,
-        month: number,
-        day: number,
-        hour = 0,
-        minute = 0,
-        second = 0,
-      ) => new Date(year, month - 1, day, hour, minute, second),
+      create: (year: number, month: number, day: number, hour = 0, minute = 0, second = 0) =>
+        new Date(year, month - 1, day, hour, minute, second),
       parse: (dateString: string) => new Date(dateString),
       fromTimestamp: (timestamp: number) => new Date(timestamp),
 
@@ -136,9 +126,7 @@ export class ScriptLibraryService {
         d.setHours(0, 0, 0, 0);
         d.setDate(d.getDate() + 4 - (d.getDay() || 7));
         const yearStart = new Date(d.getFullYear(), 0, 1);
-        return Math.ceil(
-          ((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
-        );
+        return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
       },
       getQuarter: (date: Date) => Math.floor(new Date(date).getMonth() / 3) + 1,
 
@@ -170,7 +158,7 @@ export class ScriptLibraryService {
       },
 
       // Comparison
-      diff: (date1: Date, date2: Date, unit: string = 'days') => {
+      diff: (date1: Date, date2: Date, unit = 'days') => {
         const d1 = new Date(date1).getTime();
         const d2 = new Date(date2).getTime();
         const diffMs = d1 - d2;
@@ -241,17 +229,14 @@ export class ScriptLibraryService {
       toLowerCase: (str: string) => String(str).toLowerCase(),
       toUpperCase: (str: string) => String(str).toUpperCase(),
       capitalize: (str: string) =>
-        String(str).charAt(0).toUpperCase() +
-        String(str).slice(1).toLowerCase(),
+        String(str).charAt(0).toUpperCase() + String(str).slice(1).toLowerCase(),
       titleCase: (str: string) =>
         String(str).replace(
           /\w\S*/g,
           (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(),
         ),
       camelCase: (str: string) =>
-        String(str).replace(/[-_\s]+(.)?/g, (_, c) =>
-          c ? c.toUpperCase() : '',
-        ),
+        String(str).replace(/[-_\s]+(.)?/g, (_, c) => (c ? c.toUpperCase() : '')),
       kebabCase: (str: string) =>
         String(str)
           .replace(/([a-z])([A-Z])/g, '$1-$2')
@@ -269,16 +254,12 @@ export class ScriptLibraryService {
       trimEnd: (str: string) => String(str).trimEnd(),
 
       // Padding
-      padStart: (str: string, length: number, char: string = ' ') =>
-        String(str).padStart(length, char),
-      padEnd: (str: string, length: number, char: string = ' ') =>
-        String(str).padEnd(length, char),
+      padStart: (str: string, length: number, char = ' ') => String(str).padStart(length, char),
+      padEnd: (str: string, length: number, char = ' ') => String(str).padEnd(length, char),
 
       // Manipulation
-      substring: (str: string, start: number, end?: number) =>
-        String(str).substring(start, end),
-      slice: (str: string, start: number, end?: number) =>
-        String(str).slice(start, end),
+      substring: (str: string, start: number, end?: number) => String(str).substring(start, end),
+      slice: (str: string, start: number, end?: number) => String(str).slice(start, end),
       replace: (str: string, search: string, replacement: string) =>
         String(str).replace(search, replacement),
       replaceAll: (str: string, search: string, replacement: string) =>
@@ -288,16 +269,14 @@ export class ScriptLibraryService {
 
       // Search
       includes: (str: string, search: string) => String(str).includes(search),
-      startsWith: (str: string, search: string) =>
-        String(str).startsWith(search),
+      startsWith: (str: string, search: string) => String(str).startsWith(search),
       endsWith: (str: string, search: string) => String(str).endsWith(search),
       indexOf: (str: string, search: string) => String(str).indexOf(search),
-      lastIndexOf: (str: string, search: string) =>
-        String(str).lastIndexOf(search),
+      lastIndexOf: (str: string, search: string) => String(str).lastIndexOf(search),
 
       // Split/Join
       split: (str: string, separator: string) => String(str).split(separator),
-      join: (arr: string[], separator: string = ',') => arr.join(separator),
+      join: (arr: string[], separator = ',') => arr.join(separator),
 
       // Properties
       length: (str: string) => String(str).length,
@@ -305,13 +284,10 @@ export class ScriptLibraryService {
       isNotEmpty: (str: string) => String(str).trim().length > 0,
 
       // Utility
-      truncate: (str: string, length: number, suffix: string = '...') =>
-        String(str).length > length
-          ? String(str).slice(0, length - suffix.length) + suffix
-          : str,
+      truncate: (str: string, length: number, suffix = '...') =>
+        String(str).length > length ? String(str).slice(0, length - suffix.length) + suffix : str,
       words: (str: string) => String(str).split(/\s+/).filter(Boolean),
-      wordCount: (str: string) =>
-        String(str).split(/\s+/).filter(Boolean).length,
+      wordCount: (str: string) => String(str).split(/\s+/).filter(Boolean).length,
     };
   }
 
@@ -322,7 +298,7 @@ export class ScriptLibraryService {
     return {
       // Creation
       create: (...items: any[]) => [...items],
-      range: (start: number, end: number, step: number = 1) => {
+      range: (start: number, end: number, step = 1) => {
         const result: any[] = [];
         for (let i = start; step > 0 ? i <= end : i >= end; i += step) {
           result.push(i);
@@ -343,12 +319,7 @@ export class ScriptLibraryService {
       shift: (arr: any[]) => arr.slice(1),
       concat: (...arrays: any[][]) => arrays.flat(),
       slice: (arr: any[], start: number, end?: number) => arr.slice(start, end),
-      splice: (
-        arr: any[],
-        start: number,
-        deleteCount: number,
-        ...items: any[]
-      ) => {
+      splice: (arr: any[], start: number, deleteCount: number, ...items: any[]) => {
         const result = [...arr];
         result.splice(start, deleteCount, ...items);
         return result;
@@ -356,19 +327,14 @@ export class ScriptLibraryService {
 
       // Transformation
       map: (arr: any[], fn: (item: any, index: number) => any) => arr.map(fn),
-      filter: (arr: any[], fn: (item: any, index: number) => boolean) =>
-        arr.filter(fn),
-      reduce: (
-        arr: any[],
-        fn: (acc: any, item: any, index: number) => any,
-        initial: any,
-      ) => arr.reduce(fn, initial),
-      flatten: (arr: any[], depth: number = 1) => arr.flat(depth),
+      filter: (arr: any[], fn: (item: any, index: number) => boolean) => arr.filter(fn),
+      reduce: (arr: any[], fn: (acc: any, item: any, index: number) => any, initial: any) =>
+        arr.reduce(fn, initial),
+      flatten: (arr: any[], depth = 1) => arr.flat(depth),
       flatMap: (arr: any[], fn: (item: any) => any[]) => arr.flatMap(fn),
 
       // Ordering
-      sort: (arr: any[], compareFn?: (a: any, b: any) => number) =>
-        [...arr].sort(compareFn),
+      sort: (arr: any[], compareFn?: (a: any, b: any) => number) => [...arr].sort(compareFn),
       sortBy: (arr: any[], key: string, order: 'asc' | 'desc' = 'asc') =>
         [...arr].sort((a, b) => {
           const aVal = a[key];
@@ -395,16 +361,13 @@ export class ScriptLibraryService {
       // Aggregation
       every: (arr: any[], fn: (item: any) => boolean) => arr.every(fn),
       some: (arr: any[], fn: (item: any) => boolean) => arr.some(fn),
-      count: (arr: any[], fn?: (item: any) => boolean) =>
-        fn ? arr.filter(fn).length : arr.length,
+      count: (arr: any[], fn?: (item: any) => boolean) => (fn ? arr.filter(fn).length : arr.length),
 
       // Set operations
       unique: (arr: any[]) => [...new Set(arr)],
       union: (arr1: any[], arr2: any[]) => [...new Set([...arr1, ...arr2])],
-      intersection: (arr1: any[], arr2: any[]) =>
-        arr1.filter((item) => arr2.includes(item)),
-      difference: (arr1: any[], arr2: any[]) =>
-        arr1.filter((item) => !arr2.includes(item)),
+      intersection: (arr1: any[], arr2: any[]) => arr1.filter((item) => arr2.includes(item)),
+      difference: (arr1: any[], arr2: any[]) => arr1.filter((item) => !arr2.includes(item)),
 
       // Grouping
       groupBy: (arr: any[], key: string) =>
@@ -437,15 +400,12 @@ export class ScriptLibraryService {
     return {
       // Basic statistics
       sum: (arr: number[]) => arr.reduce((a, b) => a + b, 0),
-      mean: (arr: number[]) =>
-        arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 0,
+      mean: (arr: number[]) => (arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 0),
       median: (arr: number[]) => {
         if (arr.length === 0) return 0;
         const sorted = [...arr].sort((a, b) => a - b);
         const mid = Math.floor(sorted.length / 2);
-        return sorted.length % 2
-          ? sorted[mid]
-          : (sorted[mid - 1] + sorted[mid]) / 2;
+        return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
       },
       mode: (arr: number[]) => {
         const counts = new Map<number, number>();
@@ -470,17 +430,12 @@ export class ScriptLibraryService {
       variance: (arr: number[]) => {
         if (arr.length === 0) return 0;
         const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
-        return (
-          arr.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) /
-          arr.length
-        );
+        return arr.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / arr.length;
       },
       standardDeviation: (arr: number[]) => {
         if (arr.length === 0) return 0;
         const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
-        const variance =
-          arr.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) /
-          arr.length;
+        const variance = arr.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / arr.length;
         return Math.sqrt(variance);
       },
 
@@ -492,9 +447,7 @@ export class ScriptLibraryService {
         const lower = Math.floor(index);
         const upper = Math.ceil(index);
         if (lower === upper) return sorted[lower];
-        return (
-          sorted[lower] + (sorted[upper] - sorted[lower]) * (index - lower)
-        );
+        return sorted[lower] + (sorted[upper] - sorted[lower]) * (index - lower);
       },
       quartile: (arr: number[], q: 1 | 2 | 3) => {
         const p = q * 25;
@@ -504,9 +457,7 @@ export class ScriptLibraryService {
         const lower = Math.floor(index);
         const upper = Math.ceil(index);
         if (lower === upper) return sorted[lower];
-        return (
-          sorted[lower] + (sorted[upper] - sorted[lower]) * (index - lower)
-        );
+        return sorted[lower] + (sorted[upper] - sorted[lower]) * (index - lower);
       },
 
       // Correlation
@@ -541,7 +492,7 @@ export class ScriptLibraryService {
         }
         return result;
       },
-      exponentialMovingAverage: (arr: number[], alpha: number = 0.3) => {
+      exponentialMovingAverage: (arr: number[], alpha = 0.3) => {
         const result: number[] = [arr[0]];
         for (let i = 1; i < arr.length; i++) {
           result.push(alpha * arr[i] + (1 - alpha) * result[i - 1]);
@@ -567,17 +518,10 @@ export class ScriptLibraryService {
   private getFormatLibrary(): Record<string, (...args: any[]) => any> {
     return {
       // Numbers
-      number: (n: number, decimals: number = 0) => n.toFixed(decimals),
-      currency: (
-        n: number,
-        currency: string = 'USD',
-        locale: string = 'en-US',
-      ) =>
-        new Intl.NumberFormat(locale, { style: 'currency', currency }).format(
-          n,
-        ),
-      percent: (n: number, decimals: number = 0) =>
-        `${(n * 100).toFixed(decimals)}%`,
+      number: (n: number, decimals = 0) => n.toFixed(decimals),
+      currency: (n: number, currency = 'USD', locale = 'en-US') =>
+        new Intl.NumberFormat(locale, { style: 'currency', currency }).format(n),
+      percent: (n: number, decimals = 0) => `${(n * 100).toFixed(decimals)}%`,
       compact: (n: number) => {
         const suffixes = ['', 'K', 'M', 'B', 'T'];
         let i = 0;
@@ -649,13 +593,11 @@ export class ScriptLibraryService {
       toObject: (entries: [string, any][]) => Object.fromEntries(entries),
 
       // Null handling
-      coalesce: (...values: any[]) =>
-        values.find((v) => v !== null && v !== undefined),
+      coalesce: (...values: any[]) => values.find((v) => v !== null && v !== undefined),
       defaultTo: (val: any, defaultVal: any) => val ?? defaultVal,
 
       // Conditional
-      ifThen: (condition: boolean, thenVal: any, elseVal: any) =>
-        condition ? thenVal : elseVal,
+      ifThen: (condition: boolean, thenVal: any, elseVal: any) => (condition ? thenVal : elseVal),
       when: (value: any, cases: Record<string, any>, defaultVal?: any) =>
         cases[value] !== undefined ? cases[value] : defaultVal,
 
@@ -694,11 +636,7 @@ export class ScriptLibraryService {
           },
           {} as Record<string, any>,
         ),
-      unpivot: (
-        obj: Record<string, any>,
-        keyName: string = 'key',
-        valueName: string = 'value',
-      ) =>
+      unpivot: (obj: Record<string, any>, keyName = 'key', valueName = 'value') =>
         Object.entries(obj).map(([key, value]) => ({
           [keyName]: key,
           [valueName]: value,
@@ -727,9 +665,7 @@ export class ScriptLibraryService {
           const result: Record<string, any> = { [groupBy]: key };
 
           for (const [name, agg] of Object.entries(aggregations)) {
-            const values = (items as any[])
-              .map((i) => i[agg.field])
-              .filter((v) => v !== undefined);
+            const values = (items as any[]).map((i) => i[agg.field]).filter((v) => v !== undefined);
             switch (agg.fn) {
               case 'sum':
                 result[name] = values.reduce((a, b) => a + b, 0);

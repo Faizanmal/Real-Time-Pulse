@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateWidgetTemplateDto,
@@ -26,11 +21,7 @@ export class TemplatesService {
   /**
    * Create a widget template
    */
-  async createWidgetTemplate(
-    workspaceId: string,
-    userId: string,
-    dto: CreateWidgetTemplateDto,
-  ) {
+  async createWidgetTemplate(workspaceId: string, userId: string, dto: CreateWidgetTemplateDto) {
     const template = await this.prisma.widgetTemplate.create({
       data: {
         name: dto.name,
@@ -123,11 +114,7 @@ export class TemplatesService {
   /**
    * Update a widget template
    */
-  async updateWidgetTemplate(
-    id: string,
-    workspaceId: string,
-    dto: UpdateWidgetTemplateDto,
-  ) {
+  async updateWidgetTemplate(id: string, workspaceId: string, dto: UpdateWidgetTemplateDto) {
     const template = await this.prisma.widgetTemplate.findUnique({
       where: { id },
     });
@@ -194,11 +181,7 @@ export class TemplatesService {
   /**
    * Create a portal template
    */
-  async createPortalTemplate(
-    workspaceId: string,
-    userId: string,
-    dto: CreatePortalTemplateDto,
-  ) {
+  async createPortalTemplate(workspaceId: string, userId: string, dto: CreatePortalTemplateDto) {
     const template = await this.prisma.portalTemplate.create({
       data: {
         name: dto.name,
@@ -287,11 +270,7 @@ export class TemplatesService {
   /**
    * Update a portal template
    */
-  async updatePortalTemplate(
-    id: string,
-    workspaceId: string,
-    dto: UpdatePortalTemplateDto,
-  ) {
+  async updatePortalTemplate(id: string, workspaceId: string, dto: UpdatePortalTemplateDto) {
     const template = await this.prisma.portalTemplate.findUnique({
       where: { id },
     });
@@ -437,10 +416,8 @@ export class TemplatesService {
 
     return categories.map((category) => ({
       category,
-      widgetTemplates:
-        widgetCounts.find((c) => c.category === category)?._count || 0,
-      portalTemplates:
-        portalCounts.find((c) => c.category === category)?._count || 0,
+      widgetTemplates: widgetCounts.find((c) => c.category === category)?._count || 0,
+      portalTemplates: portalCounts.find((c) => c.category === category)?._count || 0,
     }));
   }
 }

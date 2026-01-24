@@ -16,9 +16,7 @@ export class PipedriveService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  private getHeaders(
-    integration: PipedriveIntegration,
-  ): Record<string, string> {
+  private getHeaders(integration: PipedriveIntegration): Record<string, string> {
     return {
       Authorization: `Bearer ${integration.accessToken}`,
       'Content-Type': 'application/json',

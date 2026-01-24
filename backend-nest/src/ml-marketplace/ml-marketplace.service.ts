@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { MLModelExecutorService } from './ml-model-executor.service';
@@ -226,8 +221,7 @@ export class MLMarketplaceService {
     {
       id: 'model_recommendation_engine',
       name: 'Smart Recommender',
-      description:
-        'Generate personalized recommendations using collaborative filtering',
+      description: 'Generate personalized recommendations using collaborative filtering',
       category: 'recommendation',
       version: '1.3.0',
       author: 'Real-Time Pulse',
@@ -344,9 +338,7 @@ export class MLMarketplaceService {
     // Save deployment
     const key = `ml:deployments:${workspaceId}`;
     const deploymentsJson = await this.cache.get(key);
-    const deployments: ModelDeployment[] = deploymentsJson
-      ? JSON.parse(deploymentsJson)
-      : [];
+    const deployments: ModelDeployment[] = deploymentsJson ? JSON.parse(deploymentsJson) : [];
     deployments.push(deployment);
 
     await this.cache.set(key, JSON.stringify(deployments), 86400 * 365);
@@ -389,18 +381,13 @@ export class MLMarketplaceService {
 
     try {
       // Execute model
-      const result = await this.executor.execute(
-        model,
-        input,
-        deployment.config,
-      );
+      const result = await this.executor.execute(model, input, deployment.config);
 
       // Update metrics
       const latency = Date.now() - startTime;
       deployment.metrics.predictions++;
       deployment.metrics.avgLatency =
-        (deployment.metrics.avgLatency * (deployment.metrics.predictions - 1) +
-          latency) /
+        (deployment.metrics.avgLatency * (deployment.metrics.predictions - 1) + latency) /
         deployment.metrics.predictions;
       deployment.lastUsedAt = new Date();
 
@@ -480,10 +467,7 @@ export class MLMarketplaceService {
   /**
    * Run training job (simulated)
    */
-  private async runTrainingJob(
-    workspaceId: string,
-    jobId: string,
-  ): Promise<void> {
+  private async runTrainingJob(workspaceId: string, jobId: string): Promise<void> {
     const key = `ml:training_jobs:${workspaceId}`;
 
     // Update status to running
@@ -501,9 +485,7 @@ export class MLMarketplaceService {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const currentJobsJson = await this.cache.get(key);
-      const currentJobs: TrainingJob[] = currentJobsJson
-        ? JSON.parse(currentJobsJson)
-        : [];
+      const currentJobs: TrainingJob[] = currentJobsJson ? JSON.parse(currentJobsJson) : [];
       const currentJobIndex = currentJobs.findIndex((j) => j.id === jobId);
 
       if (currentJobIndex !== -1) {
