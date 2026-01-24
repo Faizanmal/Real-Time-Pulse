@@ -1,6 +1,6 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import type { Job } from 'bull';
+import type { Job } from 'bullmq';
 import { QUEUE_NAMES } from '../queue.constants';
 import { DataSyncJobData } from '../jobs.service';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -27,7 +27,7 @@ export class DataSyncQueueProcessor {
         throw new Error(`Integration not found: ${integrationId}`);
       }
 
-      await job.progress(10);
+      await job.updateProgress(10);
 
       // Sync data based on integration type
       let syncedCount = 0;
@@ -50,7 +50,7 @@ export class DataSyncQueueProcessor {
           throw new Error(`Unsupported provider: ${integration.provider}`);
       }
 
-      await job.progress(80);
+      await job.updateProgress(80);
 
       // Update last sync timestamp
       await this.prisma.integration.update({
@@ -58,7 +58,7 @@ export class DataSyncQueueProcessor {
         data: { lastSyncedAt: new Date() },
       });
 
-      await job.progress(100);
+      await job.updateProgress(100);
       this.logger.log(`Data sync completed for job ${job.id}. Synced ${syncedCount} items`);
 
       return { success: true, syncedCount };

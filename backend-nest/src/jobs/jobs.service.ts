@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
-import type * as Bull from 'bull';
+import type * as Bull from 'bullmq';
 import { QUEUE_NAMES } from './queue.constants';
 
 export interface EmailJobData {
@@ -68,7 +68,6 @@ export class JobsService {
     try {
       const job = await this.reportQueue.add('generate-report', data, {
         attempts: 2,
-        timeout: 300000, // 5 minutes
       });
 
       this.logger.log(`Report job queued: ${job.id}`);
@@ -98,7 +97,6 @@ export class JobsService {
 
       const job = await this.dataSyncQueue.add('sync-data', data, {
         attempts: 3,
-        timeout: 600000, // 10 minutes
       });
 
       this.logger.log(`Data sync job queued: ${job.id}`);
@@ -119,7 +117,7 @@ export class JobsService {
         { workspaceId },
         {
           repeat: {
-            cron: '0 * * * *', // Every hour
+            pattern: '0 * * * *', // Every hour
           },
         },
       );
@@ -150,7 +148,7 @@ export class JobsService {
       name: job.name,
       data: job.data,
       state,
-      progress: job.progress(),
+      progress: job.progress,
       attemptsMade: job.attemptsMade,
       finishedOn: job.finishedOn,
       processedOn: job.processedOn,
@@ -204,8 +202,8 @@ export class JobsService {
    */
   async cleanOldJobs(queueName: keyof typeof QUEUE_NAMES, olderThan: number = 24 * 60 * 60 * 1000) {
     const queue = this.getQueue(queueName);
-    await queue.clean(olderThan, 'completed');
-    await queue.clean(olderThan, 'failed');
+    await queue.clean(olderThan, 100, 'completed');
+    await queue.clean(olderThan, 100, 'failed');
     this.logger.log(`Cleaned old jobs from queue: ${queueName}`);
   }
 

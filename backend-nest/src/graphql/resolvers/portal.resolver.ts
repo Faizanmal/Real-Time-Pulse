@@ -52,7 +52,10 @@ export class PortalResolver {
     description: 'Get a portal by ID',
   })
   @UseGuards(GqlAuthGuard)
-  async portal(@Args('id', { type: () => ID }) id: string, @CurrentUser() user: any): Promise<any> {
+  async portal(
+    @Args({ name: 'id', type: () => ID }) id: string,
+    @CurrentUser() user: any,
+  ): Promise<any> {
     return this.prisma.portal.findFirst({
       where: {
         id,
@@ -64,11 +67,11 @@ export class PortalResolver {
   @Query(() => PortalConnection, { description: 'Get paginated portals' })
   @UseGuards(GqlAuthGuard)
   async portals(
-    @Args('first', { type: () => Int, nullable: true, defaultValue: 10 })
+    @Args({ name: 'first', type: () => Int, nullable: true, defaultValue: 10 })
     first: number,
-    @Args('after', { nullable: true }) after: string,
-    @Args('filter', { nullable: true }) filter: PortalFilterInput,
-    @Args('sort', { nullable: true }) sort: PortalSortInput,
+    @Args({ name: 'after', nullable: true }) after: string,
+    @Args({ name: 'filter', nullable: true }) filter: PortalFilterInput,
+    @Args({ name: 'sort', nullable: true }) sort: PortalSortInput,
     @CurrentUser() user: any,
   ): Promise<any> {
     const where: any = { workspaceId: user.workspaceId };
@@ -139,7 +142,7 @@ export class PortalResolver {
   @Query(() => [PortalType], { description: 'Get recent portals' })
   @UseGuards(GqlAuthGuard)
   async recentPortals(
-    @Args('limit', { type: () => Int, defaultValue: 5 }) limit: number,
+    @Args({ name: 'limit', type: () => Int, defaultValue: 5 }) limit: number,
     @CurrentUser() user: any,
   ): Promise<any[]> {
     return this.prisma.portal.findMany({
@@ -196,7 +199,7 @@ export class PortalResolver {
   @Mutation(() => PortalType, { description: 'Update a portal' })
   @UseGuards(GqlAuthGuard)
   async updatePortal(
-    @Args('id', { type: () => ID }) id: string,
+    @Args({ name: 'id', type: () => ID }) id: string,
     @Args('input') input: UpdatePortalInput,
     @CurrentUser() user: any,
   ): Promise<any> {
@@ -232,7 +235,7 @@ export class PortalResolver {
   @Mutation(() => Boolean, { description: 'Delete a portal' })
   @UseGuards(GqlAuthGuard)
   async deletePortal(
-    @Args('id', { type: () => ID }) id: string,
+    @Args({ name: 'id', type: () => ID }) id: string,
     @CurrentUser() user: any,
   ): Promise<boolean> {
     // Verify ownership
@@ -258,7 +261,7 @@ export class PortalResolver {
   @Mutation(() => PortalType, { description: 'Duplicate a portal' })
   @UseGuards(GqlAuthGuard)
   async duplicatePortal(
-    @Args('id', { type: () => ID }) id: string,
+    @Args({ name: 'id', type: () => ID }) id: string,
     @Args('newName') newName: string,
     @CurrentUser() user: any,
   ): Promise<any> {

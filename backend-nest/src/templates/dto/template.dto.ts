@@ -1,4 +1,5 @@
-import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PartialType } from '@nestjs/mapped-types';
 import { IsString, IsOptional, IsBoolean, IsEnum, IsArray, IsObject } from 'class-validator';
 import { TemplateCategory, WidgetType } from '@prisma/client';
 

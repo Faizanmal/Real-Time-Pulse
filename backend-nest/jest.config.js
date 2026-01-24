@@ -22,12 +22,14 @@ module.exports = {
   ],
   coverageDirectory: './coverage',
   testEnvironment: 'node',
-  roots: ['<rootDir>/src/', '<rootDir>/test/'],
+  roots: ['<rootDir>/src/'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@common/(.*)$': '<rootDir>/src/common/$1',
+    '^@testing/(.*)$': '<rootDir>/src/common/testing/$1',
     '^@prisma/client$': '<rootDir>/node_modules/@prisma/client',
   },
-  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/src/common/testing/jest.setup.ts'],
   testTimeout: 30000,
   maxWorkers: '50%',
   
@@ -68,8 +70,4 @@ module.exports = {
   // Detect open handles
   detectOpenHandles: true,
   forceExit: true,
-  
-  // Global test setup
-  globalSetup: '<rootDir>/test/global-setup.ts',
-  globalTeardown: '<rootDir>/test/global-teardown.ts',
 };

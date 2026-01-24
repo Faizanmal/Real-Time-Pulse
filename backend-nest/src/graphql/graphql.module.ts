@@ -27,7 +27,7 @@ import { DataLoaderService } from './dataloader.service';
 
 @Module({
   imports: [
-    NestGraphQLModule.forRootAsync<ApolloDriverConfig>({
+    NestGraphQLModule.forRootAsync({
       driver: ApolloDriver,
       useFactory: async (configService: ConfigService) => ({
         autoSchemaFile: join(process.cwd(), 'schema.gql'),
@@ -66,7 +66,7 @@ import { DataLoaderService } from './dataloader.service';
         formatError: (error) => {
           // Remove stack traces in production
           if (process.env.NODE_ENV === 'production') {
-            delete (error.extensions?.exception as any)?.stacktrace;
+            delete error.extensions?.exception?.stacktrace;
           }
           return {
             message: error.message,

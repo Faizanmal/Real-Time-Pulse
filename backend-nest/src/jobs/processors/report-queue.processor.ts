@@ -1,6 +1,6 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import type { Job } from 'bull';
+import type { Job } from 'bullmq';
 import { QUEUE_NAMES } from '../queue.constants';
 import { ReportJobData } from '../jobs.service';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -22,15 +22,15 @@ export class ReportQueueProcessor {
     this.logger.log(`Processing report generation job ${job.id}`);
 
     try {
-      await job.progress(10);
+      await job.updateProgress(10);
 
       // Fetch data based on report type
       const data = await this.fetchReportData(job.data);
-      await job.progress(50);
+      await job.updateProgress(50);
 
       // Generate report in specified format
       const reportBuffer = await this.generateReport(data, job.data.format);
-      await job.progress(80);
+      await job.updateProgress(80);
 
       // Send report via email
       await this.emailService.sendEmail({
@@ -45,7 +45,7 @@ export class ReportQueueProcessor {
         },
       });
 
-      await job.progress(100);
+      await job.updateProgress(100);
       this.logger.log(`Report generated successfully for job ${job.id}`);
 
       return {

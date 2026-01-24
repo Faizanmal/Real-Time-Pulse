@@ -1,1 +1,8 @@
-// Removed to avoid Prisma CLI parse conflicts. Using explicit --url when running prisma commands.
+import { defineConfig } from 'prisma/config'
+
+export default defineConfig({
+  schema: './prisma/schema.prisma',
+  database: {
+    url: process.env.DATABASE_URL,
+  },
+})

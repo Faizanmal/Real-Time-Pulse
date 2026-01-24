@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
-import type { Queue } from 'bull';
+import type { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface RateLimitConfig {
