@@ -8,6 +8,7 @@
 
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+
 import { PrismaService } from '../prisma/prisma.service';
 
 // Saga State

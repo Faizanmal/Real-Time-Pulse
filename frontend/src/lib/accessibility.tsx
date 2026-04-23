@@ -21,6 +21,7 @@ export function useFocusTrap(isActive = true) {
   const previousActiveElement = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
     if (!isActive || !containerRef.current) return;
 
     // Store previously focused element

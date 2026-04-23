@@ -1,7 +1,10 @@
 import { Controller, Get, Post, Body, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { FederatedSearchService, SearchOptions } from './federated-search.service';
+
+import { FederatedSearchService } from './federated-search.service';
+import { SearchOptions } from './federated-search.types';
 import { SemanticSearchService } from './semantic-search.service';
 
 @ApiTags('Federated Search')

@@ -1,10 +1,11 @@
 'use client';
 
+import { Shield, AlertTriangle, Clock, FileText } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Shield, AlertTriangle, Clock, FileText } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 
 interface ComplianceRecommendation {
@@ -51,7 +52,7 @@ export default function GDPRComplianceDashboard() {
 
   if (loading) {
     return <div className="flex items-center justify-center h-96">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
     </div>;
   }
 

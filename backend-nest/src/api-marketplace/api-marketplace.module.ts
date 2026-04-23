@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
-import { ApiMarketplaceService } from './api-marketplace.service';
+
+import { CacheModule } from '../cache/cache.module';
+import { PrismaModule } from '../prisma/prisma.module';
+
 import { ApiMarketplaceController } from './api-marketplace.controller';
+import { ApiMarketplaceService } from './api-marketplace.service';
 import { CustomEndpointService } from './custom-endpoint.service';
 import { EndpointBuilderService } from './endpoint-builder.service';
-import { PrismaModule } from '../prisma/prisma.module';
-import { CacheModule } from '../cache/cache.module';
 
 @Module({
   imports: [PrismaModule, CacheModule],

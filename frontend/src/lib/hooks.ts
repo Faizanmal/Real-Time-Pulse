@@ -6,8 +6,9 @@
  * Custom React hooks for the enterprise platform.
  */
 
-import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import * as React from "react";
+
 import { apiResources } from "./api-client";
 import { CACHE_TTL } from "./config";
 
@@ -374,6 +375,8 @@ export function useKeyboardShortcut(
   modifiers: ("ctrl" | "meta" | "shift" | "alt")[] = []
 ) {
   React.useEffect(() => {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
     const handleKeyDown = (event: KeyboardEvent) => {
       const { ctrlKey, metaKey, shiftKey, altKey } = event;
 
@@ -461,6 +464,8 @@ export function useClickOutside<T extends HTMLElement>(
   const ref = React.useRef<T>(null);
 
   React.useEffect(() => {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
     const handleClick = (event: MouseEvent) => {
       if (ref.current && !ref.current.contains(event.target as Node)) {
         callback();
@@ -484,6 +489,8 @@ export function useWindowSize() {
   });
 
   React.useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const handleResize = () => {
       setSize({
         width: window.innerWidth,

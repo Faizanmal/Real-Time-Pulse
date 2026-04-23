@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import {
   Copy,
   Trash2,
@@ -17,18 +16,19 @@ import {
   Layout,
   Bell,
 } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
 import {
-  bulkOperationsApi,
-  BulkOperationResult,
-  BulkUpdateWidgetsDto,
-} from '@/lib/enterprise-api';
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -39,27 +39,29 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  bulkOperationsApi,
+  BulkOperationResult,
+  BulkUpdateWidgetsDto,
+} from '@/lib/enterprise-api';
 // Tabs component is not used in this file
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 
-import { toast } from 'sonner';
+
 import { cn } from '@/lib/utils';
 
 interface BulkItem {

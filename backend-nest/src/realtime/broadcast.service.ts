@@ -6,6 +6,7 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common';
+
 import { RealtimeGateway } from './realtime.gateway';
 
 // Event types

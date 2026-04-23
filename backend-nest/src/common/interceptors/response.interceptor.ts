@@ -5,9 +5,9 @@ import {
   CallHandler,
   HttpStatus,
 } from '@nestjs/common';
+import type { Request, Response } from 'express';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import type { Request, Response } from 'express';
 
 export interface ApiResponse<T> {
   success: boolean;

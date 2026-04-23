@@ -11,9 +11,17 @@ import {
   Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ARVisualizationService, ARSceneConfig } from './ar-visualization.service';
+
+const SCENE_ID_PARAM = 'sceneId';
+const SCENE_ID_DESCRIPTION = 'Scene ID';
+const SCENE_ID_ROUTE = 'scenes/:sceneId';
+const QR_ROUTE = 'scenes/:sceneId/qr';
+const MARKERS_ROUTE = 'scenes/:sceneId/markers';
+
 import { ARSceneService } from './ar-scene.service';
+import { ARVisualizationService, ARSceneConfig } from './ar-visualization.service';
 
 @ApiTags('AR Visualization')
 @ApiBearerAuth()
@@ -47,19 +55,19 @@ export class ARVisualizationController {
     return this.arService.getScenes(req.user.workspaceId);
   }
 
-  @Get('scenes/:sceneId')
+  @Get(SCENE_ID_ROUTE)
   @ApiOperation({ summary: 'Get AR scene by ID' })
-  @ApiParam({ name: 'sceneId', description: 'Scene ID' })
-  async getScene(@Request() req: any, @Param('sceneId') sceneId: string) {
+  @ApiParam({ name: SCENE_ID_PARAM, description: SCENE_ID_DESCRIPTION })
+  async getScene(@Request() req: any, @Param(SCENE_ID_PARAM) sceneId: string) {
     return this.arService.getScene(req.user.workspaceId, sceneId);
   }
 
-  @Put('scenes/:sceneId')
+  @Put(SCENE_ID_ROUTE)
   @ApiOperation({ summary: 'Update AR scene' })
-  @ApiParam({ name: 'sceneId', description: 'Scene ID' })
+  @ApiParam({ name: SCENE_ID_PARAM, description: SCENE_ID_DESCRIPTION })
   async updateScene(
     @Request() req: any,
-    @Param('sceneId') sceneId: string,
+    @Param(SCENE_ID_PARAM) sceneId: string,
     @Body()
     dto: {
       name?: string;
@@ -70,28 +78,28 @@ export class ARVisualizationController {
     return this.arService.updateScene(req.user.workspaceId, sceneId, dto);
   }
 
-  @Delete('scenes/:sceneId')
+  @Delete(SCENE_ID_ROUTE)
   @ApiOperation({ summary: 'Delete AR scene' })
-  @ApiParam({ name: 'sceneId', description: 'Scene ID' })
-  async deleteScene(@Request() req: any, @Param('sceneId') sceneId: string) {
+  @ApiParam({ name: SCENE_ID_PARAM, description: SCENE_ID_DESCRIPTION })
+  async deleteScene(@Request() req: any, @Param(SCENE_ID_PARAM) sceneId: string) {
     await this.arService.deleteScene(req.user.workspaceId, sceneId);
     return { success: true };
   }
 
-  @Get('scenes/:sceneId/qr')
+  @Get(QR_ROUTE)
   @ApiOperation({ summary: 'Get QR code for AR scene' })
-  @ApiParam({ name: 'sceneId', description: 'Scene ID' })
-  async getQRCode(@Param('sceneId') sceneId: string, @Query('baseUrl') baseUrl?: string) {
+  @ApiParam({ name: SCENE_ID_PARAM, description: SCENE_ID_DESCRIPTION })
+  async getQRCode(@Param(SCENE_ID_PARAM) sceneId: string, @Query('baseUrl') baseUrl?: string) {
     const qrCode = await this.arService.generateQRCode(sceneId, baseUrl);
     return { qrCode };
   }
 
-  @Post('scenes/:sceneId/markers')
+  @Post(MARKERS_ROUTE)
   @ApiOperation({ summary: 'Create AR marker for scene' })
-  @ApiParam({ name: 'sceneId', description: 'Scene ID' })
+  @ApiParam({ name: SCENE_ID_PARAM, description: SCENE_ID_DESCRIPTION })
   async createMarker(
     @Request() req: any,
-    @Param('sceneId') sceneId: string,
+    @Param(SCENE_ID_PARAM) sceneId: string,
     @Body()
     dto: {
       type: 'qr' | 'image' | 'location';

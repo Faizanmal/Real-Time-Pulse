@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
-import { ProfitabilityService } from './profitability.service';
-import { ProfitabilityController } from './profitability.controller';
-import { ProjectService } from './project.service';
-import { PrismaModule } from '../prisma/prisma.module';
 import { ScheduleModule } from '@nestjs/schedule';
+
+import { PrismaModule } from '../prisma/prisma.module';
+
+import { ProfitabilityController } from './profitability.controller';
+import { ProfitabilityService } from './profitability.service';
+import { ProjectService } from './project.service';
 
 @Module({
   imports: [PrismaModule, ScheduleModule.forRoot()],

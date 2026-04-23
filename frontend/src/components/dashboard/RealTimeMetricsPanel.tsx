@@ -1,8 +1,6 @@
 "use client";
 
-import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSocket, useSocketEvent } from "@/contexts/socket-context";
 import {
   Activity,
   Users,
@@ -16,6 +14,9 @@ import {
   Wifi,
   WifiOff,
 } from "lucide-react";
+import * as React from "react";
+
+import { useSocket, useSocketEvent } from "@/contexts/socket-context";
 import { cn } from "@/lib/utils";
 
 // ============================================================================

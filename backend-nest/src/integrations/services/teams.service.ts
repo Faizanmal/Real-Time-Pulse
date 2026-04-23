@@ -3,13 +3,14 @@
  * Provides Teams channel integration with adaptive cards and bot messaging
  */
 
+import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
+
+import { CacheService } from '../../cache/cache.service';
 import { LoggingService } from '../../common/logger/logging.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CacheService } from '../../cache/cache.service';
-import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class TeamsIntegrationService {

@@ -76,8 +76,7 @@ export const webhooksApi = {
   },
 
   getDeliveries: async (id: string): Promise<WebhookDelivery[]> => {
-    const response = await apiClient.get<WebhookDelivery[]>(`/webhooks/${id}/deliveries`);
-    return response;
+    return await apiClient.get<WebhookDelivery[]>(`/webhooks/${id}/deliveries`);
   },
 
   test: async (id: string): Promise<{ success: boolean; statusCode?: number; error?: string }> => {

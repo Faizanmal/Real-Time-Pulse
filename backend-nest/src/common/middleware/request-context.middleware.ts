@@ -1,7 +1,8 @@
+import { AsyncLocalStorage } from 'async_hooks';
+
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { AsyncLocalStorage } from 'async_hooks';
 
 interface RequestUser {
   id: string;

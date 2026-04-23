@@ -1,9 +1,11 @@
 import { Controller, Get, Post, Patch, Param, Body, UseGuards, Query } from '@nestjs/common';
-import { AIInsightsService } from './ai-insights.service';
+import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 import type { RequestUser } from '../common/interfaces/auth.interface';
-import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
+
+import { AIInsightsService } from './ai-insights.service';
 
 @ApiTags('AI Insights')
 @Controller('ai-insights')

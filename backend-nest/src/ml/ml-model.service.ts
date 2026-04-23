@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface MLModel {
@@ -76,13 +77,13 @@ export class MLModelService {
   ) {}
 
   // Model Management
-  async createModel(config: {
+  createModel(config: {
     name: string;
     type: MLModel['type'];
     framework: MLModel['framework'];
     features: string[];
     target?: string;
-  }): Promise<MLModel> {
+  }): MLModel {
     const id = `model-${Date.now()}`;
     const model: MLModel = {
       id,
@@ -104,15 +105,15 @@ export class MLModelService {
     return model;
   }
 
-  async getModels(): Promise<MLModel[]> {
+  getModels(): MLModel[] {
     return Array.from(this.models.values());
   }
 
-  async getModel(id: string): Promise<MLModel | undefined> {
+  getModel(id: string): MLModel | undefined {
     return this.models.get(id);
   }
 
-  async deleteModel(id: string): Promise<void> {
+  deleteModel(id: string): void {
     this.models.delete(id);
     this.modelWeights.delete(id);
   }
@@ -424,10 +425,10 @@ export class MLModelService {
   }
 
   // Feature Engineering
-  async analyzeFeatures(
+  analyzeFeatures(
     data: any[],
     targetColumn: string,
-  ): Promise<{
+  ): {
     features: {
       name: string;
       type: 'numeric' | 'categorical' | 'text' | 'datetime';
@@ -436,7 +437,7 @@ export class MLModelService {
       importance?: number;
     }[];
     recommendations: string[];
-  }> {
+  } {
     const features = Object.keys(data[0] || {})
       .filter((k) => k !== targetColumn)
       .map((name) => {

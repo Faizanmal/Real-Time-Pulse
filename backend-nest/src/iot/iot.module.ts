@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { IoTController } from './iot.controller';
-import { IoTDeviceService } from './iot-device.service';
-import { EdgeComputingService } from './edge-computing.service';
+import { ScheduleModule } from '@nestjs/schedule';
+
 import { PrismaModule } from '../prisma/prisma.module';
+
+import { EdgeComputingService } from './edge-computing.service';
+import { IoTDeviceService } from './iot-device.service';
+import { IoTController } from './iot.controller';
 
 @Module({
   imports: [PrismaModule, ScheduleModule.forRoot(), EventEmitterModule.forRoot()],

@@ -11,12 +11,14 @@
  * - Suspicious activity detection
  */
 
+import * as crypto from 'crypto';
+
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
-import { RedisService } from '../cache/redis.service';
+
 import { AuditService } from '../audit/audit.service';
-import * as crypto from 'crypto';
+import { RedisService } from '../cache/redis.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 // ============================================================================
 // TYPES

@@ -1,10 +1,13 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { AuditService } from './audit.service';
+import type { AuditAction } from '@prisma/client';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 import type { RequestUser } from '../common/interfaces/auth.interface';
-import type { AuditAction } from '@prisma/client';
+
+import { AuditService } from './audit.service';
+
 @ApiTags('Audit')
 @ApiBearerAuth('JWT-auth')
 @Controller('audit')
@@ -26,14 +29,13 @@ export class AuditController {
     @Query('entity') entity?: string,
     @Query('userId') userId?: string,
   ) {
-    const logs = await this.auditService.findByWorkspace(user.workspaceId, {
+    return await this.auditService.findByWorkspace(user.workspaceId, {
       limit: limit ? parseInt(limit) : undefined,
       offset: offset ? parseInt(offset) : undefined,
       action: action as AuditAction | undefined,
       entity,
       userId,
     });
-    return logs;
   }
 
   @Get('entity')

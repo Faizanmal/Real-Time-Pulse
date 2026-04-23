@@ -1,7 +1,12 @@
 "use client";
 
-import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
+import {
+     Mouse, Layers, Sparkles,
+     Target, Zap, MessageSquare,
+} from "lucide-react";
+import { useState, useCallback } from "react";
+
 import {
     // Time Travel
     TimeTravelSlider,
@@ -26,10 +31,7 @@ import {
     type AnnotationType,
 } from "@/components/ui";
 import { useAnnotations } from "@/hooks/use-annotations";
-import {
-     Mouse, Layers, Sparkles,
-     Target, Zap, MessageSquare,
-} from "lucide-react";
+
 
 // ============================================================================
 // DEMO DATA

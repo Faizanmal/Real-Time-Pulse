@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useCallback, useEffect, useLayoutEffect, useRef, createContext, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
 import {
     Lightbulb, X, ChevronRight, ChevronLeft, CheckCircle2, Sparkles,
     Rocket, Play, HelpCircle, MousePointer2,
     Hand, ArrowRight, Gift,
 } from "lucide-react";
+import { useState, useCallback, useEffect, useLayoutEffect, useRef, createContext, useContext } from "react";
+
+import { cn } from "@/lib/utils";
+
 
 // ============================================================================
 // TYPES
@@ -57,6 +59,7 @@ export function SpotlightHighlight({
     const [rect, setRect] = useState<DOMRect | null>(null);
 
     useEffect(() => {
+        if (typeof window === 'undefined' || typeof document === 'undefined') return;
         if (!active) return;
 
         const updateRect = () => {
@@ -163,6 +166,7 @@ export function TooltipGuide({
     const isLastStep = currentStep === totalSteps - 1;
 
     useLayoutEffect(() => {
+        if (typeof window === 'undefined' || typeof document === 'undefined') return;
         if (!step.target) {
             // Center position for non-targeted steps
             // eslint-disable-next-line react-hooks/set-state-in-effect

@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { WidgetService } from './widget.service';
-import { PrismaService } from '../prisma/prisma.service';
+
 import { CacheService } from '../cache/cache.service';
 import { IntegrationService } from '../integrations/integration.service';
+import { PrismaService } from '../prisma/prisma.service';
+
+import { WidgetService } from './widget.service';
 
 describe('WidgetService', () => {
   let service: WidgetService;
@@ -105,6 +107,7 @@ describe('WidgetService', () => {
   describe('create', () => {
     it('should create a widget', async () => {
       const createDto = {
+        name: 'Test Widget',
         portalId: 'portal-1',
         integrationId: 'integration-1',
         type: 'CHART',
@@ -113,7 +116,7 @@ describe('WidgetService', () => {
         position: { x: 0, y: 0, w: 4, h: 3 },
       };
 
-      const result = await service.create('workspace-1', createDto as any);
+      const result = await service.create('workspace-1', createDto);
       expect(result).toEqual(mockWidget);
       expect(prisma.widget.create).toHaveBeenCalled();
     });

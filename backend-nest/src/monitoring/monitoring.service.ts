@@ -5,6 +5,7 @@
 
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+
 import { LoggingService } from '../common/logger/logging.service';
 
 interface MetricData {
@@ -63,13 +64,13 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
     try {
       switch (apmProvider.toLowerCase()) {
         case 'datadog':
-          await this.initializeDataDog(apmApiKey);
+          this.initializeDataDog(apmApiKey);
           break;
         case 'newrelic':
-          await this.initializeNewRelic(apmApiKey);
+          this.initializeNewRelic(apmApiKey);
           break;
         case 'prometheus':
-          await this.initializePrometheus();
+          this.initializePrometheus();
           break;
         default:
           this.logger.warn(`Unknown APM provider: ${apmProvider}`, 'MonitoringService');
@@ -79,7 +80,7 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async initializeDataDog(apiKey: string) {
+  private initializeDataDog(apiKey: string) {
     // DataDog initialization
     this.apmClient = {
       type: 'datadog',
@@ -99,7 +100,7 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('DataDog APM initialized', 'MonitoringService');
   }
 
-  private async initializeNewRelic(apiKey: string) {
+  private initializeNewRelic(apiKey: string) {
     // New Relic initialization
     this.apmClient = {
       type: 'newrelic',
@@ -118,7 +119,7 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('New Relic APM initialized', 'MonitoringService');
   }
 
-  private async initializePrometheus() {
+  private initializePrometheus() {
     // Prometheus metrics endpoint (handled by MetricsController)
     this.apmClient = { type: 'prometheus' };
     this.logger.log('Prometheus metrics initialized', 'MonitoringService');
@@ -346,7 +347,7 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
     const timestamp = Math.floor(Date.now() / 1000);
     const formattedMetrics: any[] = [];
 
-    for (const [key, value] of Object.entries(metrics.counters)) {
+    for (const [key, value] of Object.entries(metrics.counters as Record<string, number>)) {
       const { name, tags } = this.parseMetricKey(key);
       formattedMetrics.push({
         metric: `realtimepulse.${name}`,
@@ -356,7 +357,7 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
       });
     }
 
-    for (const [key, value] of Object.entries(metrics.gauges)) {
+    for (const [key, value] of Object.entries(metrics.gauges as Record<string, number>)) {
       const { name, tags } = this.parseMetricKey(key);
       formattedMetrics.push({
         metric: `realtimepulse.${name}`,

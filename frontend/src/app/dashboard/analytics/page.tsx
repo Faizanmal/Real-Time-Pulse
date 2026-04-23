@@ -1,18 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { analyticsApi, type DashboardOverview, type PerformanceMetrics, type ActivityItem, type TrendingData } from '@/lib/api/index';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   BarChart3, TrendingUp, TrendingDown, Users, Activity, Zap,
   Clock, Globe, Layers, RefreshCw, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { analyticsApi, type DashboardOverview, type PerformanceMetrics, type ActivityItem, type TrendingData } from '@/lib/api/index';
 
 export default function AnalyticsPage() {
   const [overview, setOverview] = useState<DashboardOverview | null>(null);

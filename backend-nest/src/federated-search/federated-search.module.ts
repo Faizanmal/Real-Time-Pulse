@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
-import { FederatedSearchService } from './federated-search.service';
-import { FederatedSearchController } from './federated-search.controller';
-import { SemanticSearchService } from './semantic-search.service';
-import { PrismaModule } from '../prisma/prisma.module';
+
 import { CacheModule } from '../cache/cache.module';
+import { PrismaModule } from '../prisma/prisma.module';
+
+import { FederatedSearchController } from './federated-search.controller';
+import { FederatedSearchService } from './federated-search.service';
+import { SemanticSearchService } from './semantic-search.service';
 
 @Module({
   imports: [PrismaModule, CacheModule],

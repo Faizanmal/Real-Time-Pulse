@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, useLayoutEffect } from "react";
 import { motion, AnimatePresence, PanInfo, useMotionValue, useTransform } from "framer-motion";
-import { cn } from "@/lib/utils";
 import {
     Copy, Trash2, Edit3, Download, Share2, Pin,
     ChevronRight, Bookmark, Archive,
     RefreshCw, Maximize2, Lock,
     ZoomIn, ZoomOut, RotateCw, Hand,
 } from "lucide-react";
+import { useState, useCallback, useRef, useEffect, useLayoutEffect } from "react";
+
+import { cn } from "@/lib/utils";
+
 
 // ============================================================================
 // TYPES
@@ -49,6 +51,7 @@ export function ContextMenu({ items, position, onClose, className }: ContextMenu
 
     // Adjust position to stay within viewport
     useLayoutEffect(() => {
+        if (typeof window === 'undefined' || typeof document === 'undefined') return;
         if (!menuRef.current) return;
 
         const rect = menuRef.current.getBoundingClientRect();
@@ -71,6 +74,8 @@ export function ContextMenu({ items, position, onClose, className }: ContextMenu
 
     // Close on click outside
     useEffect(() => {
+        if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
         const handleClick = (e: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
                 onClose();

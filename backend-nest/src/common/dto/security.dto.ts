@@ -1,6 +1,6 @@
-import { IsString, IsNotEmpty, MinLength, MaxLength, Matches, IsOptional } from 'class-validator';
-import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
+import { IsString, IsNotEmpty, MinLength, MaxLength, Matches, IsOptional } from 'class-validator';
 
 /**
  * Strong password validation decorator
@@ -83,6 +83,7 @@ export const SecurityPatterns = {
   UUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
 
   // Slug pattern (URL-safe)
+
   SLUG: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
 
   // Safe filename pattern

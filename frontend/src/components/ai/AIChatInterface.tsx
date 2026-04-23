@@ -1,5 +1,6 @@
 'use client';
 
+import { Send, Mic, MicOff, Sparkles, X, Maximize2, Minimize2 } from 'lucide-react';
 import React, {
   useState,
   useRef,
@@ -7,7 +8,6 @@ import React, {
   useCallback,
   KeyboardEvent,
 } from 'react';
-import { Send, Mic, MicOff, Sparkles, X, Maximize2, Minimize2 } from 'lucide-react';
 
 // Speech Recognition types
 interface SpeechRecognitionEvent extends Event {
@@ -43,8 +43,9 @@ interface SpeechRecognition extends EventTarget {
   stop(): void;
   abort(): void;
 }
-import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+
+import { cn } from '@/lib/utils';
 
 interface Message {
   id: string;

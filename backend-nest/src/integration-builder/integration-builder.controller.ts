@@ -1,6 +1,8 @@
 import { Controller, Post, Get, Body, Param, Query, UseGuards } from '@nestjs/common';
-import { IntegrationBuilderService } from './integration-builder.service';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+import { IntegrationBuilderService } from './integration-builder.service';
 
 @Controller('integration-builder')
 @UseGuards(JwtAuthGuard)

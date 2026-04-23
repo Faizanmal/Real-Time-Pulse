@@ -1,10 +1,11 @@
-import { Module, Global } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
+import { Module, Global } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { RedisService } from './redis.service';
-import { CacheService } from './cache.service';
+
 import { AdvancedCacheService } from './advanced-cache.service';
+import { CacheService } from './cache.service';
+import { RedisService } from './redis.service';
 
 @Global()
 @Module({

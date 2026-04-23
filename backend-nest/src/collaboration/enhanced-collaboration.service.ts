@@ -5,10 +5,11 @@
 
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { v4 as uuidv4 } from 'uuid';
+
+import { CacheService } from '../cache/cache.service';
 import { LoggingService } from '../common/logger/logging.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { CacheService } from '../cache/cache.service';
-import { v4 as uuidv4 } from 'uuid';
 
 interface UserPresence {
   id: string;
@@ -489,7 +490,7 @@ export class EnhancedCollaborationService {
       viewer: 'MEMBER',
     } as const;
 
-    const invite = await this.prisma.workspaceInvite.create({
+    return await this.prisma.workspaceInvite.create({
       data: {
         workspaceId,
         invitedById: inviterId,
@@ -499,8 +500,6 @@ export class EnhancedCollaborationService {
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       },
     });
-
-    return invite;
   }
 
   /**

@@ -10,12 +10,14 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { WebhooksService } from './webhooks.service';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 import type { RequestUser } from '../common/interfaces/auth.interface';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+
 import { CreateWebhookDto, UpdateWebhookDto } from './dto/webhook.dto';
+import { WebhooksService } from './webhooks.service';
 
 @ApiTags('Webhooks')
 @Controller('webhooks')

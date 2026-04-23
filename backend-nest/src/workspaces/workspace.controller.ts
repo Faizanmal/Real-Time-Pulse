@@ -16,10 +16,11 @@ import {
   FileTypeValidator,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { WorkspaceService } from './workspace.service';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 import type { RequestUser } from '../common/interfaces/auth.interface';
+
 import {
   UpdateWorkspaceDto,
   WorkspaceResponseDto,
@@ -27,6 +28,7 @@ import {
   WorkspaceMemberResponseDto,
   WorkspaceStatsDto,
 } from './dto/workspace.dto';
+import { WorkspaceService } from './workspace.service';
 
 @Controller('workspaces')
 @UseGuards(JwtAuthGuard)

@@ -1,15 +1,17 @@
 'use client';
 
+import { Shield, AlertTriangle, Database, FileCheck } from 'lucide-react';
+import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { complianceApi } from '@/lib/advanced-api';
 import type { ComplianceDashboard } from '@/types/advanced-features';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Shield, AlertTriangle, Database, FileCheck } from 'lucide-react';
-import { toast } from 'sonner';
-import Link from 'next/link';
+
 
 export default function ComplianceDashboard() {
   const [dashboard, setDashboard] = useState<ComplianceDashboard | null>(null);
@@ -71,7 +73,7 @@ export default function ComplianceDashboard() {
           {[...Array(4)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardContent className="pt-6">
-                <div className="h-16 bg-gray-200 rounded"></div>
+                <div className="h-16 bg-gray-200 rounded" />
               </CardContent>
             </Card>
           ))}

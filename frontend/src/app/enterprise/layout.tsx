@@ -8,9 +8,6 @@
  * Enterprise dashboard layout with sidebar navigation, header, and main content area.
  */
 
-import { useState, useEffect, createContext, useContext } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -38,6 +35,9 @@ import {
   GitBranch,
   Box,
 } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useState, useEffect, createContext, useContext } from 'react';
 
 // Sidebar Context
 const SidebarContext = createContext<{
@@ -227,11 +227,12 @@ function Sidebar() {
 // Header Component
 function Header() {
   const { collapsed } = useContext(SidebarContext);
-  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+  const [isDark, setIsDark] = useState(() => (typeof window !== 'undefined' && typeof document !== 'undefined') ? document.documentElement.classList.contains('dark') : false);
   const [] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
   const toggleTheme = () => {
+    if (typeof document === 'undefined') return;
     document.documentElement.classList.toggle('dark');
     setIsDark(!isDark);
   };

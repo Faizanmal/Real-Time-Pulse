@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
-import { BackupService } from './backup.service';
-import { BackupController } from './backup.controller';
-import { PrismaModule } from '../prisma/prisma.module';
 import { ScheduleModule } from '@nestjs/schedule';
+
+import { PrismaModule } from '../prisma/prisma.module';
+
+import { BackupController } from './backup.controller';
+import { BackupService } from './backup.service';
 
 @Module({
   imports: [PrismaModule, ScheduleModule.forRoot()],

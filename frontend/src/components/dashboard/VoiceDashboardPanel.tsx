@@ -1,11 +1,5 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useVoice } from '@/hooks/useAdvancedFeatures';
-import { voiceAPI } from '@/lib/advanced-features-api';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Mic,
   MicOff,
@@ -19,6 +13,13 @@ import {
   RefreshCw,
   X,
 } from 'lucide-react';
+import React, { useState } from 'react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { useVoice } from '@/hooks/useAdvancedFeatures';
+import { voiceAPI } from '@/lib/advanced-features-api';
 
 interface VoiceCommand {
   command: string;

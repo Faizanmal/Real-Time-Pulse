@@ -287,6 +287,8 @@ function TutorialOverlay({ tutorial, currentStep, onNext, onPrevious, onSkip }: 
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
   useLayoutEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
     if (step.target) {
       const element = document.querySelector(step.target);
       if (element) {

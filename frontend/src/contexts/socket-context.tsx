@@ -8,8 +8,9 @@
  */
 
 import React, { createContext, useContext, useEffect, useLayoutEffect, useState, useCallback, ReactNode } from 'react';
-import type { Annotation as ApiAnnotation } from '@/lib/api/annotations';
 import { io, Socket } from 'socket.io-client';
+
+import type { Annotation as ApiAnnotation } from '@/lib/api/annotations';
 import { useAuthStore } from '@/store/auth';
 
 // Socket event types
@@ -187,7 +188,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
       setIsConnected(false);
       setConnectionState('disconnected');
     };
-  }, [isAuthenticated, accessToken, socket]);
+  }, [isAuthenticated, accessToken]);
 
   // Event subscription
   const on = useCallback(<K extends keyof SocketEvents>(

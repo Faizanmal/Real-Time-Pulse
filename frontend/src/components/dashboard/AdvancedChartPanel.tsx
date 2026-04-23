@@ -1,7 +1,14 @@
 "use client";
 
-import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  TrendingUp,
+  TrendingDown,
+  Download,
+  Maximize2,
+  RefreshCw,
+} from "lucide-react";
+import * as React from "react";
 import {
   LineChart,
   Line,
@@ -27,14 +34,9 @@ import {
   ReferenceLine,
   Brush,
 } from "recharts";
+
 import { cn } from "@/lib/utils";
-import {
-  TrendingUp,
-  TrendingDown,
-  Download,
-  Maximize2,
-  RefreshCw,
-} from "lucide-react";
+
 
 // ============================================================================
 // ADVANCED CHART PANEL - Enterprise Visualization Component

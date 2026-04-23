@@ -1,25 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Pipeline, PipelineNode, PipelineEdge } from './pipeline.service';
-import { PipelineConnectorService } from './pipeline-connector.service';
 
-interface ExecutionContext {
-  data: Map<string, any[]>;
-  errors: string[];
-  stats: {
-    rowsProcessed: number;
-    rowsFiltered: number;
-    rowsOutput: number;
-    startTime: number;
-    endTime?: number;
-  };
-}
-
-export interface ExecutionResult {
-  success: boolean;
-  stats: ExecutionContext['stats'];
-  errors: string[];
-  outputData?: any[];
-}
+import { PipelineConnectorService, ConnectorType } from './pipeline-connector.service';
+import {
+  Pipeline,
+  PipelineNode,
+  PipelineEdge,
+  ExecutionContext,
+  ExecutionResult,
+} from './pipeline.types';
 
 @Injectable()
 export class PipelineExecutorService {
@@ -104,19 +92,19 @@ export class PipelineExecutorService {
         break;
 
       case 'transform':
-        outputData = await this.executeTransformNode(node, inputData);
+        outputData = this.executeTransformNode(node, inputData);
         break;
 
       case 'filter':
-        outputData = await this.executeFilterNode(node, inputData, context);
+        outputData = this.executeFilterNode(node, inputData, context);
         break;
 
       case 'join':
-        outputData = await this.executeJoinNode(node, edges, context);
+        outputData = this.executeJoinNode(node, edges, context);
         break;
 
       case 'aggregate':
-        outputData = await this.executeAggregateNode(node, inputData);
+        outputData = this.executeAggregateNode(node, inputData);
         break;
 
       case 'destination':
@@ -138,16 +126,16 @@ export class PipelineExecutorService {
 
     if (dryRun) {
       // Return sample data for dry run
-      return this.connectorService.getSampleData(connectorType, config);
+      return this.connectorService.getSampleData(connectorType as ConnectorType, config);
     }
 
-    return this.connectorService.fetchData(connectorType, config);
+    return this.connectorService.fetchData(connectorType as ConnectorType, config);
   }
 
   /**
    * Execute transform node
    */
-  private async executeTransformNode(node: PipelineNode, inputData: any[]): Promise<any[]> {
+  private executeTransformNode(node: PipelineNode, inputData: any[]): any[] {
     const { transformType, ...config } = node.config;
 
     switch (transformType) {
@@ -183,11 +171,11 @@ export class PipelineExecutorService {
   /**
    * Execute filter node
    */
-  private async executeFilterNode(
+  private executeFilterNode(
     node: PipelineNode,
     inputData: any[],
     context: ExecutionContext,
-  ): Promise<any[]> {
+  ): any[] {
     const { conditions, logic = 'and' } = node.config;
 
     const filtered = inputData.filter((row) => {
@@ -208,11 +196,11 @@ export class PipelineExecutorService {
   /**
    * Execute join node
    */
-  private async executeJoinNode(
+  private executeJoinNode(
     node: PipelineNode,
     edges: PipelineEdge[],
     context: ExecutionContext,
-  ): Promise<any[]> {
+  ): any[] {
     const { joinType = 'inner', leftKey, rightKey } = node.config;
 
     const inputEdges = edges.filter((e) => e.target === node.id);
@@ -293,7 +281,7 @@ export class PipelineExecutorService {
   /**
    * Execute aggregate node
    */
-  private async executeAggregateNode(node: PipelineNode, inputData: any[]): Promise<any[]> {
+  private executeAggregateNode(node: PipelineNode, inputData: any[]): any[] {
     const { groupBy, aggregations } = node.config;
 
     if (!groupBy || groupBy.length === 0) {

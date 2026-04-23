@@ -1,18 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { auditApi, type AuditLog, type AuditLogFilters } from '@/lib/api/index';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { 
   Shield, Search, Filter, Download, RefreshCw, 
   User, Clock, FileText, Activity, AlertCircle, CheckCircle 
 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { auditApi, type AuditLog, type AuditLogFilters } from '@/lib/api/index';
 
 const actionColors: Record<string, string> = {
   CREATE: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',

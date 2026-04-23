@@ -5,4 +5,8 @@ try {
   // ignore
 }
 
-// Removed to avoid Prisma CLI parse conflicts. Using explicit --url when running prisma commands.
+module.exports = {
+  db: {
+    url: "postgresql://real_time_pulse:real_time7890@localhost:5432/real_time_pulse_db"
+  }
+}

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+
 import { useCollaboration } from '@/hooks/useAdvancedFeatures';
 
 interface Participant {

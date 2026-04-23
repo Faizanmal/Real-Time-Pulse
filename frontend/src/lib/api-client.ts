@@ -11,8 +11,9 @@ import type {
   WorkspaceStats,
   HealthStatus
 } from '@/types';
-import { gamificationApi } from './api/gamification';
+
 import { annotationsApi } from './api/annotations';
+import { gamificationApi } from './api/gamification';
 
 // Auth API
 export const authApi = {
@@ -483,8 +484,8 @@ export const profitabilityApi = {
 
 export const analyticsApi = {
   getDashboard: async (workspaceId: string, dateRange?: { from: string; to: string }) => {
-    const response = await apiClient.get(`/analytics/dashboard/${workspaceId}`, {
-      params: dateRange,
+    const response = await apiClient.get('/analytics/dashboard', {
+      params: { workspaceId, ...dateRange },
     });
     return response.data;
   },
@@ -504,16 +505,24 @@ export const analyticsApi = {
   },
 
   getMetrics: async (workspaceId: string, metricType: string, period = '7d') => {
-    const response = await apiClient.get(`/analytics/metrics/${workspaceId}`, {
-      params: { metricType, period },
+    const response = await apiClient.get('/analytics/metrics', {
+      params: { workspaceId, metricType, period },
     });
     return response.data;
   },
 
-  getTrends: async (workspaceId: string, period = '30d') => {
-    const response = await apiClient.get(`/analytics/trends/${workspaceId}`, {
-      params: { period },
-    });
+  getPerformance: async () => {
+    const response = await apiClient.get('/analytics/performance');
+    return response.data;
+  },
+
+  getActivity: async (params?: { limit?: number }) => {
+    const response = await apiClient.get('/analytics/activity', { params });
+    return response.data;
+  },
+
+  getTrending: async () => {
+    const response = await apiClient.get('/analytics/trending');
     return response.data;
   },
 };

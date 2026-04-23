@@ -10,11 +10,13 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { WidgetService } from './widget.service';
-import { CreateWidgetDto, UpdateWidgetDto } from './dto/widget.dto';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 import type { RequestUser } from '../common/interfaces/auth.interface';
+
+import { CreateWidgetDto, UpdateWidgetDto } from './dto/widget.dto';
+import { WidgetService } from './widget.service';
 
 @Controller('widgets')
 @UseGuards(JwtAuthGuard)

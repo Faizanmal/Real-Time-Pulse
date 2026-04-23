@@ -1,11 +1,13 @@
+import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { PrismaService } from '../prisma/prisma.service';
-import { DataHealthService } from './data-health.service';
-import { NotificationService } from '../notifications/notification.service';
 import { HealthStatus, IntegrationProvider } from '@prisma/client';
-import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+
+import { NotificationService } from '../notifications/notification.service';
+import { PrismaService } from '../prisma/prisma.service';
+
+import { DataHealthService } from './data-health.service';
 
 @Injectable()
 export class HealthMonitorService {
@@ -24,15 +26,33 @@ export class HealthMonitorService {
   async runScheduledHealthChecks() {
     this.logger.log('Running scheduled health checks...');
 
+    // Optimized query with specific column selection
     const healthMonitors = await this.prisma.dataSourceHealth.findMany({
       where: {
         integration: {
           status: 'ACTIVE',
         },
       },
-      include: {
-        integration: true,
+      select: {
+        id: true,
+        workspaceId: true,
+        integrationId: true,
+        status: true,
+        freshnessThreshold: true,
+        lastKnownSchema: true,
+        alertsEnabled: true,
+        alertThreshold: true,
+        lastAlertSentAt: true,
+        integration: {
+          select: {
+            id: true,
+            provider: true,
+            settings: true,
+            status: true,
+          },
+        },
       },
+      orderBy: { id: 'asc' },
     });
 
     for (const monitor of healthMonitors) {
@@ -47,8 +67,25 @@ export class HealthMonitorService {
   async performHealthCheck(healthId: string) {
     const monitor = await this.prisma.dataSourceHealth.findUnique({
       where: { id: healthId },
-      include: {
-        integration: true,
+      select: {
+        id: true,
+        workspaceId: true,
+        integrationId: true,
+        status: true,
+        freshnessThreshold: true,
+        lastKnownSchema: true,
+        lastAlertSentAt: true,
+        alertsEnabled: true,
+        alertThreshold: true,
+        consecutiveErrors: true,
+        integration: {
+          select: {
+            id: true,
+            provider: true,
+            settings: true,
+            accountName: true,
+          },
+        },
       },
     });
 

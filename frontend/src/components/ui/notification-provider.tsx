@@ -1,7 +1,7 @@
 "use client";
 
-import { Toaster } from "sonner";
 import { useEffect } from "react";
+import { Toaster } from "sonner";
 import { toast } from "sonner";
 
 export function NotificationProvider() {

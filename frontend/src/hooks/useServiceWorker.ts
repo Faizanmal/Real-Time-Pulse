@@ -107,11 +107,10 @@ export function useServiceWorker(): UseServiceWorkerReturn {
       if (!state.registration) return null;
 
       try {
-        const subscription = await state.registration.pushManager.subscribe({
+        return await state.registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
         });
-        return subscription;
       } catch (error) {
         console.error('Push subscription failed:', error);
         return null;

@@ -1,9 +1,13 @@
 "use client";
 
-import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { advancedAiApi } from "@/lib/advanced-api";
+import {
+    Users, Sparkles, Trophy, Star, Medal, Crown, Flame, Target,
+    Zap, Award, Shield, Rocket, Brain,
+} from "lucide-react";
+import { useState, useCallback } from "react";
 import { toast } from "sonner";
+
 import {
     // Collaboration
     PresenceIndicator,
@@ -30,10 +34,8 @@ import {
     type Streak,
     type LeaderboardEntry,
 } from "@/components/ui";
-import {
-    Users, Sparkles, Trophy, Star, Medal, Crown, Flame, Target,
-    Zap, Award, Shield, Rocket, Brain,
-} from "lucide-react";
+import { advancedAiApi } from "@/lib/advanced-api";
+
 
 // ============================================================================
 // DEMO DATA

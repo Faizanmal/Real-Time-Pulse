@@ -4,8 +4,9 @@
  */
 
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
+
+import { PrismaService } from '../prisma/prisma.service';
 
 interface QueryAnalysis {
   query: string;

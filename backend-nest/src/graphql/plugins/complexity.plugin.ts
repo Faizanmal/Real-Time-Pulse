@@ -1,8 +1,8 @@
 /**
  * GraphQL Complexity Plugin
  */
-import { Injectable } from '@nestjs/common';
 import { Plugin } from '@nestjs/apollo';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 @Plugin()

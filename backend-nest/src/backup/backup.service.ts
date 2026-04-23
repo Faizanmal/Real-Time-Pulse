@@ -1,9 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import * as crypto from 'crypto';
-import * as zlib from 'zlib';
 import { promisify } from 'util';
+import * as zlib from 'zlib';
+
+import { Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+
+import { PrismaService } from '../prisma/prisma.service';
 
 const gzip = promisify(zlib.gzip);
 const gunzip = promisify(zlib.gunzip);

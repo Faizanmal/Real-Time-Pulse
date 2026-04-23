@@ -9,9 +9,11 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
+
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
 import { AnnotationsService } from './annotations.service';
 import { CreateAnnotationDto, UpdateAnnotationDto, ReplyAnnotationDto } from './dto/annotation.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('annotations')
 @UseGuards(JwtAuthGuard)

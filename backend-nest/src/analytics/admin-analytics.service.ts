@@ -1,7 +1,8 @@
 import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CacheService } from '../cache/cache.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
+
+import { CacheService } from '../cache/cache.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 interface DateRange {
   start: Date;
@@ -735,7 +736,7 @@ export class AdminAnalyticsService {
     }
 
     if (options.format === 'csv') {
-      return this.convertToCSV(data);
+      return this.convertToCSV(data as any[]);
     }
 
     return data;
@@ -809,7 +810,7 @@ export class AdminAnalyticsService {
   private convertToCSV(data: any[]): string {
     if (data.length === 0) return '';
 
-    const headers = Object.keys(data[0]);
+    const headers = Object.keys(data[0] as Record<string, unknown>);
     const csvRows = [headers.join(',')];
 
     for (const row of data) {

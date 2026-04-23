@@ -1,6 +1,8 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+
 import { CreateBadgeDto } from './dto/gamification.dto';
 
 const LEVELS = [0, 100, 250, 500, 1000, 2000, 4000, 8000, 16000, 32000];

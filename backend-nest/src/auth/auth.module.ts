@@ -1,19 +1,21 @@
+import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { HttpModule } from '@nestjs/axios';
+
+import { AuditModule } from '../audit/audit.module';
+import { CacheModule } from '../cache/cache.module';
+import { CommonModule } from '../common/common.module';
+import { EmailModule } from '../email/email.module';
+import { PrismaModule } from '../prisma/prisma.module';
+
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { JwtStrategy } from './strategies/jwt.strategy';
-import { GoogleStrategy } from './strategies/google.strategy';
-import { GitHubStrategy } from './strategies/github.strategy';
 import { FirebaseAuthService } from './services/firebase-auth.service';
-import { CommonModule } from '../common/common.module';
-import { PrismaModule } from '../prisma/prisma.module';
-import { CacheModule } from '../cache/cache.module';
-import { AuditModule } from '../audit/audit.module';
-import { EmailModule } from '../email/email.module';
+import { GitHubStrategy } from './strategies/github.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
+import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
   imports: [

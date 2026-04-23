@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
-import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
+
+import { CacheModule } from '../cache/cache.module';
+import { PrismaModule } from '../prisma/prisma.module';
+
+import { CollaborationController } from './collaboration.controller';
 import { CollaborationGateway } from './collaboration.gateway';
 import { CollaborationService } from './collaboration.service';
-import { CollaborationController } from './collaboration.controller';
-import { PrismaModule } from '../prisma/prisma.module';
-import { CacheModule } from '../cache/cache.module';
 
 @Module({
   imports: [

@@ -1,7 +1,8 @@
 import { Controller, Get, Post, Body, Param, Patch, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+
 import { DataHealthService } from './data-health.service';
 import { HealthMonitorService } from './health-monitor.service';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('Data Health')
 @ApiBearerAuth()

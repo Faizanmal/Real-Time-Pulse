@@ -17,23 +17,19 @@ export interface Backup {
 
 export const backupApi = {
   create: async (data: { type?: 'full' | 'incremental'; description?: string; name?: string }): Promise<Backup> => {
-    const response = await apiClient.post<Backup>('/backups', data);
-    return response;
+    return await apiClient.post<Backup>('/backups', data);
   },
 
   list: async (): Promise<Backup[]> => {
-    const response = await apiClient.get<Backup[]>('/backups');
-    return response;
+    return await apiClient.get<Backup[]>('/backups');
   },
 
   restore: async (id: string): Promise<{ success: boolean; backupId: string }> => {
-    const response = await apiClient.post<{ success: boolean; backupId: string }>(`/backups/${id}/restore`);
-    return response;
+    return await apiClient.post<{ success: boolean; backupId: string }>(`/backups/${id}/restore`);
   },
 
   restoreToPointInTime: async (timestamp: string): Promise<{ success: boolean; timestamp: string }> => {
-    const response = await apiClient.post<{ success: boolean; timestamp: string }>('/backups/restore/point-in-time', { timestamp });
-    return response;
+    return await apiClient.post<{ success: boolean; timestamp: string }>('/backups/restore/point-in-time', { timestamp });
   },
 };
 

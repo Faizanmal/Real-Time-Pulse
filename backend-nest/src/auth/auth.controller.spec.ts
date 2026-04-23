@@ -3,20 +3,28 @@
  * Tests for auth API endpoints
  */
 
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import request from 'supertest';
-import { AuthModule } from './auth.module';
-import { PrismaService } from '../prisma/prisma.service';
-import { CacheService } from '../cache/cache.service';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
+import request from 'supertest';
+
+import { CacheService } from '../cache/cache.service';
 import {
   createMockPrismaService,
   createMockRedisService,
   createTestUser,
   randomEmail,
 } from '../common/testing/test-utils';
+import { PrismaService } from '../prisma/prisma.service';
+
+import { AuthModule } from './auth.module';
+
+const REGISTER_ENDPOINT = '/api/v1/auth/register';
+const TEST_PASSWORD = 'SecurePass123!';
+const TEST_USER_NAME = 'Test User';
+const LOGIN_ENDPOINT = '/api/v1/auth/login';
+const SESSION_ID = 'session-id';
 
 describe('AuthController (Integration)', () => {
   let app: INestApplication;
@@ -59,18 +67,18 @@ describe('AuthController (Integration)', () => {
     await app.close();
   });
 
-  describe('POST /api/v1/auth/register', () => {
+  describe(`POST ${REGISTER_ENDPOINT}`, () => {
     it('should register a new user successfully', async () => {
       const email = randomEmail();
       prismaService.user.findUnique.mockResolvedValue(null);
       prismaService.user.create.mockResolvedValue(createTestUser({ email }));
 
       const response = await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
+        .post(REGISTER_ENDPOINT)
         .send({
           email,
-          password: 'SecurePass123!',
-          name: 'Test User',
+          password: TEST_PASSWORD,
+          name: TEST_USER_NAME,
         })
         .expect(201);
 
@@ -80,11 +88,11 @@ describe('AuthController (Integration)', () => {
 
     it('should return 400 for invalid email format', async () => {
       const response = await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
+        .post(REGISTER_ENDPOINT)
         .send({
           email: 'invalid-email',
-          password: 'SecurePass123!',
-          name: 'Test User',
+          password: TEST_PASSWORD,
+          name: TEST_USER_NAME,
         })
         .expect(400);
 
@@ -93,11 +101,11 @@ describe('AuthController (Integration)', () => {
 
     it('should return 400 for weak password', async () => {
       const response = await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
+        .post(REGISTER_ENDPOINT)
         .send({
           email: randomEmail(),
           password: '123', // Too weak
-          name: 'Test User',
+          name: TEST_USER_NAME,
         })
         .expect(400);
 
@@ -108,24 +116,24 @@ describe('AuthController (Integration)', () => {
       prismaService.user.findUnique.mockResolvedValue(createTestUser());
 
       await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
+        .post(REGISTER_ENDPOINT)
         .send({
           email: 'existing@example.com',
-          password: 'SecurePass123!',
-          name: 'Test User',
+          password: TEST_PASSWORD,
+          name: TEST_USER_NAME,
         })
         .expect(400);
     });
   });
 
-  describe('POST /api/v1/auth/login', () => {
+  describe(`POST ${LOGIN_ENDPOINT}`, () => {
     it('should login successfully with valid credentials', async () => {
       const testUser = createTestUser();
       prismaService.user.findUnique.mockResolvedValue(testUser);
-      prismaService.session.create.mockResolvedValue({ id: 'session-id' });
+      prismaService.session.create.mockResolvedValue({ id: SESSION_ID });
 
       const response = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
+        .post(LOGIN_ENDPOINT)
         .send({
           email: 'test@example.com',
           password: 'correctpassword',
@@ -141,7 +149,7 @@ describe('AuthController (Integration)', () => {
       prismaService.user.findUnique.mockResolvedValue(null);
 
       await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
+        .post(LOGIN_ENDPOINT)
         .send({
           email: 'wrong@example.com',
           password: 'wrongpassword',
@@ -152,9 +160,9 @@ describe('AuthController (Integration)', () => {
     it('should set secure cookies in response', async () => {
       const testUser = createTestUser();
       prismaService.user.findUnique.mockResolvedValue(testUser);
-      prismaService.session.create.mockResolvedValue({ id: 'session-id' });
+      prismaService.session.create.mockResolvedValue({ id: SESSION_ID });
 
-      const response = await request(app.getHttpServer()).post('/api/v1/auth/login').send({
+      const response = await request(app.getHttpServer()).post(LOGIN_ENDPOINT).send({
         email: 'test@example.com',
         password: 'correctpassword',
       });
@@ -167,7 +175,7 @@ describe('AuthController (Integration)', () => {
     it('should refresh token with valid refresh token', async () => {
       const testUser = createTestUser();
       prismaService.user.findUnique.mockResolvedValue(testUser);
-      prismaService.session.findFirst.mockResolvedValue({ id: 'session-id', isValid: true });
+      prismaService.session.findFirst.mockResolvedValue({ id: SESSION_ID, isValid: true });
 
       const response = await request(app.getHttpServer())
         .post('/api/v1/auth/refresh')

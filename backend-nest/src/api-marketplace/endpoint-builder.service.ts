@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+
 import { EndpointParameter } from './api-marketplace.service';
 
 export interface EndpointDefinition {

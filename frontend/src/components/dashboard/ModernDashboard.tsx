@@ -1,13 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { AnimatedCard, AnimatedCardHeader, AnimatedCardTitle, AnimatedCardContent } from "../ui/animated-card";
-import { StatsCard, StatsGrid } from "../ui/stats-card";
-import { AnimatedChart } from "../ui/animated-chart";
-import { AnimatedTabs, Tab } from "../ui/animated-tabs";
-import { StatusBadge } from "../ui/animated-badge";
-import { AnimatedButton } from "../ui/animated-button";
-import { DashboardSkeleton } from "../ui/loading-skeleton";
 import { 
   Users, 
   Activity, 
@@ -19,6 +12,15 @@ import {
   Download
 } from "lucide-react";
 import { useState, useEffect } from "react";
+
+import { StatusBadge } from "../ui/animated-badge";
+import { AnimatedButton } from "../ui/animated-button";
+import { AnimatedCard, AnimatedCardHeader, AnimatedCardTitle, AnimatedCardContent } from "../ui/animated-card";
+import { AnimatedChart } from "../ui/animated-chart";
+import { AnimatedTabs, Tab } from "../ui/animated-tabs";
+import { DashboardSkeleton } from "../ui/loading-skeleton";
+import { StatsCard, StatsGrid } from "../ui/stats-card";
+
 
 // Sample data
 const chartData = [

@@ -1,7 +1,9 @@
 import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
-import { GamificationService } from './gamification.service';
-import { CreateBadgeDto } from './dto/gamification.dto';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+import { CreateBadgeDto } from './dto/gamification.dto';
+import { GamificationService } from './gamification.service';
 
 @Controller('gamification')
 @UseGuards(JwtAuthGuard)

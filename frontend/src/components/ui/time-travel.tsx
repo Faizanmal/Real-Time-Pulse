@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
 import {
     Play, Pause, SkipBack, SkipForward, Clock,
     ChevronRight, Rewind, FastForward,
     RotateCcw, Camera,
 } from "lucide-react";
+import { useState, useCallback, useRef, useEffect } from "react";
+
+import { cn } from "@/lib/utils";
+
 
 // ============================================================================
 // TYPES

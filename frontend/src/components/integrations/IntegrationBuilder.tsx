@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
 import { Puzzle, Plus, Play, Settings } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 
 interface IntegrationBuilderProps {
   workspaceId: string;

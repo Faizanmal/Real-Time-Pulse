@@ -4,12 +4,13 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { v4 as uuidv4 } from 'uuid';
+
+import { CacheService } from '../cache/cache.service';
 import { LoggingService } from '../common/logger/logging.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { CacheService } from '../cache/cache.service';
-import { v4 as uuidv4 } from 'uuid';
 
 interface Badge {
   id: string;

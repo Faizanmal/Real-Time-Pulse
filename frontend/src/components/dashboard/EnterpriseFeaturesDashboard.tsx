@@ -1,15 +1,17 @@
 'use client';
 
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Activity, Shield, DollarSign, FileText, CheckCircle } from 'lucide-react';
+import React from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+import GDPRComplianceDashboard from '../compliance/GDPRComplianceDashboard';
 import DataHealthMonitor from '../data-quality/DataHealthMonitor';
 import DataValidationDashboard from '../data-quality/DataValidationDashboard';
 import ProfitabilityDashboard from '../profitability/ProfitabilityDashboard';
 import ClientReportingDashboard from '../reporting/ClientReportingDashboard';
-import GDPRComplianceDashboard from '../compliance/GDPRComplianceDashboard';
 
 export default function FeaturesDashboard() {
   return (

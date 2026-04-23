@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef } from 'react';
+
 import { usePipelines } from '@/hooks/useAdvancedFeatures';
 
 interface PipelineNode {

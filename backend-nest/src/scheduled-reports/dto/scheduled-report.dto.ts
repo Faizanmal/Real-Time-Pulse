@@ -1,5 +1,7 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PartialType } from '@nestjs/mapped-types';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ReportFormat } from '@prisma/client';
+import { Type } from 'class-transformer';
 import {
   IsString,
   IsOptional,
@@ -14,8 +16,6 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-import { ReportFormat } from '@prisma/client';
 
 // Date range configuration for reports
 export class DateRangeDto {

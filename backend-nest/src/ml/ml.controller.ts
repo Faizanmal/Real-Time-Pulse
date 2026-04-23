@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
-import { MLModelService } from './ml-model.service';
+
 import { CausalInferenceService } from './causal-inference.service';
+import { MLModelService } from './ml-model.service';
 
 @Controller('ml')
 export class MLController {
@@ -115,7 +116,7 @@ export class MLController {
 
   @Delete('causal/graphs/:id')
   async deleteCausalGraph(@Param('id') id: string) {
-    await this.causalService.deleteCausalGraph(id);
+    this.causalService.deleteCausalGraph(id);
     return { success: true };
   }
 

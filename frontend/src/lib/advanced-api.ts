@@ -2,7 +2,6 @@
  * Advanced Features API Client
  * Handles all API calls for new enterprise features
  */
-import { apiClient } from './api';
 import type {
   IndustryTemplate,
   IndustryDeployment,
@@ -32,6 +31,8 @@ import type {
   IncidentCategory,
   IncidentStatus,
 } from '../types/advanced-features';
+
+import { apiClient } from './api';
 
 // ========================================
 // INDUSTRY-SPECIFIC SOLUTIONS

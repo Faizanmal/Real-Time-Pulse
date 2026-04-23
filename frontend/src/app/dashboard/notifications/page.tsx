@@ -5,9 +5,8 @@
  * View and manage all notifications with preferences
  */
 
-import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import {
   Bell,
   BellOff,
   Settings,
@@ -18,7 +17,6 @@ import {
   Mail,
   Smartphone,
   MessageSquare,
-  Slack,
   Webhook,
   Clock,
   AlertCircle,
@@ -26,19 +24,22 @@ import {
   Info,
   X
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect, useCallback } from 'react';
+import { SiSlack as Slack } from 'react-icons/si';
+import { toast } from 'sonner';
+
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { notificationsApi } from '@/lib/api/index';
 import type { Notification, NotificationPreferences, NotificationStats } from '@/lib/api/index';
-import { toast } from 'sonner';
+
 
 const NOTIFICATION_TYPES = [
   { value: 'alert', label: 'Alerts', icon: AlertCircle },

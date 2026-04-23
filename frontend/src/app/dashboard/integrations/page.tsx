@@ -1,13 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { useAuthStore } from '@/store/auth';
-import { integrationApi } from '@/lib/api-client';
-import { IntegrationCard } from '@/components/ui/feature-cards';
-import type { Integration } from '@/types';
 import {
   Zap,
   Plus,
@@ -18,7 +11,16 @@ import {
   X,
   AlertCircle,
 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
+
+import { IntegrationCard } from '@/components/ui/feature-cards';
+import { integrationApi } from '@/lib/api-client';
+import { useAuthStore } from '@/store/auth';
+import type { Integration } from '@/types';
+
 
 export default function IntegrationsPage() {
   const router = useRouter();

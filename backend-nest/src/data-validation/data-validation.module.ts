@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
-import { DataValidationService } from './data-validation.service';
-import { DataValidationController } from './data-validation.controller';
-import { ValidationEngineService } from './validation-engine.service';
-import { PrismaModule } from '../prisma/prisma.module';
 import { ScheduleModule } from '@nestjs/schedule';
-import { EmailModule } from '../email/email.module';
+
 import { CacheModule } from '../cache/cache.module';
+import { EmailModule } from '../email/email.module';
+import { PrismaModule } from '../prisma/prisma.module';
+
+import { DataValidationController } from './data-validation.controller';
+import { DataValidationService } from './data-validation.service';
+import { ValidationEngineService } from './validation-engine.service';
 
 @Module({
   imports: [PrismaModule, ScheduleModule.forRoot(), EmailModule, CacheModule],

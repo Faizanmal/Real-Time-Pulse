@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { IndustryType } from '@prisma/client';
+
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class IndustrySolutionsService {
@@ -61,7 +62,7 @@ export class IndustrySolutionsService {
     });
 
     // Create deployment
-    const deployment = await this.prisma.industryDeployment.create({
+    return await this.prisma.industryDeployment.create({
       data: {
         workspaceId,
         templateId,
@@ -73,8 +74,6 @@ export class IndustrySolutionsService {
         portal: true,
       },
     });
-
-    return deployment;
   }
 
   // Get deployments for a workspace

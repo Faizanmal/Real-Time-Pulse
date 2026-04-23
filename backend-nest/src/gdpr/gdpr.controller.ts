@@ -1,6 +1,4 @@
 import { Controller, Get, Post, Body, Param, Patch, Query } from '@nestjs/common';
-import { GdprService } from './gdpr.service';
-import { ComplianceService } from './compliance.service';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import {
   ConsentType,
@@ -8,6 +6,9 @@ import {
   GDPRRequestStatus,
   ComplianceReportType,
 } from '@prisma/client';
+
+import { ComplianceService } from './compliance.service';
+import { GdprService } from './gdpr.service';
 
 @ApiTags('GDPR Compliance')
 @ApiBearerAuth()

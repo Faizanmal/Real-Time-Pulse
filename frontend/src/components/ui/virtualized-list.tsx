@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import Image from 'next/image';
 
 /**
@@ -19,7 +20,7 @@ import React, {
   ReactNode,
   CSSProperties
 } from 'react';
-import { motion } from 'framer-motion';
+
 import { cn } from '@/lib/utils';
 
 interface VirtualizedListProps<T> {

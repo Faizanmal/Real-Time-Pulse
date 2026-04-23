@@ -8,22 +8,7 @@
  * Main dashboard interface with real-time metrics, widgets, and analytics.
  */
 
-import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts';
 import {
   ArrowUp,
   ArrowDown,
@@ -41,6 +26,21 @@ import {
   Calendar,
   ChevronDown,
 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 
 // Simulated real-time data
 const generateData = () => {

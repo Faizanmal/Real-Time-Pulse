@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useRef, useState, Suspense } from 'react';
+
 import { useAuthStore } from '@/store/auth';
 
 function AuthCallbackContent() {
@@ -9,13 +10,17 @@ function AuthCallbackContent() {
   const searchParams = useSearchParams();
   const { setAuth } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
+  const handledRef = useRef(false);
+
+  const token = searchParams.get('token');
+  const errorParam = searchParams.get('error');
+  const provider = searchParams.get('provider');
 
   useEffect(() => {
-    const handleCallback = async () => {
-      const token = searchParams.get('token');
-      const errorParam = searchParams.get('error');
-      const provider = searchParams.get('provider');
+    if (handledRef.current) return;
+    handledRef.current = true;
 
+    const handleCallback = async () => {
       if (errorParam) {
         setError(decodeURIComponent(errorParam));
         return;
@@ -70,7 +75,7 @@ function AuthCallbackContent() {
     };
 
     handleCallback();
-  }, [searchParams, setAuth, router]);
+  }, [token, errorParam, provider, setAuth, router]);
 
   if (error) {
     return (

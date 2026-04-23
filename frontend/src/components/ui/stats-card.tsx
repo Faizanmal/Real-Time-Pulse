@@ -1,9 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
-import { ReactNode } from "react";
 import { ArrowUp, ArrowDown, TrendingUp } from "lucide-react";
+import { ReactNode } from "react";
+
+import { cn } from "@/lib/utils";
+
 
 interface StatsCardProps {
   title: string;

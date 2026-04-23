@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Bell, Plus, Trash2, TestTube } from 'lucide-react';
-import { alertsApi, Alert, CreateAlertDto } from '@/lib/enterprise-api';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -16,7 +17,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -25,7 +25,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
+import { Textarea } from '@/components/ui/textarea';
+import { alertsApi, Alert, CreateAlertDto } from '@/lib/enterprise-api';
 import { cn } from '@/lib/utils';
 
 export function AlertsManager({ className }: { className?: string }) {
@@ -112,8 +113,8 @@ export function AlertsManager({ className }: { className?: string }) {
 
       {loading ? (
         <div className="animate-pulse space-y-4">
-          <div className="h-20 bg-gray-200 rounded"></div>
-          <div className="h-20 bg-gray-200 rounded"></div>
+          <div className="h-20 bg-gray-200 rounded" />
+          <div className="h-20 bg-gray-200 rounded" />
         </div>
       ) : alerts.length === 0 ? (
         <div className="text-center py-8 text-gray-500">

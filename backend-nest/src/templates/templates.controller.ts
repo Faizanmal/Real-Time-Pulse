@@ -11,10 +11,11 @@ import {
   Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { TemplatesService } from './templates.service';
-import { RequestUser } from '../common/interfaces/auth.interface';
 import { TemplateCategory } from '@prisma/client';
+
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import type { AuthenticatedRequest, RequestUser } from '../common/interfaces/auth.interface';
+
 import {
   CreateWidgetTemplateDto,
   UpdateWidgetTemplateDto,
@@ -22,6 +23,7 @@ import {
   UpdatePortalTemplateDto,
   CreatePortalFromTemplateDto,
 } from './dto/template.dto';
+import { TemplatesService } from './templates.service';
 // import { TemplateCategory } from '@prisma/client';
 
 @ApiTags('Templates')
@@ -161,7 +163,7 @@ export class TemplatesController {
   @ApiOperation({ summary: 'Create a new portal from template' })
   @ApiResponse({ status: 201, description: 'Portal created from template' })
   async createPortalFromTemplate(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: CreatePortalFromTemplateDto,
   ) {

@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
-import { VoiceControlService } from './voice-control.service';
-import { VoiceControlController } from './voice-control.controller';
+
 import { PrismaModule } from '../prisma/prisma.module';
+
+import { VoiceControlController } from './voice-control.controller';
+import { VoiceControlService } from './voice-control.service';
 
 @Module({
   imports: [PrismaModule],

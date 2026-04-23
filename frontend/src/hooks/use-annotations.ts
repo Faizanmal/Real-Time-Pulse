@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
-import { annotationsApi, Annotation as ApiAnnotation, AnnotationType as ApiAnnotationType } from "@/lib/api/annotations";
+
 import type { Annotation, AnnotationType } from "@/components/ui/data-annotations";
 import { useSocket, useSocketEvent } from "@/contexts/socket-context";
+import { annotationsApi, Annotation as ApiAnnotation, AnnotationType as ApiAnnotationType } from "@/lib/api/annotations";
 
 // Mapper function to convert Backend API format to Frontend Component format
 const mapToComponentAnnotation = (a: ApiAnnotation): Annotation => ({

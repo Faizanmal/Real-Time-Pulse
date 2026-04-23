@@ -1,5 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+
 import { RoleManagementService, Permission } from '../role-management.service';
 
 export const PERMISSIONS_KEY = 'permissions';

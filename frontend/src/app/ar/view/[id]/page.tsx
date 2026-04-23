@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { arVisualizationApi } from '@/lib/advanced-api';
-import type { ARScene } from '@/types/advanced-features';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Loader2, Box, AlertTriangle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { arVisualizationApi } from '@/lib/advanced-api';
+import type { ARScene } from '@/types/advanced-features';
 
 export default function ARSceneViewerPage() {
     const params = useParams();

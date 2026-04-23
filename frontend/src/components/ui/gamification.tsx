@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect, useCallback, createContext, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
-import Image from "next/image";
 import {
     Trophy, Star, Medal, Crown, Flame, Target, Zap, Award, Gift,
     TrendingUp, CheckCircle2, Lock, ChevronRight,
     Sparkles, Rocket, Diamond, Gem,
 } from "lucide-react";
-import { gamificationApi, type UserAchievement as ApiUserAchievement } from "@/lib/api/gamification";
+import Image from "next/image";
+import { useState, useEffect, useLayoutEffect, useCallback, createContext, useContext } from "react";
+
 import { useSocketEvent } from "@/contexts/socket-context";
+import { gamificationApi, type UserAchievement as ApiUserAchievement } from "@/lib/api/gamification";
+import { cn } from "@/lib/utils";
 
 // ============================================================================
 // TYPES

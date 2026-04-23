@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
 import {
   LineChart,
   Line,
@@ -16,6 +15,8 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+
+import { cn } from "@/lib/utils";
 
 interface ChartData {
   name: string;
@@ -183,7 +184,7 @@ export function AnimatedChart({
       variants={chartVariants}
       className={cn("w-full rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800", className)}
     >
-      <ResponsiveContainer width="100%" height={height} minWidth={0}>
+      <ResponsiveContainer width="100%" height={height} minWidth={300}>
         {renderChart()}
       </ResponsiveContainer>
     </motion.div>

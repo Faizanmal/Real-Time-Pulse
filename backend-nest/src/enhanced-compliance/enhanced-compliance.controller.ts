@@ -10,14 +10,16 @@ import {
   Patch,
   Delete,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { EnhancedComplianceService } from './enhanced-compliance.service';
 import {
   DataSensitivity,
   IncidentSeverity,
   IncidentCategory,
   IncidentStatus,
 } from '@prisma/client';
+
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+import { EnhancedComplianceService } from './enhanced-compliance.service';
 
 @Controller('enhanced-compliance')
 @UseGuards(JwtAuthGuard)

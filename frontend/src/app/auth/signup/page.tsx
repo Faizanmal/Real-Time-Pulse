@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+
 import { authApi } from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth';
 
@@ -101,8 +102,15 @@ export default function SignupPage() {
     setError('');
 
     try {
-      const response = await authApi.signup(data);
+      const { confirmPassword, acceptTerms, ...signupData } = data;
+      const response = await authApi.signup(signupData);
       setAuth(response.user, response.accessToken);
+
+      // Persist refresh token for refresh flow
+      if (typeof window !== 'undefined' && response.refreshToken) {
+        localStorage.setItem('refreshToken', response.refreshToken);
+      }
+
       router.push('/dashboard');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
@@ -413,8 +421,8 @@ export default function SignupPage() {
               {isLoading ? (
                 <>
                   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                   Creating account...
                 </>

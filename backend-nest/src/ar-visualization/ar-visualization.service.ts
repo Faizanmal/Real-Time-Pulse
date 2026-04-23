@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { CacheService } from '../cache/cache.service';
 import * as QRCode from 'qrcode';
+
+import { CacheService } from '../cache/cache.service';
 
 export interface ARScene {
   id: string;

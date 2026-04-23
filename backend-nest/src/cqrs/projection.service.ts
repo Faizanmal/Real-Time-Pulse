@@ -7,6 +7,7 @@
  */
 
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+
 import { DomainEvent } from './event-sourcing.service';
 import { EventStore } from './event-store';
 

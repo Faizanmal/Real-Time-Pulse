@@ -1,8 +1,9 @@
 "use client";
 
-import { Component, ErrorInfo, ReactNode } from "react";
 import { motion } from "framer-motion";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import { Component, ErrorInfo, ReactNode } from "react";
+
 import { AnimatedButton } from "./animated-button";
 
 interface Props {

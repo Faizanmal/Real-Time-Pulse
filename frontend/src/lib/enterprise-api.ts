@@ -380,6 +380,12 @@ export const WEBHOOK_EVENTS = {
 
 // Helper function to download blob
 export const downloadBlob = (blob: Blob, filename: string) => {
+  // Client-only operation
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    // No-op during SSR
+    return;
+  }
+
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -857,7 +863,7 @@ export interface UsageMetrics {
 
 export const analyticsApi = {
   getOverview: async (startDate: string, endDate: string): Promise<AnalyticsData[]> => {
-    const response = await apiClient.get('/analytics/overview', {
+    const response = await apiClient.get('/analytics/dashboard', {
       params: { startDate, endDate },
     });
     return response.data;
@@ -875,7 +881,7 @@ export const analyticsApi = {
   },
 
   getSystemHealth: async (): Promise<SystemHealth> => {
-    const response = await apiClient.get('/analytics/health');
+    const response = await apiClient.get('/analytics/performance');
     return response.data;
   },
 
@@ -889,7 +895,12 @@ export const analyticsApi = {
   },
 
   getUsageMetrics: async (): Promise<UsageMetrics> => {
-    const response = await apiClient.get('/analytics/usage');
+    const response = await apiClient.get('/analytics/metrics');
+    return response.data;
+  },
+
+  getTrendingData: async (): Promise<unknown> => {
+    const response = await apiClient.get('/analytics/trending');
     return response.data;
   },
 

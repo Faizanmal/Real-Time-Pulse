@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
+import { Injectable, Logger } from '@nestjs/common';
 import type { Queue } from 'bullmq';
+
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface RateLimitConfig {
@@ -45,20 +46,28 @@ export class RateLimitService {
 
   /**
    * Initialize rate limits from configuration
+   * Optimized to use Prisma client instead of raw SQL for better query planning
    */
   private async initializeRateLimits() {
     try {
-      const configs = await this.prisma.$queryRaw<any[]>`
-        SELECT integration_id, max_requests, window_ms, burst_limit
-        FROM rate_limit_configs
-      `;
+      const configs = await this.prisma.rateLimitConfig.findMany({
+        select: {
+          integrationId: true,
+          maxRequests: true,
+          windowMs: true,
+          burstLimit: true,
+        },
+        orderBy: {
+          integrationId: 'asc',
+        },
+      });
 
       for (const config of configs) {
-        this.rateLimitCache.set(config.integration_id, {
-          integrationId: config.integration_id,
-          maxRequests: config.max_requests,
-          windowMs: config.window_ms,
-          burstLimit: config.burst_limit,
+        this.rateLimitCache.set(config.integrationId, {
+          integrationId: config.integrationId,
+          maxRequests: config.maxRequests,
+          windowMs: config.windowMs,
+          burstLimit: config.burstLimit,
         });
       }
 
@@ -75,12 +84,12 @@ export class RateLimitService {
     this.rateLimitCache.set(config.integrationId, config);
 
     await this.prisma.$executeRaw`
-      INSERT INTO rate_limit_configs (integration_id, max_requests, window_ms, burst_limit)
+      INSERT INTO "rate_limit_configs" ("integrationId", "maxRequests", "windowMs", "burstLimit")
       VALUES (${config.integrationId}, ${config.maxRequests}, ${config.windowMs}, ${config.burstLimit || null})
-      ON CONFLICT (integration_id)
-      DO UPDATE SET max_requests = EXCLUDED.max_requests,
-                    window_ms = EXCLUDED.window_ms,
-                    burst_limit = EXCLUDED.burst_limit
+      ON CONFLICT ("integrationId")
+      DO UPDATE SET "maxRequests" = EXCLUDED."maxRequests",
+                    "windowMs" = EXCLUDED."windowMs",
+                    "burstLimit" = EXCLUDED."burstLimit"
     `;
 
     this.logger.log(`Rate limit configured for ${config.integrationId}`);
@@ -364,7 +373,7 @@ export class RateLimitService {
   ) {
     try {
       await this.prisma.$executeRaw`
-        INSERT INTO rate_limit_metrics (integration_id, timestamp, remaining_quota, reset_at)
+        INSERT INTO "rate_limit_metrics" ("integrationId", "timestamp", "remainingQuota", "resetAt")
         VALUES (${integrationId}, ${new Date()}, ${rateLimit.remaining}, ${rateLimit.resetAt})
       `;
     } catch (error) {

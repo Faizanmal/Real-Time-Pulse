@@ -1,7 +1,5 @@
 "use client";
 
-import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   DndContext,
   closestCenter,
@@ -21,7 +19,7 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
   Grip,
@@ -34,6 +32,9 @@ import {
   MoreVertical,
   Edit3,
 } from "lucide-react";
+import * as React from "react";
+
+import { cn } from "@/lib/utils";
 
 // ============================================================================
 // WIDGET GRID SYSTEM - Drag & Drop Dashboard Layout

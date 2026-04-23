@@ -1,10 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { useAuthStore } from '@/store/auth';
 import { 
   Activity, 
   Zap, 
@@ -18,6 +14,12 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
+import { useAuthStore } from '@/store/auth';
+
 
 export default function Home() {
   const router = useRouter();

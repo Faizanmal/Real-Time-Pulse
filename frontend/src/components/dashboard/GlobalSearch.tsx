@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Search,
   X,
@@ -15,17 +14,14 @@ import {
   MessageSquare,
   Plug,
 } from 'lucide-react';
-import {
-  advancedSearchApi,
-  SearchResult,
-  SearchFilter,
-  SearchPreset,
-  GlobalSearchResponse,
-} from '@/lib/enterprise-api';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { toast } from 'sonner';
+import { useDebouncedCallback } from 'use-debounce';
+
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -34,6 +30,14 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -41,16 +45,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from 'sonner';
+  advancedSearchApi,
+  SearchResult,
+  SearchFilter,
+  SearchPreset,
+  GlobalSearchResponse,
+} from '@/lib/enterprise-api';
 import { cn } from '@/lib/utils';
-import { useDebouncedCallback } from 'use-debounce';
+
 
 interface GlobalSearchProps {
   className?: string;
@@ -452,7 +454,7 @@ export function GlobalSearch({
         <Card className="absolute z-50 w-full mt-2 max-h-[60vh] overflow-y-auto shadow-lg">
           {loading ? (
             <div className="p-4 text-center">
-              <div className="animate-spin h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+              <div className="animate-spin h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto" />
               <p className="text-sm text-gray-500 mt-2">Searching...</p>
             </div>
           ) : query ? (

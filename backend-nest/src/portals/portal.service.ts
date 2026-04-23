@@ -5,10 +5,12 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreatePortalDto, UpdatePortalDto, PortalResponseDto } from './dto/portal.dto';
-import { v4 as uuidv4 } from 'uuid';
 import { Prisma, Portal, User, Subscription } from '@prisma/client';
+import { v4 as uuidv4 } from 'uuid';
+
+import { PrismaService } from '../prisma/prisma.service';
+
+import { CreatePortalDto, UpdatePortalDto, PortalResponseDto } from './dto/portal.dto';
 
 // Define the include object for reuse.
 // This ensures all portal queries fetch the same related data.

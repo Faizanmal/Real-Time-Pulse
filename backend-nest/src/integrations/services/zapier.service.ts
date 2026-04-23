@@ -3,15 +3,17 @@
  * Enables custom webhooks and Zapier-style automation triggers
  */
 
+import * as crypto from 'crypto';
+
+import { HttpService } from '@nestjs/axios';
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { HttpService } from '@nestjs/axios';
-import { LoggingService } from '../../common/logger/logging.service';
-import { PrismaService } from '../../prisma/prisma.service';
-import { CacheService } from '../../cache/cache.service';
 import { firstValueFrom } from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';
-import * as crypto from 'crypto';
+
+import { CacheService } from '../../cache/cache.service';
+import { LoggingService } from '../../common/logger/logging.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 interface WebhookTrigger {
   id: string;
@@ -335,12 +337,11 @@ export class ZapierIntegrationService {
    * Get webhook delivery logs
    */
   async getDeliveryLogs(webhookId: string, limit = 50): Promise<any[]> {
-    const logs = await this.prisma.webhookDelivery.findMany({
+    return await this.prisma.webhookDelivery.findMany({
       where: { webhookId },
       orderBy: { createdAt: 'desc' },
       take: limit,
     });
-    return logs;
   }
 
   /**

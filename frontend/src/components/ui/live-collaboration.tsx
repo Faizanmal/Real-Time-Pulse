@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
 import {
     Users, MessageSquare, Eye, MousePointer2,
     UserPlus, Crown, Shield,
 } from "lucide-react";
+import Image from "next/image";
+import { useState, useEffect, useRef } from "react";
+
+import { cn } from "@/lib/utils";
+
 
 // ============================================================================
 // TYPES

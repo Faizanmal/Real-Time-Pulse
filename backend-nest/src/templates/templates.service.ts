@@ -1,12 +1,14 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { TemplateCategory, WidgetType } from '@prisma/client';
+
 import { PrismaService } from '../prisma/prisma.service';
+
 import {
   CreateWidgetTemplateDto,
   UpdateWidgetTemplateDto,
   CreatePortalTemplateDto,
   UpdatePortalTemplateDto,
 } from './dto/template.dto';
-import { TemplateCategory, WidgetType } from '@prisma/client';
 
 @Injectable()
 export class TemplatesService {

@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useVoiceControl } from '@/hooks/useVoiceControl';
 import { Mic, MicOff, Volume2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+
+import { useVoiceControl } from '@/hooks/useVoiceControl';
 
 interface CommandResult {
   success: boolean;
@@ -106,12 +107,11 @@ export function VoiceControlPanel({ workspaceId, onCommand }: VoiceControlPanelP
 
       try {
         // Send command to backend
-        const response = await fetch('/api/voice/command', {
+        const response = await fetch('/api/v1/voice/command', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            text: voiceCommand.text,
-            workspaceId,
+            transcript: voiceCommand.text,
           }),
         });
 

@@ -8,7 +8,6 @@
  * and graceful degradation for production environments.
  */
 
-import React, { Component, ReactNode, ErrorInfo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   AlertTriangle, 
@@ -22,6 +21,8 @@ import {
   Wifi,
   WifiOff
 } from 'lucide-react';
+import React, { Component, ReactNode, ErrorInfo } from 'react';
+
 import { Button } from './button';
 
 // Error severity levels

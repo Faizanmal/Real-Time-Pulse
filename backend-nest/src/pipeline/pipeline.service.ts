@@ -1,60 +1,17 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+
 import { CacheService } from '../cache/cache.service';
+import { PrismaService } from '../prisma/prisma.service';
+
 import { PipelineExecutorService } from './pipeline-executor.service';
-import type { ExecutionResult } from './pipeline-executor.service';
-
-export interface PipelineNode {
-  id: string;
-  type: 'source' | 'transform' | 'destination' | 'filter' | 'join' | 'aggregate';
-  name: string;
-  config: Record<string, any>;
-  position: { x: number; y: number };
-}
-
-export interface PipelineEdge {
-  id: string;
-  source: string;
-  target: string;
-  sourceHandle?: string;
-  targetHandle?: string;
-}
-
-export interface Pipeline {
-  id: string;
-  workspaceId: string;
-  name: string;
-  description?: string;
-  nodes: PipelineNode[];
-  edges: PipelineEdge[];
-  schedule?: string;
-  timezone?: string;
-  isActive: boolean;
-  lastRunAt?: Date;
-  lastRunStatus?: 'success' | 'failed' | 'running';
-  createdById: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface CreatePipelineDto {
-  name: string;
-  description?: string;
-  nodes: PipelineNode[];
-  edges: PipelineEdge[];
-  schedule?: string;
-  timezone?: string;
-}
-
-export interface UpdatePipelineDto {
-  name?: string;
-  description?: string;
-  nodes?: PipelineNode[];
-  edges?: PipelineEdge[];
-  schedule?: string;
-  timezone?: string;
-  isActive?: boolean;
-}
+import type { ExecutionResult } from './pipeline.types';
+import {
+  PipelineNode,
+  PipelineEdge,
+  Pipeline,
+  CreatePipelineDto,
+  UpdatePipelineDto,
+} from './pipeline.types';
 
 @Injectable()
 export class PipelineService {

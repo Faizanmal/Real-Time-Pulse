@@ -1,6 +1,7 @@
+import { EventEmitter } from 'events';
+
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import * as mqtt from 'mqtt';
-import { EventEmitter } from 'events';
 
 export interface MqttIntegration {
   accessToken?: string; // Username

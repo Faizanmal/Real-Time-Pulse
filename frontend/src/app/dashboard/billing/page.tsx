@@ -1,18 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { billingApi, type BillingPlan, type Subscription, type Invoice, type UsageLimits } from '@/lib/api/index';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { 
   CreditCard, Check, Download, Zap, Users, Database, 
   Globe, AlertTriangle, Crown, Sparkles, Calendar, Receipt
 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
+import { billingApi, type BillingPlan, type Subscription, type Invoice, type UsageLimits } from '@/lib/api/index';
 
 export default function BillingPage() {
   const [plans, setPlans] = useState<BillingPlan[]>([]);

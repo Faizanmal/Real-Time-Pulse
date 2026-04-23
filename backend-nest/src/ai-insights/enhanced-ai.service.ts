@@ -13,8 +13,9 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+
+import { PrismaService } from '../prisma/prisma.service';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -84,14 +85,27 @@ export class EnhancedAIService {
   // ============================================================================
 
   private initializeProviders(): void {
+    const groqKey = this.configService.get<string>('GROQ_API_KEY');
     const openAIKey = this.configService.get<string>('OPENAI_API_KEY');
     const anthropicKey = this.configService.get<string>('ANTHROPIC_API_KEY');
 
-    // OpenAI Provider (Primary)
+    // Groq Provider (Primary - fast inference)
+    if (groqKey) {
+      this.providers.push({
+        name: 'groq',
+        priority: 1,
+        isAvailable: true,
+        generateResponse: (prompt, options) => this.groqGenerate(prompt, options, groqKey),
+        generateStreamingResponse: (prompt, options) => this.groqStream(prompt, options, groqKey),
+      });
+      this.logger.log('Groq provider initialized');
+    }
+
+    // OpenAI Provider (Fallback)
     if (openAIKey) {
       this.providers.push({
         name: 'openai',
-        priority: 1,
+        priority: 2,
         isAvailable: true,
         generateResponse: (prompt, options) => this.openAIGenerate(prompt, options, openAIKey),
         generateStreamingResponse: (prompt, options) =>
@@ -100,11 +114,11 @@ export class EnhancedAIService {
       this.logger.log('OpenAI provider initialized');
     }
 
-    // Anthropic Provider (Fallback)
+    // Anthropic Provider (Secondary Fallback)
     if (anthropicKey) {
       this.providers.push({
         name: 'anthropic',
-        priority: 2,
+        priority: 3,
         isAvailable: true,
         generateResponse: (prompt, options) =>
           this.anthropicGenerate(prompt, options, anthropicKey),
@@ -316,6 +330,102 @@ export class EnhancedAIService {
             if (content) yield content;
           } catch {
             // Skip invalid JSON lines
+          }
+        }
+      }
+    }
+  }
+
+  // ============================================================================
+  // GROQ IMPLEMENTATION (OpenAI Compatible)
+  // ============================================================================
+
+  private async groqGenerate(
+    prompt: string,
+    options: GenerationOptions,
+    apiKey: string,
+  ): Promise<string> {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: options.model || 'llama3-8b-8192',
+        messages: [
+          ...(options.systemPrompt ? [{ role: 'system', content: options.systemPrompt }] : []),
+          { role: 'user', content: prompt },
+        ],
+        max_tokens: options.maxTokens || 1000,
+        temperature: options.temperature ?? 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Groq API error: ${response.status} - ${error}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0]?.message?.content || '';
+  }
+
+  private async *groqStream(
+    prompt: string,
+    options: GenerationOptions,
+    apiKey: string,
+  ): AsyncGenerator<string> {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: options.model || 'llama3-8b-8192',
+        messages: [
+          ...(options.systemPrompt ? [{ role: 'system', content: options.systemPrompt }] : []),
+          { role: 'user', content: prompt },
+        ],
+        max_tokens: options.maxTokens || 1000,
+        temperature: options.temperature ?? 0.7,
+        stream: true,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Groq stream error: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error('No response body');
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') return;
+
+          try {
+            const parsed = JSON.parse(data);
+            const content = parsed.choices[0]?.delta?.content;
+            if (content) {
+              yield content;
+            }
+          } catch (e) {
+            console.error('Error parsing Groq stream data:', e);
+            // Ignore parsing errors
           }
         }
       }
@@ -548,8 +658,7 @@ export class EnhancedAIService {
     );
 
     try {
-      const insights = JSON.parse(response);
-      return insights;
+      return JSON.parse(response);
     } catch {
       // If response isn't valid JSON, return as text insight
       return {

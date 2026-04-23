@@ -1,7 +1,9 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards, Req, Patch } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { IndustrySolutionsService } from './industry-solutions.service';
 import { IndustryType } from '@prisma/client';
+
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+import { IndustrySolutionsService } from './industry-solutions.service';
 
 @Controller('industry-solutions')
 @UseGuards(JwtAuthGuard)

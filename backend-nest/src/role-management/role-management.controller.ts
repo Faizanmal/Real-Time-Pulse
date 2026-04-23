@@ -12,7 +12,9 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import type { Request as ExpressRequest } from 'express';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
 import { RoleManagementService, Permission } from './role-management.service';
 
 type AuthedRequest = ExpressRequest & {

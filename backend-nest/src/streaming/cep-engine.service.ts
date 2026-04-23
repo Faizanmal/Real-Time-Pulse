@@ -85,7 +85,7 @@ export class CEPEngineService {
     this.rules.set(id, newRule);
     this.logger.log(`Created CEP rule: ${newRule.name} (${id})`);
 
-    return newRule;
+    return await Promise.resolve(newRule);
   }
 
   async updateRule(id: string, updates: Partial<CEPRule>): Promise<CEPRule> {
@@ -95,20 +95,21 @@ export class CEPEngineService {
     const updated = { ...rule, ...updates };
     this.rules.set(id, updated);
 
-    return updated;
+    return await Promise.resolve(updated);
   }
 
   async deleteRule(id: string): Promise<void> {
     this.rules.delete(id);
     this.partialMatches.delete(id);
+    await Promise.resolve();
   }
 
   async getRules(): Promise<CEPRule[]> {
-    return Array.from(this.rules.values());
+    return await Promise.resolve(Array.from(this.rules.values()));
   }
 
   async getRule(id: string): Promise<CEPRule | undefined> {
-    return this.rules.get(id);
+    return await Promise.resolve(this.rules.get(id));
   }
 
   // Event Processing

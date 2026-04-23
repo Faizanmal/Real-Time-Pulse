@@ -5,8 +5,8 @@
  * Browse, search, and install dashboard templates
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
+import React, { useState, useEffect, useCallback } from 'react';
 
 // Types
 interface Template {

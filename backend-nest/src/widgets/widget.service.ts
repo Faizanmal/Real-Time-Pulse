@@ -7,9 +7,11 @@ import {
   forwardRef,
   Logger,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+
 import { CacheService } from '../cache/cache.service';
 import { IntegrationService } from '../integrations/integration.service';
+import { PrismaService } from '../prisma/prisma.service';
+
 import { CreateWidgetDto, UpdateWidgetDto, WidgetResponseDto } from './dto/widget.dto';
 
 @Injectable()

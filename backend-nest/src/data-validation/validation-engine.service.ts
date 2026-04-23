@@ -1,10 +1,13 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { PrismaService } from '../prisma/prisma.service';
-import { DataValidationService } from './data-validation.service';
-import { EmailService } from '../email/email.service';
-import { CacheService } from '../cache/cache.service';
 import { ValidationRuleType, ValidationSeverity } from '@prisma/client';
+
+import { CacheService } from '../cache/cache.service';
+import { QueryCacheService } from '../common/services/query-cache.service';
+import { EmailService } from '../email/email.service';
+import { PrismaService } from '../prisma/prisma.service';
+
+import { DataValidationService } from './data-validation.service';
 
 @Injectable()
 export class ValidationEngineService {
@@ -14,6 +17,7 @@ export class ValidationEngineService {
     private prisma: PrismaService,
     private dataValidationService: DataValidationService,
     private emailService: EmailService,
+    private queryCacheService: QueryCacheService,
     @Inject(forwardRef(() => CacheService))
     private cacheService: CacheService,
   ) {}
@@ -23,10 +27,36 @@ export class ValidationEngineService {
   async runScheduledValidations() {
     this.logger.log('Running scheduled data validations...');
 
-    const rules = await this.prisma.dataValidationRule.findMany({
-      where: { enabled: true },
-      include: { integration: true },
-    });
+    // Use cache with 5-minute TTL to reduce database hits for frequently checked rules
+    const rules = await this.queryCacheService.withCache(
+      'enabled-validation-rules',
+      () =>
+        this.prisma.dataValidationRule.findMany({
+          where: { enabled: true },
+          select: {
+            id: true,
+            workspaceId: true,
+            integrationId: true,
+            fieldPath: true,
+            ruleType: true,
+            config: true,
+            severity: true,
+            notifyOnFailure: true,
+            notifyEmails: true,
+            integration: {
+              select: {
+                id: true,
+                provider: true,
+                accountName: true,
+                settings: true,
+              },
+            },
+          },
+          orderBy: { id: 'asc' },
+          take: 100, // Limit to prevent excessive processing
+        }),
+      300000, // 5 minute cache TTL
+    );
 
     for (const rule of rules) {
       try {

@@ -42,28 +42,23 @@ export const commentsApi = {
       offset?: number;
     }
   ): Promise<Comment[]> => {
-    const response = await apiClient.get<Comment[]>(`/comments/portal/${portalId}`, { params: options });
-    return response;
+    return await apiClient.get<Comment[]>(`/comments/portal/${portalId}`, { params: options });
   },
 
   getById: async (id: string): Promise<Comment> => {
-    const response = await apiClient.get<Comment>(`/comments/${id}`);
-    return response;
+    return await apiClient.get<Comment>(`/comments/${id}`);
   },
 
   getThread: async (id: string): Promise<Comment> => {
-    const response = await apiClient.get<Comment>(`/comments/${id}/thread`);
-    return response;
+    return await apiClient.get<Comment>(`/comments/${id}/thread`);
   },
 
   create: async (data: CreateCommentDto): Promise<Comment> => {
-    const response = await apiClient.post<Comment>('/comments', data);
-    return response;
+    return await apiClient.post<Comment>('/comments', data);
   },
 
   update: async (id: string, data: UpdateCommentDto): Promise<Comment> => {
-    const response = await apiClient.patch<Comment>(`/comments/${id}`, data);
-    return response;
+    return await apiClient.patch<Comment>(`/comments/${id}`, data);
   },
 
   delete: async (id: string): Promise<void> => {

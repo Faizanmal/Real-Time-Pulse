@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import axios, { AxiosRequestConfig } from 'axios';
+
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface OAuth2Config {
   authUrl: string;
@@ -127,7 +128,7 @@ export class IntegrationBuilderService {
     // Detect authentication scheme
     const authConfig = this.detectAuthScheme(spec);
 
-    const integration = await this.createIntegration(workspaceId, {
+    return await this.createIntegration(workspaceId, {
       name: name || spec.info.title,
       description: spec.info.version,
       authType: 'openapi',
@@ -138,8 +139,6 @@ export class IntegrationBuilderService {
       customWidgets: [],
       workspaceId,
     });
-
-    return integration;
   }
 
   /**
@@ -197,10 +196,10 @@ export class IntegrationBuilderService {
 
     // Store tokens securely (encrypted in production)
     await this.prisma.$executeRaw`
-      INSERT INTO integration_tokens (integration_id, access_token, refresh_token, expires_at)
+      INSERT INTO integration_tokens (integrationid, access_token, refresh_token, expires_at)
       VALUES (${integrationId}, ${access_token}, ${refresh_token || null}, 
               ${new Date(Date.now() + 3600000)})
-      ON CONFLICT (integration_id) 
+      ON CONFLICT (integrationid) 
       DO UPDATE SET access_token = EXCLUDED.access_token, 
                     refresh_token = EXCLUDED.refresh_token,
                     expires_at = EXCLUDED.expires_at
@@ -450,7 +449,7 @@ export class IntegrationBuilderService {
     const result = await this.prisma.$queryRaw<any[]>`
       SELECT access_token, refresh_token, expires_at 
       FROM integration_tokens 
-      WHERE integration_id = ${integrationId}
+      WHERE integrationid = ${integrationId}
     `;
 
     if (!result || result.length === 0) {
@@ -495,7 +494,7 @@ export class IntegrationBuilderService {
       SET access_token = ${access_token},
           refresh_token = ${refresh_token || refreshToken},
           expires_at = ${new Date(Date.now() + 3600000)}
-      WHERE integration_id = ${integrationId}
+      WHERE integrationid = ${integrationId}
     `;
 
     return access_token;

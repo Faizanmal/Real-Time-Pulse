@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { VoiceCommand } from './voice.service';
+
+import { VoiceCommand } from './voice.types';
 
 interface CommandPattern {
   pattern: RegExp;
@@ -15,7 +16,8 @@ export class VoiceCommandService {
   private readonly commandPatterns: CommandPattern[] = [
     // Navigation commands
     {
-      pattern: /(?:show|open|go to|navigate to)\s+(?:the\s+)?(.+?)(?:\s+dashboard|\s+portal)?$/i,
+      pattern:
+        /(?:show|open|go to|navigate to)\s+(?:the\s+)?(.{1,50})(?:\s+dashboard|\s+portal)?$/i,
       action: 'navigate',
       extractParams: (match) => ({ target: match[1].trim() }),
     },
@@ -33,7 +35,7 @@ export class VoiceCommandService {
     // Filter commands
     {
       pattern:
-        /(?:filter|show|display)\s+(?:by\s+)?(?:the\s+)?(?:last\s+)?(\d+)\s+(days?|weeks?|months?|years?)$/i,
+        /(?:filter|show|display)\s+(?:by\s+)?(?:the\s+)?(?:last\s+)?(\d{1,3})\s+(days?|weeks?|months?|years?)$/i,
       action: 'filter_time',
       extractParams: (match) => ({
         amount: parseInt(match[1]),
@@ -41,12 +43,12 @@ export class VoiceCommandService {
       }),
     },
     {
-      pattern: /(?:filter|show)\s+(?:from\s+)?(.+?)\s+to\s+(.+)$/i,
+      pattern: /(?:filter|show)\s+(?:from\s+)?(.{1,50})\s+to\s+(.{1,50})$/i,
       action: 'filter_date_range',
       extractParams: (match) => ({ from: match[1], to: match[2] }),
     },
     {
-      pattern: /(?:filter|show)\s+(?:only\s+)?(.+?)\s+(?:data|items|records)$/i,
+      pattern: /(?:filter|show)\s+(?:only\s+)?(.{1,50})\s+(?:data|items|records)$/i,
       action: 'filter_category',
       extractParams: (match) => ({ category: match[1] }),
     },
@@ -71,17 +73,17 @@ export class VoiceCommandService {
 
     // Widget commands
     {
-      pattern: /(?:zoom|focus)\s+(?:in\s+)?(?:on\s+)?(?:the\s+)?(.+?)(?:\s+widget|\s+chart)?$/i,
+      pattern: /(?:zoom|focus)\s+(?:in\s+)?(?:on\s+)?(?:the\s+)?(.{1,50})(?:\s+widget|\s+chart)?$/i,
       action: 'zoom_widget',
       extractParams: (match) => ({ widgetName: match[1] }),
     },
     {
-      pattern: /(?:expand|maximize)\s+(?:the\s+)?(.+?)(?:\s+widget|\s+chart)?$/i,
+      pattern: /(?:expand|maximize)\s+(?:the\s+)?(.{1,50})(?:\s+widget|\s+chart)?$/i,
       action: 'expand_widget',
       extractParams: (match) => ({ widgetName: match[1] }),
     },
     {
-      pattern: /(?:collapse|minimize)\s+(?:the\s+)?(.+?)(?:\s+widget|\s+chart)?$/i,
+      pattern: /(?:collapse|minimize)\s+(?:the\s+)?(.{1,50})(?:\s+widget|\s+chart)?$/i,
       action: 'collapse_widget',
       extractParams: (match) => ({ widgetName: match[1] }),
     },
@@ -89,12 +91,12 @@ export class VoiceCommandService {
     // Insight commands
     {
       pattern:
-        /(?:what(?:'s| is)?|tell me)\s+(?:the\s+)?(?:current\s+)?(.+?)(?:\s+value|\s+metric)?$/i,
+        /(?:what(?:'s| is)?|tell me)\s+(?:the\s+)?(?:current\s+)?(.{1,50})(?:\s+value|\s+metric)?$/i,
       action: 'get_metric',
       extractParams: (match) => ({ metric: match[1] }),
     },
     {
-      pattern: /(?:summarize|summary of|describe)\s+(?:the\s+)?(.+)$/i,
+      pattern: /(?:summarize|summary of|describe)\s+(?:the\s+)?(.{1,50})$/i,
       action: 'summarize',
       extractParams: (match) => ({ target: match[1] }),
     },
@@ -106,7 +108,8 @@ export class VoiceCommandService {
 
     // Alert commands
     {
-      pattern: /(?:set|create)\s+(?:an?\s+)?alert\s+(?:for\s+)?(.+?)\s+(?:when|if)\s+(.+)$/i,
+      pattern:
+        /(?:set|create)\s+(?:an?\s+)?alert\s+(?:for\s+)?(.{1,50})\s+(?:when|if)\s+(.{1,50})$/i,
       action: 'create_alert',
       extractParams: (match) => ({ metric: match[1], condition: match[2] }),
     },

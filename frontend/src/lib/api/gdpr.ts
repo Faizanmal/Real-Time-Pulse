@@ -139,8 +139,7 @@ export const gdprApi = {
   },
 
   getRequestStats: async (workspaceId: string): Promise<GdprDashboard['requestStats']> => {
-    const response = await apiClient.get<GdprDashboard['requestStats']>(`/gdpr/requests/workspace/${workspaceId}/stats`);
-    return response;
+    return await apiClient.get<GdprDashboard['requestStats']>(`/gdpr/requests/workspace/${workspaceId}/stats`);
   },
 
   // Compliance Reports

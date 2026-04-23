@@ -1,8 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { AuditService } from '../audit/audit.service';
-import { CreateApiKeyDto } from './dto/create-api-key.dto';
 import * as crypto from 'crypto';
+
+import { Injectable, NotFoundException } from '@nestjs/common';
+
+import { AuditService } from '../audit/audit.service';
+import { PrismaService } from '../prisma/prisma.service';
+
+import { CreateApiKeyDto } from './dto/create-api-key.dto';
+
+const API_KEY_NOT_FOUND = 'API key not found';
 
 @Injectable()
 export class ApiKeysService {
@@ -71,7 +76,7 @@ export class ApiKeysService {
    * Get all API keys for a workspace
    */
   async getApiKeys(workspaceId: string) {
-    const keys = await this.prisma.apiKey.findMany({
+    return await this.prisma.apiKey.findMany({
       where: {
         workspaceId,
         revokedAt: null,
@@ -88,8 +93,6 @@ export class ApiKeysService {
         createdAt: true,
       },
     });
-
-    return keys;
   }
 
   /**
@@ -115,7 +118,7 @@ export class ApiKeysService {
     });
 
     if (!key) {
-      throw new NotFoundException('API key not found');
+      throw new NotFoundException(API_KEY_NOT_FOUND);
     }
 
     return key;
@@ -134,7 +137,7 @@ export class ApiKeysService {
     });
 
     if (!key) {
-      throw new NotFoundException('API key not found');
+      throw new NotFoundException(API_KEY_NOT_FOUND);
     }
 
     await this.prisma.apiKey.update({
@@ -173,7 +176,7 @@ export class ApiKeysService {
     });
 
     if (!existingKey) {
-      throw new NotFoundException('API key not found');
+      throw new NotFoundException(API_KEY_NOT_FOUND);
     }
 
     const { key, hash, prefix } = this.generateApiKey();

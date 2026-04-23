@@ -6,10 +6,12 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { S3Service } from '../common/services/s3.service';
+
 import { EncryptionService } from '../common/services/encryption.service';
+import { S3Service } from '../common/services/s3.service';
 import { EmailService } from '../email/email.service';
+import { PrismaService } from '../prisma/prisma.service';
+
 import {
   UpdateWorkspaceDto,
   WorkspaceResponseDto,

@@ -1,15 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CacheService } from '../cache/cache.service';
-import { VoiceCommandService } from './voice-command.service';
 
-export interface VoiceCommand {
-  id: string;
-  phrase: string;
-  action: string;
-  parameters?: Record<string, any>;
-  confidence: number;
-}
+import { CacheService } from '../cache/cache.service';
+
+import { VoiceCommandService } from './voice-command.service';
+import { VoiceCommand } from './voice.types';
 
 export interface VoiceAnnotation {
   id: string;

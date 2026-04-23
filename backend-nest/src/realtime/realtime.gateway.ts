@@ -5,6 +5,9 @@
  * Enterprise-grade WebSocket gateway with rooms, presence, and broadcast features.
  */
 
+import { Logger, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -17,9 +20,7 @@ import {
   WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
+
 import { PrismaService } from '../prisma/prisma.service';
 
 // --- Types & Interfaces ---
@@ -457,13 +458,21 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
 
   private cleanupStaleConnections(): void {
     const now = Date.now();
-    const staleThreshold = 5 * 60 * 1000;
+    const staleThreshold = 5 * 60 * 1000; // 5 minutes
 
     for (const [socketId, metadata] of this.connections) {
       if (now - metadata.lastActivity.getTime() > staleThreshold) {
-        const socket = this.server.sockets.sockets.get(socketId);
-        if (socket) socket.disconnect(true);
+        // Remove stale connection metadata - socket.io will handle actual disconnection
+        this.logger.debug(`Removing stale connection metadata for socket ${socketId}`);
         this.connections.delete(socketId);
+
+        // Clean up user socket mapping if needed
+        for (const [userId, sockets] of this.userSockets) {
+          sockets.delete(socketId);
+          if (sockets.size === 0) {
+            this.userSockets.delete(userId);
+          }
+        }
       }
     }
   }

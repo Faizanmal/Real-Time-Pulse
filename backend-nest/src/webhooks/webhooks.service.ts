@@ -1,9 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { HttpService } from '@nestjs/axios';
-import { CreateWebhookDto, UpdateWebhookDto } from './dto/webhook.dto';
-import { firstValueFrom } from 'rxjs';
 import * as crypto from 'crypto';
+
+import { HttpService } from '@nestjs/axios';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { firstValueFrom } from 'rxjs';
+
+import { PrismaService } from '../prisma/prisma.service';
+
+import { CreateWebhookDto, UpdateWebhookDto } from './dto/webhook.dto';
 
 @Injectable()
 export class WebhooksService {
@@ -178,7 +181,7 @@ export class WebhooksService {
         data: {
           status: 'SUCCESS',
           responseCode: response.status,
-          responseBody: JSON.stringify(response.data).substring(0, 1000),
+          responseBody: JSON.stringify(response.data || {}).substring(0, 1000),
           responseTime,
           lastAttemptAt: new Date(),
           attempts: { increment: 1 },

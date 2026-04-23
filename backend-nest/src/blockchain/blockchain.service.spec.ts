@@ -1,7 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
+
+import { CacheService } from '../cache/cache.service';
+
 import { BlockchainService } from './blockchain.service';
 import { MerkleTreeService } from './merkle-tree.service';
-import { CacheService } from '../cache/cache.service';
 
 describe('BlockchainService', () => {
   let service: BlockchainService;

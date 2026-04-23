@@ -637,8 +637,10 @@ model AuditLog {
 enum AuditAction {
   // Authentication
   LOGIN
+  SIGN_IN
   LOGOUT
   PASSWORD_RESET
+  SIGN_UP
 
   // CRUD operations
   CREATE
@@ -1031,6 +1033,7 @@ model ScheduledReport {
   @@index([portalId])
   @@index([isActive])
   @@index([nextRunAt])
+  @@index([isActive, nextRunAt])
   @@map("scheduled_reports")
 }
 
@@ -1793,6 +1796,7 @@ model DataSourceHealth {
   @@index([workspaceId])
   @@index([status])
   @@index([lastCheckAt])
+  @@index([workspaceId, status])
   @@map("data_source_health")
 }
 
@@ -1860,6 +1864,7 @@ model DataValidationRule {
   
   @@index([workspaceId])
   @@index([enabled])
+  @@index([enabled, workspaceId])
   @@map("data_validation_rules")
 }
 
@@ -1949,6 +1954,7 @@ model Project {
   @@index([workspaceId])
   @@index([status])
   @@index([clientName])
+  @@index([workspaceId, status])
   @@map("projects")
 }
 
@@ -2075,6 +2081,7 @@ model ClientReport {
   @@index([projectId])
   @@index([status])
   @@index([scheduledFor])
+  @@index([status, scheduledFor])
   @@map("client_reports")
 }
 

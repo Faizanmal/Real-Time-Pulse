@@ -1,13 +1,5 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useMLModels } from '@/hooks/useAdvancedFeatures';
-import type { MLModel } from '@/hooks/useAdvancedFeatures.types';
-import { mlMarketplaceAPI } from '@/lib/advanced-features-api';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Brain,
   Download,
@@ -23,6 +15,15 @@ import {
   RefreshCw,
   Zap,
 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { useMLModels } from '@/hooks/useAdvancedFeatures';
+import type { MLModel } from '@/hooks/useAdvancedFeatures.types';
+import { mlMarketplaceAPI } from '@/lib/advanced-features-api';
 
 // Using shared MLModel type from hooks types
 // Removed unused TrainingJob interface

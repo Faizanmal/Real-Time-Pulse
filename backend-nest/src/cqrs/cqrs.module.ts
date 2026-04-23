@@ -7,14 +7,15 @@
  */
 
 import { Module, Global, DynamicModule } from '@nestjs/common';
-import { EventSourcingService } from './event-sourcing.service';
+
 import { CommandBus } from './command-bus';
-import { QueryBus } from './query-bus';
+import { EventReplayService } from './event-replay.service';
+import { EventSourcingService } from './event-sourcing.service';
 import { EventStore } from './event-store';
 import { ProjectionService } from './projection.service';
-import { SnapshotService } from './snapshot.service';
+import { QueryBus } from './query-bus';
 import { SagaOrchestrator } from './saga-orchestrator';
-import { EventReplayService } from './event-replay.service';
+import { SnapshotService } from './snapshot.service';
 
 export interface CQRSModuleOptions {
   eventStore: {

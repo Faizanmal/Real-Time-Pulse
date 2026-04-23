@@ -1,7 +1,7 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PartialType } from '@nestjs/mapped-types';
-import { IsString, IsOptional, IsBoolean, IsEnum, IsArray, IsObject } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TemplateCategory, WidgetType } from '@prisma/client';
+import { IsString, IsOptional, IsBoolean, IsEnum, IsArray, IsObject } from 'class-validator';
 
 // ============================================
 // Widget Template DTOs

@@ -1,6 +1,5 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
 import {
   Database,
   Table,
@@ -19,6 +18,8 @@ import {
   Eye,
   Copy,
 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+
 import { cn } from '@/lib/utils';
 
 interface Schema {

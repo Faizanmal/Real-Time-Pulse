@@ -8,8 +8,9 @@
  */
 
 import { Module, Global } from '@nestjs/common';
-import { CorrelationService } from './correlation.service';
+
 import { CorrelationInterceptor } from './correlation.interceptor';
+import { CorrelationService } from './correlation.service';
 
 @Global()
 @Module({

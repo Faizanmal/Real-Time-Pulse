@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import type { AuditAction, Prisma } from '@prisma/client';
+
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface AuditLogData {
   workspaceId: string;

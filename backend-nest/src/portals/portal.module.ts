@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
-import { PortalService } from './portal.service';
-import { PortalController } from './portal.controller';
+
 import { PrismaModule } from '../prisma/prisma.module';
+
+import { PortalController } from './portal.controller';
+import { PortalService } from './portal.service';
 
 @Module({
   imports: [PrismaModule],

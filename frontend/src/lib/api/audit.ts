@@ -38,15 +38,13 @@ export interface AuditLogResponse {
 
 export const auditApi = {
   getLogs: async (filters?: AuditLogFilters): Promise<AuditLogResponse> => {
-    const response = await apiClient.get<AuditLogResponse>('/audit', { params: filters as Record<string, string> });
-    return response;
+    return await apiClient.get<AuditLogResponse>('/audit', { params: filters as Record<string, string> });
   },
 
   getEntityLogs: async (entity: string, entityId: string): Promise<AuditLog[]> => {
-    const response = await apiClient.get<AuditLog[]>('/audit/entity', {
+    return await apiClient.get<AuditLog[]>('/audit/entity', {
       params: { entity, entityId },
     });
-    return response;
   },
 };
 

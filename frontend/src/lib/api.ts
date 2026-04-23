@@ -8,6 +8,7 @@
  * in './enterprise-api.ts' but use this same apiClient instance.
  */
 import axios, { AxiosInstance, AxiosError } from 'axios';
+
 import type { User } from '../types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
@@ -61,9 +62,11 @@ apiClient.interceptors.response.use(
 
       try {
         // Refresh tokens endpoint sends new access token
+        // Include stored refresh token in the request body (frontend stores it in localStorage)
+        const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
         const response = await axios.post(
           `${API_BASE_URL}/auth/refresh`,
-          {},
+          { refreshToken },
           { withCredentials: true }
         );
 
@@ -92,7 +95,7 @@ apiClient.interceptors.response.use(
         // Refresh failed, clear auth and redirect to login
         if (typeof window !== 'undefined') {
           localStorage.removeItem('auth-storage');
-          window.location.href = '/signin';
+          window.location.href = '/auth/login';
         }
         return Promise.reject(refreshError);
       }

@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+
 import { CacheService } from '../cache/cache.service';
 
 export interface SceneObject {

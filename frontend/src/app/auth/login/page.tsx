@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState, useCallback, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+
 import { authApi } from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth';
 
@@ -64,12 +65,14 @@ export default function LoginPage() {
       const response = await authApi.signin(data);
       setAuth(response.user, response.accessToken);
       
-      // Store tokens
+      // Persist tokens for API client and refresh flow
       if (typeof window !== 'undefined') {
-        sessionStorage.setItem('accessToken', response.accessToken);
+        // add refresh token
         if (response.refreshToken) {
           localStorage.setItem('refreshToken', response.refreshToken);
         }
+        // also keep a legacy access token key for compatibility
+        localStorage.setItem('access_token', response.accessToken);
       }
       
       router.push('/dashboard');

@@ -1,7 +1,9 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
-import { IoTDeviceService, IoTDevice, DeviceAlert } from './iot-device.service';
-import { EdgeComputingService, EdgeNodeConfig, EdgeProcessingRule } from './edge-computing.service';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+import { EdgeComputingService, EdgeNodeConfig, EdgeProcessingRule } from './edge-computing.service';
+import { IoTDeviceService, IoTDevice, DeviceAlert } from './iot-device.service';
 
 // DTOs
 interface RegisterDeviceDto {

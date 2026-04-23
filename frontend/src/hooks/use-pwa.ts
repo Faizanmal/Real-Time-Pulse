@@ -147,8 +147,7 @@ export function usePWA(): UsePWAReturn {
       return 'denied';
     }
 
-    const permission = await Notification.requestPermission();
-    return permission;
+    return await Notification.requestPermission();
   }, []);
 
   // Subscribe to push notifications
