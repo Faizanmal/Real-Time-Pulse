@@ -1,8 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+
 import { CacheService } from '../cache/cache.service';
-import { ScriptSandboxService } from './script-sandbox.service';
+import { PrismaService } from '../prisma/prisma.service';
+
 import { ScriptLibraryService } from './script-library.service';
+import { ScriptSandboxService } from './script-sandbox.service';
 
 interface CreateScriptDto {
   name: string;
@@ -52,7 +54,7 @@ export class ScriptingService {
    */
   async createScript(workspaceId: string, userId: string, dto: CreateScriptDto) {
     // Validate code before saving
-    const validationResult = await this.validateScript(dto.code);
+    const validationResult = this.validateScript(dto.code);
     if (!validationResult.valid) {
       throw new BadRequestException(`Invalid script: ${validationResult.errors.join(', ')}`);
     }
@@ -137,7 +139,7 @@ export class ScriptingService {
 
     // Validate new code if provided
     if (dto.code) {
-      const validationResult = await this.validateScript(dto.code);
+      const validationResult = this.validateScript(dto.code);
       if (!validationResult.valid) {
         throw new BadRequestException(`Invalid script: ${validationResult.errors.join(', ')}`);
       }
@@ -196,7 +198,7 @@ export class ScriptingService {
 
     // Validate input against schema
     if (script.inputSchema && Object.keys(script.inputSchema).length > 0) {
-      const validation = this.sandbox.validateInput(dto.input || {}, script.inputSchema);
+      const validation = this.sandbox.validateInput(dto.input || {}, script.inputSchema as {});
       if (!validation.valid) {
         throw new BadRequestException(`Invalid input: ${validation.errors.join(', ')}`);
       }
@@ -209,8 +211,8 @@ export class ScriptingService {
     const context = {
       // Input data
       input: dto.input || {},
-      widgetData: dto.widgetData,
-      portalData: dto.portalData,
+      widgetData: dto.widgetData as Record<string, any>,
+      portalData: dto.portalData as Record<string, any>,
 
       // Library functions
       ...libraries,
@@ -250,7 +252,7 @@ export class ScriptingService {
   /**
    * Validate a script without executing it
    */
-  async validateScript(code: string): Promise<{ valid: boolean; errors: string[] }> {
+  validateScript(code: string): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
     try {

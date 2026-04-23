@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { MLModel } from './ml-marketplace.service';
+
+import { MLModel } from './ml-marketplace.types';
 
 @Injectable()
 export class MLModelExecutorService {

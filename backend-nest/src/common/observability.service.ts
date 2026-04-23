@@ -7,8 +7,8 @@
  */
 
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
-import { Observable, tap, catchError } from 'rxjs';
 import * as opentelemetry from '@opentelemetry/api';
+import { Observable, tap, catchError } from 'rxjs';
 
 // Logger with structured output
 @Injectable()

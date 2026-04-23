@@ -9,12 +9,14 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CollaborationService } from './collaboration.service';
+import type { RequestUser } from '../common/interfaces/auth.interface';
+
 import { CollaborationGateway } from './collaboration.gateway';
 import type { UserPresence } from './collaboration.gateway';
+import { CollaborationService } from './collaboration.service';
 import type { ActivityLog, WidgetChange, ChatMessage } from './collaboration.service';
-import type { RequestUser } from '../common/interfaces/auth.interface';
 
 @ApiTags('Collaboration')
 @ApiBearerAuth()

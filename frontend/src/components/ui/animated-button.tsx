@@ -1,9 +1,11 @@
 "use client";
 
 import { motion, HTMLMotionProps } from "framer-motion";
-import { cn } from "@/lib/utils";
-import { ReactNode, forwardRef } from "react";
 import { Loader2 } from "lucide-react";
+import { ReactNode, forwardRef } from "react";
+
+import { cn } from "@/lib/utils";
+
 
 interface AnimatedButtonProps extends Omit<HTMLMotionProps<"button">, "children"> {
   children: ReactNode;

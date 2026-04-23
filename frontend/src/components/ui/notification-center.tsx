@@ -8,18 +8,8 @@
  * grouping, activity timeline, and real-time updates.
  */
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useEffect,
-  ReactNode,
-  useMemo,
-} from 'react';
-import Image from 'next/image';
+import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import {
   Bell,
   BellOff,
@@ -41,7 +31,19 @@ import {
   Star,
   Eye,
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import Image from 'next/image';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  ReactNode,
+  useMemo,
+} from 'react';
+
+import { cn } from '@/lib/utils';
+
 
 // ==================== TYPES ====================
 

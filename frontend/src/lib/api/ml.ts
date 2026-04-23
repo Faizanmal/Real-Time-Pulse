@@ -66,13 +66,11 @@ export interface FeatureAnalysis {
 export const mlApi = {
   // Models
   getModels: async (): Promise<MLModel[]> => {
-    const response = await apiClient.get<MLModel[]>('/ml/models');
-    return response;
+    return await apiClient.get<MLModel[]>('/ml/models');
   },
 
   getModel: async (id: string): Promise<MLModel> => {
-    const response = await apiClient.get<MLModel>(`/ml/models/${id}`);
-    return response;
+    return await apiClient.get<MLModel>(`/ml/models/${id}`);
   },
 
   createModel: async (data: {
@@ -135,13 +133,11 @@ export const mlApi = {
 
   // Causal Inference
   getCausalGraphs: async (): Promise<CausalGraph[]> => {
-    const response = await apiClient.get<CausalGraph[]>('/ml/causal/graphs');
-    return response;
+    return await apiClient.get<CausalGraph[]>('/ml/causal/graphs');
   },
 
   getCausalGraph: async (id: string): Promise<CausalGraph> => {
-    const response = await apiClient.get<CausalGraph>(`/ml/causal/graphs/${id}`);
-    return response;
+    return await apiClient.get<CausalGraph>(`/ml/causal/graphs/${id}`);
   },
 
   createCausalGraph: async (data: {

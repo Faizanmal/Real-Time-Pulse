@@ -7,9 +7,9 @@
  * and background synchronization.
  */
 
+import localforage from 'localforage';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
-import localforage from 'localforage';
 
 // ============================================================================
 // TYPES

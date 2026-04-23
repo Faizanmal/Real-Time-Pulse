@@ -1,8 +1,7 @@
 "use client";
 
-import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Command } from "cmdk";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   Home,
@@ -27,6 +26,7 @@ import {
   Bot,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import * as React from "react";
 
 // ============================================================================
 // COMMAND PALETTE - Enterprise Power User Feature

@@ -1,6 +1,5 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
 import {
   Activity,
   Play,
@@ -13,9 +12,12 @@ import {
   Clock,
   Database,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { apiClient } from '@/lib/api';
+import React, { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
+
+import { apiClient } from '@/lib/api';
+import { cn } from '@/lib/utils';
+
 
 interface Stream {
   id: string;

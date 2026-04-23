@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
 import { Webhook, Plus, Trash2, Eye, EyeOff, TestTube, RefreshCw, ExternalLink } from 'lucide-react';
-import { webhooksApi, Webhook as WebhookType, CreateWebhookDto, WEBHOOK_EVENTS, WebhookDelivery } from '../../lib/enterprise-api';
+import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -17,8 +18,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+
+import { webhooksApi, Webhook as WebhookType, CreateWebhookDto, WEBHOOK_EVENTS, WebhookDelivery } from '../../lib/enterprise-api';
 
 export function WebhooksManager({ className }: { className?: string }) {
   const [webhooks, setWebhooks] = useState<WebhookType[]>([]);
@@ -114,8 +116,8 @@ export function WebhooksManager({ className }: { className?: string }) {
 
       {loading ? (
         <div className="animate-pulse space-y-4">
-          <div className="h-24 bg-gray-200 rounded"></div>
-          <div className="h-24 bg-gray-200 rounded"></div>
+          <div className="h-24 bg-gray-200 rounded" />
+          <div className="h-24 bg-gray-200 rounded" />
         </div>
       ) : webhooks.length === 0 ? (
         <div className="text-center py-8 text-gray-500">

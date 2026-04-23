@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence, useAnimationControls } from "framer-motion";
-import { cn } from "@/lib/utils";
 import {
     Activity,
     ArrowUp,
@@ -16,6 +14,10 @@ import {
     AlertTriangle,
     Circle,
 } from "lucide-react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+
+import { cn } from "@/lib/utils";
+
 
 // ============================================================================
 // LIVE PULSE INDICATOR

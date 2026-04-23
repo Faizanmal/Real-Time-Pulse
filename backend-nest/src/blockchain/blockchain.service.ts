@@ -1,6 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
 import * as crypto from 'crypto';
+
+import { Injectable, Logger } from '@nestjs/common';
+
 import { CacheService } from '../cache/cache.service';
+
 import { MerkleTreeService } from './merkle-tree.service';
 
 export interface AuditBlock {

@@ -10,11 +10,17 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 import type { RequestUser } from '../common/interfaces/auth.interface';
+
 import { ApiKeysService } from './api-keys.service';
 import { CreateApiKeyDto } from './dto/create-api-key.dto';
+
+const API_KEY_ID_PARAM = 'id';
+const API_KEY_ID_ROUTE = ':id';
+const API_KEY_REGENERATE_ROUTE = ':id/regenerate';
 
 @ApiTags('API Keys')
 @Controller('api-keys')
@@ -37,25 +43,25 @@ export class ApiKeysController {
     return this.apiKeysService.getApiKeys(user.workspaceId);
   }
 
-  @Get(':id')
+  @Get(API_KEY_ID_ROUTE)
   @ApiOperation({ summary: 'Get an API key by ID' })
   @ApiResponse({ status: 200, description: 'API key retrieved' })
-  async getApiKey(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+  async getApiKey(@CurrentUser() user: RequestUser, @Param(API_KEY_ID_PARAM) id: string) {
     return this.apiKeysService.getApiKey(id, user.workspaceId);
   }
 
-  @Delete(':id')
+  @Delete(API_KEY_ID_ROUTE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete an API key' })
   @ApiResponse({ status: 204, description: 'API key deleted' })
-  async deleteApiKey(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+  async deleteApiKey(@CurrentUser() user: RequestUser, @Param(API_KEY_ID_PARAM) id: string) {
     await this.apiKeysService.deleteApiKey(id, user.workspaceId, user.id);
   }
 
-  @Post(':id/regenerate')
+  @Post(API_KEY_REGENERATE_ROUTE)
   @ApiOperation({ summary: 'Regenerate an API key' })
   @ApiResponse({ status: 200, description: 'API key regenerated' })
-  async regenerateApiKey(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+  async regenerateApiKey(@CurrentUser() user: RequestUser, @Param(API_KEY_ID_PARAM) id: string) {
     return this.apiKeysService.regenerateApiKey(id, user.workspaceId, user.id);
   }
 }

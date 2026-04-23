@@ -7,15 +7,16 @@
  * Global providers for state management, theming, and data fetching.
  */
 
-import { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ThemeProvider } from 'next-themes';
-import { SocketProvider } from '@/contexts/socket-context';
+import { ReactNode } from 'react';
+
 import { AuthProvider } from '@/contexts/auth-context';
+import { FeatureFlagProvider } from '@/contexts/feature-flag-context';
 import { NotificationProvider } from '@/contexts/notification-context';
 import { PresenceProvider } from '@/contexts/presence-context';
-import { FeatureFlagProvider } from '@/contexts/feature-flag-context';
+import { SocketProvider } from '@/contexts/socket-context';
 
 // Create Query Client with optimized defaults
 function makeQueryClient() {
@@ -69,8 +70,8 @@ export function Providers({ children }: ProvidersProps) {
       <ThemeProvider
         attribute="class"
         defaultTheme="light"
-        enableSystem={true}
-        disableTransitionOnChange={false}
+        enableSystem={false}
+        disableTransitionOnChange={true}
         storageKey="pulse-theme"
       >
         <AuthProvider>

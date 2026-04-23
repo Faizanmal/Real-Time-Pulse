@@ -1,12 +1,5 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { useFederatedSearch } from '@/hooks/useAdvancedFeatures';
-import type { SearchResult, SearchSource } from '@/hooks/useAdvancedFeatures.types';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Search,
   Filter,
@@ -21,6 +14,14 @@ import {
 
   X,
 } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { useFederatedSearch } from '@/hooks/useAdvancedFeatures';
+import type { SearchResult, SearchSource } from '@/hooks/useAdvancedFeatures.types';
 
 // Using shared SearchResult and SearchSource types from hooks types
 

@@ -1,14 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
-import Image from 'next/image';
-import { useAuthStore } from '@/store/auth';
-import { workspaceApi } from '@/lib/api-client';
-import { securityApi } from '@/lib/enterprise-api';
-import type { Workspace, WorkspaceMember } from '@/types';
 import {
   Settings,
   ArrowLeft,
@@ -24,8 +16,17 @@ import {
   CheckCircle,
   Key,
 } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
+
 import { TwoFactorSetup, APIKeyManager } from '@/components/security';
+import { workspaceApi } from '@/lib/api-client';
+import { securityApi } from '@/lib/enterprise-api';
+import { useAuthStore } from '@/store/auth';
+import type { Workspace, WorkspaceMember } from '@/types';
 
 export default function SettingsPage() {
   const router = useRouter();

@@ -1,5 +1,9 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+
 import { CacheService } from '../cache/cache.service';
+
+const PUBLISHER_NAME = 'Real-Time Pulse';
+const MARKETPLACE_CONNECTORS_KEY = 'marketplace:connectors';
 
 export interface MarketplaceConnector {
   id: string;
@@ -71,7 +75,7 @@ export class ApiMarketplaceService implements OnModuleInit {
         name: 'Stripe',
         description: 'Payment processing and billing data',
         category: 'Payments',
-        publisher: 'Real-Time Pulse',
+        publisher: PUBLISHER_NAME,
         version: '1.0.0',
         icon: 'stripe-icon',
         authType: 'api_key',
@@ -139,7 +143,7 @@ export class ApiMarketplaceService implements OnModuleInit {
         name: 'Salesforce',
         description: 'CRM data and sales analytics',
         category: 'CRM',
-        publisher: 'Real-Time Pulse',
+        publisher: PUBLISHER_NAME,
         version: '1.0.0',
         icon: 'salesforce-icon',
         authType: 'oauth2',
@@ -191,7 +195,7 @@ export class ApiMarketplaceService implements OnModuleInit {
         name: 'Google Analytics',
         description: 'Web analytics and user behavior data',
         category: 'Analytics',
-        publisher: 'Real-Time Pulse',
+        publisher: PUBLISHER_NAME,
         version: '1.0.0',
         icon: 'ga-icon',
         authType: 'oauth2',
@@ -248,7 +252,7 @@ export class ApiMarketplaceService implements OnModuleInit {
         name: 'Slack',
         description: 'Team communication and notifications',
         category: 'Communication',
-        publisher: 'Real-Time Pulse',
+        publisher: PUBLISHER_NAME,
         version: '1.0.0',
         icon: 'slack-icon',
         authType: 'oauth2',
@@ -304,7 +308,7 @@ export class ApiMarketplaceService implements OnModuleInit {
         name: 'GitHub',
         description: 'Repository and development metrics',
         category: 'Development',
-        publisher: 'Real-Time Pulse',
+        publisher: PUBLISHER_NAME,
         version: '1.0.0',
         icon: 'github-icon',
         authType: 'api_key',
@@ -373,7 +377,7 @@ export class ApiMarketplaceService implements OnModuleInit {
         name: 'Jira',
         description: 'Project management and issue tracking',
         category: 'Project Management',
-        publisher: 'Real-Time Pulse',
+        publisher: PUBLISHER_NAME,
         version: '1.0.0',
         icon: 'jira-icon',
         authType: 'basic',
@@ -430,7 +434,11 @@ export class ApiMarketplaceService implements OnModuleInit {
     ];
 
     // Save built-in connectors
-    await this.cache.set('marketplace:connectors', JSON.stringify(builtInConnectors), 86400 * 365);
+    await this.cache.set(
+      MARKETPLACE_CONNECTORS_KEY,
+      JSON.stringify(builtInConnectors),
+      86400 * 365,
+    );
   }
 
   /**
@@ -441,7 +449,7 @@ export class ApiMarketplaceService implements OnModuleInit {
     search?: string;
     verified?: boolean;
   }): Promise<MarketplaceConnector[]> {
-    const connectorsJson = await this.cache.get('marketplace:connectors');
+    const connectorsJson = await this.cache.get(MARKETPLACE_CONNECTORS_KEY);
     let connectors: MarketplaceConnector[] = connectorsJson ? JSON.parse(connectorsJson) : [];
 
     if (options?.category) {
@@ -581,23 +589,23 @@ export class ApiMarketplaceService implements OnModuleInit {
       updatedAt: new Date(),
     };
 
-    const connectorsJson = await this.cache.get('marketplace:connectors');
+    const connectorsJson = await this.cache.get(MARKETPLACE_CONNECTORS_KEY);
     const connectors: MarketplaceConnector[] = connectorsJson ? JSON.parse(connectorsJson) : [];
     connectors.push(newConnector);
 
-    await this.cache.set('marketplace:connectors', JSON.stringify(connectors), 86400 * 365);
+    await this.cache.set(MARKETPLACE_CONNECTORS_KEY, JSON.stringify(connectors), 86400 * 365);
 
     return newConnector;
   }
 
   private async incrementDownloads(connectorId: string): Promise<void> {
-    const connectorsJson = await this.cache.get('marketplace:connectors');
+    const connectorsJson = await this.cache.get(MARKETPLACE_CONNECTORS_KEY);
     const connectors: MarketplaceConnector[] = connectorsJson ? JSON.parse(connectorsJson) : [];
 
     const index = connectors.findIndex((c) => c.id === connectorId);
     if (index !== -1) {
       connectors[index].downloads++;
-      await this.cache.set('marketplace:connectors', JSON.stringify(connectors), 86400 * 365);
+      await this.cache.set(MARKETPLACE_CONNECTORS_KEY, JSON.stringify(connectors), 86400 * 365);
     }
   }
 }

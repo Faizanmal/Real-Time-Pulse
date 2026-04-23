@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
-import { AnnotationsService } from './annotations.service';
-import { AnnotationsController } from './annotations.controller';
+
 import { PrismaModule } from '../prisma/prisma.module';
 import { RealtimeModule } from '../realtime/realtime.module';
+
+import { AnnotationsController } from './annotations.controller';
+import { AnnotationsService } from './annotations.service';
 
 @Module({
   imports: [PrismaModule, RealtimeModule],

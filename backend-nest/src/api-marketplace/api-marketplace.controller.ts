@@ -11,11 +11,22 @@ import {
   Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
 import { ApiMarketplaceService } from './api-marketplace.service';
 import { CustomEndpointService } from './custom-endpoint.service';
 import { EndpointBuilderService } from './endpoint-builder.service';
 import type { BuilderStep } from './endpoint-builder.service';
+
+const ENDPOINT_ID_PARAM = 'endpointId';
+const ENDPOINT_ID_DESCRIPTION = 'Endpoint ID';
+const ENDPOINT_ID_ROUTE = 'endpoints/:endpointId';
+const ACTIVATE_ROUTE = 'endpoints/:endpointId/activate';
+const DEACTIVATE_ROUTE = 'endpoints/:endpointId/deactivate';
+const REGENERATE_KEY_ROUTE = 'endpoints/:endpointId/regenerate-key';
+const EXECUTE_ROUTE = 'endpoints/:endpointId/execute';
+const STATS_ROUTE = 'endpoints/:endpointId/stats';
 
 @ApiTags('API Marketplace')
 @ApiBearerAuth()
@@ -144,68 +155,68 @@ export class ApiMarketplaceController {
     return this.endpointService.getEndpoints(req.user.workspaceId);
   }
 
-  @Get('endpoints/:endpointId')
+  @Get(ENDPOINT_ID_ROUTE)
   @ApiOperation({ summary: 'Get endpoint by ID' })
-  @ApiParam({ name: 'endpointId', description: 'Endpoint ID' })
-  async getEndpoint(@Request() req: any, @Param('endpointId') endpointId: string) {
+  @ApiParam({ name: ENDPOINT_ID_PARAM, description: ENDPOINT_ID_DESCRIPTION })
+  async getEndpoint(@Request() req: any, @Param(ENDPOINT_ID_PARAM) endpointId: string) {
     return this.endpointService.getEndpoint(req.user.workspaceId, endpointId);
   }
 
-  @Put('endpoints/:endpointId')
+  @Put(ENDPOINT_ID_ROUTE)
   @ApiOperation({ summary: 'Update endpoint' })
-  @ApiParam({ name: 'endpointId', description: 'Endpoint ID' })
+  @ApiParam({ name: ENDPOINT_ID_PARAM, description: ENDPOINT_ID_DESCRIPTION })
   async updateEndpoint(
     @Request() req: any,
-    @Param('endpointId') endpointId: string,
+    @Param(ENDPOINT_ID_PARAM) endpointId: string,
     @Body() dto: any,
   ) {
     return this.endpointService.updateEndpoint(req.user.workspaceId, endpointId, dto);
   }
 
-  @Delete('endpoints/:endpointId')
+  @Delete(ENDPOINT_ID_ROUTE)
   @ApiOperation({ summary: 'Delete endpoint' })
-  @ApiParam({ name: 'endpointId', description: 'Endpoint ID' })
-  async deleteEndpoint(@Request() req: any, @Param('endpointId') endpointId: string) {
+  @ApiParam({ name: ENDPOINT_ID_PARAM, description: ENDPOINT_ID_DESCRIPTION })
+  async deleteEndpoint(@Request() req: any, @Param(ENDPOINT_ID_PARAM) endpointId: string) {
     await this.endpointService.deleteEndpoint(req.user.workspaceId, endpointId);
     return { success: true };
   }
 
-  @Post('endpoints/:endpointId/activate')
+  @Post(ACTIVATE_ROUTE)
   @ApiOperation({ summary: 'Activate endpoint' })
-  @ApiParam({ name: 'endpointId', description: 'Endpoint ID' })
-  async activateEndpoint(@Request() req: any, @Param('endpointId') endpointId: string) {
+  @ApiParam({ name: ENDPOINT_ID_PARAM, description: ENDPOINT_ID_DESCRIPTION })
+  async activateEndpoint(@Request() req: any, @Param(ENDPOINT_ID_PARAM) endpointId: string) {
     return this.endpointService.activateEndpoint(req.user.workspaceId, endpointId);
   }
 
-  @Post('endpoints/:endpointId/deactivate')
+  @Post(DEACTIVATE_ROUTE)
   @ApiOperation({ summary: 'Deactivate endpoint' })
-  @ApiParam({ name: 'endpointId', description: 'Endpoint ID' })
-  async deactivateEndpoint(@Request() req: any, @Param('endpointId') endpointId: string) {
+  @ApiParam({ name: ENDPOINT_ID_PARAM, description: ENDPOINT_ID_DESCRIPTION })
+  async deactivateEndpoint(@Request() req: any, @Param(ENDPOINT_ID_PARAM) endpointId: string) {
     return this.endpointService.deactivateEndpoint(req.user.workspaceId, endpointId);
   }
 
-  @Post('endpoints/:endpointId/regenerate-key')
+  @Post(REGENERATE_KEY_ROUTE)
   @ApiOperation({ summary: 'Regenerate API key' })
-  @ApiParam({ name: 'endpointId', description: 'Endpoint ID' })
-  async regenerateApiKey(@Request() req: any, @Param('endpointId') endpointId: string) {
+  @ApiParam({ name: ENDPOINT_ID_PARAM, description: ENDPOINT_ID_DESCRIPTION })
+  async regenerateApiKey(@Request() req: any, @Param(ENDPOINT_ID_PARAM) endpointId: string) {
     const apiKey = await this.endpointService.regenerateApiKey(req.user.workspaceId, endpointId);
     return { apiKey };
   }
 
-  @Post('endpoints/:endpointId/execute')
+  @Post(EXECUTE_ROUTE)
   @ApiOperation({ summary: 'Execute custom endpoint' })
-  @ApiParam({ name: 'endpointId', description: 'Endpoint ID' })
+  @ApiParam({ name: ENDPOINT_ID_PARAM, description: ENDPOINT_ID_DESCRIPTION })
   async executeEndpoint(
     @Request() req: any,
-    @Param('endpointId') endpointId: string,
+    @Param(ENDPOINT_ID_PARAM) endpointId: string,
     @Body() params: Record<string, any>,
   ) {
     return this.endpointService.executeEndpoint(req.user.workspaceId, endpointId, params);
   }
 
-  @Get('endpoints/:endpointId/stats')
+  @Get(STATS_ROUTE)
   @ApiOperation({ summary: 'Get endpoint usage statistics' })
-  @ApiParam({ name: 'endpointId', description: 'Endpoint ID' })
+  @ApiParam({ name: ENDPOINT_ID_PARAM, description: ENDPOINT_ID_DESCRIPTION })
   @ApiQuery({ name: 'days', required: false, type: Number })
   async getEndpointStats(
     @Request() req: any,

@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Star, Download, Search, Plug, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { apiMarketplaceApi } from '@/lib/advanced-api';
 import type { APIConnector } from '@/types/advanced-features';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Star, Download, Search, Plug, CheckCircle } from 'lucide-react';
-import { toast } from 'sonner';
+
 
 export default function APIMarketplace() {
   const [connectors, setConnectors] = useState<APIConnector[]>([]);
@@ -142,11 +144,11 @@ export default function APIMarketplace() {
           {[...Array(6)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader>
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+                <div className="h-3 bg-gray-200 rounded w-1/2" />
               </CardHeader>
               <CardContent>
-                <div className="h-24 bg-gray-200 rounded"></div>
+                <div className="h-24 bg-gray-200 rounded" />
               </CardContent>
             </Card>
           ))}

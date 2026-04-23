@@ -1,10 +1,12 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { ExportService } from '../exports/export.service';
-import { EmailService } from '../email/email.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { ReportFormat, ReportStatus, ScheduledReport } from '@prisma/client';
+
+import { EmailService } from '../email/email.service';
+import { ExportService } from '../exports/export.service';
+import { PrismaService } from '../prisma/prisma.service';
+
 import { CreateScheduledReportDto, UpdateScheduledReportDto } from './dto/scheduled-report.dto';
-import { ReportFormat, ReportStatus } from '@prisma/client';
 
 @Injectable()
 export class ScheduledReportsService {
@@ -77,6 +79,7 @@ export class ScheduledReportsService {
         },
       },
       orderBy: { createdAt: 'desc' },
+      take: 100, // Limit results
     });
   }
 
@@ -201,7 +204,7 @@ export class ScheduledReportsService {
   async processScheduledReports() {
     const now = new Date();
 
-    // Find reports due to run
+    // Find reports due to run - optimized query with specific column selection
     const dueReports = await this.prisma.scheduledReport.findMany({
       where: {
         isActive: true,
@@ -210,8 +213,16 @@ export class ScheduledReportsService {
         },
       },
       include: {
-        portal: true,
+        portal: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            workspaceId: true,
+          },
+        },
       },
+      take: 10, // Limit concurrent executions
     });
 
     // Only log if there are reports to execute (reduce log noise)
@@ -231,7 +242,12 @@ export class ScheduledReportsService {
   /**
    * Execute a single report
    */
-  private async executeReport(report: any) {
+
+  private async executeReport(
+    report: ScheduledReport & {
+      portal: { id: string; name: string; slug: string; workspaceId: string };
+    },
+  ) {
     // Create run record
     const run = await this.prisma.reportRun.create({
       data: {

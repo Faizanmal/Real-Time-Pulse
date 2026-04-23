@@ -11,7 +11,7 @@
 
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { ReactNode, useState, useCallback } from 'react';
+import { ReactNode, useState, useEffect,useCallback } from 'react';
 import { toast } from 'sonner';
 
 // ============================================================================
@@ -202,10 +202,9 @@ export function useInvalidateQueries() {
 export function useHydration() {
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // This runs only on the client after hydration
-  if (typeof window !== 'undefined' && !isHydrated) {
+  useEffect(() => {
     setIsHydrated(true);
-  }
+  }, []);
 
   return isHydrated;
 }

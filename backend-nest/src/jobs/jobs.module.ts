@@ -1,12 +1,14 @@
-import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
+import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { EmailQueueProcessor } from './processors/email-queue.processor';
-import { ReportQueueProcessor } from './processors/report-queue.processor';
-import { DataSyncQueueProcessor } from './processors/data-sync-queue.processor';
-import { JobsService } from './jobs.service';
+
 import { EmailModule } from '../email/email.module';
 import { PrismaModule } from '../prisma/prisma.module';
+
+import { JobsService } from './jobs.service';
+import { DataSyncQueueProcessor } from './processors/data-sync-queue.processor';
+import { EmailQueueProcessor } from './processors/email-queue.processor';
+import { ReportQueueProcessor } from './processors/report-queue.processor';
 import { QUEUE_NAMES } from './queue.constants';
 
 @Module({

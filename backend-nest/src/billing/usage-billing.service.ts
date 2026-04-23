@@ -4,12 +4,13 @@
  */
 
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { Prisma } from '@prisma/client'; // Assuming Prisma types exist
 import Stripe from 'stripe';
 import { v4 as uuidv4 } from 'uuid';
-import { Prisma } from '@prisma/client'; // Assuming Prisma types exist
+
+import { PrismaService } from '../prisma/prisma.service';
 
 // --- Interfaces ---
 
@@ -75,7 +76,7 @@ interface Invoice {
 
 @Injectable()
 export class UsageBillingService {
-  private stripe: Stripe;
+  private stripe: any;
   private metrics: UsageMetric[];
   private plans: UsagePlan[];
   private readonly logger = new Logger(UsageBillingService.name);
@@ -85,7 +86,7 @@ export class UsageBillingService {
     private readonly prisma: PrismaService,
   ) {
     this.stripe = new Stripe(this.configService.get<string>('stripe.secretKey') || '', {
-      apiVersion: '2025-12-15.clover', // Specify version for stability
+      apiVersion: '2026-03-25.dahlia', // Specify version for stability
     });
     this.initializeMetrics();
     this.initializePlans();
@@ -772,7 +773,7 @@ export class UsageBillingService {
       const action =
         metric?.aggregation === 'last' || metric?.aggregation === 'max' ? 'set' : 'increment';
 
-      await (this.stripe.subscriptionItems as any).createUsageRecord(meteredItem.id, {
+      await this.stripe.subscriptionItems.createUsageRecord(meteredItem.id, {
         quantity: quantity,
         timestamp: Math.floor(Date.now() / 1000),
         action: action,

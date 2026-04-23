@@ -1,12 +1,13 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bullmq';
-import { QUEUE_NAMES } from '../queue.constants';
-import { ReportJobData } from '../jobs.service';
-import { PrismaService } from '../../prisma/prisma.service';
-import { EmailService } from '../../email/email.service';
 import ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
+
+import { EmailService } from '../../email/email.service';
+import { PrismaService } from '../../prisma/prisma.service';
+import { ReportJobData } from '../jobs.service';
+import { QUEUE_NAMES } from '../queue.constants';
 
 @Processor(QUEUE_NAMES.REPORT)
 export class ReportQueueProcessor {

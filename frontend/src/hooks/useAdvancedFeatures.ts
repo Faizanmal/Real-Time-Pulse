@@ -5,6 +5,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+
 import {
   collaborationAPI,
   scriptingAPI,
@@ -17,6 +18,8 @@ import {
   arVisualizationAPI,
   apiMarketplaceAPI,
 } from '../lib/advanced-features-api';
+import { Pipeline, ARSceneInput, EndpointCreationInput } from '../lib/advanced-features-api';
+
 import {
   CollaborationSession,
   CollaborationParticipant,
@@ -41,7 +44,6 @@ import {
   CustomEndpoint,
   EndpointCategory,
 } from './useAdvancedFeatures.types';
-import { Pipeline, ARSceneInput, EndpointCreationInput } from '../lib/advanced-features-api';
 
 // ==================== Collaboration Hooks ====================
 export function useCollaboration(portalId: string) {
@@ -386,8 +388,7 @@ export function useVoice() {
           setTranscript(voiceResult.transcript || '');
           
           // Process as command
-          const commandResult = await voiceAPI.processCommand(voiceResult.transcript || '');
-          return commandResult;
+          return await voiceAPI.processCommand(voiceResult.transcript || '');
         } catch (error) {
           console.error('Transcription failed:', error);
         }

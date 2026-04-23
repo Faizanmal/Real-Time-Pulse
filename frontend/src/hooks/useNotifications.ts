@@ -3,6 +3,7 @@
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
+
 import { useAuthStore } from '../store/auth';
 import type { Notification } from '../types';
 

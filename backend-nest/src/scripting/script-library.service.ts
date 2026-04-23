@@ -33,8 +33,8 @@ export class ScriptLibraryService {
       mod: (a: number, b: number) => a % b,
 
       // Rounding
-      round: (n: number, decimals = 0) =>
-        Math.round(n * Math.pow(10, decimals)) / Math.pow(10, decimals),
+      round: (n: any, decimals: any = 0) =>
+        Math.round(Number(n) * Math.pow(10, Number(decimals))) / Math.pow(10, Number(decimals)),
       ceil: Math.ceil,
       floor: Math.floor,
       truncate: Math.trunc,
@@ -89,8 +89,15 @@ export class ScriptLibraryService {
     return {
       // Creation
       now: () => new Date(),
-      create: (year: number, month: number, day: number, hour = 0, minute = 0, second = 0) =>
-        new Date(year, month - 1, day, hour, minute, second),
+      create: (year: any, month: any, day: any, hour: any = 0, minute: any = 0, second: any = 0) =>
+        new Date(
+          Number(year),
+          Number(month) - 1,
+          Number(day),
+          Number(hour),
+          Number(minute),
+          Number(second),
+        ),
       parse: (dateString: string) => new Date(dateString),
       fromTimestamp: (timestamp: number) => new Date(timestamp),
 
@@ -249,9 +256,9 @@ export class ScriptLibraryService {
           .toLowerCase(),
 
       // Trimming
-      trim: (str: string) => String(str).trim(),
-      trimStart: (str: string) => String(str).trimStart(),
-      trimEnd: (str: string) => String(str).trimEnd(),
+      trim: (str: any) => String(str).trim(),
+      trimStart: (str: any) => String(str).trimStart(),
+      trimEnd: (str: any) => String(str).trimEnd(),
 
       // Padding
       padStart: (str: string, length: number, char = ' ') => String(str).padStart(length, char),
@@ -275,8 +282,8 @@ export class ScriptLibraryService {
       lastIndexOf: (str: string, search: string) => String(str).lastIndexOf(search),
 
       // Split/Join
-      split: (str: string, separator: string) => String(str).split(separator),
-      join: (arr: string[], separator = ',') => arr.join(separator),
+      split: (str: any, separator: any) => String(str).split(String(separator)),
+      join: (arr: any[], separator: any = ',') => arr.join(String(separator)),
 
       // Properties
       length: (str: string) => String(str).length,
@@ -518,10 +525,13 @@ export class ScriptLibraryService {
   private getFormatLibrary(): Record<string, (...args: any[]) => any> {
     return {
       // Numbers
-      number: (n: number, decimals = 0) => n.toFixed(decimals),
-      currency: (n: number, currency = 'USD', locale = 'en-US') =>
-        new Intl.NumberFormat(locale, { style: 'currency', currency }).format(n),
-      percent: (n: number, decimals = 0) => `${(n * 100).toFixed(decimals)}%`,
+      number: (n: any, decimals: any = 0) => Number(n).toFixed(Number(decimals)),
+      currency: (n: any, currency: any = 'USD', locale: any = 'en-US') =>
+        new Intl.NumberFormat(String(locale), {
+          style: 'currency',
+          currency: String(currency),
+        }).format(Number(n)),
+      percent: (n: any, decimals: any = 0) => `${(Number(n) * 100).toFixed(Number(decimals))}%`,
       compact: (n: number) => {
         const suffixes = ['', 'K', 'M', 'B', 'T'];
         let i = 0;
@@ -668,18 +678,19 @@ export class ScriptLibraryService {
             const values = (items as any[]).map((i) => i[agg.field]).filter((v) => v !== undefined);
             switch (agg.fn) {
               case 'sum':
-                result[name] = values.reduce((a, b) => a + b, 0);
+                result[name] = values.reduce((a: any, b: any) => Number(a) + Number(b), 0);
                 break;
               case 'avg':
-                result[name] = values.length
-                  ? values.reduce((a, b) => a + b, 0) / values.length
-                  : 0;
+                result[name] =
+                  values.length > 0
+                    ? values.reduce((a: any, b: any) => Number(a) + Number(b), 0) / values.length
+                    : 0;
                 break;
               case 'min':
-                result[name] = Math.min(...values);
+                result[name] = Math.min(...(values as number[]));
                 break;
               case 'max':
-                result[name] = Math.max(...values);
+                result[name] = Math.max(...(values as number[]));
                 break;
               case 'count':
                 result[name] = values.length;

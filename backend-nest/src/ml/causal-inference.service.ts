@@ -58,7 +58,7 @@ export class CausalInferenceService {
   constructor(private readonly eventEmitter: EventEmitter2) {}
 
   // Causal Graph Management
-  async createCausalGraph(config: Omit<CausalGraph, 'id'>): Promise<CausalGraph> {
+  createCausalGraph(config: Omit<CausalGraph, 'id'>): CausalGraph {
     const id = `graph-${Date.now()}`;
     const graph: CausalGraph = { ...config, id };
 
@@ -68,15 +68,15 @@ export class CausalInferenceService {
     return graph;
   }
 
-  async getCausalGraphs(): Promise<CausalGraph[]> {
+  getCausalGraphs(): CausalGraph[] {
     return Array.from(this.graphs.values());
   }
 
-  async getCausalGraph(id: string): Promise<CausalGraph | undefined> {
+  getCausalGraph(id: string): CausalGraph | undefined {
     return this.graphs.get(id);
   }
 
-  async updateCausalGraph(id: string, updates: Partial<CausalGraph>): Promise<CausalGraph> {
+  updateCausalGraph(id: string, updates: Partial<CausalGraph>): CausalGraph {
     const graph = this.graphs.get(id);
     if (!graph) throw new Error(`Graph ${id} not found`);
 
@@ -86,7 +86,7 @@ export class CausalInferenceService {
     return updated;
   }
 
-  async deleteCausalGraph(id: string): Promise<void> {
+  deleteCausalGraph(id: string): void {
     this.graphs.delete(id);
   }
 
@@ -177,8 +177,8 @@ export class CausalInferenceService {
     const treated = data.filter((d) => d[config.treatment] === 1 || d[config.treatment] === true);
     const control = data.filter((d) => d[config.treatment] === 0 || d[config.treatment] === false);
 
-    const treatedMean = this.mean(treated.map((d) => d[config.outcome]));
-    const controlMean = this.mean(control.map((d) => d[config.outcome]));
+    const treatedMean = this.mean(treated.map((d) => d[config.outcome]) as number[]);
+    const controlMean = this.mean(control.map((d) => d[config.outcome]) as number[]);
 
     const naiveEffect = treatedMean - controlMean;
 
@@ -221,7 +221,7 @@ export class CausalInferenceService {
 
     const originalOutcome =
       config.observation[config.outcomeVariable] ||
-      this.mean(data.map((d) => d[config.outcomeVariable]));
+      this.mean(data.map((d) => d[config.outcomeVariable]) as number[]);
 
     // Simulate counterfactual outcome
     let counterfactualOutcome = originalOutcome;
@@ -240,18 +240,18 @@ export class CausalInferenceService {
   }
 
   // A/B Test Analysis with Causal Inference
-  async analyzeABTest(config: {
+  analyzeABTest(config: {
     testId: string;
     treatmentData: any[];
     controlData: any[];
     metric: string;
     alpha?: number;
     method?: 'ttest' | 'bayesian' | 'cuped';
-  }): Promise<ABTestAnalysis> {
+  }): ABTestAnalysis {
     const alpha = config.alpha || 0.05;
 
-    const treatmentValues = config.treatmentData.map((d) => d[config.metric]);
-    const controlValues = config.controlData.map((d) => d[config.metric]);
+    const treatmentValues = config.treatmentData.map((d) => d[config.metric]) as number[];
+    const controlValues = config.controlData.map((d) => d[config.metric]) as number[];
 
     const treatmentMean = this.mean(treatmentValues);
     const controlMean = this.mean(controlValues);

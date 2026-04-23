@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   MessageCircle,
   Reply,
@@ -13,19 +12,21 @@ import {
   AtSign,
   X,
 } from 'lucide-react';
-import { commentsApi, Comment, CreateCommentDto } from '@/lib/enterprise-api';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { toast } from 'sonner';
+
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { toast } from 'sonner';
+import { Textarea } from '@/components/ui/textarea';
+import { commentsApi, Comment, CreateCommentDto } from '@/lib/enterprise-api';
 import { cn } from '@/lib/utils';
 
 interface CommentsSectionProps {
@@ -125,8 +126,8 @@ export function CommentsSection({
 
       {loading ? (
         <div className="animate-pulse space-y-4">
-          <div className="h-24 bg-gray-200 rounded"></div>
-          <div className="h-24 bg-gray-200 rounded"></div>
+          <div className="h-24 bg-gray-200 rounded" />
+          <div className="h-24 bg-gray-200 rounded" />
         </div>
       ) : comments.length === 0 ? (
         <div className="text-center py-8 text-gray-500">

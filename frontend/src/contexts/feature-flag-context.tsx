@@ -17,24 +17,7 @@ const FeatureFlagContext = createContext<FeatureFlagContextType | undefined>(und
 
 export function FeatureFlagProvider({ children }: { children: ReactNode }) {
   const [flags, setFlags] = useState<FeatureFlags>(() => {
-    const stored = localStorage.getItem('feature-flags');
-    if (stored) {
-      try {
-        return { ...{
-          // Default feature flags
-          'advanced-analytics': true,
-          'real-time-alerts': true,
-          'ar-visualization': false,
-          'workflow-automation': false,
-          'ai-insights': true,
-          'enterprise-features': false,
-        }, ...JSON.parse(stored) };
-      } catch (error) {
-        console.error('Failed to parse stored feature flags:', error);
-      }
-    }
-    return {
-      // Default feature flags
+    const defaults: FeatureFlags = {
       'advanced-analytics': true,
       'real-time-alerts': true,
       'ar-visualization': false,
@@ -42,6 +25,19 @@ export function FeatureFlagProvider({ children }: { children: ReactNode }) {
       'ai-insights': true,
       'enterprise-features': false,
     };
+
+    // During SSR, avoid accessing browser storage
+    if (typeof window === 'undefined') return defaults;
+
+    const stored = localStorage.getItem('feature-flags');
+    if (stored) {
+      try {
+        return { ...defaults, ...JSON.parse(stored) };
+      } catch (error) {
+        console.error('Failed to parse stored feature flags:', error);
+      }
+    }
+    return defaults;
   });
 
   const isEnabled = (flag: string): boolean => {
@@ -58,8 +54,9 @@ export function FeatureFlagProvider({ children }: { children: ReactNode }) {
 
 
 
-  // Save flags to localStorage
+  // Save flags to localStorage (client-only)
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     localStorage.setItem('feature-flags', JSON.stringify(flags));
   }, [flags]);
 

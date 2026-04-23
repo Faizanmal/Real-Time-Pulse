@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
-import { BlockchainService } from './blockchain.service';
-import { BlockchainController } from './blockchain.controller';
-import { MerkleTreeService } from './merkle-tree.service';
-import { PrismaModule } from '../prisma/prisma.module';
+
 import { CacheModule } from '../cache/cache.module';
+import { PrismaModule } from '../prisma/prisma.module';
+
+import { BlockchainController } from './blockchain.controller';
+import { BlockchainService } from './blockchain.service';
+import { MerkleTreeService } from './merkle-tree.service';
 
 @Module({
   imports: [PrismaModule, CacheModule],

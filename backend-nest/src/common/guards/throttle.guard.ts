@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
+
 import type { RequestUser } from '../interfaces/auth.interface';
 
 interface ThrottlerRequest {

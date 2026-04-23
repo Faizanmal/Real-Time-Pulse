@@ -7,10 +7,10 @@
  * with intelligent routing, caching, and fallback strategies.
  */
 
+import Anthropic from '@anthropic-ai/sdk';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
-import Anthropic from '@anthropic-ai/sdk';
 
 // Types
 interface AIMessage {
@@ -93,7 +93,7 @@ export class AIService implements OnModuleInit {
 
   constructor(private config: ConfigService) {}
 
-  async onModuleInit() {
+  onModuleInit() {
     // Initialize OpenAI
     const openaiKey = this.config.get<string>('OPENAI_API_KEY');
     if (openaiKey) {
@@ -573,7 +573,7 @@ ${dataContext ? `Current data context:\n${JSON.stringify(dataContext, null, 2)}`
   }
 
   // Health check
-  async healthCheck(): Promise<{ openai: boolean; anthropic: boolean }> {
+  healthCheck(): { openai: boolean; anthropic: boolean } {
     return {
       openai: !!this.openai,
       anthropic: !!this.anthropic,

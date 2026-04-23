@@ -1,7 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import {
+    Sparkles, Zap, Trophy, Target, Flame,
+    PartyPopper, Medal, Star, Activity, TrendingUp,
+} from "lucide-react";
+import { useState, useEffect } from "react";
+
 import {
     CelebrationProvider,
     useCelebration,
@@ -19,10 +24,7 @@ import {
     InteractiveChart,
     type InteractiveNotification,
 } from "@/components/ui";
-import {
-    Sparkles, Zap, Trophy, Target, Flame,
-    PartyPopper, Medal, Star, Activity, TrendingUp,
-} from "lucide-react";
+
 
 // Demo Data
 const chartData = [

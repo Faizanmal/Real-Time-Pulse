@@ -7,8 +7,9 @@
  * Uses AsyncLocalStorage for request-scoped context propagation.
  */
 
-import { Injectable, Logger } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
+
+import { Injectable, Logger } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface CorrelationContext {

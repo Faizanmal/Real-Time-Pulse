@@ -1,28 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import { ExportButton, WidgetExportButton } from '@/components/dashboard/ExportButton';
-import { AIInsightsPanel } from '@/components/dashboard/AIInsightsPanel';
-import { AlertsManager } from '@/components/dashboard/AlertsManager';
-import { WebhooksManager } from '@/components/dashboard/WebhooksManager';
-import { ScheduledReportsManager } from '@/components/dashboard/ScheduledReportsManager';
-import { ShareLinksManager } from '@/components/dashboard/ShareLinksManager';
-import { CommentsSection } from '@/components/dashboard/CommentsSection';
-import { TemplatesMarketplace } from '@/components/dashboard/TemplatesMarketplace';
-import { BillingDashboard } from '@/components/dashboard/BillingDashboard';
-import { AnalyticsDashboard } from '@/components/dashboard/AnalyticsDashboard';
-import { IntegrationsHub } from '@/components/dashboard/IntegrationsHub';
-import { AuditLogViewer } from '@/components/dashboard/AuditLogViewer';
-import { RoleManagementPanel } from '@/components/dashboard/RoleManagementPanel';
-import { FederatedSearchPanel } from '@/components/dashboard/FederatedSearchPanel';
-import { MLMarketplacePanel } from '@/components/dashboard/MLMarketplacePanel';
-import { VoiceDashboardPanel } from '@/components/dashboard/VoiceDashboardPanel';
-import { BlockchainAuditPanel } from '@/components/dashboard/BlockchainAuditPanel';
-import { ARVisualizationPanel } from '@/components/dashboard/ARVisualizationPanel';
-import { APIMarketplacePanel } from '@/components/dashboard/APIMarketplacePanel';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Download,
   Brain,
@@ -41,6 +18,30 @@ import {
   Zap,
   Puzzle
 } from 'lucide-react';
+import { useState } from 'react';
+
+import { AIInsightsPanel } from '@/components/dashboard/AIInsightsPanel';
+import { AlertsManager } from '@/components/dashboard/AlertsManager';
+import { AnalyticsDashboard } from '@/components/dashboard/AnalyticsDashboard';
+import { APIMarketplacePanel } from '@/components/dashboard/APIMarketplacePanel';
+import { ARVisualizationPanel } from '@/components/dashboard/ARVisualizationPanel';
+import { AuditLogViewer } from '@/components/dashboard/AuditLogViewer';
+import { BillingDashboard } from '@/components/dashboard/BillingDashboard';
+import { BlockchainAuditPanel } from '@/components/dashboard/BlockchainAuditPanel';
+import { CommentsSection } from '@/components/dashboard/CommentsSection';
+import { ExportButton, WidgetExportButton } from '@/components/dashboard/ExportButton';
+import { FederatedSearchPanel } from '@/components/dashboard/FederatedSearchPanel';
+import { IntegrationsHub } from '@/components/dashboard/IntegrationsHub';
+import { MLMarketplacePanel } from '@/components/dashboard/MLMarketplacePanel';
+import { RoleManagementPanel } from '@/components/dashboard/RoleManagementPanel';
+import { ScheduledReportsManager } from '@/components/dashboard/ScheduledReportsManager';
+import { ShareLinksManager } from '@/components/dashboard/ShareLinksManager';
+import { TemplatesMarketplace } from '@/components/dashboard/TemplatesMarketplace';
+import { VoiceDashboardPanel } from '@/components/dashboard/VoiceDashboardPanel';
+import { WebhooksManager } from '@/components/dashboard/WebhooksManager';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 /**
  * Enterprise Features Dashboard

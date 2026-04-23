@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+
 import { useScripts } from '@/hooks/useAdvancedFeatures';
 import type { UserScript } from '@/hooks/useAdvancedFeatures.types';
 import { scriptingAPI } from '@/lib/advanced-features-api';

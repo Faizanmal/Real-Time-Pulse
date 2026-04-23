@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { apiResources } from '@/lib/api-client';
 import { Shield, CheckCircle, XCircle, FileText, Search, Download, RefreshCw, Box } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+
+import { apiResources } from '@/lib/api-client';
 
 export default function ComplianceCenterPage() {
     const [integrityIds, setIntegrityIds] = useState<{ isValid: boolean; blocksVerified: number; entriesVerified: number; verifiedAt: string } | null>(null);
@@ -107,10 +108,10 @@ export default function ComplianceCenterPage() {
                             </div>
                         ) : (
                             <div className="animate-pulse flex space-x-4">
-                                <div className="h-12 w-12 bg-white/20 rounded-full"></div>
+                                <div className="h-12 w-12 bg-white/20 rounded-full" />
                                 <div className="space-y-2 flex-1">
-                                    <div className="h-4 bg-white/20 rounded w-1/2"></div>
-                                    <div className="h-4 bg-white/20 rounded w-3/4"></div>
+                                    <div className="h-4 bg-white/20 rounded w-1/2" />
+                                    <div className="h-4 bg-white/20 rounded w-3/4" />
                                 </div>
                             </div>
                         )}

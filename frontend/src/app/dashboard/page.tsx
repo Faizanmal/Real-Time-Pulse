@@ -1,21 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { useAuthStore } from '@/store/auth';
-import { portalApi, workspaceApi, integrationApi } from '@/lib/api-client';
-import { useNotifications } from '@/hooks/useNotifications';
-import { toast } from 'sonner';
-import { StatsCard, PortalCard } from '@/components/ui/feature-cards';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import type { Portal, Workspace, WorkspaceStats } from '@/types';
 import {
   LayoutDashboard,
   Plus,
@@ -40,6 +25,23 @@ import {
   Sun,
   X,
 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { StatsCard, PortalCard } from '@/components/ui/feature-cards';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useNotifications } from '@/hooks/useNotifications';
+import { portalApi, workspaceApi, integrationApi } from '@/lib/api-client';
+import { useAuthStore } from '@/store/auth';
+import type { Portal, Workspace, WorkspaceStats } from '@/types';
+
 
 interface PortalFilters {
   showPublic: boolean;

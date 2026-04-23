@@ -12,34 +12,33 @@ export interface ExportOptions {
 
 export const exportsApi = {
   exportPortalToPdf: async (portalId: string): Promise<Blob> => {
-    const response = await apiClient.get<Blob>(`/exports/portal/${portalId}/pdf`, {
+    return await apiClient.get<Blob>(`/exports/portal/${portalId}/pdf`, {
       responseType: 'blob',
     });
-    return response;
   },
 
   exportPortalToCsv: async (portalId: string): Promise<Blob> => {
-    const response = await apiClient.get<Blob>(`/exports/portal/${portalId}/csv`, {
+    return await apiClient.get<Blob>(`/exports/portal/${portalId}/csv`, {
       responseType: 'blob',
     });
-    return response;
   },
 
   exportPortalToExcel: async (portalId: string): Promise<Blob> => {
-    const response = await apiClient.get<Blob>(`/exports/portal/${portalId}/excel`, {
+    return await apiClient.get<Blob>(`/exports/portal/${portalId}/excel`, {
       responseType: 'blob',
     });
-    return response;
   },
 
   exportWidget: async (widgetId: string, format: ExportFormat): Promise<Blob> => {
-    const response = await apiClient.get<Blob>(`/exports/widget/${widgetId}/${format}`, {
+    return await apiClient.get<Blob>(`/exports/widget/${widgetId}/${format}`, {
       responseType: 'blob',
     });
-    return response;
   },
 
   downloadBlob: (blob: Blob, filename: string): void => {
+    // Client-only: prevent SSR errors
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;

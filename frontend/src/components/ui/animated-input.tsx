@@ -1,9 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
-import { forwardRef, InputHTMLAttributes, ReactNode, useState } from "react";
 import { Eye, EyeOff, Search, X } from "lucide-react";
+import { forwardRef, InputHTMLAttributes, ReactNode, useState } from "react";
+
+import { cn } from "@/lib/utils";
+
 
 export interface AnimatedInputProps
   extends InputHTMLAttributes<HTMLInputElement> {

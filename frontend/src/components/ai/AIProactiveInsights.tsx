@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
 import { Lightbulb, TrendingUp, AlertTriangle, Target, X, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+
 import { cn } from '@/lib/utils';
 
 interface ProactiveInsight {

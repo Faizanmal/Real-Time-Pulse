@@ -1,11 +1,13 @@
+import * as crypto from 'crypto';
+
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
+import * as QRCode from 'qrcode';
+import * as speakeasy from 'speakeasy';
+
 import { CacheService } from '../cache/cache.service';
 import { EmailService } from '../email/email.service';
-import * as crypto from 'crypto';
-import * as speakeasy from 'speakeasy';
-import * as QRCode from 'qrcode';
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface TotpSetupResult {
   secret: string;
@@ -195,14 +197,12 @@ export class TwoFactorService {
 
     const secret = this.decryptSecret(config.totpSecret);
 
-    const verified = speakeasy.totp.verify({
+    return speakeasy.totp.verify({
       secret,
       encoding: 'base32',
       token,
       window: 1,
     });
-
-    return verified;
   }
 
   /**
@@ -424,7 +424,7 @@ export class TwoFactorService {
     const iv = crypto.randomBytes(12);
     const cipher = crypto.createCipheriv(
       algorithm,
-      crypto.createHash('sha256').update(key).digest() as crypto.BinaryLike,
+      crypto.createHash('sha256').update(key).digest(),
       iv,
     );
 
@@ -447,7 +447,7 @@ export class TwoFactorService {
     const authTag = Buffer.from(authTagHex, 'hex');
     const decipher = crypto.createDecipheriv(
       algorithm,
-      crypto.createHash('sha256').update(key).digest() as crypto.BinaryLike,
+      crypto.createHash('sha256').update(key).digest(),
       iv,
     );
 

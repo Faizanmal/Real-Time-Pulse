@@ -8,9 +8,11 @@
 
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+
 import { PrismaService } from '../prisma/prisma.service';
-import { EventStore } from './event-store';
+
 import { AggregateRoot } from './event-sourcing.service';
+import { EventStore } from './event-store';
 
 // Snapshot Configuration
 export interface SnapshotConfig {

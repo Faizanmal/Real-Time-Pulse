@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { WorkflowExecutionStatus } from '@prisma/client';
+
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class WorkflowAutomationService {
@@ -148,7 +149,7 @@ export class WorkflowAutomationService {
           const result = await this.executeAction(action, triggerData, workflow.workspaceId);
 
           steps.push({
-            action: action.type,
+            action: String(action.type),
             status: 'success',
             result,
             duration: Date.now() - stepStartTime,
@@ -237,9 +238,9 @@ export class WorkflowAutomationService {
       case 'less_than':
         return value < rule.value;
       case 'contains':
-        return String(value).includes(rule.value);
+        return String(value).includes(String(rule.value));
       case 'not_contains':
-        return !String(value).includes(rule.value);
+        return !String(value).includes(String(rule.value));
       default:
         return false;
     }
@@ -304,7 +305,7 @@ export class WorkflowAutomationService {
       method: config.method || 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...config.headers,
+        ...(config.headers || {}),
       },
       body: JSON.stringify(data),
     });

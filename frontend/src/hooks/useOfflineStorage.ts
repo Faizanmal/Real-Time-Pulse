@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
 import localforage from 'localforage';
+import { useEffect, useState, useCallback } from 'react';
 
 // Configure localforage for offline storage
 const dashboardStore = localforage.createInstance({

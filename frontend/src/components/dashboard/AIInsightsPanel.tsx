@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
 import { Sparkles, TrendingUp, AlertTriangle, Lightbulb, X, Check } from 'lucide-react';
-import { aiInsightsApi, AIInsight } from '@/lib/enterprise-api';
+import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
+import { aiInsightsApi, AIInsight } from '@/lib/enterprise-api';
 import { cn } from '@/lib/utils';
 
 interface AIInsightsPanelProps {
@@ -73,9 +74,9 @@ export function AIInsightsPanel({ portalId, className }: AIInsightsPanelProps) {
     return (
       <Card className={cn('p-6', className)}>
         <div className="animate-pulse space-y-4">
-          <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-20 bg-gray-200 rounded"></div>
-          <div className="h-20 bg-gray-200 rounded"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/4" />
+          <div className="h-20 bg-gray-200 rounded" />
+          <div className="h-20 bg-gray-200 rounded" />
         </div>
       </Card>
     );

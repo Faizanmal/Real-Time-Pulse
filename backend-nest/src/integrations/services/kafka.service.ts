@@ -227,7 +227,7 @@ export class KafkaService implements OnModuleDestroy {
       const admin = await this.getAdmin(integration);
       const groups = await admin.listGroups();
 
-      const groupDetails = await Promise.all(
+      return await Promise.all(
         groups.groups.map(async (group) => {
           try {
             const description = await admin.describeGroups([group.groupId]);
@@ -246,8 +246,6 @@ export class KafkaService implements OnModuleDestroy {
           }
         }),
       );
-
-      return groupDetails;
     } catch (error) {
       this.logger.error('Failed to fetch Kafka consumer groups', error);
       throw error;
@@ -275,7 +273,7 @@ export class KafkaService implements OnModuleDestroy {
       });
 
       // Get topic high watermarks for lag calculation
-      const lagInfo = await Promise.all(
+      return await Promise.all(
         offsets.map(async (topicOffset) => {
           try {
             const highWatermarks = await admin.fetchTopicOffsets(topicOffset.topic);
@@ -307,8 +305,6 @@ export class KafkaService implements OnModuleDestroy {
           }
         }),
       );
-
-      return lagInfo;
     } catch (error) {
       this.logger.error('Failed to fetch Kafka consumer group offsets', error);
       throw error;

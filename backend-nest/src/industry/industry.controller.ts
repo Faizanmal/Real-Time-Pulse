@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Body, Param, Query } from '@nestjs/common';
-import { HealthcareSolutionService } from './healthcare/healthcare-solution.service';
+
 import { FinanceSolutionService } from './finance/finance-solution.service';
+import { HealthcareSolutionService } from './healthcare/healthcare-solution.service';
 import { ManufacturingSolutionService } from './manufacturing/manufacturing-solution.service';
 import { RetailSolutionService } from './retail/retail-solution.service';
 

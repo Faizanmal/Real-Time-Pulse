@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useCallback, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
 import { Trophy, Star, Sparkles, PartyPopper, Medal, Crown, Zap, Target, Flame, Award } from "lucide-react";
+import { useEffect, useLayoutEffect, useCallback, useRef, useState } from "react";
 
 // ============================================================================
 // CONFETTI SYSTEM
@@ -439,6 +438,8 @@ export function AchievementToast({
 // ============================================================================
 
 import { createContext, useContext } from "react";
+
+import { cn } from "@/lib/utils";
 
 interface CelebrationContextType {
     celebrate: (achievement: Achievement) => void;

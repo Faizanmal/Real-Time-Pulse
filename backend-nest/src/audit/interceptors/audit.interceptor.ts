@@ -1,12 +1,13 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import type { Prisma } from '@prisma/client';
+import type { Request } from 'express';
 import { Observable } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
-import type { Request } from 'express';
-import type { Prisma } from '@prisma/client';
+
+import type { RequestUser } from '../../common/interfaces/auth.interface';
 import { AuditService } from '../audit.service';
 import { AUDIT_LOG_KEY, AuditLogMetadata } from '../decorators/audit-log.decorator';
-import type { RequestUser } from '../../common/interfaces/auth.interface';
 
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {

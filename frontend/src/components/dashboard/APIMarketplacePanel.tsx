@@ -1,12 +1,13 @@
  'use client';
 
+import { Plus, ExternalLink, Cloud } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { useAPIMarketplace } from '@/hooks/useAdvancedFeatures';
 import type { APIConnector } from '@/hooks/useAdvancedFeatures.types';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Plus, ExternalLink, Cloud } from 'lucide-react';
 
 export function APIMarketplacePanel() {
   const {

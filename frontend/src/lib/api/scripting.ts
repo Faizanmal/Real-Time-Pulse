@@ -109,8 +109,7 @@ export const scriptingApi = {
   },
 
   getVersions: async (scriptId: string): Promise<ScriptVersion[]> => {
-    const response = await apiClient.get<ScriptVersion[]>(`/scripting/scripts/${scriptId}/versions`);
-    return response;
+    return await apiClient.get<ScriptVersion[]>(`/scripting/scripts/${scriptId}/versions`);
   },
 
   rollback: async (scriptId: string, version: number): Promise<Script> => {
@@ -119,13 +118,11 @@ export const scriptingApi = {
   },
 
   getExecutions: async (scriptId: string): Promise<ScriptExecution[]> => {
-    const response = await apiClient.get<ScriptExecution[]>(`/scripting/scripts/${scriptId}/executions`);
-    return response;
+    return await apiClient.get<ScriptExecution[]>(`/scripting/scripts/${scriptId}/executions`);
   },
 
   getLibraryFunctions: async (): Promise<LibraryFunction[]> => {
-    const response = await apiClient.get<LibraryFunction[]>('/scripting/libraries');
-    return response;
+    return await apiClient.get<LibraryFunction[]>('/scripting/libraries');
   },
 };
 

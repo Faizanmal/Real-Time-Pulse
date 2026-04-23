@@ -7,8 +7,8 @@
  * Provides optimistic update capabilities with automatic rollback on failure.
  */
 
-import { useState, useCallback, useRef } from 'react';
 import { useMutation, useQueryClient, MutationFunction } from '@tanstack/react-query';
+import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 
 interface OptimisticUpdateOptions<TData, TVariables, TContext> {

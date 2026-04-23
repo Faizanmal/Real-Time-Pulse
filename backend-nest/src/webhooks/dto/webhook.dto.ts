@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsString,
   IsOptional,
@@ -7,7 +8,6 @@ import {
   IsNumber,
   IsUrl,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateWebhookDto {
   @ApiProperty()

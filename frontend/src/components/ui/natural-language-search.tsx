@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
 import {
     Search, Mic, MicOff, Sparkles, TrendingUp, Calendar, Users,
     DollarSign, BarChart3, Clock, ArrowRight, X, Loader2,
     History, Zap, Filter, MessageSquare, ChevronRight,
 } from "lucide-react";
+import { useState, useCallback, useRef, useEffect } from "react";
+
+import { cn } from "@/lib/utils";
+
 
 // ============================================================================
 // TYPES
@@ -506,8 +508,7 @@ export function AIQueryInterface({
 
             // Add to recent queries
             setRecentQueries((prev) => {
-                const updated = [query, ...prev.filter((q) => q !== query)].slice(0, 10);
-                return updated;
+                return [query, ...prev.filter((q) => q !== query)].slice(0, 10);
             });
         } catch (error) {
             console.error("Query failed:", error);

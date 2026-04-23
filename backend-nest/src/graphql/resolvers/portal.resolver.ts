@@ -5,6 +5,7 @@
  * GraphQL resolver for Portal operations with subscriptions and data loading.
  */
 
+import { UseGuards } from '@nestjs/common';
 import {
   Resolver,
   Query,
@@ -16,13 +17,12 @@ import {
   Int,
   Context,
 } from '@nestjs/graphql';
-import { UseGuards } from '@nestjs/common';
 import { PubSub } from 'graphql-subscriptions';
-import { GqlAuthGuard } from '../../auth/guards/gql-auth.guard';
+
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { GqlAuthGuard } from '../../auth/guards/gql-auth.guard';
 import { PrismaService } from '../../prisma/prisma.service';
 import { DataLoaderService } from '../dataloader.service';
-
 // GraphQL Object Types (would be defined in separate files)
 import {
   PortalType,
@@ -275,7 +275,7 @@ export class PortalResolver {
     }
 
     // Create new portal
-    const newPortal = await this.prisma.portal.create({
+    return await this.prisma.portal.create({
       data: {
         name: newName,
         slug: this.generateSlug(newName),
@@ -300,8 +300,6 @@ export class PortalResolver {
         },
       },
     });
-
-    return newPortal;
   }
 
   // ============================================

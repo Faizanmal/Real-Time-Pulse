@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { ReportType, ClientReportStatus, Prisma } from '@prisma/client';
+
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ClientReportService {
@@ -127,6 +128,7 @@ export class ClientReportService {
 
   async getScheduledReports() {
     const now = new Date();
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
     return this.prisma.clientReport.findMany({
       where: {
@@ -135,45 +137,97 @@ export class ClientReportService {
           lte: now,
         },
       },
-      include: {
+      select: {
+        id: true,
+        workspaceId: true,
+        projectId: true,
+        title: true,
+        clientName: true,
+        reportType: true,
+        scheduledFor: true,
+        recipientEmails: true,
+        status: true,
         project: {
-          include: {
-            profitability: true,
+          select: {
+            id: true,
+            name: true,
+            clientName: true,
+            profitability: {
+              select: {
+                id: true,
+                totalRevenue: true,
+                profitMargin: true,
+                utilizationRate: true,
+              },
+            },
             timeEntries: {
+              where: {
+                date: {
+                  gte: thirtyDaysAgo,
+                },
+              },
+              select: {
+                id: true,
+                date: true,
+                hours: true,
+              },
               orderBy: { date: 'desc' },
-              take: 50,
+              take: 20,
             },
             expenses: {
+              where: {
+                date: {
+                  gte: thirtyDaysAgo,
+                },
+              },
+              select: {
+                id: true,
+                date: true,
+                amount: true,
+              },
               orderBy: { date: 'desc' },
-              take: 50,
+              take: 20,
             },
           },
         },
       },
+      orderBy: { scheduledFor: 'asc' },
+      take: 50, // Limit to prevent excessive data loading
     });
   }
 
   async getReportStats(workspaceId: string) {
-    const reports = await this.prisma.clientReport.findMany({
-      where: { workspaceId },
-    });
-
-    const total = reports.length;
-    const sent = reports.filter((r) => r.status === ClientReportStatus.SENT).length;
-    const scheduled = reports.filter((r) => r.status === ClientReportStatus.SCHEDULED).length;
-    const draft = reports.filter((r) => r.status === ClientReportStatus.DRAFT).length;
-    const failed = reports.filter((r) => r.status === ClientReportStatus.FAILED).length;
-
-    const aiGenerated = reports.filter((r) => r.aiGenerated).length;
+    // Use aggregation instead of loading all records - much more efficient
+    const [totalData, sentData, scheduledData, draftData, failedData, aiGeneratedData] =
+      await Promise.all([
+        this.prisma.clientReport.count({
+          where: { workspaceId },
+        }),
+        this.prisma.clientReport.count({
+          where: { workspaceId, status: ClientReportStatus.SENT },
+        }),
+        this.prisma.clientReport.count({
+          where: { workspaceId, status: ClientReportStatus.SCHEDULED },
+        }),
+        this.prisma.clientReport.count({
+          where: { workspaceId, status: ClientReportStatus.DRAFT },
+        }),
+        this.prisma.clientReport.count({
+          where: { workspaceId, status: ClientReportStatus.FAILED },
+        }),
+        this.prisma.clientReport.count({
+          where: { workspaceId, aiGenerated: true },
+        }),
+      ]);
 
     return {
-      total,
-      sent,
-      scheduled,
-      draft,
-      failed,
-      aiGenerated,
-      aiGeneratedPercent: total > 0 ? (aiGenerated / total) * 100 : 0,
+      total: totalData,
+      sent: sentData,
+      scheduled: scheduledData,
+      draft: draftData,
+      failed: failedData,
+      aiGenerated: aiGeneratedData,
+      aiGeneratedPercent: totalData > 0 ? (aiGeneratedData / totalData) * 100 : 0,
     };
   }
 }

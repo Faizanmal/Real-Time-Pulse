@@ -91,7 +91,12 @@ export class LoggingService implements NestLoggerService {
   }
 
   // Contexts to suppress (NestJS internal noisy logs)
-  private readonly suppressedContexts = ['RouterExplorer', 'RoutesResolver', 'InstanceLoader'];
+  private readonly suppressedContexts = [
+    'RouterExplorer',
+    'RoutesResolver',
+    'InstanceLoader',
+    'LegacyRouteConverter',
+  ];
 
   setContext(context: string) {
     this.context = context;
@@ -114,7 +119,15 @@ export class LoggingService implements NestLoggerService {
   }
 
   warn(message: string, context?: string) {
-    this.logger.warn(message, { context: context || this.context });
+    const ctx = context || this.context;
+    // Suppress LegacyRouteConverter warnings about /api/* patterns
+    if (
+      ctx === 'LegacyRouteConverter' ||
+      (typeof message === 'string' && message.includes('Unsupported route path'))
+    ) {
+      return;
+    }
+    this.logger.warn(message, { context: ctx });
   }
 
   debug(message: string, context?: string) {

@@ -9,6 +9,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+
 import { PrismaService } from '../prisma/prisma.service';
 
 // Types
@@ -98,7 +99,7 @@ export class NotificationService implements OnModuleInit {
     private prisma: PrismaService,
   ) {}
 
-  async onModuleInit() {
+  onModuleInit() {
     this.registerDefaultTemplates();
     this.startQueueProcessor();
     this.logger.log('Notification service initialized');
@@ -170,7 +171,7 @@ export class NotificationService implements OnModuleInit {
   /**
    * Schedule notification for later
    */
-  async schedule(payload: NotificationPayload, sendAt: Date): Promise<string> {
+  schedule(payload: NotificationPayload, sendAt: Date): string {
     const scheduledPayload = { ...payload, scheduledFor: sendAt };
     this.queue.push(scheduledPayload);
     return `scheduled_${Date.now()}_${Math.random().toString(36).slice(2)}`;
@@ -309,7 +310,7 @@ export class NotificationService implements OnModuleInit {
   /**
    * Send in-app notification
    */
-  private async sendInApp(payload: NotificationPayload): Promise<void> {
+  private sendInApp(payload: NotificationPayload): void {
     // Store notification in database
     const notification = {
       id: `notif_${Date.now()}_${Math.random().toString(36).slice(2)}`,
@@ -409,32 +410,32 @@ export class NotificationService implements OnModuleInit {
     });
   }
 
-  private async sendWithSES(_options: EmailOptions): Promise<void> {
+  private sendWithSES(_options: EmailOptions): void {
     // AWS SES implementation
     this.logger.log('Sending email with AWS SES');
   }
 
-  private async sendWithMailgun(_options: EmailOptions): Promise<void> {
+  private sendWithMailgun(_options: EmailOptions): void {
     // Mailgun implementation
     this.logger.log('Sending email with Mailgun');
   }
 
-  private async sendWithSMTP(_options: EmailOptions): Promise<void> {
+  private sendWithSMTP(_options: EmailOptions): void {
     // SMTP implementation
     this.logger.log('Sending email with SMTP');
   }
 
-  private async sendWithFCM(_options: PushOptions): Promise<void> {
+  private sendWithFCM(_options: PushOptions): void {
     // Firebase Cloud Messaging implementation
     this.logger.log('Sending push with FCM');
   }
 
-  private async sendWithOneSignal(_options: PushOptions): Promise<void> {
+  private sendWithOneSignal(_options: PushOptions): void {
     // OneSignal implementation
     this.logger.log('Sending push with OneSignal');
   }
 
-  private async sendWithExpo(_options: PushOptions): Promise<void> {
+  private sendWithExpo(_options: PushOptions): void {
     // Expo push implementation
     this.logger.log('Sending push with Expo');
   }
@@ -464,12 +465,12 @@ export class NotificationService implements OnModuleInit {
     });
   }
 
-  private async sendWithNexmo(_options: SMSOptions): Promise<void> {
+  private sendWithNexmo(_options: SMSOptions): void {
     // Nexmo/Vonage implementation
     this.logger.log('Sending SMS with Nexmo');
   }
 
-  private async sendWithSNS(_options: SMSOptions): Promise<void> {
+  private sendWithSNS(_options: SMSOptions): void {
     // AWS SNS implementation
     this.logger.log('Sending SMS with AWS SNS');
   }
@@ -478,11 +479,11 @@ export class NotificationService implements OnModuleInit {
   // PREFERENCES MANAGEMENT
   // ============================================================================
 
-  async setPreferences(preferences: NotificationPreferences): Promise<void> {
+  setPreferences(preferences: NotificationPreferences): void {
     this.preferences.set(preferences.userId, preferences);
   }
 
-  async getPreferences(userId: string): Promise<NotificationPreferences | undefined> {
+  getPreferences(userId: string): NotificationPreferences | undefined {
     return this.preferences.get(userId);
   }
 

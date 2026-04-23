@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
-import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { Wifi, WifiOff, RefreshCw, AlertCircle } from 'lucide-react';
+import React from 'react';
+
+import { useOfflineSync } from '@/hooks/useOfflineSync';
 
 export function OfflineIndicator() {
   const { isOnline, pendingSync, sync } = useOfflineSync();

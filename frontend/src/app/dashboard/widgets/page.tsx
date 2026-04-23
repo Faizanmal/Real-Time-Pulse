@@ -1,13 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { useAuthStore } from '@/store/auth';
-import { widgetApi, portalApi } from '@/lib/api-client';
-import { WidgetCard } from '@/components/ui/feature-cards';
-import type { Widget, Portal } from '@/types';
 import {
   Puzzle,
   Plus,
@@ -18,7 +11,16 @@ import {
   RefreshCw,
   AlertCircle,
 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
+
+import { WidgetCard } from '@/components/ui/feature-cards';
+import { widgetApi, portalApi } from '@/lib/api-client';
+import { useAuthStore } from '@/store/auth';
+import type { Widget, Portal } from '@/types';
+
 
 export default function WidgetsPage() {
   return (
@@ -32,11 +34,11 @@ function WidgetsPageLoading() {
   return (
     <div className="container py-8">
       <div className="animate-pulse space-y-4">
-        <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-        <div className="h-12 bg-gray-200 rounded"></div>
+        <div className="h-8 bg-gray-200 rounded w-1/4" />
+        <div className="h-12 bg-gray-200 rounded" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-64 bg-gray-200 rounded-lg"></div>
+            <div key={i} className="h-64 bg-gray-200 rounded-lg" />
           ))}
         </div>
       </div>

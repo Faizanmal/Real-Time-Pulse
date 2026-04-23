@@ -8,16 +8,7 @@
  * persistent layouts, quick actions, and personalization.
  */
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  ReactNode,
-} from 'react';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { Button } from './button';
 import {
   GripVertical,
   Maximize2,
@@ -37,6 +28,18 @@ import {
   ChevronDown,
   Check,
 } from 'lucide-react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+} from 'react';
+
+import { cn } from '@/lib/utils';
+
+import { Button } from './button';
+
 
 // ==================== TYPES ====================
 

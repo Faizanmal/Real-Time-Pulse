@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import {
   LayoutTemplate,
   Star,
@@ -15,24 +14,13 @@ import {
   Globe,
   Lock,
 } from 'lucide-react';
-import {
-  templatesApi,
-  Template,
-  CreateTemplateDto,
-} from '@/lib/enterprise-api';
+import Image from 'next/image';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -47,15 +35,28 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
-import Image from 'next/image';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  templatesApi,
+  Template,
+  CreateTemplateDto,
+} from '@/lib/enterprise-api';
 import { cn } from '@/lib/utils';
 
 interface TemplatesMarketplaceProps {

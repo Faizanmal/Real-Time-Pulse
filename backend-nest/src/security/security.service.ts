@@ -1,11 +1,13 @@
+import * as crypto from 'crypto';
+
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
-import { CacheService } from '../cache/cache.service';
-import { AuditService } from '../audit/audit.service';
-import { EmailService } from '../email/email.service';
-import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
+
+import { AuditService } from '../audit/audit.service';
+import { CacheService } from '../cache/cache.service';
+import { EmailService } from '../email/email.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface SecuritySettings {
   mfaEnabled: boolean;

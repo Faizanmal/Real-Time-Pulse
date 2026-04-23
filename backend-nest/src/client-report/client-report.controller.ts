@@ -1,8 +1,9 @@
 import { Controller, Get, Post, Body, Param, Patch, Delete, Query } from '@nestjs/common';
-import { ClientReportService } from './client-report.service';
-import { ReportGeneratorService } from './report-generator.service';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ReportType, ClientReportStatus } from '@prisma/client';
+
+import { ClientReportService } from './client-report.service';
+import { ReportGeneratorService } from './report-generator.service';
 
 @ApiTags('Client Reports')
 @ApiBearerAuth()

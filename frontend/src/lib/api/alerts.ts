@@ -50,23 +50,19 @@ export type UpdateAlertDto = Partial<CreateAlertDto>;
 
 export const alertsApi = {
   getAll: async (): Promise<Alert[]> => {
-    const response = await apiClient.get<Alert[]>('/alerts');
-    return response;
+    return await apiClient.get<Alert[]>('/alerts');
   },
 
   getById: async (id: string): Promise<Alert> => {
-    const response = await apiClient.get<Alert>(`/alerts/${id}`);
-    return response;
+    return await apiClient.get<Alert>(`/alerts/${id}`);
   },
 
   create: async (data: CreateAlertDto): Promise<Alert> => {
-    const response = await apiClient.post<Alert>('/alerts', data);
-    return response;
+    return await apiClient.post<Alert>('/alerts', data);
   },
 
   update: async (id: string, data: UpdateAlertDto): Promise<Alert> => {
-    const response = await apiClient.patch<Alert>(`/alerts/${id}`, data);
-    return response;
+    return await apiClient.patch<Alert>(`/alerts/${id}`, data);
   },
 
   delete: async (id: string): Promise<void> => {
@@ -74,13 +70,11 @@ export const alertsApi = {
   },
 
   getHistory: async (id: string): Promise<AlertHistory[]> => {
-    const response = await apiClient.get<AlertHistory[]>(`/alerts/${id}/history`);
-    return response;
+    return await apiClient.get<AlertHistory[]>(`/alerts/${id}/history`);
   },
 
   test: async (id: string): Promise<{ success: boolean; message: string }> => {
-    const response = await apiClient.post<{ success: boolean; message: string }>(`/alerts/${id}/test`);
-    return response;
+    return await apiClient.post<{ success: boolean; message: string }>(`/alerts/${id}/test`);
   },
 };
 

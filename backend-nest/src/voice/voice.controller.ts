@@ -13,10 +13,12 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiConsumes } from '@nestjs/swagger';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { VoiceService } from './voice.service';
-import { VoiceCommandService } from './voice-command.service';
 import { RequestUser } from '../common/interfaces/auth.interface';
+
+import { VoiceCommandService } from './voice-command.service';
+import { VoiceService } from './voice.service';
 
 @ApiTags('Voice')
 @ApiBearerAuth()

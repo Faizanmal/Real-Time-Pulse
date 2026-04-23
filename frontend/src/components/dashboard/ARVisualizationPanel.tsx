@@ -1,16 +1,5 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useARVisualization } from '@/hooks/useAdvancedFeatures';
-import type { ARScene } from '@/hooks/useAdvancedFeatures.types';
-import type { ARSceneInput } from '@/lib/advanced-features-api';
-import { arVisualizationAPI } from '@/lib/advanced-features-api';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import NextImage from 'next/image';
-import Link from 'next/link';
 import {
   Box,
   Plus,
@@ -26,6 +15,18 @@ import {
   Copy,
   Check,
 } from 'lucide-react';
+import NextImage from 'next/image';
+import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { useARVisualization } from '@/hooks/useAdvancedFeatures';
+import type { ARScene } from '@/hooks/useAdvancedFeatures.types';
+import type { ARSceneInput } from '@/lib/advanced-features-api';
+import { arVisualizationAPI } from '@/lib/advanced-features-api';
 
 // Using shared ARScene and ARSceneInput types from the hooks type definitions
 

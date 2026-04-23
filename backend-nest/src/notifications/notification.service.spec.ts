@@ -1,10 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { NotificationService } from './notification.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { EmailService } from '../email/email.service';
-import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import { Test, TestingModule } from '@nestjs/testing';
 import { of } from 'rxjs';
+
+import { EmailService } from '../email/email.service';
+import { PrismaService } from '../prisma/prisma.service';
+
+import { NotificationService } from './notification.service';
 
 describe('NotificationService', () => {
   let service: NotificationService;
@@ -15,9 +17,31 @@ describe('NotificationService', () => {
   const mockUser = {
     id: 'user-1',
     email: 'test@example.com',
+    password: 'hashedpassword',
     firstName: 'Test',
     lastName: 'User',
+    name: 'Test User',
+    avatar: null,
     phone: '+1234567890',
+    googleId: null,
+    githubId: null,
+    firebaseUid: null,
+    emailVerified: true,
+    emailVerifyToken: null,
+    emailVerifyExpiry: null,
+    resetToken: null,
+    resetTokenExpiry: null,
+    twoFactorEnabled: false,
+    twoFactorSecret: null,
+    passwordChangedAt: null,
+    failedLoginCount: 0,
+    lockedUntil: null,
+    stripeCustomerId: null,
+    workspaceId: 'workspace-1',
+    role: 'MEMBER' as any,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    lastLoginAt: null,
     pushTokens: [
       { token: 'token-1', platform: 'web', isActive: true },
       { token: 'token-2', platform: 'ios', isActive: true },
@@ -132,7 +156,8 @@ describe('NotificationService', () => {
       jest.spyOn(prisma.user, 'findUnique').mockResolvedValue({
         ...mockUser,
         phone: null,
-      } as any);
+        password: 'hashedpassword',
+      });
 
       const phone = await (service as any).getUserPhone('user-1');
       expect(phone).toBeNull();

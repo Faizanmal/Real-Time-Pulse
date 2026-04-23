@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
+
+import { EmailModule } from '../email/email.module';
+
 import { WorkspaceController } from './workspace.controller';
 import { WorkspaceService } from './workspace.service';
-import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [EmailModule],

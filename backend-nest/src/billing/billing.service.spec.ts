@@ -2,12 +2,8 @@
  * Enhanced Billing Service Unit Tests
  */
 
-import { Test, TestingModule } from '@nestjs/testing';
-import { BillingService } from './billing.service';
-import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
-import { CacheService } from '../cache/cache.service';
-import { AuditService } from '../audit/audit.service';
+import { Test, TestingModule } from '@nestjs/testing';
 import {
   createMockPrismaService,
   createMockConfigService,
@@ -15,6 +11,12 @@ import {
   createTestUser,
   createTestWorkspace,
 } from 'common/testing/test-utils';
+
+import { AuditService } from '../audit/audit.service';
+import { CacheService } from '../cache/cache.service';
+import { PrismaService } from '../prisma/prisma.service';
+
+import { BillingService } from './billing.service';
 
 describe('BillingService', () => {
   let service: BillingService;

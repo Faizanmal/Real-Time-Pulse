@@ -1,8 +1,9 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../prisma/prisma.service';
-import { EncryptionService } from '../../common/services/encryption.service';
 import * as admin from 'firebase-admin';
+
+import { EncryptionService } from '../../common/services/encryption.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 interface FirebaseUserData {
   uid: string;

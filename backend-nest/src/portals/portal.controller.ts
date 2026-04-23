@@ -11,11 +11,13 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { PortalService } from './portal.service';
-import { CreatePortalDto, UpdatePortalDto } from './dto/portal.dto';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 import type { RequestUser } from '../common/interfaces/auth.interface';
+
+import { CreatePortalDto, UpdatePortalDto } from './dto/portal.dto';
+import { PortalService } from './portal.service';
 
 @Controller('portals')
 export class PortalController {

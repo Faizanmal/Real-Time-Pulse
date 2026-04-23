@@ -6,9 +6,11 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
+
 import { LoggingService } from '../common/logger/logging.service';
-import { MonitoringService } from './monitoring.service';
 import { NotificationService } from '../notifications/notification.service';
+
+import { MonitoringService } from './monitoring.service';
 
 export interface AlertRule {
   id: string;
@@ -44,14 +46,14 @@ export class AlertingService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    await this.loadAlertRules();
+    this.loadAlertRules();
     this.logger.log('Alerting service initialized', 'AlertingService');
   }
 
   /**
    * Load alert rules from database or config
    */
-  private async loadAlertRules() {
+  private loadAlertRules() {
     // Default alert rules
     this.alertRules = [
       {
@@ -167,7 +169,7 @@ export class AlertingService implements OnModuleInit {
   /**
    * Get current value of a metric
    */
-  private async getMetricValue(metric: string): Promise<number> {
+  private getMetricValue(metric: string): number {
     const metrics = this.monitoringService.getMetrics();
 
     // Check counters
@@ -414,7 +416,7 @@ export class AlertingService implements OnModuleInit {
   /**
    * Send email alert
    */
-  private async sendEmailAlert(_alert: any) {
+  private sendEmailAlert(_alert: any) {
     const alertEmails = this.configService.get<string>('monitoring.alertEmails');
     if (!alertEmails) return;
 
@@ -492,7 +494,7 @@ export class AlertingService implements OnModuleInit {
   /**
    * Create custom alert rule
    */
-  async createAlertRule(rule: Omit<AlertRule, 'id'>): Promise<AlertRule> {
+  createAlertRule(rule: Omit<AlertRule, 'id'>): AlertRule {
     const newRule: AlertRule = {
       ...rule,
       id: `custom_${Date.now()}`,

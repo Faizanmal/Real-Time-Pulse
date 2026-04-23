@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react';
 import Image from 'next/image';
+import React, { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react';
 
 interface Collaborator {
   id: string;

@@ -11,12 +11,13 @@ import {
   Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { PipelineService } from './pipeline.service';
-import type { CreatePipelineDto, UpdatePipelineDto } from './pipeline.service';
-import { PipelineConnectorService, ConnectorType } from './pipeline-connector.service';
-import type { ExecutionResult } from './pipeline-executor.service';
 import type { AuthenticatedRequest } from '../common/interfaces/auth.interface';
+
+import { PipelineConnectorService, ConnectorType } from './pipeline-connector.service';
+import { PipelineService } from './pipeline.service';
+import type { ExecutionResult, CreatePipelineDto, UpdatePipelineDto } from './pipeline.types';
 
 @ApiTags('Data Pipeline')
 @ApiBearerAuth()

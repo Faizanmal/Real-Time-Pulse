@@ -11,10 +11,12 @@ import {
   Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ShareLinksService } from './share-links.service';
-import { RequestUser } from '../common/interfaces/auth.interface';
+import type { AuthenticatedRequest, RequestUser } from '../common/interfaces/auth.interface';
+
 import { CreateShareLinkDto, UpdateShareLinkDto, AccessShareLinkDto } from './dto/share-link.dto';
+import { ShareLinksService } from './share-links.service';
 
 @ApiTags('Share Links')
 @Controller('share-links')
@@ -48,7 +50,7 @@ export class ShareLinksController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get a share link by ID' })
   @ApiResponse({ status: 200, description: 'Returns the share link' })
-  async findOne(@Request() req: any, @Param('id') id: string) {
+  async findOne(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.shareLinksService.findOne(id, req.user.workspaceId);
   }
 

@@ -1,9 +1,10 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bullmq';
-import { QUEUE_NAMES } from '../queue.constants';
-import { DataSyncJobData } from '../jobs.service';
+
 import { PrismaService } from '../../prisma/prisma.service';
+import { DataSyncJobData } from '../jobs.service';
+import { QUEUE_NAMES } from '../queue.constants';
 
 @Processor(QUEUE_NAMES.DATA_SYNC)
 export class DataSyncQueueProcessor {

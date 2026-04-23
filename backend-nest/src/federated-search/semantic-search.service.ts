@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SearchResult } from './federated-search.service';
+
+import { SearchResult } from './federated-search.types';
 
 @Injectable()
 export class SemanticSearchService {

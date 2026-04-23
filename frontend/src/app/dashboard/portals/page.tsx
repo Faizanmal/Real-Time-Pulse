@@ -1,18 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { useAuthStore } from '@/store/auth';
-import { portalApi } from '@/lib/api-client';
-import { PortalCard } from '@/components/ui/feature-cards';
-import { toast } from 'sonner';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Button } from '@/components/ui/button';
-import type { Portal } from '@/types';
 import {
   LayoutDashboard,
   Plus,
@@ -25,6 +13,20 @@ import {
   SortDesc,
   X,
 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, useMemo } from 'react';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { PortalCard } from '@/components/ui/feature-cards';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { portalApi } from '@/lib/api-client';
+import { useAuthStore } from '@/store/auth';
+import type { Portal } from '@/types';
+
 
 interface PortalFilters {
   showPublic: boolean;
@@ -74,7 +76,7 @@ export default function PortalsPage() {
 
     try {
       await portalApi.delete(portalId);
-      setPortals(portals.filter((p) => p.id !== portalId));
+      setPortals((portals || []).filter((p) => p.id !== portalId));
       toast.success('Portal deleted successfully');
     } catch (error) {
       console.error('Failed to delete portal:', error);
@@ -83,7 +85,7 @@ export default function PortalsPage() {
   };
 
   const sortedAndFilteredPortals = useMemo(() => {
-    return portals
+    return (portals || [])
       .filter((portal) => {
         // Text search
         const matchesSearch = portal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -164,7 +166,7 @@ export default function PortalsPage() {
                   <LayoutDashboard className="h-7 w-7 text-purple-400" />
                   Portals
                 </h1>
-                <p className="text-sm text-gray-400">{portals.length} total portals</p>
+                <p className="text-sm text-gray-400">{(portals || []).length} total portals</p>
               </div>
             </div>
 

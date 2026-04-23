@@ -3,6 +3,7 @@
  */
 import '@testing-library/jest-dom';
 import React from 'react';
+
 import { server } from './src/mocks/server';
 
 // Mock Next.js router

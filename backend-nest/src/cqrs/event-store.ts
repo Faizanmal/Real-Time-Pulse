@@ -7,7 +7,9 @@
  */
 
 import { Injectable, Logger, Inject, OnModuleInit } from '@nestjs/common';
+
 import { PrismaService } from '../prisma/prisma.service';
+
 import { DomainEvent } from './event-sourcing.service';
 
 // Event Store Interface

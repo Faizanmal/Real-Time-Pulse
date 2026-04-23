@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ReportGeneratorService } from './report-generator.service';
-import { PrismaService } from '../prisma/prisma.service';
+
 import { EmailService } from '../email/email.service';
+import { PrismaService } from '../prisma/prisma.service';
+
 import { ClientReportService } from './client-report.service';
+import { ReportGeneratorService } from './report-generator.service';
 
 describe('ReportGeneratorService', () => {
   let service: ReportGeneratorService;

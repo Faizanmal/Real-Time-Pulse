@@ -1,12 +1,6 @@
 "use client";
 
-import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
-import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { useTheme } from "next-themes";
-import { cn } from "@/lib/utils";
 import {
   Home,
   LayoutDashboard,
@@ -32,6 +26,14 @@ import {
   FolderOpen,
   PanelLeft,
 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
+import * as React from "react";
+
+import { cn } from "@/lib/utils";
+
 
 // ============================================================================
 // NAVIGATION LAYOUT - Enterprise Dashboard Shell

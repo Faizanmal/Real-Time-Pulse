@@ -15,8 +15,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       password: this.configService.get<string>('redis.password'),
       db: this.configService.get<number>('redis.db'),
       retryStrategy: (times: number) => {
-        const delay = Math.min(times * 50, 2000);
-        return delay;
+        return Math.min(times * 50, 2000);
       },
     });
 

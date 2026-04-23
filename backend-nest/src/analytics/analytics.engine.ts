@@ -89,7 +89,7 @@ export class AnalyticsEngine implements OnModuleInit {
     private eventEmitter: EventEmitter2,
   ) {}
 
-  async onModuleInit() {
+  onModuleInit(): void {
     this.startAggregationWorker();
     this.logger.log('Analytics Engine initialized');
   }
@@ -101,7 +101,7 @@ export class AnalyticsEngine implements OnModuleInit {
   /**
    * Ingest single metric data point
    */
-  async ingest(
+  ingest(
     metricId: string,
     value: number,
     dimensions?: Record<string, string>,
@@ -129,12 +129,14 @@ export class AnalyticsEngine implements OnModuleInit {
       metricId,
       dataPoint,
     });
+
+    return Promise.resolve();
   }
 
   /**
    * Batch ingest multiple data points
    */
-  async ingestBatch(metricId: string, dataPoints: MetricDataPoint[]): Promise<void> {
+  ingestBatch(metricId: string, dataPoints: MetricDataPoint[]): Promise<void> {
     if (!this.dataBuffer.has(metricId)) {
       this.dataBuffer.set(metricId, []);
     }
@@ -146,6 +148,8 @@ export class AnalyticsEngine implements OnModuleInit {
     if (buffer.length > this.BUFFER_SIZE) {
       buffer.splice(0, buffer.length - this.BUFFER_SIZE);
     }
+
+    return Promise.resolve();
   }
 
   // ============================================================================
@@ -155,17 +159,17 @@ export class AnalyticsEngine implements OnModuleInit {
   /**
    * Execute analytics query
    */
-  async query(query: AnalyticsQuery): Promise<AnalyticsResult> {
+  query(query: AnalyticsQuery): Promise<AnalyticsResult> {
     const startTime = Date.now();
     const cacheKey = this.getCacheKey(query);
 
     // Check cache
     const cached = this.aggregationCache.get(cacheKey);
     if (cached && cached.expiresAt > new Date()) {
-      return {
+      return Promise.resolve({
         ...(cached.data as AnalyticsResult),
         executionTime: Date.now() - startTime,
-      };
+      });
     }
 
     // Process query
@@ -215,7 +219,7 @@ export class AnalyticsEngine implements OnModuleInit {
       expiresAt: new Date(Date.now() + this.CACHE_TTL),
     });
 
-    return result;
+    return Promise.resolve(result);
   }
 
   /**
@@ -512,7 +516,7 @@ export class AnalyticsEngine implements OnModuleInit {
     });
   }
 
-  private async getMetricWithComparison(
+  private getMetricWithComparison(
     metricId: string,
     currentRange: { start: Date; end: Date },
     previousRange: { start: Date; end: Date },
@@ -537,7 +541,7 @@ export class AnalyticsEngine implements OnModuleInit {
     const trend = this.analyzeTrend(currentData.map((dp) => dp.value));
     const sparkline = currentData.slice(-24).map((dp) => dp.value);
 
-    return {
+    return Promise.resolve({
       metricId,
       value: currentValue,
       previousValue,
@@ -545,7 +549,7 @@ export class AnalyticsEngine implements OnModuleInit {
       changePercent: Math.round(changePercent * 100) / 100,
       trend,
       sparkline,
-    };
+    });
   }
 
   private getCacheKey(query: AnalyticsQuery): string {

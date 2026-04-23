@@ -1,17 +1,19 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card } from '@/components/ui/card';
 import { 
   Activity, Shield, DollarSign, FileText, CheckCircle,
   TrendingUp
 } from 'lucide-react';
+import React, { useState } from 'react';
+
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+import ClientReportDashboard from './ClientReportDashboard';
 import DataHealthDashboard from './DataHealthDashboard';
 import DataValidationDashboard from './DataValidationDashboard';
-import ProfitabilityDashboard from './ProfitabilityDashboard';
-import ClientReportDashboard from './ClientReportDashboard';
 import GDPRDashboard from './GDPRDashboard';
+import ProfitabilityDashboard from './ProfitabilityDashboard';
 
 export default function FeaturesDashboard({ workspaceId }: { workspaceId: string }) {
   const [activeTab, setActiveTab] = useState('overview');

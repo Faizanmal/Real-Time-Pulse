@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Put, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
-import { ETLPipelineService, ETLNode, ETLEdge } from './etl-pipeline.service';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+import { ETLPipelineService, ETLNode, ETLEdge } from './etl-pipeline.service';
 
 interface CreatePipelineDto {
   name: string;

@@ -6,11 +6,12 @@
  * Comprehensive testing utilities for unit and integration tests.
  */
 
-import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '../../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
+
+import { PrismaService } from '../../prisma/prisma.service';
 
 // ============================================================================
 // MOCK FACTORIES

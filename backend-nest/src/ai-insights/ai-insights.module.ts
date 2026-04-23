@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+
+import { PrismaModule } from '../prisma/prisma.module';
+
 import { AIInsightsController } from './ai-insights.controller';
 import { AIInsightsService } from './ai-insights.service';
-import { EnhancedAIService } from './enhanced-ai.service';
-import { ConversationalAIService } from './conversational-ai.service';
 import { ConversationalAIController } from './conversational-ai.controller';
-import { PrismaModule } from '../prisma/prisma.module';
+import { ConversationalAIService } from './conversational-ai.service';
+import { EnhancedAIService } from './enhanced-ai.service';
 
 @Module({
   imports: [PrismaModule, EventEmitterModule.forRoot()],

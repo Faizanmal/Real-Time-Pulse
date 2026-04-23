@@ -1,7 +1,9 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { NotificationsGateway } from '../notifications/notifications.gateway';
+
 import { EmailService } from '../email/email.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { PrismaService } from '../prisma/prisma.service';
+
 import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
 
 @Injectable()
@@ -485,7 +487,7 @@ export class CommentsService {
     });
 
     // Recursively get replies for each reply
-    const nestedReplies = await Promise.all(
+    return await Promise.all(
       replies.map(async (reply) => {
         const childReplies = await this.getNestedReplies(reply.id);
         return {
@@ -494,7 +496,5 @@ export class CommentsService {
         };
       }),
     );
-
-    return nestedReplies;
   }
 }

@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
-import { ShareLinksService } from './share-links.service';
-import { ShareLinksController } from './share-links.controller';
+
 import { PrismaModule } from '../prisma/prisma.module';
+
+import { ShareLinksController } from './share-links.controller';
+import { ShareLinksService } from './share-links.service';
 
 @Module({
   imports: [PrismaModule],

@@ -5,10 +5,11 @@
 
 import { Module, Global } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
-import { MonitoringService } from './monitoring.service';
-import { MetricsController } from './metrics.controller';
-// import { HealthIndicatorService } from './health-indicator.service';
+
 import { AlertingService } from './alerting.service';
+import { MetricsController } from './metrics.controller';
+import { MonitoringService } from './monitoring.service';
+// import { HealthIndicatorService } from './health-indicator.service';
 // import { TraceService } from './trace.service';
 
 @Global()

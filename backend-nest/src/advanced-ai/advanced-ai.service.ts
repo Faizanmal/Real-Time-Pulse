@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { AIModelType, AIProvider, AIQueryType } from '@prisma/client';
+
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AdvancedAiService {
@@ -62,7 +63,7 @@ export class AdvancedAiService {
     const model = await this.getModel(data.modelId);
 
     // Simulate AI prediction (integrate with actual AI service)
-    const prediction = await this.runPrediction(model, data.inputData);
+    const prediction = this.runPrediction(model, data.inputData);
 
     return this.prisma.aIPrediction.create({
       data: {
@@ -120,7 +121,7 @@ export class AdvancedAiService {
     }
 
     // Process query (integrate with OpenAI/Anthropic)
-    const response = await this.processQuery(model, query, workspaceId, portalId);
+    const response = this.processQuery(model, query, workspaceId, portalId);
 
     // Save query
     return this.prisma.aIQuery.create({
@@ -149,7 +150,7 @@ export class AdvancedAiService {
     }
 
     // Generate SQL (integrate with AI service)
-    const sql = await this.generateSQL(model, query);
+    const sql = this.generateSQL(model, query);
 
     return this.prisma.aIQuery.create({
       data: {
@@ -196,7 +197,7 @@ export class AdvancedAiService {
     }
 
     // Run forecasting algorithm
-    const forecast = await this.runForecasting(model, data.historicalData, data.forecastPeriods);
+    const forecast = this.runForecasting(model, data.historicalData, data.forecastPeriods);
 
     return this.prisma.aIPrediction.create({
       data: {
@@ -227,7 +228,7 @@ export class AdvancedAiService {
       throw new NotFoundException('No anomaly detection model available');
     }
 
-    const anomalies = await this.runAnomalyDetection(model, data.timeSeries);
+    const anomalies = this.runAnomalyDetection(model, data.timeSeries);
 
     return {
       anomalies,
@@ -246,13 +247,11 @@ export class AdvancedAiService {
       return this.getDefaultRecommendations(workspaceId, portalId);
     }
 
-    const recommendations = await this.runRecommendationEngine(model, workspaceId, portalId);
-
-    return recommendations;
+    return await this.runRecommendationEngine(model, workspaceId, portalId);
   }
 
   // Private helper methods (simulate AI operations)
-  private async runPrediction(model: any, inputData: any) {
+  private runPrediction(model: any, inputData: any) {
     const startTime = Date.now();
 
     // Simulate AI prediction
@@ -269,7 +268,7 @@ export class AdvancedAiService {
     };
   }
 
-  private async processQuery(model: any, query: string, _workspaceId: string, _portalId?: string) {
+  private processQuery(model: any, query: string, _workspaceId: string, _portalId?: string) {
     // Simulate NLP processing
     // In production, use OpenAI GPT-4, Claude, etc.
 
@@ -287,13 +286,13 @@ export class AdvancedAiService {
     };
   }
 
-  private async generateSQL(model: any, query: string) {
+  private generateSQL(model: any, query: string) {
     // Simulate SQL generation
     // In production, use AI to convert natural language to SQL
     return `SELECT * FROM portals WHERE name LIKE '%${query}%'`;
   }
 
-  private async runForecasting(
+  private runForecasting(
     model: any,
     historicalData: Array<{ timestamp: Date; value: number }>,
     periods: number,
@@ -328,10 +327,7 @@ export class AdvancedAiService {
     };
   }
 
-  private async runAnomalyDetection(
-    model: any,
-    timeSeries: Array<{ timestamp: Date; value: number }>,
-  ) {
+  private runAnomalyDetection(model: any, timeSeries: Array<{ timestamp: Date; value: number }>) {
     // Simple z-score based anomaly detection for demo
     const values = timeSeries.map((d) => d.value);
     const mean = values.reduce((a, b) => a + b, 0) / values.length;

@@ -1,5 +1,4 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import {
   ComplianceStatus,
   DataSensitivity,
@@ -7,6 +6,8 @@ import {
   IncidentCategory,
   IncidentStatus,
 } from '@prisma/client';
+
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class EnhancedComplianceService {

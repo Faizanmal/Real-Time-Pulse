@@ -1,9 +1,11 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
-import { ReactNode, useEffect } from "react";
 import { X } from "lucide-react";
+import { ReactNode, useEffect } from "react";
+
+import { cn } from "@/lib/utils";
+
 
 interface AnimatedModalProps {
   isOpen: boolean;
@@ -35,6 +37,8 @@ export function AnimatedModal({
   closeOnOverlayClick = true,
 }: AnimatedModalProps) {
   useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };

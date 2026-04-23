@@ -11,9 +11,13 @@ import {
   Headers,
   Ip,
 } from '@nestjs/common';
-import type { Response, Request } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import type { Response, Request } from 'express';
+
+import { CurrentUser } from '../common/decorators/user.decorator';
+import type { RequestUser } from '../common/interfaces/auth.interface';
+
 import { AuthService, Session } from './auth.service';
 import {
   SignUpDto,
@@ -23,12 +27,12 @@ import {
   AuthResponseDto,
   FirebaseAuthDto,
 } from './dto/auth.dto';
-import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { GitHubAuthGuard } from './guards/github-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { FirebaseAuthService } from './services/firebase-auth.service';
-import { CurrentUser } from '../common/decorators/user.decorator';
-import type { RequestUser } from '../common/interfaces/auth.interface';
+
+const THROTTLE_CONFIG = { default: { limit: 5, ttl: 900000 } };
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -39,7 +43,7 @@ export class AuthController {
   ) {}
 
   @Post('signup')
-  @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 attempts per 15 minutes
+  @Throttle(THROTTLE_CONFIG) // 5 attempts per 15 minutes
   @ApiOperation({ summary: 'Register a new user account' })
   @ApiResponse({
     status: 201,
@@ -59,7 +63,7 @@ export class AuthController {
 
   @Post('signin')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 attempts per 15 minutes
+  @Throttle(THROTTLE_CONFIG) // 5 attempts per 15 minutes
   @ApiOperation({ summary: 'Sign in with email and password' })
   @ApiResponse({
     status: 200,
@@ -155,7 +159,7 @@ export class AuthController {
 
   @Post('password-reset/confirm')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 5, ttl: 900000 } })
+  @Throttle(THROTTLE_CONFIG)
   @ApiOperation({ summary: 'Reset password with token' })
   @ApiResponse({ status: 200, description: 'Password reset successfully' })
   @ApiResponse({ status: 400, description: 'Invalid or expired token' })

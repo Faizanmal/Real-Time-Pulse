@@ -1,21 +1,22 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { alertsApi, type Alert, type AlertHistory, type CreateAlertDto } from '@/lib/api/index';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { 
   Bell, Plus, Trash2, Edit2, Play, History, AlertTriangle, 
   CheckCircle, XCircle, Clock, TrendingUp, TrendingDown 
 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { alertsApi, type Alert, type AlertHistory, type CreateAlertDto } from '@/lib/api/index';
 
 const severityColors = {
   LOW: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
@@ -42,10 +43,11 @@ export default function AlertsPage() {
   const loadAlerts = useCallback(async () => {
     try {
       const data = await alertsApi.getAll();
-      setAlerts(data);
+      setAlerts(Array.isArray(data) ? data : (data as any)?.data || []);
     } catch (error) {
       console.error('Failed to load alerts:', error);
       toast.error('Failed to load alerts');
+      setAlerts([]);
     } finally {
       setLoading(false);
     }
@@ -58,7 +60,7 @@ export default function AlertsPage() {
   const handleToggleAlert = async (alert: Alert) => {
     try {
       await alertsApi.update(alert.id, { enabled: !alert.enabled });
-      setAlerts(alerts.map(a => 
+      setAlerts((alerts || []).map(a => 
         a.id === alert.id ? { ...a, enabled: !a.enabled } : a
       ));
       toast.success(`Alert ${!alert.enabled ? 'enabled' : 'disabled'}`);
@@ -71,7 +73,7 @@ export default function AlertsPage() {
     if (!confirm('Are you sure you want to delete this alert?')) return;
     try {
       await alertsApi.delete(id);
-      setAlerts(alerts.filter(a => a.id !== id));
+      setAlerts((alerts || []).filter(a => a.id !== id));
       toast.success('Alert deleted');
     } catch {
       toast.error('Failed to delete alert');
@@ -107,7 +109,7 @@ export default function AlertsPage() {
   const handleCreateAlert = async (data: CreateAlertDto) => {
     try {
       const newAlert = await alertsApi.create(data);
-      setAlerts([newAlert, ...alerts]);
+      setAlerts([newAlert, ...(alerts || [])]);
       setShowCreateDialog(false);
       toast.success('Alert created successfully');
     } catch {
@@ -159,7 +161,7 @@ export default function AlertsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Alerts</p>
-                <p className="text-2xl font-bold">{alerts.length}</p>
+                <p className="text-2xl font-bold">{(alerts || []).length}</p>
               </div>
               <Bell className="h-8 w-8 text-muted-foreground" />
             </div>
@@ -171,7 +173,7 @@ export default function AlertsPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Active</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {alerts.filter(a => a.enabled).length}
+                  {(alerts || []).filter(a => a.enabled).length}
                 </p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-500" />
@@ -184,7 +186,7 @@ export default function AlertsPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Disabled</p>
                 <p className="text-2xl font-bold text-gray-500">
-                  {alerts.filter(a => !a.enabled).length}
+                  {(alerts || []).filter(a => !a.enabled).length}
                 </p>
               </div>
               <XCircle className="h-8 w-8 text-gray-400" />
@@ -197,7 +199,7 @@ export default function AlertsPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Critical</p>
                 <p className="text-2xl font-bold text-red-600">
-                  {alerts.filter(a => a.severity === 'CRITICAL').length}
+                  {(alerts || []).filter(a => a.severity === 'CRITICAL').length}
                 </p>
               </div>
               <AlertTriangle className="h-8 w-8 text-red-500" />
@@ -213,7 +215,7 @@ export default function AlertsPage() {
           <CardDescription>Manage your notification rules and thresholds</CardDescription>
         </CardHeader>
         <CardContent>
-          {alerts.length === 0 ? (
+          {(alerts || []).length === 0 ? (
             <div className="text-center py-12">
               <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">No alerts configured yet</p>
@@ -224,7 +226,7 @@ export default function AlertsPage() {
           ) : (
             <div className="space-y-4">
               <AnimatePresence>
-                {alerts.map((alert) => {
+                {(alerts || []).map((alert) => {
                   const TypeIcon = typeIcons[alert.type];
                   return (
                     <motion.div

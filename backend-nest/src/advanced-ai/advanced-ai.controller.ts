@@ -1,7 +1,10 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards, Req, Patch } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { AdvancedAiService } from './advanced-ai.service';
 import { AIModelType, AIProvider } from '@prisma/client';
+
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import type { AuthenticatedRequest } from '../common/interfaces/auth.interface';
+
+import { AdvancedAiService } from './advanced-ai.service';
 
 @Controller('advanced-ai')
 @UseGuards(JwtAuthGuard)
@@ -10,7 +13,7 @@ export class AdvancedAiController {
 
   // AI Models
   @Get('models')
-  async getModels(@Req() req: any, @Query('type') type?: AIModelType) {
+  async getModels(@Req() req: AuthenticatedRequest, @Query('type') type?: AIModelType) {
     return this.advancedAiService.getModels(req.user.workspaceId, type);
   }
 
@@ -21,7 +24,7 @@ export class AdvancedAiController {
 
   @Post('models')
   async createModel(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body()
     data: {
       name: string;
@@ -46,7 +49,7 @@ export class AdvancedAiController {
   // Predictions
   @Post('predictions')
   async createPrediction(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body()
     data: {
       modelId: string;
@@ -63,7 +66,7 @@ export class AdvancedAiController {
 
   @Get('predictions')
   async getPredictions(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Query('modelId') modelId?: string,
     @Query('portalId') portalId?: string,
     @Query('widgetId') widgetId?: string,
@@ -78,7 +81,7 @@ export class AdvancedAiController {
   // Natural Language Queries
   @Post('query')
   async processNaturalLanguageQuery(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body()
     data: {
       query: string;
@@ -94,7 +97,7 @@ export class AdvancedAiController {
   }
 
   @Post('sql-generation')
-  async generateSQL(@Req() req: any, @Body() data: { query: string }) {
+  async generateSQL(@Req() req: AuthenticatedRequest, @Body() data: { query: string }) {
     return this.advancedAiService.generateSQLFromNaturalLanguage(
       req.user.workspaceId,
       req.user.id,
@@ -103,14 +106,14 @@ export class AdvancedAiController {
   }
 
   @Get('queries')
-  async getQueries(@Req() req: any) {
+  async getQueries(@Req() req: AuthenticatedRequest) {
     return this.advancedAiService.getQueries(req.user.workspaceId, req.user.id);
   }
 
   // Forecasting
   @Post('forecast')
   async forecastTimeSeries(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body()
     data: {
       widgetId: string;
@@ -124,7 +127,7 @@ export class AdvancedAiController {
   // Anomaly Detection
   @Post('anomalies')
   async detectAnomalies(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body()
     data: {
       widgetId?: string;
@@ -137,7 +140,10 @@ export class AdvancedAiController {
 
   // Recommendations
   @Get('recommendations/:portalId')
-  async generateRecommendations(@Req() req: any, @Param('portalId') portalId: string) {
+  async generateRecommendations(
+    @Req() req: AuthenticatedRequest,
+    @Param('portalId') portalId: string,
+  ) {
     return this.advancedAiService.generateRecommendations(req.user.workspaceId, portalId);
   }
 }

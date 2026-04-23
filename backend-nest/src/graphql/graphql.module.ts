@@ -6,24 +6,26 @@
  * and advanced security features.
  */
 
-import { Module } from '@nestjs/common';
-import { GraphQLModule as NestGraphQLModule } from '@nestjs/graphql';
-import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { ConfigService } from '@nestjs/config';
 import { join } from 'path';
+
+import { ApolloDriver } from '@nestjs/apollo';
+import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { GraphQLModule as NestGraphQLModule } from '@nestjs/graphql';
+
+import { DataLoaderService } from './dataloader.service';
 import { GraphQLService } from './graphql.service';
-import { PortalResolver } from './resolvers/portal.resolver';
-import { WidgetResolver } from './resolvers/widget.resolver';
-import { WorkspaceResolver } from './resolvers/workspace.resolver';
-import { UserResolver } from './resolvers/user.resolver';
-import { IntegrationResolver } from './resolvers/integration.resolver';
-import { AnalyticsResolver } from './resolvers/analytics.resolver';
-import { AlertResolver } from './resolvers/alert.resolver';
-import { AIInsightResolver } from './resolvers/ai-insight.resolver';
+import { CacheControlPlugin } from './plugins/cache-control.plugin';
 import { ComplexityPlugin } from './plugins/complexity.plugin';
 import { LoggingPlugin } from './plugins/logging.plugin';
-import { CacheControlPlugin } from './plugins/cache-control.plugin';
-import { DataLoaderService } from './dataloader.service';
+import { AIInsightResolver } from './resolvers/ai-insight.resolver';
+import { AlertResolver } from './resolvers/alert.resolver';
+import { AnalyticsResolver } from './resolvers/analytics.resolver';
+import { IntegrationResolver } from './resolvers/integration.resolver';
+import { PortalResolver } from './resolvers/portal.resolver';
+import { UserResolver } from './resolvers/user.resolver';
+import { WidgetResolver } from './resolvers/widget.resolver';
+import { WorkspaceResolver } from './resolvers/workspace.resolver';
 
 @Module({
   imports: [

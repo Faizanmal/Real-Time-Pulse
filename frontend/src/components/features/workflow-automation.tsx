@@ -1,14 +1,16 @@
 'use client';
 
+import { Play, Pause, Trash2, Plus, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
+import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { workflowApi } from '@/lib/advanced-api';
 import type { Workflow } from '@/types/advanced-features';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Play, Pause, Trash2, Plus, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { toast } from 'sonner';
-import Link from 'next/link';
+
 
 export default function WorkflowAutomation() {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
@@ -157,8 +159,8 @@ export default function WorkflowAutomation() {
           {[...Array(3)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardContent className="pt-6">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+                <div className="h-3 bg-gray-200 rounded w-1/2" />
               </CardContent>
             </Card>
           ))}

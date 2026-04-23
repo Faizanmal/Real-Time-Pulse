@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
 import {
   Link2,
   Plus,
@@ -14,14 +13,12 @@ import {
   Download,
   MoreVertical,
 } from 'lucide-react';
-import {
-  shareLinksApi,
-  ShareLink,
-  CreateShareLinkDto,
-} from '@/lib/enterprise-api';
+import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -30,6 +27,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -41,12 +44,10 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { toast } from 'sonner';
+  shareLinksApi,
+  ShareLink,
+  CreateShareLinkDto,
+} from '@/lib/enterprise-api';
 import { cn } from '@/lib/utils';
 
 interface ShareLinksManagerProps {
@@ -164,8 +165,8 @@ export function ShareLinksManager({
 
       {loading ? (
         <div className="animate-pulse space-y-4">
-          <div className="h-20 bg-gray-200 rounded"></div>
-          <div className="h-20 bg-gray-200 rounded"></div>
+          <div className="h-20 bg-gray-200 rounded" />
+          <div className="h-20 bg-gray-200 rounded" />
         </div>
       ) : links.length === 0 ? (
         <div className="text-center py-8 text-gray-500">

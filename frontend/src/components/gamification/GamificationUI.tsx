@@ -5,8 +5,8 @@
  * Badges, leaderboard, streaks, and achievement displays
  */
 
-import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import Image from 'next/image';
+import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
 
 // Types
 interface Badge {

@@ -1,9 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { PrismaService } from '../prisma/prisma.service';
-import { ClientReportService } from './client-report.service';
-import { EmailService } from '../email/email.service';
 import { ClientReportStatus } from '@prisma/client';
+
+import { EmailService } from '../email/email.service';
+import { PrismaService } from '../prisma/prisma.service';
+
+import { ClientReportService } from './client-report.service';
 
 @Injectable()
 export class ReportGeneratorService {

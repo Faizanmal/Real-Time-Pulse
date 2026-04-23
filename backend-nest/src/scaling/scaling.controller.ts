@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
-import { MultiRegionService } from './multi-region.service';
+
 import { HorizontalScalingService } from './horizontal-scaling.service';
+import { MultiRegionService } from './multi-region.service';
 
 @Controller('scaling')
 export class ScalingController {

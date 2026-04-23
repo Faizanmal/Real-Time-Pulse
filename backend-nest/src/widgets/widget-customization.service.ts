@@ -1,7 +1,8 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CacheService } from '../cache/cache.service';
 import { Prisma } from '@prisma/client';
+
+import { CacheService } from '../cache/cache.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface WidgetStyle {
   backgroundColor?: string;
@@ -380,8 +381,11 @@ export class WidgetCustomizationService {
   /**
    * Apply data transformations to data
    */
-  applyTransformations(data: any[], transformations: DataTransformation[]): any[] {
-    let result = [...data];
+  applyTransformations(
+    data: any[],
+    transformations: DataTransformation[],
+  ): Record<string, unknown>[] {
+    let result: Record<string, unknown>[] = [...(data as Record<string, unknown>[])];
 
     for (const transform of transformations.sort((a, b) => a.order - b.order)) {
       switch (transform.type) {

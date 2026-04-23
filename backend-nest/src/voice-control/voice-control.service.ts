@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface VoiceCommand {
@@ -21,12 +22,12 @@ export class VoiceControlService {
 
   // Command patterns for intent recognition
   private readonly commandPatterns = {
-    show: /^(show|display|open|view)\s+(me\s+)?(.+)/i,
-    create: /^(create|make|add|new)\s+(.+)/i,
-    update: /^(update|change|modify|edit)\s+(.+)/i,
-    delete: /^(delete|remove)\s+(.+)/i,
-    generate: /^(generate|create|make)\s+(report|summary)\s+(.+)/i,
-    filter: /^(filter|show|display)\s+(.+?)\s+(by|where|with)\s+(.+)/i,
+    show: /^(show|display|open|view)\s+(me\s+)?(.{1,100})/i,
+    create: /^(create|make|add|new)\s+(.{1,100})/i,
+    update: /^(update|change|modify|edit)\s+(.{1,100})/i,
+    delete: /^(delete|remove)\s+(.{1,100})/i,
+    generate: /^(generate|create|make)\s+(report|summary)\s+(.{1,100})/i,
+    filter: /^(filter|show|display)\s+(.{1,50})\s+(by|where|with)\s+(.{1,50})/i,
     alert: /^(create|set|add)\s+alert\s+(for|when)\s+(.+)/i,
     navigate: /^(go to|navigate to|switch to)\s+(.+)/i,
   };
@@ -123,18 +124,18 @@ export class VoiceControlService {
 
     switch (intent) {
       case 'show':
-        entities.target = match[3]?.trim();
+        entities.target = match[3]?.trim() ?? '';
         entities.type = this.identifyEntityType(entities.target);
         break;
       case 'create':
-        entities.target = match[2]?.trim();
+        entities.target = match[2]?.trim() ?? '';
         entities.type = this.identifyEntityType(entities.target);
         break;
       case 'update':
-        entities.target = match[2]?.trim();
+        entities.target = match[2]?.trim() ?? '';
         break;
       case 'delete':
-        entities.target = match[2]?.trim();
+        entities.target = match[2]?.trim() ?? '';
         break;
       case 'generate':
         entities.reportType = match[2]?.trim();
@@ -191,7 +192,7 @@ export class VoiceControlService {
             success: true,
             action: 'show_dashboard',
             data: { dashboard: dashboards[0] },
-            message: `Showing ${dashboards[0].name}`,
+            message: `Showing ${String(dashboards[0].name)}`,
           };
         }
         break;
@@ -205,7 +206,7 @@ export class VoiceControlService {
             success: true,
             action: 'show_project',
             data: { project },
-            message: `Showing ${project.name} status`,
+            message: `Showing ${String(project.name)} status`,
           };
         }
         break;
@@ -286,7 +287,7 @@ export class VoiceControlService {
       success: true,
       action: 'generate_report',
       data: {
-        type: reportType,
+        type: String(reportType),
         period,
         format: 'pdf',
       },
@@ -311,7 +312,7 @@ export class VoiceControlService {
       success: true,
       action: 'create_alert',
       data: {
-        type: alertType,
+        type: String(alertType),
         condition,
         userId,
         workspaceId,
@@ -336,7 +337,7 @@ export class VoiceControlService {
       success: true,
       action: 'navigate',
       data: { route },
-      message: `Navigating to ${destination}`,
+      message: `Navigating to ${String(destination)}`,
     });
   }
 

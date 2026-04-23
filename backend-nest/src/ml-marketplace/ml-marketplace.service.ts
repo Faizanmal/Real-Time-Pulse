@@ -1,33 +1,10 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CacheService } from '../cache/cache.service';
-import { MLModelExecutorService } from './ml-model-executor.service';
 
-export interface MLModel {
-  id: string;
-  name: string;
-  description: string;
-  category:
-    | 'forecasting'
-    | 'anomaly_detection'
-    | 'classification'
-    | 'clustering'
-    | 'nlp'
-    | 'recommendation';
-  version: string;
-  author: string;
-  isPublic: boolean;
-  isPremium: boolean;
-  price?: number;
-  rating: number;
-  downloads: number;
-  inputSchema: Record<string, any>;
-  outputSchema: Record<string, any>;
-  config: Record<string, any>;
-  tags: string[];
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { CacheService } from '../cache/cache.service';
+import { PrismaService } from '../prisma/prisma.service';
+
+import { MLModel } from './ml-marketplace.types';
+import { MLModelExecutorService } from './ml-model-executor.service';
 
 export interface ModelDeployment {
   id: string;

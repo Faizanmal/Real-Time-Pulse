@@ -1,3 +1,5 @@
+import * as crypto from 'crypto';
+
 import {
   Injectable,
   ConflictException,
@@ -5,17 +7,18 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
-import * as crypto from 'crypto';
-import { EncryptionService } from '../common/services/encryption.service';
-import { CacheService } from '../cache/cache.service';
-import { AuditService } from '../audit/audit.service';
-import { RecaptchaService } from '../common/services/recaptcha.service';
-import { RateLimitService } from '../common/services/rate-limit.service';
-import { EmailService } from '../email/email.service';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcryptjs';
 import { JwtPayload } from 'jsonwebtoken';
+
+import { AuditService } from '../audit/audit.service';
+import { CacheService } from '../cache/cache.service';
+import { EncryptionService } from '../common/services/encryption.service';
+import { RateLimitService } from '../common/services/rate-limit.service';
+import { RecaptchaService } from '../common/services/recaptcha.service';
+import { EmailService } from '../email/email.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 // Extend JwtPayload to include exp
 declare module 'jsonwebtoken' {
@@ -23,9 +26,8 @@ declare module 'jsonwebtoken' {
     exp?: number;
   }
 }
-import { FirebaseAuthService } from './services/firebase-auth.service';
-import * as bcrypt from 'bcryptjs';
 import { SignUpDto, SignInDto, AuthResponseDto } from './dto/auth.dto';
+import { FirebaseAuthService } from './services/firebase-auth.service';
 
 interface AuthContext {
   ip: string;
@@ -156,7 +158,7 @@ export class AuthService {
 
     // Audit log
     await this.auditService.log({
-      action: 'SIGN_UP' as any,
+      action: 'SIGN_IN',
       userId: result.user.id,
       workspaceId: result.user.workspaceId,
       userEmail: result.user.email,
@@ -239,7 +241,7 @@ export class AuthService {
 
     // Audit log
     await this.auditService.log({
-      action: 'SIGN_IN' as any,
+      action: 'SIGN_IN',
       userId: user.id,
       workspaceId: user.workspaceId,
       userEmail: user.email,

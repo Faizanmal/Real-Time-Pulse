@@ -5,8 +5,9 @@
 
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { LoggingService } from '../common/logger/logging.service';
 import OpenAI from 'openai';
+
+import { LoggingService } from '../common/logger/logging.service';
 
 interface VoiceCommand {
   command: string;
@@ -53,8 +54,8 @@ export class EnhancedVoiceControlService {
       {
         command: 'navigate',
         patterns: [
-          /(?:go to|open|show|navigate to)\s+(?:the\s+)?(\w+)/i,
-          /(?:take me to)\s+(?:the\s+)?(\w+)/i,
+          /(?:go to|open|show|navigate to)\s+(?:the\s+)?(\w{1,50})/i,
+          /(?:take me to)\s+(?:the\s+)?(\w{1,50})/i,
         ],
         action: 'navigation.goto',
         parameters: ['destination'],
@@ -64,8 +65,8 @@ export class EnhancedVoiceControlService {
       {
         command: 'dashboard',
         patterns: [
-          /(?:show|display|open)\s+(?:the\s+)?(\w+)?\s*dashboard/i,
-          /(?:switch to|change to)\s+(?:the\s+)?(\w+)?\s*dashboard/i,
+          /(?:show|display|open)\s+(?:the\s+)?(\w{1,50})?\s*dashboard/i,
+          /(?:switch to|change to)\s+(?:the\s+)?(\w{1,50})?\s*dashboard/i,
         ],
         action: 'dashboard.show',
         parameters: ['dashboardName'],
@@ -75,8 +76,8 @@ export class EnhancedVoiceControlService {
       {
         command: 'widget.add',
         patterns: [
-          /(?:add|create|new)\s+(?:a\s+)?(\w+)\s+widget/i,
-          /(?:insert)\s+(?:a\s+)?(\w+)\s+(?:widget|chart)/i,
+          /(?:add|create|new)\s+(?:a\s+)?(\w{1,50})\s+widget/i,
+          /(?:insert)\s+(?:a\s+)?(\w{1,50})\s+(?:widget|chart)/i,
         ],
         action: 'widget.create',
         parameters: ['widgetType'],
@@ -85,8 +86,8 @@ export class EnhancedVoiceControlService {
       {
         command: 'widget.remove',
         patterns: [
-          /(?:remove|delete|hide)\s+(?:the\s+)?(\w+)\s+widget/i,
-          /(?:close)\s+(?:the\s+)?(\w+)\s+(?:widget|chart)/i,
+          /(?:remove|delete|hide)\s+(?:the\s+)?(\w{1,50})\s+widget/i,
+          /(?:close)\s+(?:the\s+)?(\w{1,50})\s+(?:widget|chart)/i,
         ],
         action: 'widget.remove',
         parameters: ['widgetName'],
@@ -96,7 +97,7 @@ export class EnhancedVoiceControlService {
       {
         command: 'filter',
         patterns: [
-          /(?:filter|show only|display only)\s+(?:by\s+)?(.+)/i,
+          /(?:filter|show only|display only)\s+(?:by\s+)?(.{1,100})/i,
           /(?:apply filter)\s+(.+)/i,
         ],
         action: 'data.filter',
@@ -106,8 +107,8 @@ export class EnhancedVoiceControlService {
       {
         command: 'timerange',
         patterns: [
-          /(?:show|display)\s+(?:data\s+)?(?:for|from)\s+(?:the\s+)?(?:last\s+)?(\d+)\s+(days?|weeks?|months?|hours?)/i,
-          /(?:set time range to)\s+(.+)/i,
+          /(?:show|display)\s+(?:data\s+)?(?:for|from)\s+(?:the\s+)?(?:last\s+)?(\d{1,3})\s+(days?|weeks?|months?|hours?)/i,
+          /(?:set time range to)\s+(.{1,50})/i,
         ],
         action: 'data.timerange',
         parameters: ['value', 'unit'],
@@ -124,8 +125,8 @@ export class EnhancedVoiceControlService {
       {
         command: 'report.generate',
         patterns: [
-          /(?:generate|create|build)\s+(?:a\s+)?(?:(\w+)\s+)?report/i,
-          /(?:make me|give me)\s+(?:a\s+)?(?:(\w+)\s+)?report/i,
+          /(?:generate|create|build)\s+(?:a\s+)?(?:(\w{1,50})\s+)?report/i,
+          /(?:make me|give me)\s+(?:a\s+)?(?:(\w{1,50})\s+)?report/i,
         ],
         action: 'report.generate',
         parameters: ['reportType'],
@@ -134,8 +135,8 @@ export class EnhancedVoiceControlService {
       {
         command: 'report.export',
         patterns: [
-          /(?:export|download)\s+(?:the\s+)?(?:report|data)\s+(?:as|to)\s+(\w+)/i,
-          /(?:save)\s+(?:as|to)\s+(\w+)/i,
+          /(?:export|download)\s+(?:the\s+)?(?:report|data)\s+(?:as|to)\s+(\w{1,20})/i,
+          /(?:save)\s+(?:as|to)\s+(\w{1,20})/i,
         ],
         action: 'report.export',
         parameters: ['format'],
@@ -145,8 +146,8 @@ export class EnhancedVoiceControlService {
       {
         command: 'alert.create',
         patterns: [
-          /(?:create|set|add)\s+(?:an?\s+)?alert\s+(?:for|when)\s+(.+)/i,
-          /(?:notify me|alert me)\s+(?:when|if)\s+(.+)/i,
+          /(?:create|set|add)\s+(?:an?\s+)?alert\s+(?:for|when)\s+(.{1,100})/i,
+          /(?:notify me|alert me)\s+(?:when|if)\s+(.{1,100})/i,
         ],
         action: 'alert.create',
         parameters: ['condition'],

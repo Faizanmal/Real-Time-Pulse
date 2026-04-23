@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
 import {
   BarChart3,
   TrendingUp,
@@ -13,16 +12,12 @@ import {
   RefreshCw,
   Calendar,
 } from 'lucide-react';
-import {
-  analyticsApi,
-  AnalyticsData,
-  SystemHealth,
-  UserActivity,
-  UsageMetrics,
-} from '@/lib/enterprise-api';
+import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -36,7 +31,13 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { toast } from 'sonner';
+import {
+  analyticsApi,
+  AnalyticsData,
+  SystemHealth,
+  UserActivity,
+  UsageMetrics,
+} from '@/lib/enterprise-api';
 import { cn } from '@/lib/utils';
 
 interface AnalyticsDashboardProps {
@@ -136,14 +137,14 @@ export function AnalyticsDashboard({ className, portalId }: AnalyticsDashboardPr
     return (
       <Card className={cn('p-6', className)}>
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="h-8 bg-gray-200 rounded w-1/4" />
           <div className="grid grid-cols-4 gap-4">
-            <div className="h-24 bg-gray-200 rounded"></div>
-            <div className="h-24 bg-gray-200 rounded"></div>
-            <div className="h-24 bg-gray-200 rounded"></div>
-            <div className="h-24 bg-gray-200 rounded"></div>
+            <div className="h-24 bg-gray-200 rounded" />
+            <div className="h-24 bg-gray-200 rounded" />
+            <div className="h-24 bg-gray-200 rounded" />
+            <div className="h-24 bg-gray-200 rounded" />
           </div>
-          <div className="h-64 bg-gray-200 rounded"></div>
+          <div className="h-64 bg-gray-200 rounded" />
         </div>
       </Card>
     );

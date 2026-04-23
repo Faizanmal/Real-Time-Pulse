@@ -8,17 +8,8 @@
  * two-factor authentication, security logs, and vulnerability alerts.
  */
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  ReactNode,
-  useMemo,
-} from 'react';
+import { formatDistanceToNow, format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { Button } from './button';
 import {
   Shield,
   ShieldCheck,
@@ -46,7 +37,19 @@ import {
   Copy,
   QrCode,
 } from 'lucide-react';
-import { formatDistanceToNow, format } from 'date-fns';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+  useMemo,
+} from 'react';
+
+import { cn } from '@/lib/utils';
+
+import { Button } from './button';
+
 
 // ==================== TYPES ====================
 

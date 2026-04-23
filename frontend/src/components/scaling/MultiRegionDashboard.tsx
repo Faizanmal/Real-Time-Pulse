@@ -1,6 +1,5 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
 import {
   Globe,
   Server,
@@ -15,6 +14,8 @@ import {
   Settings,
   ArrowRight,
 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+
 import { cn } from '@/lib/utils';
 
 interface Region {

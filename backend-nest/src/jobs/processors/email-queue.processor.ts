@@ -1,9 +1,10 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bullmq';
+
 import { EmailService } from '../../email/email.service';
-import { QUEUE_NAMES } from '../queue.constants';
 import { EmailJobData } from '../jobs.service';
+import { QUEUE_NAMES } from '../queue.constants';
 
 @Processor(QUEUE_NAMES.EMAIL)
 export class EmailQueueProcessor {

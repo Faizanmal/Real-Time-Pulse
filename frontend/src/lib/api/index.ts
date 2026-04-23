@@ -35,7 +35,10 @@ export { iotApi } from './iot';
 export type { IoTDevice, IoTMetric, IoTAlert, EdgeNode, EdgeRule } from './iot';
 
 export { mlApi } from './ml';
-export type { MLModel, TrainingJob, PredictionResult, CausalGraph, FeatureAnalysis } from './ml';
+export type { MLModel, TrainingJob, PredictionResult } from './ml';
+
+export { portalsApi } from './portals';
+export type { Portal, CreatePortalDto, UpdatePortalDto, PortalResponse } from './portals';
 
 export { scheduledReportsApi } from './scheduled-reports';
 export type { ScheduledReport, ReportRun, CreateScheduledReportDto, UpdateScheduledReportDto } from './scheduled-reports';

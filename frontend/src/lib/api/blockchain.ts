@@ -72,43 +72,35 @@ export const blockchainApi = {
     action: string;
     data: Record<string, unknown>;
   }): Promise<BlockchainAuditEntry> => {
-    const response = await apiClient.post<BlockchainAuditEntry>('/blockchain/audit', data);
-    return response;
+    return await apiClient.post<BlockchainAuditEntry>('/blockchain/audit', data);
   },
 
   forceCreateBlock: async (): Promise<Block> => {
-    const response = await apiClient.post<Block>('/blockchain/block');
-    return response;
+    return await apiClient.post<Block>('/blockchain/block');
   },
 
   verifyChain: async (): Promise<BlockchainVerification> => {
-    const response = await apiClient.get<BlockchainVerification>('/blockchain/verify');
-    return response;
+    return await apiClient.get<BlockchainVerification>('/blockchain/verify');
   },
 
   verifyEntry: async (entryId: string): Promise<{ valid: boolean; entry: BlockchainAuditEntry }> => {
-    const response = await apiClient.get<{ valid: boolean; entry: BlockchainAuditEntry }>(`/blockchain/verify/${entryId}`);
-    return response;
+    return await apiClient.get<{ valid: boolean; entry: BlockchainAuditEntry }>(`/blockchain/verify/${entryId}`);
   },
 
   getAuditTrail: async (entityType: string, entityId: string): Promise<BlockchainAuditEntry[]> => {
-    const response = await apiClient.get<BlockchainAuditEntry[]>(`/blockchain/audit/${entityType}/${entityId}`);
-    return response;
+    return await apiClient.get<BlockchainAuditEntry[]>(`/blockchain/audit/${entityType}/${entityId}`);
   },
 
   getAllAuditEntries: async (): Promise<BlockchainAuditEntry[]> => {
-    const response = await apiClient.get<BlockchainAuditEntry[]>('/blockchain/audit');
-    return response;
+    return await apiClient.get<BlockchainAuditEntry[]>('/blockchain/audit');
   },
 
   getBlocks: async (): Promise<Block[]> => {
-    const response = await apiClient.get<Block[]>('/blockchain/blocks');
-    return response;
+    return await apiClient.get<Block[]>('/blockchain/blocks');
   },
 
   verifyChainIntegrity: async (): Promise<BlockchainVerification> => {
-    const response = await apiClient.get<BlockchainVerification>('/blockchain/verify');
-    return response;
+    return await apiClient.get<BlockchainVerification>('/blockchain/verify');
   },
 
   generateComplianceReport: async (params: {
@@ -117,28 +109,23 @@ export const blockchainApi = {
     startDate?: string;
     endDate?: string;
   }): Promise<ComplianceReport> => {
-    const response = await apiClient.get<ComplianceReport>('/blockchain/compliance', { params });
-    return response;
+    return await apiClient.get<ComplianceReport>('/blockchain/compliance', { params });
   },
 
   exportBlockchain: async (): Promise<{ blocks: Block[]; checksum: string }> => {
-    const response = await apiClient.get<{ blocks: Block[]; checksum: string }>('/blockchain/export');
-    return response;
+    return await apiClient.get<{ blocks: Block[]; checksum: string }>('/blockchain/export');
   },
 
   importBlockchain: async (data: { blocks: Block[]; checksum: string }): Promise<{ success: boolean }> => {
-    const response = await apiClient.post<{ success: boolean }>('/blockchain/import', data);
-    return response;
+    return await apiClient.post<{ success: boolean }>('/blockchain/import', data);
   },
 
   verifyMerkleProof: async (data: { leaf: string; proof: string[]; root: string }): Promise<MerkleProof> => {
-    const response = await apiClient.post<MerkleProof>('/blockchain/merkle/verify', data);
-    return response;
+    return await apiClient.post<MerkleProof>('/blockchain/merkle/verify', data);
   },
 
   buildMerkleTree: async (hashes: string[]): Promise<{ root: string; tree: string[][] }> => {
-    const response = await apiClient.post<{ root: string; tree: string[][] }>('/blockchain/merkle/tree', { hashes });
-    return response;
+    return await apiClient.post<{ root: string; tree: string[][] }>('/blockchain/merkle/tree', { hashes });
   },
 };
 

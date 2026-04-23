@@ -1,9 +1,10 @@
+import Anthropic from '@anthropic-ai/sdk';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
 import { IntegrationStatus } from '@prisma/client';
 import OpenAI from 'openai';
-import Anthropic from '@anthropic-ai/sdk';
+
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface ConversationMessage {
   role: 'user' | 'assistant' | 'system';
@@ -438,7 +439,7 @@ suggest 2 proactive insights that would be valuable. Return JSON array with obje
         'You are a business analytics expert. Provide realistic proactive insights.',
         prompt,
       );
-      const parsed = JSON.parse(response) as Array<{
+      return JSON.parse(response) as Array<{
         type: 'anomaly' | 'trend' | 'opportunity' | 'warning';
         title: string;
         description: string;
@@ -446,7 +447,6 @@ suggest 2 proactive insights that would be valuable. Return JSON array with obje
         actionable: boolean;
         suggestedAction: string;
       }>;
-      return parsed;
     } catch {
       return [];
     }

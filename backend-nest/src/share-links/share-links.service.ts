@@ -5,11 +5,13 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CacheService } from '../cache/cache.service';
 import * as bcrypt from 'bcryptjs';
 import * as QRCode from 'qrcode';
 import { v4 as uuidv4 } from 'uuid';
+
+import { CacheService } from '../cache/cache.service';
+import { PrismaService } from '../prisma/prisma.service';
+
 import { CreateShareLinkDto, UpdateShareLinkDto } from './dto/share-link.dto';
 
 export interface AccessLog {
@@ -410,7 +412,6 @@ export class ShareLinksService {
     const shareUrl = this.generateShareUrl(link.token);
 
     if (options?.format === 'svg') {
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string
       const svg = await QRCode.toString(shareUrl, {
         type: 'svg',
         width: options?.width || 256,

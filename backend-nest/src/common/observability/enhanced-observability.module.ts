@@ -1,4 +1,5 @@
 import { Module, Global } from '@nestjs/common';
+
 import { EnhancedObservabilityService } from './enhanced-observability.service';
 
 @Global()

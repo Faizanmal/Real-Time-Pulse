@@ -8,17 +8,7 @@
  * and quick start wizard for new users.
  */
 
-import React, { 
-  createContext, 
-  useContext, 
-  useState, 
-  useCallback,
-  useEffect,
-  ReactNode 
-} from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { Button } from './button';
 import { 
   X, 
   ChevronLeft, 
@@ -39,6 +29,19 @@ import {
   BarChart3,
   Zap
 } from 'lucide-react';
+import React, { 
+  createContext, 
+  useContext, 
+  useState, 
+  useCallback,
+  useEffect,
+  ReactNode 
+} from 'react';
+
+import { cn } from '@/lib/utils';
+
+import { Button } from './button';
+
 
 // ==================== TYPES ====================
 
@@ -318,6 +321,8 @@ function TourOverlay({ tour, currentStep, onNext, onPrev, onSkip, onComplete }: 
   const isLastStep = currentStep === tour.length - 1;
 
   useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
     const target = document.querySelector(step.target);
     if (target) {
       const rect = target.getBoundingClientRect();

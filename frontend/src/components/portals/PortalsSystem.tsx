@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-// import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-// import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Layout, Plus, Eye, Edit, Trash2, Users } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+
+import { portalsApi } from '@/lib/api/index';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+// import { Input } from '@/components/ui/input';
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Portal {
   id: string;
@@ -29,9 +32,8 @@ export default function PortalsSystem() {
     let mounted = true;
     (async () => {
       try {
-        const response = await fetch('/api/portals');
-        const data = await response.json();
-        if (mounted) setPortals(data);
+        const response = await portalsApi.getPortals();
+        if (mounted) setPortals(response.data);
       } catch (error) {
         console.error('Failed to fetch portals:', error);
       } finally {
@@ -43,9 +45,8 @@ export default function PortalsSystem() {
 
   const fetchPortals = async () => {
     try {
-      const response = await fetch('/api/portals');
-      const data = await response.json();
-      setPortals(data);
+      const response = await portalsApi.getPortals();
+      setPortals(response.data);
     } catch (error) {
       console.error('Failed to fetch portals:', error);
     } finally {

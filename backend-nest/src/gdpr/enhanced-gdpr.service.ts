@@ -3,16 +3,18 @@
  * Provides comprehensive GDPR data export, deletion, and consent management
  */
 
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { ConfigService } from '@nestjs/config';
-import { LoggingService } from '../common/logger/logging.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { AuditService } from '../audit/audit.service';
-import { EmailService } from '../email/email.service';
-import { v4 as uuidv4 } from 'uuid';
-import * as archiver from 'archiver';
 import { PassThrough } from 'stream';
+
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import * as archiver from 'archiver';
+import { v4 as uuidv4 } from 'uuid';
+
+import { AuditService } from '../audit/audit.service';
+import { LoggingService } from '../common/logger/logging.service';
+import { EmailService } from '../email/email.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 interface DataExportRequest {
   id: string;
@@ -270,8 +272,7 @@ export class EnhancedGdprService {
       // Store JSON file
       const content = JSON.stringify(data, null, 2);
       // In production, upload to S3 or similar
-      const url = await this.uploadToStorage(filename + '.json', content);
-      return url;
+      return await this.uploadToStorage(filename + '.json', content);
     } else {
       // Convert to CSV (multiple files in zip)
       const archive = archiver('zip');
@@ -286,8 +287,7 @@ export class EnhancedGdprService {
       }
 
       await archive.finalize();
-      const url = await this.uploadToStorage(filename + '.zip', passthrough);
-      return url;
+      return await this.uploadToStorage(filename + '.zip', passthrough);
     }
   }
 
@@ -669,11 +669,9 @@ export class EnhancedGdprService {
     };
 
     // Generate and return download URL
-    const url = await this.uploadToStorage(
+    return await this.uploadToStorage(
       `portability-${userId}-${Date.now()}.json`,
       JSON.stringify(portableData, null, 2),
     );
-
-    return url;
   }
 }

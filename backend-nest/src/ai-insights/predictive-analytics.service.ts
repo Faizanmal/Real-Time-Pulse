@@ -5,10 +5,11 @@
 
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import OpenAI from 'openai';
+
+import { CacheService } from '../cache/cache.service';
 import { LoggingService } from '../common/logger/logging.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { CacheService } from '../cache/cache.service';
-import OpenAI from 'openai';
 
 interface TimeSeriesPoint {
   timestamp: Date;
@@ -22,6 +23,22 @@ interface PredictionResult {
   seasonality?: { period: number; strength: number };
 }
 
+interface CorrelationResult {
+  metric1: string;
+  metric2: string;
+  correlation: number;
+  strength: 'strong' | 'moderate' | 'weak';
+  direction: 'positive' | 'negative';
+}
+
+interface AnomalySummary {
+  totalPoints: number;
+  anomalyCount: number;
+  anomalyRate: number;
+  mean: number;
+  stdDev: number;
+}
+
 interface AnomalyResult {
   isAnomaly: boolean;
   score: number;
@@ -29,6 +46,8 @@ interface AnomalyResult {
   severity: 'low' | 'medium' | 'high';
   possibleCauses?: string[];
 }
+
+const GPT_MODEL = 'gpt-4o-mini';
 
 @Injectable()
 export class PredictiveAnalyticsService {
@@ -48,7 +67,7 @@ export class PredictiveAnalyticsService {
   /**
    * Forecast future values using statistical methods
    */
-  async forecast(data: TimeSeriesPoint[], horizonDays = 30): Promise<PredictionResult> {
+  forecast(data: TimeSeriesPoint[], horizonDays = 30): PredictionResult {
     if (data.length < 7) {
       throw new Error('Insufficient data for forecasting (minimum 7 points)');
     }
@@ -101,10 +120,10 @@ export class PredictiveAnalyticsService {
   /**
    * Detect anomalies in time series data
    */
-  async detectAnomalies(
+  detectAnomalies(
     data: TimeSeriesPoint[],
     sensitivityLevel: 'low' | 'medium' | 'high' = 'medium',
-  ): Promise<{ points: (TimeSeriesPoint & AnomalyResult)[]; summary: any }> {
+  ): { points: (TimeSeriesPoint & AnomalyResult)[]; summary: AnomalySummary } {
     const values = data.map((d) => d.value);
     const mean = this.calculateMean(values);
     const stdDev = this.calculateStdDev(values, mean);
@@ -159,7 +178,7 @@ export class PredictiveAnalyticsService {
 
     try {
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: GPT_MODEL,
         messages: [
           {
             role: 'system',
@@ -202,7 +221,7 @@ export class PredictiveAnalyticsService {
 
     try {
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: GPT_MODEL,
         messages: [
           {
             role: 'system',
@@ -236,7 +255,7 @@ export class PredictiveAnalyticsService {
     try {
       // First, understand the query intent
       const intentResponse = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: GPT_MODEL,
         messages: [
           {
             role: 'system',
@@ -260,7 +279,7 @@ export class PredictiveAnalyticsService {
 
       // Generate natural language response
       const nlResponse = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: GPT_MODEL,
         messages: [
           {
             role: 'system',
@@ -289,10 +308,11 @@ export class PredictiveAnalyticsService {
   /**
    * Correlation analysis between metrics
    */
-  async analyzeCorrelations(
-    datasets: { name: string; data: TimeSeriesPoint[] }[],
-  ): Promise<{ correlations: any[]; strongestPairs: any[] }> {
-    const correlations: any[] = [];
+  analyzeCorrelations(datasets: { name: string; data: TimeSeriesPoint[] }[]): {
+    correlations: CorrelationResult[];
+    strongestPairs: CorrelationResult[];
+  } {
+    const correlations: CorrelationResult[] = [];
 
     for (let i = 0; i < datasets.length; i++) {
       for (let j = i + 1; j < datasets.length; j++) {
@@ -331,7 +351,7 @@ export class PredictiveAnalyticsService {
     const n = values.length;
     const xSum = (n * (n - 1)) / 2;
     const ySum = values.reduce((a, b) => a + b, 0);
-    const xySum = values.reduce((sum, y, x) => sum + x * y, 0);
+    const xySum = values.reduce((sum: number, y: number, x: number) => sum + x * y, 0);
     const x2Sum = (n * (n - 1) * (2 * n - 1)) / 6;
 
     const slope = (n * xySum - xSum * ySum) / (n * x2Sum - xSum * xSum);
@@ -339,8 +359,11 @@ export class PredictiveAnalyticsService {
 
     // Calculate R-squared
     const yMean = ySum / n;
-    const ssRes = values.reduce((sum, y, x) => sum + Math.pow(y - (slope * x + intercept), 2), 0);
-    const ssTot = values.reduce((sum, y) => sum + Math.pow(y - yMean, 2), 0);
+    const ssRes = values.reduce(
+      (sum: number, y: number, x: number) => sum + Math.pow(y - (slope * x + intercept), 2),
+      0,
+    );
+    const ssTot = values.reduce((sum: number, y: number) => sum + Math.pow(y - yMean, 2), 0);
     const rSquared = 1 - ssRes / ssTot;
 
     return { slope, intercept, rSquared };
@@ -407,7 +430,7 @@ export class PredictiveAnalyticsService {
     return denominator === 0 ? 0 : numerator / denominator;
   }
 
-  private async executeStructuredQuery(spec: any, _workspaceId: string): Promise<any> {
+  private executeStructuredQuery(spec: any, _workspaceId: string): any {
     // This would connect to your actual data sources
     // Simplified for demonstration
     return {

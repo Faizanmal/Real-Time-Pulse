@@ -79,16 +79,16 @@ export class PipelineConnectorService {
         break;
 
       case 'csv':
-        await this.writeToCsv(config, data);
+        this.writeToCsv(config, data);
         break;
 
       case 'postgresql':
       case 'mysql':
-        await this.writeToDatabase(connectorType, config, data);
+        this.writeToDatabase(connectorType, config, data);
         break;
 
       case 's3':
-        await this.writeToS3(config, data);
+        this.writeToS3(config, data);
         break;
 
       case 'webhook':
@@ -274,11 +274,11 @@ export class PipelineConnectorService {
   private async fetchFromRestApi(config: ConnectorConfig): Promise<any[]> {
     const { url, method = 'GET', headers = {}, body, dataPath } = config;
 
-    const response = await fetch(url, {
-      method,
+    const response = await fetch(url as string, {
+      method: method as string,
       headers: {
         'Content-Type': 'application/json',
-        ...headers,
+        ...(headers as Record<string, string>),
       },
       body: body ? JSON.stringify(body) : undefined,
     });
@@ -303,9 +303,9 @@ export class PipelineConnectorService {
     let data: any;
 
     if (content) {
-      data = JSON.parse(content);
+      data = JSON.parse(content as string);
     } else if (url) {
-      const response = await fetch(url);
+      const response = await fetch(url as string);
       data = await response.json();
     } else {
       throw new Error('Either url or content must be provided');
@@ -324,9 +324,9 @@ export class PipelineConnectorService {
     let csvContent: string;
 
     if (content) {
-      csvContent = content;
+      csvContent = content as string;
     } else if (url) {
-      const response = await fetch(url);
+      const response = await fetch(url as string);
       csvContent = await response.text();
     } else {
       throw new Error('Either url or content must be provided');
@@ -335,17 +335,17 @@ export class PipelineConnectorService {
     return this.parseCsv(csvContent, delimiter, hasHeader);
   }
 
-  private async fetchFromDatabase(
+  private fetchFromDatabase(
     connectorType: 'postgresql' | 'mysql',
     _config: ConnectorConfig,
-  ): Promise<any[]> {
+  ): any[] {
     // In production, use actual database connection
     // For now, return mock data
     this.logger.warn(`Database connector ${connectorType} not fully implemented`);
     return [];
   }
 
-  private async fetchFromS3(_config: ConnectorConfig): Promise<any[]> {
+  private fetchFromS3(_config: ConnectorConfig): any[] {
     // In production, use AWS SDK
     this.logger.warn('S3 connector not fully implemented');
     return [];
@@ -401,27 +401,27 @@ export class PipelineConnectorService {
     }
   }
 
-  private async writeToJson(config: ConnectorConfig, data: any[]): Promise<void> {
+  private writeToJson(config: ConnectorConfig, data: any[]): void {
     // In production, write to file or storage
     this.logger.log(`Would write JSON: ${JSON.stringify(data).slice(0, 100)}...`);
   }
 
-  private async writeToCsv(config: ConnectorConfig, data: any[]): Promise<void> {
+  private writeToCsv(config: ConnectorConfig, data: any[]): void {
     // In production, write to file or storage
     const csv = this.generateCsv(data, config.delimiter || ',');
     this.logger.log(`Would write CSV: ${csv.slice(0, 100)}...`);
   }
 
-  private async writeToDatabase(
+  private writeToDatabase(
     connectorType: 'postgresql' | 'mysql',
     _config: ConnectorConfig,
     _data: any[],
-  ): Promise<void> {
+  ): void {
     // In production, use actual database connection
     this.logger.warn(`Database write to ${connectorType} not fully implemented`);
   }
 
-  private async writeToS3(_config: ConnectorConfig, _data: any[]): Promise<void> {
+  private writeToS3(_config: ConnectorConfig, _data: any[]): void {
     // In production, use AWS SDK
     this.logger.warn('S3 write not fully implemented');
   }
@@ -429,14 +429,14 @@ export class PipelineConnectorService {
   private async writeToWebhook(config: ConnectorConfig, data: any[]): Promise<void> {
     const { url, method = 'POST', headers = {}, batchSize = 100 } = config;
 
-    for (let i = 0; i < data.length; i += batchSize) {
-      const batch = data.slice(i, i + batchSize);
+    for (let i = 0; i < data.length; i += batchSize as number) {
+      const batch = data.slice(i, i + (batchSize as number));
 
-      const response = await fetch(url, {
-        method,
+      const response = await fetch(url as string, {
+        method: method as string,
         headers: {
           'Content-Type': 'application/json',
-          ...headers,
+          ...(headers as Record<string, string>),
         },
         body: JSON.stringify({
           data: batch,

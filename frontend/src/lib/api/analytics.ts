@@ -63,13 +63,11 @@ export interface TrendingData {
 
 export const analyticsApi = {
   getDashboardOverview: async (): Promise<DashboardOverview> => {
-    const response = await apiClient.get<DashboardOverview>('/analytics/dashboard');
-    return response;
+    return await apiClient.get<DashboardOverview>('/analytics/dashboard');
   },
 
   getPortalAnalytics: async (portalId: string): Promise<PortalAnalytics> => {
-    const response = await apiClient.get<PortalAnalytics>(`/analytics/portal/${portalId}`);
-    return response;
+    return await apiClient.get<PortalAnalytics>(`/analytics/portal/${portalId}`);
   },
 
   getUsageMetrics: async (params: {
@@ -78,23 +76,19 @@ export const analyticsApi = {
     endDate?: string;
     period?: 'hour' | 'day' | 'week' | 'month';
   }): Promise<UsageMetric[]> => {
-    const response = await apiClient.get<UsageMetric[]>('/analytics/metrics', { params });
-    return response;
+    return await apiClient.get<UsageMetric[]>('/analytics/metrics', { params });
   },
 
   getPerformanceMetrics: async (): Promise<PerformanceMetrics> => {
-    const response = await apiClient.get<PerformanceMetrics>('/analytics/performance');
-    return response;
+    return await apiClient.get<PerformanceMetrics>('/analytics/performance');
   },
 
   getActivityFeed: async (limit?: number): Promise<ActivityItem[]> => {
-    const response = await apiClient.get<ActivityItem[]>('/analytics/activity', { params: { limit } });
-    return response;
+    return await apiClient.get<ActivityItem[]>('/analytics/activity', { params: { limit } });
   },
 
   getTrendingData: async (): Promise<TrendingData> => {
-    const response = await apiClient.get<TrendingData>('/analytics/trending');
-    return response;
+    return await apiClient.get<TrendingData>('/analytics/trending');
   },
 
   trackMetric: async (data: {

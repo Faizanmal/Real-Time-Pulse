@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import {
   Users,
   Building2,
@@ -23,18 +22,12 @@ import {
   Globe,
   Calendar,
 } from 'lucide-react';
-import {
-  adminAnalyticsApi,
-  SystemMetrics,
-  RevenueMetrics,
-  AdminSystemHealth,
-  UserActivityMetrics,
-  AdminActivityItem,
-  WorkspaceComparison,
-} from '@/lib/enterprise-api';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
   Select,
@@ -44,12 +37,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
-import {
   Table,
   TableBody,
   TableCell,
@@ -57,7 +44,21 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { toast } from 'sonner';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import {
+  adminAnalyticsApi,
+  SystemMetrics,
+  RevenueMetrics,
+  AdminSystemHealth,
+  UserActivityMetrics,
+  AdminActivityItem,
+  WorkspaceComparison,
+} from '@/lib/enterprise-api';
 import { cn } from '@/lib/utils';
 
 interface AdminDashboardProps {
@@ -197,13 +198,13 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
     return (
       <Card className={cn('p-6', className)}>
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="h-8 bg-gray-200 rounded w-1/4" />
           <div className="grid grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+              <div key={i} className="h-32 bg-gray-200 rounded" />
             ))}
           </div>
-          <div className="h-64 bg-gray-200 rounded"></div>
+          <div className="h-64 bg-gray-200 rounded" />
         </div>
       </Card>
     );

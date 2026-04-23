@@ -1,24 +1,25 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { commentsApi, type Comment } from '@/lib/api/index';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   MessageSquare, Send, RefreshCw, Edit, Trash2, Reply,
   MoreVertical, Clock, ChevronDown, ChevronUp
 } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
+
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Textarea } from '@/components/ui/textarea';
+import { commentsApi, type Comment } from '@/lib/api/index';
 
 interface CommentItemProps {
   comment: Comment;
@@ -106,7 +107,7 @@ function CommentItem({ comment, onReply, onEdit, onDelete, depth = 0 }: CommentI
 
       {hasReplies && showReplies && (
         <AnimatePresence>
-          {comment.replies!.map(reply => (
+          {comment.replies!.map((reply: Comment) => (
             <CommentItem
               key={reply.id}
               comment={reply}

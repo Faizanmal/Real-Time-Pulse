@@ -3,14 +3,10 @@
  * Tests for authentication and authorization functionality
  */
 
-import { Test, TestingModule } from '@nestjs/testing';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 import { UnauthorizedException, BadRequestException } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { CacheService } from '../cache/cache.service';
-import { AuditService } from '../audit/audit.service';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcryptjs';
 import {
   createMockPrismaService,
@@ -19,6 +15,12 @@ import {
   createMockRedisService,
   createTestUser,
 } from 'common/testing/test-utils';
+
+import { AuditService } from '../audit/audit.service';
+import { CacheService } from '../cache/cache.service';
+import { PrismaService } from '../prisma/prisma.service';
+
+import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
   let service: AuthService;

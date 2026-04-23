@@ -1,10 +1,15 @@
 import { Controller, Post, Get, Body, Query, UseGuards, Req } from '@nestjs/common';
+import type { Request } from 'express';
+
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/user.decorator';
+import type { AuthenticatedRequest, RequestUser } from '../common/interfaces/auth.interface';
+
 import {
   ConversationalAIService,
   ConversationContext,
   ConversationMessage,
 } from './conversational-ai.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 interface QueryRequestDto {
   query: string;
@@ -33,13 +38,13 @@ export class ConversationalAIController {
    * Process a natural language query
    */
   @Post('query')
-  async processQuery(@Body() dto: QueryRequestDto, @Req() req: any) {
+  async processQuery(@Body() dto: QueryRequestDto, @CurrentUser() user: RequestUser) {
     const context: ConversationContext = {
-      workspaceId: req.user.workspaceId,
-      userId: req.user.id,
+      workspaceId: user.workspaceId,
+      userId: user.id,
       portalId: dto.portalId,
-      recentMessages: await this.getRecentMessages(req.user.workspaceId, req.user.id),
-      availableDataSources: await this.getAvailableDataSources(req.user.workspaceId),
+      recentMessages: await this.getRecentMessages(user.workspaceId, user.id),
+      availableDataSources: this.getAvailableDataSources(user.workspaceId),
       activeFilters: dto.context?.activeFilters,
     };
 
@@ -50,21 +55,17 @@ export class ConversationalAIController {
    * Get proactive insights
    */
   @Get('insights')
-  async getProactiveInsights(@Req() req: any) {
-    return this.conversationalAIService.getProactiveInsights(req.user.workspaceId, req.user.id);
+  async getProactiveInsights(@CurrentUser() user: RequestUser) {
+    return this.conversationalAIService.getProactiveInsights(user.workspaceId, user.id);
   }
 
   /**
    * Get conversation history
    */
   @Get('history')
-  async getConversationHistory(@Query('limit') limit: string, @Req() req: any) {
+  async getConversationHistory(@Query('limit') limit: string, @CurrentUser() user: RequestUser) {
     const limitNum = parseInt(limit, 10) || 20;
-    return this.conversationalAIService.getConversationHistory(
-      req.user.workspaceId,
-      req.user.id,
-      limitNum,
-    );
+    return this.conversationalAIService.getConversationHistory(user.workspaceId, user.id, limitNum);
   }
 
   /**
@@ -89,7 +90,7 @@ export class ConversationalAIController {
    * Generate a data story
    */
   @Post('story')
-  async generateDataStory(@Body() dto: DataStoryDto, @Req() req: any) {
+  async generateDataStory(@Body() dto: DataStoryDto, @Req() req: Request & AuthenticatedRequest) {
     return this.conversationalAIService.generateDataStory(req.user.workspaceId, dto.metrics);
   }
 
@@ -97,7 +98,10 @@ export class ConversationalAIController {
    * Get suggested questions based on current context
    */
   @Get('suggestions')
-  async getSuggestions(@Query('portalId') _portalId: string, @Req() _req: any) {
+  getSuggestions(
+    @Query('portalId') _portalId: string,
+    @Req() _req: Request & AuthenticatedRequest,
+  ) {
     const suggestions = [
       'Show me the top performing metrics this week',
       'What are the main trends in my data?',
@@ -120,7 +124,7 @@ export class ConversationalAIController {
     return this.conversationalAIService.getConversationHistory(workspaceId, userId, 10);
   }
 
-  private async getAvailableDataSources(_workspaceId: string): Promise<string[]> {
+  private getAvailableDataSources(_workspaceId: string): string[] {
     // This would typically query the database for active integrations
     return ['GOOGLE_ANALYTICS', 'HUBSPOT', 'SALESFORCE', 'SHOPIFY', 'STRIPE', 'JIRA', 'GITHUB'];
   }

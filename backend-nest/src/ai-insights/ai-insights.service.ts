@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
 import { InsightType, InsightSeverity, InsightStatus } from '@prisma/client';
+
+import { PrismaService } from '../prisma/prisma.service';
 
 interface GeneratedInsight {
   type: InsightType;
@@ -17,6 +18,9 @@ interface NaturalLanguageQuery {
   query: string;
   portalId?: string;
 }
+
+const DISMISSED_STATUS = 'DISMISSED';
+const PORTAL_NOT_FOUND_MESSAGE = 'Portal not found';
 
 @Injectable()
 export class AIInsightsService {
@@ -61,14 +65,14 @@ export class AIInsightsService {
     });
 
     if (!portal) {
-      throw new NotFoundException('Portal not found');
+      throw new NotFoundException(PORTAL_NOT_FOUND_MESSAGE);
     }
 
     return this.prisma.aIInsight.findMany({
       where: {
         portalId,
         workspaceId,
-        status: { not: 'DISMISSED' },
+        status: { not: DISMISSED_STATUS },
       },
       orderBy: [{ severity: 'desc' }, { createdAt: 'desc' }],
     });
@@ -91,7 +95,7 @@ export class AIInsightsService {
     });
 
     if (!portal) {
-      throw new NotFoundException('Portal not found');
+      throw new NotFoundException(PORTAL_NOT_FOUND_MESSAGE);
     }
 
     // Example insights generation logic
@@ -265,7 +269,7 @@ export class AIInsightsService {
     });
 
     if (!portal) {
-      throw new NotFoundException('Portal not found');
+      throw new NotFoundException(PORTAL_NOT_FOUND_MESSAGE);
     }
 
     const insights: GeneratedInsight[] = [];
@@ -463,7 +467,7 @@ export class AIInsightsService {
       const insights = await this.prisma.aIInsight.findMany({
         where: {
           workspaceId,
-          status: { not: 'DISMISSED' },
+          status: { not: DISMISSED_STATUS },
         },
         orderBy: { severity: 'desc' },
         take: 10,
@@ -535,7 +539,7 @@ export class AIInsightsService {
         select: { provider: true, status: true },
       }),
       this.prisma.aIInsight.findMany({
-        where: { workspaceId, status: { not: 'DISMISSED' } },
+        where: { workspaceId, status: { not: DISMISSED_STATUS } },
         select: { type: true, title: true, severity: true },
         take: 5,
       }),

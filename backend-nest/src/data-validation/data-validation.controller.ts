@@ -1,8 +1,9 @@
 import { Controller, Get, Post, Body, Param, Patch, Delete, Query } from '@nestjs/common';
-import { DataValidationService } from './data-validation.service';
-import { ValidationEngineService } from './validation-engine.service';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ValidationRuleType, ValidationSeverity } from '@prisma/client';
+
+import { DataValidationService } from './data-validation.service';
+import { ValidationEngineService } from './validation-engine.service';
 
 @ApiTags('Data Validation')
 @ApiBearerAuth()

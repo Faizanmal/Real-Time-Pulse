@@ -4,8 +4,6 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
 import { 
   Activity, 
   TrendingUp, 
@@ -21,7 +19,10 @@ import {
   MoreVertical,
 } from 'lucide-react';
 import Link from 'next/link';
+import { ReactNode } from 'react';
 import { useState } from 'react';
+
+import { cn } from '@/lib/utils';
 
 interface StatsCardProps {
   title: string;

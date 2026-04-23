@@ -1,9 +1,11 @@
+import * as crypto from 'crypto';
+
 import { Injectable, Logger, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
-import { CacheService } from '../cache/cache.service';
+
 import { AuditService } from '../audit/audit.service';
-import * as crypto from 'crypto';
+import { CacheService } from '../cache/cache.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface SsoProvider {
   id: string;

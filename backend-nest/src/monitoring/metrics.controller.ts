@@ -5,9 +5,11 @@
 
 import { Controller, Get, Header } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiProduces } from '@nestjs/swagger';
-import { MonitoringService } from './monitoring.service';
-import { AlertingService } from './alerting.service';
+
 import { Public } from '../auth/decorators/public.decorator';
+
+import { AlertingService } from './alerting.service';
+import { MonitoringService } from './monitoring.service';
 
 @ApiTags('Monitoring')
 @Controller('metrics')

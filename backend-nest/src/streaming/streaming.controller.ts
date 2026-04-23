@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
-import { StreamProcessingService } from './stream-processing.service';
-import { CEPEngineService } from './cep-engine.service';
+
+import { CEPEngineService, CEPRule } from './cep-engine.service';
+import { StreamProcessingService, StreamConfig } from './stream-processing.service';
 
 @Controller('streaming')
 export class StreamingController {
@@ -48,7 +49,7 @@ export class StreamingController {
   }
 
   @Put('streams/:id')
-  async updateStream(@Param('id') id: string, @Body() updates: any) {
+  async updateStream(@Param('id') id: string, @Body() updates: Partial<StreamConfig>) {
     return this.streamService.updateStream(id, updates);
   }
 
@@ -109,7 +110,7 @@ export class StreamingController {
   }
 
   @Put('cep/rules/:id')
-  async updateCEPRule(@Param('id') id: string, @Body() updates: any) {
+  async updateCEPRule(@Param('id') id: string, @Body() updates: Partial<CEPRule>) {
     return this.cepEngine.updateRule(id, updates);
   }
 

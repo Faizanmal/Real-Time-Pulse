@@ -1,5 +1,6 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import * as vm from 'vm';
+
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 
 interface SandboxResult {
   success: boolean;

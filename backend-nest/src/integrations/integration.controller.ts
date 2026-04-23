@@ -10,9 +10,11 @@ import {
   Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
 import { IntegrationService } from './integration.service';
 import type { IntegrationConfig } from './integration.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Integrations')
 @ApiBearerAuth('JWT-auth')

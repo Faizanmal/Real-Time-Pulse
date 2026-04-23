@@ -1,17 +1,16 @@
 'use client';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import IndustrySolutions from '@/components/features/industry-solutions';
+import { Sparkles, Building2, Zap, Shield, Plug, Box } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
+
 import AIQueryInterface from '@/components/features/ai-query-interface';
-import WorkflowAutomation from '@/components/features/workflow-automation';
-import ComplianceDashboard from '@/components/features/compliance-dashboard';
 import APIMarketplace from '@/components/features/api-marketplace';
 import ARVisualization from '@/components/features/ar-visualization';
-import { Sparkles, Building2, Zap, Shield, Plug, Box } from 'lucide-react';
-
-import { useSearchParams } from 'next/navigation';
-
-import { Suspense } from 'react';
+import ComplianceDashboard from '@/components/features/compliance-dashboard';
+import IndustrySolutions from '@/components/features/industry-solutions';
+import WorkflowAutomation from '@/components/features/workflow-automation';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 function AdvancedFeaturesContent() {
   const searchParams = useSearchParams();

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -19,6 +20,7 @@ export class ProfitabilityService {
           in: ['ACTIVE', 'ON_HOLD'],
         },
       },
+      orderBy: { id: 'asc' },
     });
 
     for (const project of projects) {
@@ -238,12 +240,35 @@ export class ProfitabilityService {
     const projects = await this.prisma.project.findMany({
       where: {
         workspaceId,
-        status: 'ACTIVE',
+        status: {
+          in: ['ACTIVE', 'ON_HOLD'],
+        },
       },
       include: {
-        timeEntries: true,
-        profitability: true,
+        timeEntries: {
+          where: {
+            date: {
+              gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000), // Last 90 days
+            },
+          },
+          select: {
+            id: true,
+            userId: true,
+            hours: true,
+            date: true,
+            billable: true,
+          },
+        },
+        profitability: {
+          select: {
+            id: true,
+            totalRevenue: true,
+            totalCosts: true,
+            profitMargin: true,
+          },
+        },
       },
+      take: 200, // Limit projects
     });
 
     // Group by user

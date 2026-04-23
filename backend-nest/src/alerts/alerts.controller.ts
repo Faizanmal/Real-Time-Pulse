@@ -10,12 +10,19 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { AlertsService } from './alerts.service';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 import type { RequestUser } from '../common/interfaces/auth.interface';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+
+import { AlertsService } from './alerts.service';
 import { CreateAlertDto, UpdateAlertDto } from './dto/alert.dto';
+
+const ALERT_ID_PARAM = 'id';
+const ALERT_ID_ROUTE = ':id';
+const ALERT_HISTORY_ROUTE = ':id/history';
+const ALERT_TEST_ROUTE = ':id/test';
 
 @ApiTags('Alerts')
 @Controller('alerts')
@@ -44,19 +51,19 @@ export class AlertsController {
   /**
    * Get alert by ID
    */
-  @Get(':id')
+  @Get(ALERT_ID_ROUTE)
   @ApiOperation({ summary: 'Get alert by ID' })
-  async findOne(@Param('id') id: string, @CurrentUser() user: RequestUser) {
+  async findOne(@Param(ALERT_ID_PARAM) id: string, @CurrentUser() user: RequestUser) {
     return this.alertsService.findOne(id, user.workspaceId);
   }
 
   /**
    * Update alert
    */
-  @Patch(':id')
+  @Patch(ALERT_ID_ROUTE)
   @ApiOperation({ summary: 'Update alert' })
   async update(
-    @Param('id') id: string,
+    @Param(ALERT_ID_PARAM) id: string,
     @CurrentUser() user: RequestUser,
     @Body() dto: UpdateAlertDto,
   ) {
@@ -66,28 +73,28 @@ export class AlertsController {
   /**
    * Delete alert
    */
-  @Delete(':id')
+  @Delete(ALERT_ID_ROUTE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete alert' })
-  async remove(@Param('id') id: string, @CurrentUser() user: RequestUser) {
+  async remove(@Param(ALERT_ID_PARAM) id: string, @CurrentUser() user: RequestUser) {
     await this.alertsService.remove(id, user.workspaceId);
   }
 
   /**
    * Get alert history
    */
-  @Get(':id/history')
+  @Get(ALERT_HISTORY_ROUTE)
   @ApiOperation({ summary: 'Get alert trigger history' })
-  async getHistory(@Param('id') id: string, @CurrentUser() user: RequestUser) {
+  async getHistory(@Param(ALERT_ID_PARAM) id: string, @CurrentUser() user: RequestUser) {
     return this.alertsService.getHistory(id, user.workspaceId);
   }
 
   /**
    * Test alert (trigger manually)
    */
-  @Post(':id/test')
+  @Post(ALERT_TEST_ROUTE)
   @ApiOperation({ summary: 'Test alert configuration' })
-  async testAlert(@Param('id') id: string, @CurrentUser() user: RequestUser) {
+  async testAlert(@Param(ALERT_ID_PARAM) id: string, @CurrentUser() user: RequestUser) {
     return this.alertsService.testAlert(id, user.workspaceId);
   }
 }

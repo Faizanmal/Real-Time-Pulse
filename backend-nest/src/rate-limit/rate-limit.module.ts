@@ -1,8 +1,10 @@
-import { Module } from '@nestjs/common';
-import { RateLimitService } from './rate-limit.service';
-import { RateLimitController } from './rate-limit.controller';
-import { PrismaModule } from '../prisma/prisma.module';
 import { BullModule } from '@nestjs/bull';
+import { Module } from '@nestjs/common';
+
+import { PrismaModule } from '../prisma/prisma.module';
+
+import { RateLimitController } from './rate-limit.controller';
+import { RateLimitService } from './rate-limit.service';
 
 @Module({
   imports: [

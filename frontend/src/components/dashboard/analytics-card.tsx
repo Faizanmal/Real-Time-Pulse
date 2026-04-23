@@ -1,16 +1,6 @@
 "use client";
 
-import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  AnimatedCard,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardBadge,
-} from "@/components/ui/animated-card";
-import { cn } from "@/lib/utils";
 import {
   TrendingUp,
   TrendingDown,
@@ -22,6 +12,18 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import * as React from "react";
+
+import {
+  AnimatedCard,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardBadge,
+} from "@/components/ui/animated-card";
+import { cn } from "@/lib/utils";
+
 
 // ============================================================================
 // ANALYTICS CARD - Enterprise Dashboard Component

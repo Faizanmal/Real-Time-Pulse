@@ -1,14 +1,16 @@
 'use client';
 
+import { Send, Sparkles, Database, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { advancedAiApi } from '@/lib/advanced-api';
 import type { AIQuery } from '@/types/advanced-features';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Send, Sparkles, Database, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+
 
 export default function AIQueryInterface() {
   const [query, setQuery] = useState('');
@@ -128,8 +130,8 @@ export default function AIQueryInterface() {
             {[...Array(3)].map((_, i) => (
               <Card key={i} className="animate-pulse">
                 <CardContent className="pt-6">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+                  <div className="h-3 bg-gray-200 rounded w-1/2" />
                 </CardContent>
               </Card>
             ))}

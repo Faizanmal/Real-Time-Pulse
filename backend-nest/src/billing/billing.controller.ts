@@ -11,10 +11,12 @@ import {
 } from '@nestjs/common';
 import type { RawBodyRequest } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import type { AuthenticatedRequest } from '../common/interfaces/auth.interface';
+
 import { BillingService } from './billing.service';
 import { CreateCheckoutDto, CreatePortalSessionDto, ChangePlanDto } from './dto/billing.dto';
-import type { AuthenticatedRequest } from '../common/interfaces/auth.interface';
 
 @ApiTags('Billing')
 @Controller('billing')
@@ -111,7 +113,7 @@ export class BillingController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get invoices' })
   @ApiResponse({ status: 200, description: 'Returns invoices' })
-  async getInvoices(@Request() req: AuthenticatedRequest) {
+  async getInvoices(@Request() req: AuthenticatedRequest): Promise<any> {
     return this.billingService.getInvoices(req.user.workspaceId);
   }
 

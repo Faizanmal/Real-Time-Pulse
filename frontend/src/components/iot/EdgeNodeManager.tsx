@@ -1,6 +1,5 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
 import {
   Server,
   Cpu,
@@ -13,6 +12,8 @@ import {
   Pause,
   Trash2,
 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+
 import { cn } from '@/lib/utils';
 
 interface EdgeNode {

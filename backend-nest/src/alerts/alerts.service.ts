@@ -1,9 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { EmailService } from '../email/email.service';
 import { HttpService } from '@nestjs/axios';
-import { CreateAlertDto, UpdateAlertDto } from './dto/alert.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
+
+import { EmailService } from '../email/email.service';
+import { PrismaService } from '../prisma/prisma.service';
+
+import { CreateAlertDto, UpdateAlertDto } from './dto/alert.dto';
 
 @Injectable()
 export class AlertsService {
@@ -196,7 +198,7 @@ export class AlertsService {
     if (channels.includes('slack') && alert.slackWebhook) {
       try {
         await firstValueFrom(
-          this.httpService.post(alert.slackWebhook, {
+          this.httpService.post(alert.slackWebhook as string, {
             text: `🚨 Alert Triggered: ${alert.name}`,
             blocks: [
               {
@@ -232,7 +234,7 @@ export class AlertsService {
     if (channels.includes('webhook') && alert.webhookUrl) {
       try {
         await firstValueFrom(
-          this.httpService.post(alert.webhookUrl, {
+          this.httpService.post(alert.webhookUrl as string, {
             alertId: alert.id,
             alertName: alert.name,
             description: alert.description,

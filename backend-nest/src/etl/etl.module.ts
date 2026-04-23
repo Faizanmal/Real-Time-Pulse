@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { ETLController } from './etl.controller';
-import { ETLPipelineService } from './etl-pipeline.service';
+import { ScheduleModule } from '@nestjs/schedule';
+
 import { PrismaModule } from '../prisma/prisma.module';
+
+import { ETLPipelineService } from './etl-pipeline.service';
+import { ETLController } from './etl.controller';
 
 @Module({
   imports: [PrismaModule, ScheduleModule.forRoot(), EventEmitterModule.forRoot()],

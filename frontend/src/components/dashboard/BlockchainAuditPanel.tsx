@@ -1,12 +1,5 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useBlockchain } from '@/hooks/useAdvancedFeatures';
-import { blockchainAPI } from '@/lib/advanced-features-api';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Shield,
   Link2,
@@ -19,6 +12,14 @@ import {
   FileText,
   Eye,
 } from 'lucide-react';
+import React, { useState } from 'react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { useBlockchain } from '@/hooks/useAdvancedFeatures';
+import { blockchainAPI } from '@/lib/advanced-features-api';
 
 interface AuditEntry {
   id: string;

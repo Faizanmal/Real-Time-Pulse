@@ -1,11 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
-import { Transporter } from 'nodemailer';
-import * as handlebars from 'handlebars';
 import * as fs from 'fs';
 import * as path from 'path';
+
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ValidationSeverity } from '@prisma/client';
+import * as handlebars from 'handlebars';
+import * as nodemailer from 'nodemailer';
+import { Transporter } from 'nodemailer';
 
 export interface EmailOptions {
   to: string | string[];

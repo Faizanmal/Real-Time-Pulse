@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
-import { PipelineService } from './pipeline.service';
-import { PipelineController } from './pipeline.controller';
-import { PipelineExecutorService } from './pipeline-executor.service';
-import { PipelineConnectorService } from './pipeline-connector.service';
-import { PrismaModule } from '../prisma/prisma.module';
+
 import { CacheModule } from '../cache/cache.module';
+import { PrismaModule } from '../prisma/prisma.module';
+
+import { PipelineConnectorService } from './pipeline-connector.service';
+import { PipelineExecutorService } from './pipeline-executor.service';
+import { PipelineController } from './pipeline.controller';
+import { PipelineService } from './pipeline.service';
 
 @Module({
   imports: [PrismaModule, CacheModule, ScheduleModule.forRoot()],

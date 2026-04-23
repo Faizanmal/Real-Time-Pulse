@@ -8,16 +8,7 @@
  * recent items, quick actions, and contextual suggestions.
  */
 
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  useMemo,
-  ReactNode,
-} from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import {
   Search,
   Command as CommandIcon,
@@ -42,6 +33,17 @@ import {
   Folder,
   ExternalLink,
 } from 'lucide-react';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+  ReactNode,
+} from 'react';
+
+import { cn } from '@/lib/utils';
+
 
 // ==================== TYPES ====================
 
@@ -236,6 +238,8 @@ export function CommandPalette({
 
   // Open/close with keyboard
   useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       // Open with Cmd+K
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -630,6 +634,9 @@ export function CommandPalette({
 
 export function useCommandPalette() {
   const open = useCallback(() => {
+    // No-op during SSR
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
     // Dispatch keyboard event to open palette
     const event = new KeyboardEvent('keydown', {
       key: 'k',

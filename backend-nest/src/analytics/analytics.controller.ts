@@ -1,8 +1,11 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { AnalyticsService } from './analytics.service';
 import { UsageMetricType, PeriodType } from '@prisma/client';
+
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import type { AuthenticatedRequest } from '../common/interfaces/auth.interface';
+
+import { AnalyticsService } from './analytics.service';
 
 @ApiTags('Analytics')
 @ApiBearerAuth()
@@ -14,14 +17,17 @@ export class AnalyticsController {
   @Get('dashboard')
   @ApiOperation({ summary: 'Get workspace dashboard overview' })
   @ApiResponse({ status: 200, description: 'Returns dashboard overview' })
-  async getDashboardOverview(@Request() req: any) {
+  async getDashboardOverview(@Request() req: AuthenticatedRequest) {
     return this.analyticsService.getDashboardOverview(req.user.workspaceId);
   }
 
   @Get('portal/:portalId')
   @ApiOperation({ summary: 'Get portal analytics' })
   @ApiResponse({ status: 200, description: 'Returns portal analytics' })
-  async getPortalAnalytics(@Request() req: any, @Param('portalId') portalId: string) {
+  async getPortalAnalytics(
+    @Request() req: AuthenticatedRequest,
+    @Param('portalId') portalId: string,
+  ) {
     return this.analyticsService.getPortalAnalytics(req.user.workspaceId, portalId);
   }
 
@@ -29,7 +35,7 @@ export class AnalyticsController {
   @ApiOperation({ summary: 'Get usage metrics' })
   @ApiResponse({ status: 200, description: 'Returns usage metrics' })
   async getMetrics(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Query('metricType') metricType?: UsageMetricType,
     @Query('portalId') portalId?: string,
     @Query('periodType') periodType?: PeriodType,
@@ -46,14 +52,14 @@ export class AnalyticsController {
   @Get('performance')
   @ApiOperation({ summary: 'Get performance metrics' })
   @ApiResponse({ status: 200, description: 'Returns performance metrics' })
-  async getPerformanceMetrics(@Request() req: any) {
+  async getPerformanceMetrics(@Request() req: AuthenticatedRequest) {
     return this.analyticsService.getPerformanceMetrics(req.user.workspaceId);
   }
 
   @Get('activity')
   @ApiOperation({ summary: 'Get activity feed' })
   @ApiResponse({ status: 200, description: 'Returns activity feed' })
-  async getActivityFeed(@Request() req: any, @Query('limit') limit?: number) {
+  async getActivityFeed(@Request() req: AuthenticatedRequest, @Query('limit') limit?: number) {
     return this.analyticsService.getActivityFeed(
       req.user.workspaceId,
       limit ? parseInt(String(limit), 10) : 50,
@@ -63,7 +69,7 @@ export class AnalyticsController {
   @Get('trending')
   @ApiOperation({ summary: 'Get trending data' })
   @ApiResponse({ status: 200, description: 'Returns trending data' })
-  async getTrendingData(@Request() req: any) {
+  async getTrendingData(@Request() req: AuthenticatedRequest) {
     return this.analyticsService.getTrendingData(req.user.workspaceId);
   }
 
@@ -71,7 +77,7 @@ export class AnalyticsController {
   @ApiOperation({ summary: 'Track a usage metric' })
   @ApiResponse({ status: 201, description: 'Metric recorded' })
   async trackMetric(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body()
     body: {
       metricType: UsageMetricType;

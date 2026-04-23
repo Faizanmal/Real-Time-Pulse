@@ -1,20 +1,21 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
-import Stripe from 'stripe';
-import { BillingEventType } from '@prisma/client';
-import { CacheService } from '../cache/cache.service';
 import {
+  BillingEventType,
   SubscriptionPlan,
   SubscriptionStatus,
   // BillingEventType,
   // BillingEventStatus,
 } from '@prisma/client';
+import Stripe from 'stripe';
+
+import { CacheService } from '../cache/cache.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class BillingService {
   private readonly logger = new Logger(BillingService.name);
-  private readonly stripe: Stripe;
+  private readonly stripe: any;
 
   // Plan configurations
   private readonly plans = {
@@ -43,7 +44,7 @@ export class BillingService {
 
     if (stripeSecretKey) {
       this.stripe = new Stripe(stripeSecretKey, {
-        apiVersion: '2025-12-15.clover',
+        apiVersion: '2026-03-25.dahlia',
       });
     } else {
       this.logger.warn('Stripe secret key not configured');
@@ -214,7 +215,7 @@ export class BillingService {
       items: [{ price: priceId }],
     });
 
-    const dbSub = await this.prisma.subscription.create({
+    return await this.prisma.subscription.create({
       data: {
         workspace: { connect: { id: workspaceId } },
         stripeCustomerId: user.stripeCustomerId,
@@ -223,8 +224,6 @@ export class BillingService {
         plan: 'PRO',
       },
     });
-
-    return dbSub;
   }
 
   /**
@@ -255,7 +254,7 @@ export class BillingService {
       (subscription as any).items?.[0]?.stripeItemId || (subscription as any).stripeItemId;
     if (!stripeItemId) throw new BadRequestException('No metered item found');
 
-    await (this.stripe as any).usageRecords.create({
+    await this.stripe.usageRecords.create({
       subscription_item: stripeItemId,
       quantity,
       timestamp: Math.floor(Date.now() / 1000),
@@ -318,13 +317,13 @@ export class BillingService {
   /**
    * Handle Stripe webhook events
    */
-  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+
   async handleWebhook(signatureOrEvent: string | any, payload?: Buffer) {
     if (!this.stripe) {
       throw new BadRequestException('Stripe not configured');
     }
 
-    let event: Stripe.Event;
+    let event: any;
 
     if (typeof signatureOrEvent === 'object' && signatureOrEvent.type) {
       // Already-parsed event (tests pass objects directly)
@@ -460,7 +459,7 @@ export class BillingService {
   /**
    * Get invoices
    */
-  async getInvoices(workspaceId: string) {
+  async getInvoices(workspaceId: string): Promise<any> {
     if (!this.stripe) {
       return [];
     }
@@ -529,7 +528,7 @@ export class BillingService {
   // Private Helper Methods
   // ============================================
 
-  private async handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  private async handleCheckoutCompleted(session: any) {
     const workspaceId = session.metadata?.workspaceId;
     const plan = session.metadata?.plan as 'PRO' | 'AGENCY';
 
@@ -555,7 +554,7 @@ export class BillingService {
     await this.recordBillingEvent(workspaceId, 'SUBSCRIPTION_CREATED');
   }
 
-  private async handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  private async handleSubscriptionUpdated(subscription: any) {
     const customerId = subscription.customer as string;
 
     const dbSubscription = await this.prisma.subscription.findUnique({
@@ -581,7 +580,7 @@ export class BillingService {
       where: { id: dbSubscription.id },
       data: {
         status: statusMap[subscription.status] || 'ACTIVE',
-        stripeCurrentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+        stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
         stripePriceId: subscription.items.data[0]?.price.id,
       },
     });
@@ -589,7 +588,7 @@ export class BillingService {
     await this.recordBillingEvent(dbSubscription.workspaceId, 'SUBSCRIPTION_UPDATED');
   }
 
-  private async handleSubscriptionCanceled(subscription: Stripe.Subscription) {
+  private async handleSubscriptionCanceled(subscription: any) {
     const customerId = subscription.customer as string;
 
     const dbSubscription = await this.prisma.subscription.findUnique({
@@ -609,7 +608,7 @@ export class BillingService {
     await this.recordBillingEvent(dbSubscription.workspaceId, 'SUBSCRIPTION_CANCELED');
   }
 
-  private async handleInvoicePaid(invoice: Stripe.Invoice) {
+  private async handleInvoicePaid(invoice: any) {
     const customerId = invoice.customer as string;
 
     const subscription = await this.prisma.subscription.findUnique({
@@ -624,7 +623,7 @@ export class BillingService {
     });
   }
 
-  private async handleInvoiceFailed(invoice: Stripe.Invoice) {
+  private async handleInvoiceFailed(invoice: any) {
     const customerId = invoice.customer as string;
 
     const subscription = await this.prisma.subscription.findUnique({

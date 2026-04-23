@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+
 import { MerkleTreeService } from './merkle-tree.service';
 
 describe('MerkleTreeService', () => {
