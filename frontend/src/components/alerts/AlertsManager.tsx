@@ -2,8 +2,8 @@
 
 import { Bell, Plus, Trash2, Edit, AlertCircle, Mail, MessageSquare } from 'lucide-react';
 import React, { useState, useEffect, useCallback } from 'react';
-import { SiSlack as Slack } from 'react-icons/si';
 
+import { Slack } from '@/components/icons/brand-icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

@@ -72,7 +72,7 @@ export default function WorkflowsPage() {
     try {
       setLoading(true);
       const data = await workflowsApi.getWorkflows();
-      setWorkflows(data);
+      setWorkflows(Array.isArray(data) ? data : (data as any)?.data || []);
     } catch (error) {
       console.error('Failed to load workflows:', error);
       toast.error('Failed to load workflows');
@@ -88,7 +88,7 @@ export default function WorkflowsPage() {
   const loadExecutions = async (workflowId: string) => {
     try {
       const data = await workflowsApi.getExecutions(workflowId);
-      setExecutions(data);
+      setExecutions(Array.isArray(data) ? data : (data as any)?.data || []);
     } catch (error) {
       console.error('Failed to load executions:', error);
       toast.error('Failed to load execution history');
@@ -167,7 +167,10 @@ export default function WorkflowsPage() {
     }
   };
 
-  const filteredWorkflows = workflows.filter(workflow => {
+  const safeWorkflows = Array.isArray(workflows) ? workflows : [];
+  const safeExecutions = Array.isArray(executions) ? executions : [];
+
+  const filteredWorkflows = safeWorkflows.filter(workflow => {
     const matchesSearch = workflow.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       workflow.description?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = filterStatus === 'all' || 
@@ -177,10 +180,10 @@ export default function WorkflowsPage() {
   });
 
   const stats = {
-    total: workflows.length,
-    active: workflows.filter(w => w.isActive).length,
-    inactive: workflows.filter(w => !w.isActive).length,
-    executions: executions.length,
+    total: safeWorkflows.length,
+    active: safeWorkflows.filter(w => w.isActive).length,
+    inactive: safeWorkflows.filter(w => !w.isActive).length,
+    executions: safeExecutions.length,
   };
 
   const getStatusIcon = (status: string) => {

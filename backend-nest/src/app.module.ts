@@ -74,6 +74,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 import { WidgetModule } from './widgets/widget.module';
 import { WorkflowAutomationModule } from './workflow-automation/workflow-automation.module';
 import { WorkspaceModule } from './workspaces/workspace.module';
+import { IoTModule } from './iot/iot.module';
 
 @Module({
   imports: [
@@ -182,6 +183,7 @@ import { WorkspaceModule } from './workspaces/workspace.module';
     // ML/AI & Industry Solutions (Phase 3)
     MLModule,
     IndustryModule,
+    IoTModule,
   ],
   controllers: [AppController],
   providers: [

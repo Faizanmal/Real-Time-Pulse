@@ -13,8 +13,9 @@ import {
   Users,
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
-import { SiGithub as Github, SiSlack as Slack, SiTrello as Trello } from 'react-icons/si';
 import { toast } from 'sonner';
+
+import { Github, Slack, Trello } from '@/components/icons/brand-icons';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

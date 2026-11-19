@@ -57,6 +57,12 @@ class ApiClient {
       }
 
       const data = responseType === 'blob' ? await response.blob() : await response.json();
+      
+      // Auto-unwrap NestJS global response interceptor format ({ success, data, ... })
+      if (responseType === 'json' && data && typeof data === 'object' && 'success' in data && 'data' in data) {
+        return { data: data.data };
+      }
+      
       return { data };
     } catch (error) {
       console.error(`API Error [${endpoint}]:`, error);

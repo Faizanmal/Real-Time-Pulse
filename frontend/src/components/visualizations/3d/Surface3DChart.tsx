@@ -176,7 +176,7 @@ export function Surface3DChart({
       sceneRef.current.remove(meshRef.current);
       meshRef.current.geometry.dispose();
       if (Array.isArray(meshRef.current.material)) {
-        meshRef.current.material.forEach(m => m.dispose());
+        meshRef.current.material.forEach((m: { dispose: () => void }) => m.dispose());
       } else {
         meshRef.current.material.dispose();
       }

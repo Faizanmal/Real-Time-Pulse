@@ -44,7 +44,7 @@ export class BillingService {
 
     if (stripeSecretKey) {
       this.stripe = new Stripe(stripeSecretKey, {
-        apiVersion: '2026-03-25.dahlia',
+        apiVersion: '2026-08-26.dahlia',
       });
     } else {
       this.logger.warn('Stripe secret key not configured');

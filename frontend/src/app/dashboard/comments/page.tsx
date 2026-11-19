@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
-import { commentsApi, type Comment } from '@/lib/api/index';
+import { commentsApi, portalsApi, type Comment } from '@/lib/api/index';
 
 interface CommentItemProps {
   comment: Comment;
@@ -132,14 +132,31 @@ export default function CommentsPage() {
   const [submitting, setSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Default entity for demo - in real app, this would come from context or props
-  const entityId = 'demo';
+  const [entityId, setEntityId] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchDefaultPortal() {
+      try {
+        const res = await portalsApi.getPortals();
+        if (res && res.data && res.data.length > 0) {
+          setEntityId(res.data[0].id);
+        } else {
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error(err);
+        setLoading(false);
+      }
+    }
+    fetchDefaultPortal();
+  }, []);
 
   const loadComments = useCallback(async () => {
+    if (!entityId) return;
     setLoading(true);
     try {
       const data = await commentsApi.getByPortal(entityId);
-      setComments(data);
+      setComments(Array.isArray(data) ? data : (data as any)?.data || []);
     } catch (error) {
       console.error('Failed to load comments:', error);
       toast.error('Failed to load comments');
@@ -166,7 +183,7 @@ export default function CommentsPage() {
         setEditingComment(null);
       } else {
         await commentsApi.create({
-          portalId: entityId,
+          portalId: entityId!,
           content: newComment,
           parentId: replyTo || undefined,
         });

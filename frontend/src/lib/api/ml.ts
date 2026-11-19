@@ -100,10 +100,9 @@ export const mlApi = {
   },
 
   getTrainingJobs: async (modelId?: string): Promise<TrainingJob[]> => {
-    const response = await apiClient.get<TrainingJob[]>('/ml/training-jobs', {
+    return await apiClient.get<TrainingJob[]>('/ml/training', {
       params: modelId ? { modelId } : undefined,
     });
-    return response as TrainingJob[];
   },
 
   predict: async (

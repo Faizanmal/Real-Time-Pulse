@@ -33,7 +33,7 @@ export default function AnalyticsPage() {
       ]);
       setOverview(overviewData);
       setPerformance(performanceData);
-      setActivity(activityData);
+      setActivity(Array.isArray(activityData) ? activityData : (activityData as any)?.data || []);
       setTrending(trendingData);
     } catch (error) {
       console.error('Failed to load analytics:', error);
@@ -79,21 +79,21 @@ export default function AnalyticsPage() {
         <MetricCard
           title="Total Portals"
           value={overview?.totalPortals || 0}
-          change={overview?.trends.portals || 0}
+          change={overview?.trends?.portals || 0}
           icon={Layers}
           color="purple"
         />
         <MetricCard
           title="Active Users"
           value={overview?.activeUsers || 0}
-          change={overview?.trends.users || 0}
+          change={overview?.trends?.users || 0}
           icon={Users}
           color="blue"
         />
         <MetricCard
           title="Total Widgets"
           value={overview?.totalWidgets || 0}
-          change={overview?.trends.widgets || 0}
+          change={overview?.trends?.widgets || 0}
           icon={Activity}
           color="green"
         />
@@ -168,7 +168,7 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3 max-h-80 overflow-y-auto">
-              {activity.length === 0 ? (
+              {!Array.isArray(activity) || activity.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">No recent activity</p>
               ) : (
                 activity.map((item, index) => (

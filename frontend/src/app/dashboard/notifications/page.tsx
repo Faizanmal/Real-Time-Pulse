@@ -25,8 +25,9 @@ import {
   X
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
-import { SiSlack as Slack } from 'react-icons/si';
 import { toast } from 'sonner';
+
+import { Slack } from '@/components/icons/brand-icons';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

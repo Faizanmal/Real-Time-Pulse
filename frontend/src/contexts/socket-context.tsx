@@ -152,23 +152,23 @@ export function SocketProvider({ children }: SocketProviderProps) {
       setConnectionState('connected');
     });
 
-    newSocket.on('disconnect', (reason) => {
+    newSocket.on('disconnect', (reason: string) => {
       console.log('Socket disconnected:', reason);
       setIsConnected(false);
       setConnectionState('disconnected');
     });
 
-    newSocket.on('connect_error', (error) => {
+    newSocket.on('connect_error', (error: Error) => {
       console.error('Socket connection error:', error.message);
       setConnectionState('disconnected');
     });
 
-    newSocket.io.on('reconnect_attempt', (attemptNumber) => {
+    newSocket.io.on('reconnect_attempt', (attemptNumber: number) => {
       console.log('Socket reconnecting, attempt:', attemptNumber);
       setConnectionState('reconnecting');
     });
 
-    newSocket.io.on('reconnect', (attemptNumber) => {
+    newSocket.io.on('reconnect', (attemptNumber: number) => {
       console.log('Socket reconnected after', attemptNumber, 'attempts');
       setIsConnected(true);
       setConnectionState('connected');

@@ -1,6 +1,7 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as admin from 'firebase-admin';
+import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
 import { EncryptionService } from '../../common/services/encryption.service';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -50,9 +51,9 @@ export class FirebaseAuthService {
         return;
       }
 
-      if (!admin.apps.length) {
-        admin.initializeApp({
-          credential: admin.credential.cert({
+      if (!getApps().length) {
+        initializeApp({
+          credential: cert({
             projectId,
             clientEmail,
             privateKey: privateKey.replace(/\\n/g, '\n'),
@@ -77,7 +78,7 @@ export class FirebaseAuthService {
     }
 
     try {
-      const decodedToken = await admin.auth().verifyIdToken(idToken, true);
+      const decodedToken = await getAuth().verifyIdToken(idToken, true);
       return decodedToken as DecodedIdToken;
     } catch (error: any) {
       this.logger.error('Firebase token verification failed', error);
@@ -105,7 +106,7 @@ export class FirebaseAuthService {
     }
 
     try {
-      const userRecord = await admin.auth().getUser(uid);
+      const userRecord = await getAuth().getUser(uid);
       return {
         uid: userRecord.uid,
         email: userRecord.email || '',
@@ -129,7 +130,7 @@ export class FirebaseAuthService {
     }
 
     try {
-      await admin.auth().revokeRefreshTokens(uid);
+      await getAuth().revokeRefreshTokens(uid);
       this.logger.log(`Revoked refresh tokens for user: ${uid}`);
     } catch (error) {
       this.logger.error(`Failed to revoke tokens for user: ${uid}`, error);

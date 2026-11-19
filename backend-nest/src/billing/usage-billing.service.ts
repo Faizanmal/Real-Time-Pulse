@@ -86,7 +86,7 @@ export class UsageBillingService {
     private readonly prisma: PrismaService,
   ) {
     this.stripe = new Stripe(this.configService.get<string>('stripe.secretKey') || '', {
-      apiVersion: '2026-03-25.dahlia', // Specify version for stability
+      apiVersion: '2026-08-26.dahlia', // Specify version for stability
     });
     this.initializeMetrics();
     this.initializePlans();

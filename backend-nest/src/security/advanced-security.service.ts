@@ -144,7 +144,7 @@ export class AdvancedSecurityService {
 
       if (count >= config.points) {
         // Rate limited
-        const oldestEntry = await client.zrange(key, 0, 0, 'WITHSCORES');
+        const oldestEntry = await client.zrange(key, 0, '0', 'WITHSCORES');
         const resetTime =
           oldestEntry.length > 1
             ? new Date(parseInt(oldestEntry[1]) + config.duration * 1000)
