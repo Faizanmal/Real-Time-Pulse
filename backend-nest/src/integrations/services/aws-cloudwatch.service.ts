@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface AWSCloudWatchIntegration {
   accessToken: string; // AWS Access Key ID
   refreshToken: string; // AWS Secret Access Key
@@ -63,7 +64,7 @@ export class AWSCloudWatchService {
 
       return response.status === 200;
     } catch (error) {
-      this.logger.error('AWS CloudWatch connection test failed', error);
+      this.logger.error('AWS CloudWatch connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -143,7 +144,7 @@ export class AWSCloudWatchService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch AWS CloudWatch metrics', error);
+      this.logger.error('Failed to fetch AWS CloudWatch metrics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -178,7 +179,7 @@ export class AWSCloudWatchService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch AWS CloudWatch alarms', error);
+      this.logger.error('Failed to fetch AWS CloudWatch alarms' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -225,7 +226,7 @@ export class AWSCloudWatchService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch AWS CloudWatch logs', error);
+      this.logger.error('Failed to fetch AWS CloudWatch logs' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -252,7 +253,7 @@ export class AWSCloudWatchService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch AWS CloudWatch dashboards', error);
+      this.logger.error('Failed to fetch AWS CloudWatch dashboards' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -297,7 +298,7 @@ export class AWSCloudWatchService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to start AWS CloudWatch Insights query', error);
+      this.logger.error('Failed to start AWS CloudWatch Insights query' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -348,7 +349,7 @@ export class AWSCloudWatchService {
         })),
       };
     } catch (error) {
-      this.logger.error('Failed to fetch AWS CloudWatch analytics', error);
+      this.logger.error('Failed to fetch AWS CloudWatch analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

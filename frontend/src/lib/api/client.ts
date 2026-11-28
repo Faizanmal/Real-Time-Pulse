@@ -42,12 +42,16 @@ class ApiClient {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+      ...(options.method && !['GET', 'HEAD', 'OPTIONS'].includes(options.method.toUpperCase())
+        ? { 'X-CSRF-Token': 'browser-session' }
+        : {}),
       ...options.headers,
     };
 
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         ...options,
+        credentials: 'include',
         headers,
       });
 

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Param, Query, UseGuards, Request } from '@
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AiUsageLimitGuard } from '../billing/ai-usage-limit.guard';
 
 import { MLMarketplaceService } from './ml-marketplace.service';
 
@@ -59,6 +60,7 @@ export class MLMarketplaceController {
   }
 
   @Post('deployments/:deploymentId/predict')
+  @UseGuards(AiUsageLimitGuard)
   @ApiOperation({ summary: 'Run prediction' })
   @ApiParam({ name: 'deploymentId', description: 'Deployment ID' })
   async predict(
@@ -70,6 +72,7 @@ export class MLMarketplaceController {
   }
 
   @Post('training')
+  @UseGuards(AiUsageLimitGuard)
   @ApiOperation({ summary: 'Start training job' })
   async startTraining(
     @Request() req: any,

@@ -10,6 +10,7 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 
 import type { User } from '../types';
+import { useAuthStore } from '../store/auth';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
   ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
@@ -20,81 +21,52 @@ export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    'X-CSRF-Token': 'browser-session',
   },
   timeout: 30000,
   withCredentials: true, // Important for httpOnly cookies
 });
 
-// Request interceptor to add auth token
-apiClient.interceptors.request.use(
-  (config) => {
-    // Try to get token from zustand store
-    if (typeof window !== 'undefined') {
-      const authStorage = localStorage.getItem('auth-storage');
-      if (authStorage) {
-        try {
-          const parsed = JSON.parse(authStorage);
-          const token = parsed?.state?.accessToken;
-          if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-          }
-        } catch (error) {
-          console.error('Failed to parse auth storage:', error);
-        }
-      }
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+// Browser sessions use HttpOnly cookies; no bearer or refresh token enters JS storage/headers.
+let refreshInFlight: Promise<void> | null = null;
+const rotateSession = async (): Promise<void> => {
+  const requestRotation = () => axios.post(
+    `${API_BASE_URL}/auth/session/refresh`,
+    {},
+    { withCredentials: true, headers: { 'X-CSRF-Token': 'browser-session' } },
+  ).then(() => undefined);
 
-// Response interceptor to handle token refresh
+  if (typeof navigator !== 'undefined' && navigator.locks?.request) {
+    await navigator.locks.request('real-time-pulse-session-refresh', requestRotation);
+    return;
+  }
+  await requestRotation();
+};
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as AxiosError['config'] & { _retry?: boolean };
+    const requestUrl = originalRequest?.url || '';
 
-    // If 401 and not already retried
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 && originalRequest && !originalRequest._retry &&
+      useAuthStore.getState().isAuthenticated &&
+      !requestUrl.includes('/auth/session/signin') &&
+      !requestUrl.includes('/auth/session/signup') &&
+      !requestUrl.includes('/auth/session/refresh')
+    ) {
       originalRequest._retry = true;
 
       try {
-        // Refresh tokens endpoint sends new access token
-        // Include stored refresh token in the request body (frontend stores it in localStorage)
-        const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
-        const response = await axios.post(
-          `${API_BASE_URL}/auth/refresh`,
-          { refreshToken },
-          { withCredentials: true }
-        );
-
-        const { accessToken } = response.data;
-
-        // Update access token in storage
-        if (typeof window !== 'undefined') {
-          const authStorage = localStorage.getItem('auth-storage');
-          if (authStorage) {
-            try {
-              const parsed = JSON.parse(authStorage);
-              parsed.state.accessToken = accessToken;
-              localStorage.setItem('auth-storage', JSON.stringify(parsed));
-            } catch (e) {
-              console.error('Failed to update token:', e);
-            }
-          }
+        if (!refreshInFlight) {
+          refreshInFlight = rotateSession().finally(() => { refreshInFlight = null; });
         }
-
-        // Retry original request with new token
-        if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-        }
+        await refreshInFlight;
         return apiClient(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, clear auth and redirect to login
         if (typeof window !== 'undefined') {
-          localStorage.removeItem('auth-storage');
+          useAuthStore.getState().clearAuth();
           window.location.href = '/auth/login';
         }
         return Promise.reject(refreshError);
@@ -276,11 +248,8 @@ export interface MeetingTemplate {
 // Authentication
 export const authAPI = {
   login: async (username: string, password: string) => {
-    const response = await apiClient.post('/auth/token/', { username, password });
-    const { access, refresh } = response.data;
-    localStorage.setItem('access_token', access);
-    localStorage.setItem('refresh_token', refresh);
-    return response.data;
+    const response = await apiClient.post('/auth/session/signin', { email: username, password });
+    return response.data.data;
   },
 
   register: async (username: string, email: string, password: string, timezone?: string) => {
@@ -295,14 +264,11 @@ export const authAPI = {
   },
 
   logout: () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    return apiClient.post('/auth/session/logout');
   },
 
   verifyToken: async () => {
-    const token = localStorage.getItem('access_token');
-    if (!token) throw new Error('No token found');
-    return await apiClient.post('/auth/token/verify/', { token });
+    return apiClient.get('/auth/me');
   },
 
   getCurrentUser: async (): Promise<User> => {

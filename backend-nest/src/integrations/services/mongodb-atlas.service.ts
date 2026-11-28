@@ -11,6 +11,7 @@ interface MongoDBAtlasIntegration {
   };
 }
 
+import { providerHttpStatus } from '../connector-security.util';
 @Injectable()
 export class MongoDBAtlasService {
   private readonly logger = new Logger(MongoDBAtlasService.name);
@@ -38,7 +39,7 @@ export class MongoDBAtlasService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('MongoDB Atlas connection test failed', error);
+      this.logger.error('MongoDB Atlas connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -81,7 +82,7 @@ export class MongoDBAtlasService {
 
       return response.data.results || [];
     } catch (error) {
-      this.logger.error('Failed to fetch MongoDB Atlas clusters', error);
+      this.logger.error('Failed to fetch MongoDB Atlas clusters' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -106,7 +107,7 @@ export class MongoDBAtlasService {
 
       return response.data.results || [];
     } catch (error) {
-      this.logger.error('Failed to fetch MongoDB Atlas databases', error);
+      this.logger.error('Failed to fetch MongoDB Atlas databases' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -132,7 +133,7 @@ export class MongoDBAtlasService {
 
       return response.data.results || [];
     } catch (error) {
-      this.logger.error('Failed to fetch MongoDB Atlas collections', error);
+      this.logger.error('Failed to fetch MongoDB Atlas collections' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -176,7 +177,7 @@ export class MongoDBAtlasService {
 
       return response.data.measurements || [];
     } catch (error) {
-      this.logger.error('Failed to fetch MongoDB Atlas metrics', error);
+      this.logger.error('Failed to fetch MongoDB Atlas metrics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -205,7 +206,7 @@ export class MongoDBAtlasService {
 
       return response.data.results || [];
     } catch (error) {
-      this.logger.error('Failed to fetch MongoDB Atlas alerts', error);
+      this.logger.error('Failed to fetch MongoDB Atlas alerts' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -237,7 +238,7 @@ export class MongoDBAtlasService {
         contentType: 'application/gzip',
       };
     } catch (error) {
-      this.logger.error('Failed to fetch MongoDB Atlas logs', error);
+      this.logger.error('Failed to fetch MongoDB Atlas logs' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -283,7 +284,7 @@ export class MongoDBAtlasService {
         recentAlerts: alertsArray.slice(0, 5),
       };
     } catch (error) {
-      this.logger.error('Failed to fetch MongoDB Atlas analytics', error);
+      this.logger.error('Failed to fetch MongoDB Atlas analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

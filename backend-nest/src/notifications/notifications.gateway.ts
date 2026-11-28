@@ -10,6 +10,8 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { PrismaService } from '../prisma/prisma.service';
+import { createRealtimeEvent } from '../realtime/realtime-event';
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -30,9 +32,21 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   private readonly logger = new Logger(NotificationsGateway.name);
   private userSockets: Map<string, Set<string>> = new Map(); // userId -> Set of socket IDs
   private ipConnectionCounts: Map<string, number> = new Map();
+  private userTenants = new Map<string, string>();
+  private portalTenants = new Map<string, string>();
   private MAX_CONNECTIONS_PER_IP = parseInt(process.env.WS_MAX_CONNECTIONS_PER_IP || '50', 10);
 
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  async revokePortalSubscriptions(portalId: string): Promise<void> {
+    if (!this.server) return;
+    const room = `portal:${portalId}`;
+    this.server.to(room).emit('portal:access:revoked', { portalId });
+    await this.server.in(room).socketsLeave(room);
+  }
 
   async handleConnection(client: AuthenticatedSocket) {
     try {
@@ -67,9 +81,17 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       const userId = payload.sub as string;
       const workspaceId = payload.workspaceId as string;
 
+      const account = await this.prisma.user.findFirst({ where: { id: userId, workspaceId }, select: { role: true } });
+      if (!account || account.role === 'MEMBER') {
+        client.emit('error', { message: 'Use a portal link assigned to your client account' });
+        client.disconnect();
+        return;
+      }
+
       (client as any).userId = userId;
 
       (client as any).workspaceId = workspaceId;
+      this.userTenants.set(userId, workspaceId);
 
       // Track user's sockets
       if (!this.userSockets.has(userId)) {
@@ -83,10 +105,10 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       this.logger.log(`Client connected: ${client.id} (User: ${(client as any).userId as string})`);
 
       // Send connection acknowledgment
-      client.emit('connected', {
+      client.emit('connected', createRealtimeEvent({
         message: 'Successfully connected to notifications',
         timestamp: new Date().toISOString(),
-      });
+      }, { tenantId: workspaceId, resourceType: 'user', resourceId: userId }));
     } catch (error) {
       this.logger.error(`Client ${client.id} authentication failed`, error);
       client.disconnect();
@@ -113,11 +135,18 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   }
 
   @SubscribeMessage('subscribe:portal')
-  handleSubscribePortal(
+  async handleSubscribePortal(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { portalId: string },
   ) {
-    void client.join(`portal:${data.portalId}`);
+    if (!client.userId || !client.workspaceId) return { success: false, error: 'Access denied' };
+    const portal = await this.prisma.portal.findFirst({
+      where: { id: data.portalId, workspaceId: client.workspaceId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!portal) return { success: false, error: 'Access denied' };
+    this.portalTenants.set(data.portalId, client.workspaceId);
+    await client.join(`portal:${data.portalId}`);
     this.logger.log(`Client ${client.id} subscribed to portal ${data.portalId}`);
     return { success: true, portalId: data.portalId };
   }
@@ -127,6 +156,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { portalId: string },
   ) {
+    if (typeof data?.portalId !== 'string' || !data.portalId || data.portalId.length > 128 || !client.rooms.has(`portal:${data.portalId}`)) {
+      return { success: false, error: 'Access denied' };
+    }
     void client.leave(`portal:${data.portalId}`);
     this.logger.log(`Client ${client.id} unsubscribed from portal ${data.portalId}`);
     return { success: true, portalId: data.portalId };
@@ -138,8 +170,12 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   notifyUser(userId: string, event: string, data: Record<string, unknown>): void {
     const socketIds = this.userSockets.get(userId);
     if (socketIds) {
+      const payload = createRealtimeEvent(data, {
+        tenantId: this.userTenants.get(userId) ?? null,
+        resourceType: 'user', resourceId: userId,
+      });
       socketIds.forEach((socketId) => {
-        this.server.to(socketId).emit(event, data);
+        this.server.to(socketId).emit(event, payload);
       });
       this.logger.debug(`Notification sent to user ${userId}: ${event}`);
     }
@@ -149,7 +185,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
    * Notify all users in a workspace
    */
   notifyWorkspace(workspaceId: string, event: string, data: Record<string, unknown>): void {
-    this.server.to(`workspace:${workspaceId}`).emit(event, data);
+    this.server.to(`workspace:${workspaceId}`).emit(event, createRealtimeEvent(data, {
+      tenantId: workspaceId, resourceType: 'workspace', resourceId: workspaceId,
+    }));
     this.logger.debug(`Notification sent to workspace ${workspaceId}: ${event}`);
   }
 
@@ -157,7 +195,10 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
    * Notify all users subscribed to a portal
    */
   notifyPortal(portalId: string, event: string, data: Record<string, unknown>): void {
-    this.server.to(`portal:${portalId}`).emit(event, data);
+    this.server.to(`portal:${portalId}`).emit(event, createRealtimeEvent(data, {
+      tenantId: this.portalTenants.get(portalId) ?? (data.tenantId as string | undefined) ?? null,
+      resourceType: 'portal', resourceId: portalId,
+    }));
     this.logger.debug(`Notification sent to portal ${portalId}: ${event}`);
   }
 
@@ -165,7 +206,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
    * Broadcast to all connected clients
    */
   broadcast(event: string, data: Record<string, unknown>): void {
-    this.server.emit(event, data);
+    this.server.emit(event, createRealtimeEvent(data, {
+      tenantId: null, resourceType: 'system', resourceId: 'all',
+    }));
     this.logger.debug(`Broadcast notification: ${event}`);
   }
 }

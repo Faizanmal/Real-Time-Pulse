@@ -1,23 +1,50 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { 
-  BarChart3, TrendingUp, TrendingDown, Users, Activity, Zap,
-  Clock, Globe, Layers, RefreshCw, ArrowUpRight, ArrowDownRight
-} from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
-import { toast } from 'sonner';
+import { motion } from "framer-motion";
+import {
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+  Users,
+  Activity,
+  Zap,
+  Clock,
+  Globe,
+  Layers,
+  RefreshCw,
+  ArrowUpRight,
+  ArrowDownRight,
+} from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { analyticsApi, type DashboardOverview, type PerformanceMetrics, type ActivityItem, type TrendingData } from '@/lib/api/index';
+import { MetricMappingManager } from "@/components/analytics/MetricMappingManager";
+import { ValueLedgerManager } from "@/components/analytics/ValueLedgerManager";
+import { ProductAnalyticsPanel } from "@/components/analytics/ProductAnalyticsPanel";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  analyticsApi,
+  type DashboardOverview,
+  type PerformanceMetrics,
+  type ActivityItem,
+  type TrendingData,
+} from "@/lib/api/index";
 
 export default function AnalyticsPage() {
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
-  const [performance, setPerformance] = useState<PerformanceMetrics | null>(null);
+  const [performance, setPerformance] = useState<PerformanceMetrics | null>(
+    null,
+  );
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [trending, setTrending] = useState<TrendingData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,19 +52,20 @@ export default function AnalyticsPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [overviewData, performanceData, activityData, trendingData] = await Promise.all([
-        analyticsApi.getDashboardOverview(),
-        analyticsApi.getPerformanceMetrics(),
-        analyticsApi.getActivityFeed(20),
-        analyticsApi.getTrendingData(),
-      ]);
+      const [overviewData, performanceData, activityData, trendingData] =
+        await Promise.all([
+          analyticsApi.getDashboardOverview(),
+          analyticsApi.getPerformanceMetrics(),
+          analyticsApi.getActivityFeed(20),
+          analyticsApi.getTrendingData(),
+        ]);
       setOverview(overviewData);
       setPerformance(performanceData);
-      setActivity(Array.isArray(activityData) ? activityData : (activityData as any)?.data || []);
+      setActivity(activityData);
       setTrending(trendingData);
     } catch (error) {
-      console.error('Failed to load analytics:', error);
-      toast.error('Failed to load analytics data');
+      console.error("Failed to load analytics:", error);
+      toast.error("Failed to load analytics data");
     } finally {
       setLoading(false);
     }
@@ -73,6 +101,10 @@ export default function AnalyticsPage() {
           Refresh
         </Button>
       </div>
+
+      <MetricMappingManager />
+      <ValueLedgerManager />
+      <ProductAnalyticsPanel />
 
       {/* Overview Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -120,25 +152,40 @@ export default function AnalyticsPage() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Uptime</span>
-                <span className="font-medium text-green-600">{performance?.uptime?.toFixed(2) || 99.99}%</span>
+                <span className="font-medium text-green-600">
+                  {performance?.uptime?.toFixed(2) || 99.99}%
+                </span>
               </div>
               <Progress value={performance?.uptime || 99.99} className="h-2" />
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Avg Response Time</span>
-                <span className="font-medium">{performance?.avgResponseTime || 0}ms</span>
+                <span className="font-medium">
+                  {performance?.avgResponseTime || 0}ms
+                </span>
               </div>
-              <Progress value={Math.min(100, 100 - (performance?.avgResponseTime || 0) / 10)} className="h-2" />
+              <Progress
+                value={Math.min(
+                  100,
+                  100 - (performance?.avgResponseTime || 0) / 10,
+                )}
+                className="h-2"
+              />
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Error Rate</span>
-                <span className={`font-medium ${(performance?.errorRate || 0) > 1 ? 'text-red-600' : 'text-green-600'}`}>
+                <span
+                  className={`font-medium ${(performance?.errorRate || 0) > 1 ? "text-red-600" : "text-green-600"}`}
+                >
                   {performance?.errorRate?.toFixed(2) || 0}%
                 </span>
               </div>
-              <Progress value={100 - (performance?.errorRate || 0)} className="h-2" />
+              <Progress
+                value={100 - (performance?.errorRate || 0)}
+                className="h-2"
+              />
             </div>
             <div className="pt-4 border-t space-y-2">
               <div className="flex justify-between text-sm">
@@ -169,7 +216,9 @@ export default function AnalyticsPage() {
           <CardContent>
             <div className="space-y-3 max-h-80 overflow-y-auto">
               {!Array.isArray(activity) || activity.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">No recent activity</p>
+                <p className="text-center text-muted-foreground py-8">
+                  No recent activity
+                </p>
               ) : (
                 activity.map((item, index) => (
                   <motion.div
@@ -220,21 +269,37 @@ export default function AnalyticsPage() {
             <CardContent>
               <div className="space-y-4">
                 {trending?.topPortals?.map((portal, index) => (
-                  <div key={portal.id} className="flex items-center justify-between p-3 rounded-lg border">
+                  <div
+                    key={portal.id}
+                    className="flex items-center justify-between p-3 rounded-lg border"
+                  >
                     <div className="flex items-center gap-3">
-                      <span className="text-lg font-bold text-muted-foreground">#{index + 1}</span>
+                      <span className="text-lg font-bold text-muted-foreground">
+                        #{index + 1}
+                      </span>
                       <div>
                         <p className="font-medium">{portal.name}</p>
-                        <p className="text-sm text-muted-foreground">{portal.views.toLocaleString()} views</p>
+                        <p className="text-sm text-muted-foreground">
+                          {portal.views.toLocaleString()} views
+                        </p>
                       </div>
                     </div>
-                    <Badge variant={portal.growth >= 0 ? 'default' : 'destructive'} className="gap-1">
-                      {portal.growth >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                    <Badge
+                      variant={portal.growth >= 0 ? "default" : "destructive"}
+                      className="gap-1"
+                    >
+                      {portal.growth >= 0 ? (
+                        <ArrowUpRight className="h-3 w-3" />
+                      ) : (
+                        <ArrowDownRight className="h-3 w-3" />
+                      )}
                       {Math.abs(portal.growth)}%
                     </Badge>
                   </div>
                 )) || (
-                  <p className="text-center text-muted-foreground py-8">No data available</p>
+                  <p className="text-center text-muted-foreground py-8">
+                    No data available
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -250,21 +315,37 @@ export default function AnalyticsPage() {
             <CardContent>
               <div className="space-y-4">
                 {trending?.topWidgets?.map((widget, index) => (
-                  <div key={widget.id} className="flex items-center justify-between p-3 rounded-lg border">
+                  <div
+                    key={widget.id}
+                    className="flex items-center justify-between p-3 rounded-lg border"
+                  >
                     <div className="flex items-center gap-3">
-                      <span className="text-lg font-bold text-muted-foreground">#{index + 1}</span>
+                      <span className="text-lg font-bold text-muted-foreground">
+                        #{index + 1}
+                      </span>
                       <div>
                         <p className="font-medium">{widget.name}</p>
-                        <p className="text-sm text-muted-foreground">{widget.interactions.toLocaleString()} interactions</p>
+                        <p className="text-sm text-muted-foreground">
+                          {widget.interactions.toLocaleString()} interactions
+                        </p>
                       </div>
                     </div>
-                    <Badge variant={widget.growth >= 0 ? 'default' : 'destructive'} className="gap-1">
-                      {widget.growth >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                    <Badge
+                      variant={widget.growth >= 0 ? "default" : "destructive"}
+                      className="gap-1"
+                    >
+                      {widget.growth >= 0 ? (
+                        <ArrowUpRight className="h-3 w-3" />
+                      ) : (
+                        <ArrowDownRight className="h-3 w-3" />
+                      )}
                       {Math.abs(widget.growth)}%
                     </Badge>
                   </div>
                 )) || (
-                  <p className="text-center text-muted-foreground py-8">No data available</p>
+                  <p className="text-center text-muted-foreground py-8">
+                    No data available
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -280,15 +361,22 @@ export default function AnalyticsPage() {
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {trending?.popularIntegrations?.map((integration) => (
-                  <div key={integration.provider} className="flex items-center gap-3 p-4 rounded-lg border">
+                  <div
+                    key={integration.provider}
+                    className="flex items-center gap-3 p-4 rounded-lg border"
+                  >
                     <Globe className="h-8 w-8 text-purple-500" />
                     <div>
                       <p className="font-medium">{integration.provider}</p>
-                      <p className="text-sm text-muted-foreground">{integration.count} connections</p>
+                      <p className="text-sm text-muted-foreground">
+                        {integration.count} connections
+                      </p>
                     </div>
                   </div>
                 )) || (
-                  <p className="text-center text-muted-foreground py-8 col-span-full">No data available</p>
+                  <p className="text-center text-muted-foreground py-8 col-span-full">
+                    No data available
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -302,17 +390,30 @@ export default function AnalyticsPage() {
               <CardDescription>When your users are most active</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-end justify-between h-48 gap-1">
-                {(trending?.peakHours || Array.from({ length: 24 }, (_, i) => ({ hour: i, requests: Math.random() * 100 }))).map((hour) => (
-                  <div key={hour.hour} className="flex-1 flex flex-col items-center gap-1">
-                    <div 
-                      className="w-full bg-purple-500 rounded-t transition-all hover:bg-purple-600"
-                      style={{ height: `${(hour.requests / Math.max(...(trending?.peakHours?.map(h => h.requests) || [100]))) * 100}%` }}
-                    />
-                    <span className="text-xs text-muted-foreground">{hour.hour}</span>
-                  </div>
-                ))}
-              </div>
+              {trending?.peakHours?.length ? (
+                <div className="flex h-48 items-end justify-between gap-1">
+                  {trending.peakHours.map((hour) => (
+                    <div
+                      key={hour.hour}
+                      className="flex flex-1 flex-col items-center gap-1"
+                    >
+                      <div
+                        className="w-full rounded-t bg-purple-500 transition-all hover:bg-purple-600"
+                        style={{
+                          height: `${(hour.requests / Math.max(1, ...trending.peakHours.map((item) => item.requests))) * 100}%`,
+                        }}
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        {hour.hour}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="py-8 text-sm text-muted-foreground">
+                  No peak-hour data is available yet.
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -322,24 +423,24 @@ export default function AnalyticsPage() {
 }
 
 // Metric Card Component
-function MetricCard({ 
-  title, 
-  value, 
-  change, 
-  icon: Icon, 
-  color 
-}: { 
-  title: string; 
-  value: number; 
-  change?: number; 
-  icon: React.ComponentType<{ className?: string }>; 
-  color: 'purple' | 'blue' | 'green' | 'orange';
+function MetricCard({
+  title,
+  value,
+  change,
+  icon: Icon,
+  color,
+}: {
+  title: string;
+  value: number;
+  change?: number;
+  icon: React.ComponentType<{ className?: string }>;
+  color: "purple" | "blue" | "green" | "orange";
 }) {
   const colorClasses = {
-    purple: 'text-purple-600 bg-purple-100 dark:bg-purple-900',
-    blue: 'text-blue-600 bg-blue-100 dark:bg-blue-900',
-    green: 'text-green-600 bg-green-100 dark:bg-green-900',
-    orange: 'text-orange-600 bg-orange-100 dark:bg-orange-900',
+    purple: "text-purple-600 bg-purple-100 dark:bg-purple-900",
+    blue: "text-blue-600 bg-blue-100 dark:bg-blue-900",
+    green: "text-green-600 bg-green-100 dark:bg-green-900",
+    orange: "text-orange-600 bg-orange-100 dark:bg-orange-900",
   };
 
   return (
@@ -350,8 +451,14 @@ function MetricCard({
             <p className="text-sm text-muted-foreground">{title}</p>
             <p className="text-2xl font-bold">{value.toLocaleString()}</p>
             {change !== undefined && (
-              <div className={`flex items-center gap-1 text-xs ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {change >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+              <div
+                className={`flex items-center gap-1 text-xs ${change >= 0 ? "text-green-600" : "text-red-600"}`}
+              >
+                {change >= 0 ? (
+                  <TrendingUp className="h-3 w-3" />
+                ) : (
+                  <TrendingDown className="h-3 w-3" />
+                )}
                 {Math.abs(change)}% from last period
               </div>
             )}

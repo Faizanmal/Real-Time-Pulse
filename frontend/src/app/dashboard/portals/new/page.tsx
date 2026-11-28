@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { portalsApi } from '@/lib/api/index';
+import { portalApi } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -21,26 +22,43 @@ export default function NewPortalPage() {
   });
   const [loading, setLoading] = useState(false);
   const [slugError, setSlugError] = useState('');
+  const [sampleLoading, setSampleLoading] = useState(false);
+  const [formError, setFormError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setSlugError('');
+    setFormError('');
 
     try {
-      await portalsApi.createPortal(formData);
-      router.push('/dashboard/portals');
+      const portal = await portalsApi.createPortal(formData);
+      router.push(`/dashboard/portals/${portal.id}/edit`);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create portal';
       if (message.toLowerCase().includes('slug already exists')) {
         setSlugError('This slug is already taken. Please choose a different one.');
         toast.error('This portal slug already exists. Please use another slug.');
       } else {
+        setFormError(message);
         toast.error(message);
       }
       console.error('Failed to create portal:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const startWithSample = async () => {
+    setSampleLoading(true);
+    setFormError('');
+    try {
+      const demo = await portalApi.createDemoClientPortal();
+      router.push(`/dashboard/portals/${demo.portalId}/edit`);
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Sample portal could not be created.');
+    } finally {
+      setSampleLoading(false);
     }
   };
 
@@ -58,6 +76,14 @@ export default function NewPortalPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-950">
+            <p className="font-semibold">Build from fictional sample data</p>
+            <p className="mt-1 text-sm">Creates a clearly labelled local demo portal with no provider credentials or live data.</p>
+            <Button type="button" className="mt-3" variant="outline" disabled={sampleLoading} onClick={() => void startWithSample()}>
+              {sampleLoading ? 'Preparing sample…' : 'Start with sample portal'}
+            </Button>
+          </div>
+          {formError && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-800">{formError}</p>}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">

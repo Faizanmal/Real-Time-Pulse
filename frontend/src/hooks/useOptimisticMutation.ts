@@ -11,6 +11,9 @@ import { useMutation, useQueryClient, MutationFunction } from '@tanstack/react-q
 import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 
+const asQueryKey = (key: string | readonly unknown[]) =>
+  Array.isArray(key) ? key : [key];
+
 interface OptimisticUpdateOptions<TData, TVariables, TContext> {
   // Query key(s) to invalidate on success
   queryKey: string | readonly unknown[];
@@ -78,7 +81,7 @@ export function useOptimisticMutation<
     rollbackDelay = 300,
   } = options;
 
-  const mutation = useMutation<TData, Error, TVariables, { previousData: TData | undefined }>({
+  const mutation = useMutation<TData, Error, TVariables, { previousData: TData | undefined; optimisticData?: TData }>({
     mutationFn,
 
     // Before mutation: optimistically update cache
@@ -88,18 +91,20 @@ export function useOptimisticMutation<
       setIsOptimistic(true);
 
       // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: [queryKey] });
+      const normalizedQueryKey = asQueryKey(queryKey);
+      await queryClient.cancelQueries({ queryKey: normalizedQueryKey });
 
       // Snapshot previous value
-      const previousData = queryClient.getQueryData<TData>([queryKey]);
+      const previousData = queryClient.getQueryData<TData>(normalizedQueryKey);
+      let optimisticData: TData | undefined;
 
       // Optimistically update cache
       if (optimisticUpdate && previousData !== undefined) {
-        const newData = optimisticUpdate(variables, previousData);
-        queryClient.setQueryData([queryKey], newData);
+        optimisticData = optimisticUpdate(variables, previousData);
+        queryClient.setQueryData(normalizedQueryKey, optimisticData);
       }
 
-      return { previousData };
+      return { previousData, optimisticData };
     },
 
     // On error: rollback to previous value
@@ -110,7 +115,12 @@ export function useOptimisticMutation<
       // Rollback with slight delay for smoother UX
       setTimeout(() => {
         if (context?.previousData !== undefined) {
-          queryClient.setQueryData([queryKey], context.previousData);
+          const normalizedQueryKey = asQueryKey(queryKey);
+          // Only restore this mutation's snapshot while its optimistic value is still current.
+          // A later mutation or server event owns the cache once it has replaced that value.
+          if (queryClient.getQueryData<TData>(normalizedQueryKey) === context.optimisticData) {
+            queryClient.setQueryData(normalizedQueryKey, context.previousData);
+          }
         }
 
         if (pendingMutationsRef.current === 0) {
@@ -145,7 +155,7 @@ export function useOptimisticMutation<
 
     // Always refetch after error or success
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [queryKey] });
+      queryClient.invalidateQueries({ queryKey: asQueryKey(queryKey) });
     },
   });
 
@@ -176,13 +186,13 @@ export function useOptimisticList<TItem extends { id: string }>(
       tempItem: TItem,
     ): Promise<TItem> => {
       // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: [queryKey] });
+      await queryClient.cancelQueries({ queryKey: asQueryKey(queryKey) });
 
       // Snapshot previous value
-      const previousItems = queryClient.getQueryData<TItem[]>([queryKey]);
+      const previousItems = queryClient.getQueryData<TItem[]>(asQueryKey(queryKey));
 
       // Optimistically add to list
-      queryClient.setQueryData<TItem[]>([queryKey], (old) => [
+      const optimisticItems = queryClient.setQueryData<TItem[]>(asQueryKey(queryKey), (old) => [
         ...(old || []),
         tempItem,
       ]);
@@ -191,7 +201,7 @@ export function useOptimisticList<TItem extends { id: string }>(
         const result = await mutationFn(variables);
 
         // Replace temp item with real item
-        queryClient.setQueryData<TItem[]>([queryKey], (old) =>
+        queryClient.setQueryData<TItem[]>(asQueryKey(queryKey), (old) =>
           old?.map((item) => (item.id === tempItem.id ? result : item)),
         );
 
@@ -202,7 +212,10 @@ export function useOptimisticList<TItem extends { id: string }>(
         return result;
       } catch (error) {
         // Rollback
-        queryClient.setQueryData([queryKey], previousItems);
+        if (queryClient.getQueryData(asQueryKey(queryKey)) === optimisticItems) {
+          queryClient.setQueryData(asQueryKey(queryKey), previousItems);
+        }
+        void queryClient.invalidateQueries({ queryKey: asQueryKey(queryKey) });
 
         if (showToast) {
           toast.error('Failed to add item');
@@ -222,12 +235,12 @@ export function useOptimisticList<TItem extends { id: string }>(
       itemId: string,
       updates: Partial<TItem>,
     ): Promise<TItem> => {
-      await queryClient.cancelQueries({ queryKey: [queryKey] });
+      await queryClient.cancelQueries({ queryKey: asQueryKey(queryKey) });
 
-      const previousItems = queryClient.getQueryData<TItem[]>([queryKey]);
+      const previousItems = queryClient.getQueryData<TItem[]>(asQueryKey(queryKey));
 
       // Optimistically update
-      queryClient.setQueryData<TItem[]>([queryKey], (old) =>
+      const optimisticItems = queryClient.setQueryData<TItem[]>(asQueryKey(queryKey), (old) =>
         old?.map((item) =>
           item.id === itemId ? { ...item, ...updates } : item,
         ),
@@ -236,7 +249,7 @@ export function useOptimisticList<TItem extends { id: string }>(
       try {
         const result = await mutationFn(variables);
 
-        queryClient.setQueryData<TItem[]>([queryKey], (old) =>
+        queryClient.setQueryData<TItem[]>(asQueryKey(queryKey), (old) =>
           old?.map((item) => (item.id === itemId ? result : item)),
         );
 
@@ -246,7 +259,10 @@ export function useOptimisticList<TItem extends { id: string }>(
 
         return result;
       } catch (error) {
-        queryClient.setQueryData([queryKey], previousItems);
+        if (queryClient.getQueryData(asQueryKey(queryKey)) === optimisticItems) {
+          queryClient.setQueryData(asQueryKey(queryKey), previousItems);
+        }
+        void queryClient.invalidateQueries({ queryKey: asQueryKey(queryKey) });
 
         if (showToast) {
           toast.error('Failed to update item');
@@ -265,12 +281,12 @@ export function useOptimisticList<TItem extends { id: string }>(
       variables: TVariables,
       itemId: string,
     ): Promise<void> => {
-      await queryClient.cancelQueries({ queryKey: [queryKey] });
+      await queryClient.cancelQueries({ queryKey: asQueryKey(queryKey) });
 
-      const previousItems = queryClient.getQueryData<TItem[]>([queryKey]);
+      const previousItems = queryClient.getQueryData<TItem[]>(asQueryKey(queryKey));
 
       // Optimistically remove
-      queryClient.setQueryData<TItem[]>([queryKey], (old) =>
+      const optimisticItems = queryClient.setQueryData<TItem[]>(asQueryKey(queryKey), (old) =>
         old?.filter((item) => item.id !== itemId),
       );
 
@@ -281,7 +297,10 @@ export function useOptimisticList<TItem extends { id: string }>(
           toast.success('Item deleted successfully');
         }
       } catch (error) {
-        queryClient.setQueryData([queryKey], previousItems);
+        if (queryClient.getQueryData(asQueryKey(queryKey)) === optimisticItems) {
+          queryClient.setQueryData(asQueryKey(queryKey), previousItems);
+        }
+        void queryClient.invalidateQueries({ queryKey: asQueryKey(queryKey) });
 
         if (showToast) {
           toast.error('Failed to delete item');
@@ -300,12 +319,12 @@ export function useOptimisticList<TItem extends { id: string }>(
       variables: TVariables,
       newOrder: TItem[],
     ): Promise<void> => {
-      await queryClient.cancelQueries({ queryKey: [queryKey] });
+      await queryClient.cancelQueries({ queryKey: asQueryKey(queryKey) });
 
-      const previousItems = queryClient.getQueryData<TItem[]>([queryKey]);
+      const previousItems = queryClient.getQueryData<TItem[]>(asQueryKey(queryKey));
 
       // Optimistically reorder
-      queryClient.setQueryData([queryKey], newOrder);
+      const optimisticItems = queryClient.setQueryData(asQueryKey(queryKey), newOrder);
 
       try {
         await mutationFn(variables);
@@ -314,7 +333,10 @@ export function useOptimisticList<TItem extends { id: string }>(
           toast.success('Order updated');
         }
       } catch (error) {
-        queryClient.setQueryData([queryKey], previousItems);
+        if (queryClient.getQueryData(asQueryKey(queryKey)) === optimisticItems) {
+          queryClient.setQueryData(asQueryKey(queryKey), previousItems);
+        }
+        void queryClient.invalidateQueries({ queryKey: asQueryKey(queryKey) });
 
         if (showToast) {
           toast.error('Failed to update order');
@@ -345,6 +367,7 @@ export function useOptimisticBatch<TItem extends { id: string }>(
     type: 'add' | 'update' | 'delete';
     item: TItem | string;
     previousState: TItem[];
+    optimisticState?: TItem[];
   }>>([]);
 
   const startBatch = useCallback(() => {
@@ -353,7 +376,7 @@ export function useOptimisticBatch<TItem extends { id: string }>(
 
   const addOperation = useCallback(
     (type: 'add' | 'update' | 'delete', item: TItem | string) => {
-      const previousState = queryClient.getQueryData<TItem[]>([queryKey]) || [];
+      const previousState = queryClient.getQueryData<TItem[]>(asQueryKey(queryKey)) || [];
 
       operationsRef.current.push({
         type,
@@ -362,7 +385,7 @@ export function useOptimisticBatch<TItem extends { id: string }>(
       });
 
       // Apply optimistically
-      queryClient.setQueryData<TItem[]>([queryKey], (old) => {
+      const optimisticState = queryClient.setQueryData<TItem[]>(asQueryKey(queryKey), (old) => {
         const current = old || [];
 
         switch (type) {
@@ -378,6 +401,8 @@ export function useOptimisticBatch<TItem extends { id: string }>(
             return current;
         }
       });
+      const lastOperation = operationsRef.current.at(-1);
+      if (lastOperation) lastOperation.optimisticState = optimisticState;
     },
     [queryClient, queryKey],
   );
@@ -391,9 +416,11 @@ export function useOptimisticBatch<TItem extends { id: string }>(
       } catch (error) {
         // Rollback all operations in reverse order
         const firstState = operationsRef.current[0]?.previousState;
-        if (firstState) {
-          queryClient.setQueryData([queryKey], firstState);
+        const latestOptimisticState = operationsRef.current.at(-1)?.optimisticState;
+        if (firstState && queryClient.getQueryData(asQueryKey(queryKey)) === latestOptimisticState) {
+          queryClient.setQueryData(asQueryKey(queryKey), firstState);
         }
+        void queryClient.invalidateQueries({ queryKey: asQueryKey(queryKey) });
         operationsRef.current = [];
         toast.error('Failed to save changes');
         throw error;
@@ -404,9 +431,11 @@ export function useOptimisticBatch<TItem extends { id: string }>(
 
   const rollbackBatch = useCallback(() => {
     const firstState = operationsRef.current[0]?.previousState;
-    if (firstState) {
-      queryClient.setQueryData([queryKey], firstState);
+    const latestOptimisticState = operationsRef.current.at(-1)?.optimisticState;
+    if (firstState && queryClient.getQueryData(asQueryKey(queryKey)) === latestOptimisticState) {
+      queryClient.setQueryData(asQueryKey(queryKey), firstState);
     }
+    void queryClient.invalidateQueries({ queryKey: asQueryKey(queryKey) });
     operationsRef.current = [];
   }, [queryClient, queryKey]);
 

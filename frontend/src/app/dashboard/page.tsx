@@ -38,7 +38,7 @@ import { StatsCard, PortalCard } from '@/components/ui/feature-cards';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useNotifications } from '@/hooks/useNotifications';
-import { portalApi, workspaceApi, integrationApi } from '@/lib/api-client';
+import { authApi, portalApi, workspaceApi, integrationApi } from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth';
 import type { Portal, Workspace, WorkspaceStats } from '@/types';
 
@@ -58,9 +58,19 @@ export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
 
   const [portals, setPortals] = useState<Portal[]>([]);
+  const [portalTotal, setPortalTotal] = useState(0);
+  const [portalPage, setPortalPage] = useState(1);
+  const [selectedPortalIds, setSelectedPortalIds] = useState<string[]>([]);
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  const [attentionItems, setAttentionItems] = useState<Awaited<ReturnType<typeof portalApi.getAttention>>['items']>([]);
+  const [attentionTotal, setAttentionTotal] = useState(0);
+  const [attentionPage, setAttentionPage] = useState(1);
+  const [attentionError, setAttentionError] = useState('');
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [stats, setStats] = useState<WorkspaceStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [isCreatingDemo, setIsCreatingDemo] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [integrationCount, setIntegrationCount] = useState(0);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -77,14 +87,33 @@ export default function DashboardPage() {
   }, []);
 
   const loadData = useCallback(async () => {
+    setLoadError('');
+    if (user?.role === 'MEMBER') {
+      // Client accounts use explicitly assigned share links, not the agency dashboard APIs.
+      setPortals([]);
+      setPortalTotal(0);
+      setAttentionItems([]);
+      setAttentionTotal(0);
+      setWorkspace(null);
+      setStats(null);
+      setIntegrationCount(0);
+      setIsLoading(false);
+      return;
+    }
     try {
-      const [portalsData, workspaceData, integrationsData] = await Promise.all([
-        portalApi.getAll(),
+      const [portalsData, workspaceData, integrationsData, attentionData] = await Promise.all([
+        portalApi.getAll(portalPage, 20),
         workspaceApi.getMyWorkspace(),
         user?.workspaceId ? integrationApi.getAllByWorkspace(user.workspaceId).catch(() => []) : Promise.resolve([]),
+        portalApi.getAttention(attentionPage, 20).catch(() => null),
       ]);
 
       setPortals(portalsData?.portals || []);
+      setPortalTotal(portalsData?.total || 0);
+      setSelectedPortalIds([]);
+      setAttentionItems(attentionData?.items || []);
+      setAttentionTotal(attentionData?.total || 0);
+      setAttentionError(attentionData ? '' : 'Client attention items could not be loaded.');
       setWorkspace(workspaceData);
       setIntegrationCount(Array.isArray(integrationsData) ? integrationsData.length : 0);
 
@@ -99,10 +128,11 @@ export default function DashboardPage() {
       }
     } catch (err) {
       console.error('Failed to load data:', err);
+      setLoadError('Dashboard data could not be loaded. Check the API connection and retry.');
     } finally {
       setIsLoading(false);
     }
-  }, [user?.workspaceId]);
+  }, [user, portalPage, attentionPage]);
 
   const handlePortalUpdate = useCallback(() => {
     loadData();
@@ -125,9 +155,25 @@ export default function DashboardPage() {
     };
   }, [isAuthenticated, isHydrated, router, handlePortalUpdate, loadData]);
 
-  const handleLogout = () => {
-    clearAuth();
-    router.push('/auth/login');
+  const handleLogout = async () => {
+    try { await authApi.logout(); } finally {
+      clearAuth();
+      router.push('/auth/login');
+    }
+  };
+
+  const handleCreateDemoPortal = async () => {
+    if (isCreatingDemo) return;
+    setIsCreatingDemo(true);
+    try {
+      const result = await portalApi.createDemoClientPortal();
+      toast.success('Demo client portal saved. Opening its client view.');
+      router.push(result.clientPath);
+    } catch {
+      toast.error('Demo portal creation was not confirmed. Check your portal list before retrying.');
+    } finally {
+      setIsCreatingDemo(false);
+    }
   };
 
   const handleDeletePortal = async (portalId: string) => {
@@ -140,6 +186,25 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Failed to delete portal:', error);
       toast.error('Failed to delete portal');
+    }
+  };
+
+  const handleBulkUnpublish = async () => {
+    if (!selectedPortalIds.length || isBulkUpdating) return;
+    if (!confirm(`Unpublish ${selectedPortalIds.length} selected portal(s)? Clients will lose public access until republished.`)) return;
+    setIsBulkUpdating(true);
+    try {
+      const result = await portalApi.bulkUnpublish(selectedPortalIds);
+      setPortals((current) => current.map((portal) => result.succeededPortalIds.includes(portal.id) ? { ...portal, isPublic: false } : portal));
+      setSelectedPortalIds([]);
+      toast.success(`${result.succeededCount} portal(s) unpublished; ${result.unavailableCount} unavailable or changed.`);
+      if (result.unavailableCount > 0) void loadData();
+      void portalApi.getAttention(attentionPage, 20).then((data) => { setAttentionItems(data.items); setAttentionTotal(data.total); setAttentionError(''); }).catch(() => setAttentionError('Client attention items could not be refreshed.'));
+    } catch {
+      toast.error('Bulk unpublish failed. Reload the list before retrying.');
+      void loadData();
+    } finally {
+      setIsBulkUpdating(false);
     }
   };
 
@@ -209,6 +274,23 @@ export default function DashboardPage() {
           <p className="text-lg text-gray-600 dark:text-gray-300">Loading your dashboard...</p>
         </motion.div>
       </div>
+    );
+  }
+
+  if (user?.role === 'MEMBER') {
+    return (
+      <main className="min-h-screen bg-linear-to-br from-slate-100 via-purple-50 to-slate-100 dark:from-slate-950 dark:via-purple-950 dark:to-slate-950 flex items-center justify-center p-6">
+        <Card className="w-full max-w-xl">
+          <CardHeader>
+            <CardTitle>Your shared client portals</CardTitle>
+            <CardDescription>Portals appear through access links assigned to your account.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">Open the portal link your agency sent. If it has expired or you need access, use the request access option on that page.</p>
+            <Button variant="outline" onClick={handleLogout}>Sign out</Button>
+          </CardContent>
+        </Card>
+      </main>
     );
   }
 
@@ -304,6 +386,12 @@ export default function DashboardPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {loadError && (
+          <div role="alert" className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-red-300 bg-red-50 p-4 text-red-900 dark:border-red-800 dark:bg-red-950/50 dark:text-red-100">
+            <p>{loadError}</p>
+            <Button variant="outline" onClick={() => void loadData()}>Retry</Button>
+          </div>
+        )}
         {/* Stats Cards */}
         {stats && (
           <motion.div
@@ -348,8 +436,22 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+          className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8"
         >
+          <button
+            type="button"
+            onClick={handleCreateDemoPortal}
+            disabled={isCreatingDemo}
+            aria-label="Create demo client portal"
+            className="p-4 text-left rounded-xl bg-linear-to-br from-emerald-100 to-teal-200 dark:from-emerald-500/20 dark:to-teal-600/20 border border-emerald-300 dark:border-emerald-500/30 backdrop-blur-sm hover:border-emerald-500 transition-all disabled:cursor-wait disabled:opacity-60"
+          >
+            <Activity className="h-6 w-6 text-emerald-700 dark:text-emerald-300 mb-2" />
+            <h3 className="font-semibold text-slate-900 dark:text-white">
+              {isCreatingDemo ? 'Saving demo portal…' : 'Create demo client portal'}
+            </h3>
+            <p className="text-xs text-slate-700 dark:text-gray-300 mt-1">Synthetic data, no provider keys</p>
+          </button>
+
           <Link href="/dashboard/portals/new">
             <motion.div
               whileHover={{ scale: 1.05, y: -5 }}
@@ -574,6 +676,44 @@ export default function DashboardPage() {
           </motion.div>
         )}
 
+        <section role="region" aria-labelledby="client-attention-heading" className="mb-10 rounded-2xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-800 dark:bg-amber-950/30">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h2 id="client-attention-heading" className="text-xl font-semibold text-slate-900 dark:text-white">Client attention</h2>
+              <p className="text-sm text-slate-600 dark:text-gray-300">Blockers and pending decisions, oldest review updates first.</p>
+            </div>
+            <span className="rounded-full bg-amber-200 px-3 py-1 text-sm font-semibold text-amber-950 dark:bg-amber-900 dark:text-amber-100">{attentionTotal}</span>
+          </div>
+          {attentionError ? (
+            <div role="alert" className="flex items-center gap-3 text-sm text-red-800 dark:text-red-200">{attentionError}<Button variant="outline" size="sm" onClick={() => void loadData()}>Retry</Button></div>
+          ) : attentionItems.length === 0 ? (
+            <p className="rounded-lg bg-white/70 p-4 text-sm text-slate-600 dark:bg-slate-900/40 dark:text-gray-300">No client blockers or pending decisions.</p>
+          ) : (
+            <ul className="divide-y divide-amber-200 dark:divide-amber-900">
+              {attentionItems.map((item) => (
+                <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                  <div>
+                    <p className="font-medium text-slate-900 dark:text-white">{item.name} <span className="ml-2 text-xs font-semibold uppercase text-amber-800 dark:text-amber-200">{item.clientStatus || 'Decision pending'}</span></p>
+                    <p className="text-sm text-slate-600 dark:text-gray-300">{item.clientStatusNote || 'Review client status'}</p>
+                    {item.pendingDecision && <p className="text-sm text-slate-700 dark:text-gray-200"><span className="font-medium">Pending decision:</span> {item.pendingDecision}</p>}
+                    <time className="text-xs text-slate-500 dark:text-gray-400" dateTime={item.clientUpdateAt || item.updatedAt}>Updated {new Date(item.clientUpdateAt || item.updatedAt).toLocaleString()}</time>
+                  </div>
+                  <Link className="rounded-md border border-amber-700 px-3 py-2 text-sm font-medium text-amber-950 hover:bg-amber-100 dark:text-amber-100 dark:hover:bg-amber-900" href={`/dashboard/portals/${item.id}/edit`}>Review</Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          {attentionTotal > 20 && !attentionError && (
+            <div className="mt-3 flex items-center justify-between gap-3 border-t border-amber-200 pt-3 dark:border-amber-900">
+              <p className="text-xs text-slate-600 dark:text-gray-300">Attention page {attentionPage} of {Math.ceil(attentionTotal / 20)} · showing {attentionItems.length} at a time</p>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" disabled={attentionPage <= 1} onClick={() => setAttentionPage((page) => Math.max(1, page - 1))}>Previous attention</Button>
+                <Button size="sm" variant="outline" disabled={attentionPage >= Math.ceil(attentionTotal / 20)} onClick={() => setAttentionPage((page) => page + 1)}>Next attention</Button>
+              </div>
+            </div>
+          )}
+        </section>
+
         {/* Portals Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -592,12 +732,13 @@ export default function DashboardPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 dark:text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search portals..."
+                  placeholder="Search this page..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 pr-4 py-2 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 />
               </div>
+              <span className="sr-only">Search and visibility filters apply to the current server page. Use pagination to reach other portals.</span>
               <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
                 <PopoverTrigger asChild>
                   <motion.button
@@ -705,6 +846,17 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {portalTotal > 0 && (
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-slate-600 dark:text-gray-300">Page {portalPage} of {Math.max(1, Math.ceil(portalTotal / 20))} · {portalTotal} portals total</p>
+              <div className="flex items-center gap-2">
+                {selectedPortalIds.length > 0 && <Button variant="outline" disabled={isBulkUpdating} onClick={() => void handleBulkUnpublish()}>{isBulkUpdating ? 'Unpublishing…' : `Unpublish ${selectedPortalIds.length} selected`}</Button>}
+                <Button variant="outline" disabled={portalPage <= 1} onClick={() => setPortalPage((page) => Math.max(1, page - 1))}>Previous</Button>
+                <Button variant="outline" disabled={portalPage >= Math.ceil(portalTotal / 20)} onClick={() => setPortalPage((page) => page + 1)}>Next</Button>
+              </div>
+            </div>
+          )}
+
           {filteredPortals.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -734,23 +886,26 @@ export default function DashboardPage() {
               )}
             </motion.div>
           ) : (
+            <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPortals.map((portal, index) => (
-                <motion.div
+              {filteredPortals.map((portal) => (
+                <div
                   key={portal.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + index * 0.05 }}
                 >
+                  <label className="mb-2 flex items-center gap-2 text-sm text-slate-700 dark:text-gray-200">
+                    <input type="checkbox" checked={selectedPortalIds.includes(portal.id)} onChange={(event) => setSelectedPortalIds((ids) => event.target.checked ? [...ids, portal.id] : ids.filter((id) => id !== portal.id))} aria-label={`Select ${portal.name}`} />
+                    Select for safe bulk unpublish
+                  </label>
                   <PortalCard
                     {...portal}
                     onView={(id) => router.push(`/dashboard/portals/${id}`)}
                     onEdit={(id) => router.push(`/dashboard/portals/${id}/edit`)}
                     onDelete={handleDeletePortal}
                   />
-                </motion.div>
+                </div>
               ))}
             </div>
+            </>
           )}
         </motion.div>
 

@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface SentryIntegration {
   accessToken: string; // Auth token
   settings: {
@@ -34,7 +35,7 @@ export class SentryService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('Sentry connection test failed', error);
+      this.logger.error('Sentry connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -92,7 +93,7 @@ export class SentryService {
 
       return response.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Sentry issues', error);
+      this.logger.error('Failed to fetch Sentry issues' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -125,7 +126,7 @@ export class SentryService {
 
       return response.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Sentry events', error);
+      this.logger.error('Failed to fetch Sentry events' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -144,7 +145,7 @@ export class SentryService {
 
       return response.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Sentry projects', error);
+      this.logger.error('Failed to fetch Sentry projects' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -174,7 +175,7 @@ export class SentryService {
 
       return response.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Sentry releases', error);
+      this.logger.error('Failed to fetch Sentry releases' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -206,7 +207,7 @@ export class SentryService {
 
       return response.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Sentry stats', error);
+      this.logger.error('Failed to fetch Sentry stats' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -235,7 +236,7 @@ export class SentryService {
 
       return response.data || {};
     } catch (error) {
-      this.logger.error('Failed to fetch Sentry performance data', error);
+      this.logger.error('Failed to fetch Sentry performance data' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -294,7 +295,7 @@ export class SentryService {
         })),
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Sentry analytics', error);
+      this.logger.error('Failed to fetch Sentry analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

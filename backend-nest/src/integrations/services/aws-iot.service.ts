@@ -4,6 +4,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface AwsIotIntegration {
   accessToken: string; // AWS Access Key ID
   refreshToken: string; // AWS Secret Access Key
@@ -90,7 +91,7 @@ export class AwsIotService {
       await this.fetchThings(integration, { maxResults: 1 });
       return true;
     } catch (error) {
-      this.logger.error('AWS IoT connection test failed', error);
+      this.logger.error('AWS IoT connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -148,7 +149,7 @@ export class AwsIotService {
         nextToken: response.data.nextToken,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch AWS IoT things', error);
+      this.logger.error('Failed to fetch AWS IoT things' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -171,7 +172,7 @@ export class AwsIotService {
         nextToken: response.data.nextToken,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch AWS IoT thing types', error);
+      this.logger.error('Failed to fetch AWS IoT thing types' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -194,7 +195,7 @@ export class AwsIotService {
         nextToken: response.data.nextToken,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch AWS IoT thing groups', error);
+      this.logger.error('Failed to fetch AWS IoT thing groups' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -221,7 +222,7 @@ export class AwsIotService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to get AWS IoT thing shadow', error);
+      this.logger.error('Failed to get AWS IoT thing shadow' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -244,7 +245,7 @@ export class AwsIotService {
         nextMarker: response.data.nextMarker,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch AWS IoT policies', error);
+      this.logger.error('Failed to fetch AWS IoT policies' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -267,7 +268,7 @@ export class AwsIotService {
         nextMarker: response.data.nextMarker,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch AWS IoT certificates', error);
+      this.logger.error('Failed to fetch AWS IoT certificates' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -293,7 +294,7 @@ export class AwsIotService {
         nextToken: response.data.nextToken,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch AWS IoT jobs', error);
+      this.logger.error('Failed to fetch AWS IoT jobs' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -316,7 +317,7 @@ export class AwsIotService {
         nextToken: response.data.nextToken,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch AWS IoT topic rules', error);
+      this.logger.error('Failed to fetch AWS IoT topic rules' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -384,7 +385,7 @@ export class AwsIotService {
         })),
       };
     } catch (error) {
-      this.logger.error('Failed to fetch AWS IoT analytics', error);
+      this.logger.error('Failed to fetch AWS IoT analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -412,7 +413,7 @@ export class AwsIotService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to create AWS IoT thing', error);
+      this.logger.error('Failed to create AWS IoT thing' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -443,7 +444,7 @@ export class AwsIotService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to update AWS IoT thing shadow', error);
+      this.logger.error('Failed to update AWS IoT thing shadow' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -469,7 +470,7 @@ export class AwsIotService {
 
       return { success: true, topic: data.topic };
     } catch (error) {
-      this.logger.error('Failed to publish to AWS IoT topic', error);
+      this.logger.error('Failed to publish to AWS IoT topic' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

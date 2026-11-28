@@ -9,6 +9,30 @@ export class CacheService {
 
   constructor(private readonly redis: RedisService) {}
 
+  async consume(key: string): Promise<string | null> {
+    return this.redis.consume(key);
+  }
+
+  async addToSet(key: string, value: string, ttlSeconds?: number): Promise<void> {
+    return this.redis.addToSet(key, value, ttlSeconds);
+  }
+
+  async claimSetMember(key: string, value: string, ttlSeconds: number): Promise<boolean> {
+    return this.redis.claimSetMember(key, value, ttlSeconds);
+  }
+
+  async removeFromSet(key: string, value: string): Promise<void> {
+    return this.redis.removeFromSet(key, value);
+  }
+
+  async getSetMembers(key: string): Promise<string[]> {
+    return this.redis.getSetMembers(key);
+  }
+
+  async deleteMany(keys: string[]): Promise<void> {
+    return this.redis.deleteMany(keys);
+  }
+
   /**
    * Generate cache key for workspace data
    */
@@ -117,9 +141,15 @@ export class CacheService {
   /**
    * Invalidate portal cache
    */
-  async invalidatePortal(portalId: string): Promise<void> {
+  async invalidatePortal(portalId: string, widgetIds: string[] = []): Promise<void> {
     const pattern = `${this.CACHE_PREFIX}portal:${portalId}*`;
-    await this.redis.invalidatePattern(pattern);
+    await Promise.all([
+      this.redis.invalidatePattern(pattern),
+      ...widgetIds.map((widgetId) => this.invalidateWidget(widgetId)),
+      this.redis.del(`collaboration:history:${portalId}`),
+      this.redis.del(`collaboration:activity:${portalId}`),
+      this.redis.del(`collaboration:chat:${portalId}`),
+    ]);
   }
 
   /**

@@ -10,10 +10,13 @@ import {
   HttpStatus,
   Headers,
   Ip,
+  ForbiddenException,
+  InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import type { Response, Request } from 'express';
+import type { CookieOptions, Response, Request } from 'express';
 
 import { CurrentUser } from '../common/decorators/user.decorator';
 import type { RequestUser } from '../common/interfaces/auth.interface';
@@ -24,13 +27,14 @@ import {
   SignInDto,
   ResetPasswordRequestDto,
   ResetPasswordDto,
-  AuthResponseDto,
+  SessionAuthResponseDto,
   FirebaseAuthDto,
 } from './dto/auth.dto';
 import { GitHubAuthGuard } from './guards/github-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { FirebaseAuthService } from './services/firebase-auth.service';
+import { isTrustedSessionRequest } from './session-security.util';
 
 const THROTTLE_CONFIG = { default: { limit: 5, ttl: 900000 } };
 
@@ -42,23 +46,75 @@ export class AuthController {
     private readonly firebaseAuthService: FirebaseAuthService,
   ) {}
 
+  private cookieOptions(path: string): CookieOptions {
+    return {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path,
+    };
+  }
+
+  private setSessionCookies(
+    response: Response,
+    tokens: { accessToken: string; refreshToken?: string },
+  ): void {
+    response.cookie('pulse_access', tokens.accessToken, {
+      ...this.cookieOptions('/'),
+      maxAge: 15 * 60 * 1000,
+    });
+    if (tokens.refreshToken) {
+      response.cookie('pulse_refresh', tokens.refreshToken, {
+        ...this.cookieOptions('/api/v1/auth'),
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+    }
+    response.setHeader('Cache-Control', 'no-store');
+    response.setHeader('Pragma', 'no-cache');
+    response.setHeader('Referrer-Policy', 'no-referrer');
+  }
+
+  private clearSessionCookies(response: Response): void {
+    response.clearCookie('pulse_access', this.cookieOptions('/'));
+    response.clearCookie('pulse_refresh', this.cookieOptions('/api/v1/auth'));
+    response.setHeader('Cache-Control', 'no-store');
+    response.setHeader('Referrer-Policy', 'no-referrer');
+  }
+
+  private assertSessionRequest(request: Request): void {
+    const origin = request.headers.origin;
+    const configuredOrigins = (process.env.FRONTEND_URL || 'http://localhost:3001')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    if (!isTrustedSessionRequest(origin, request.headers['x-csrf-token'], configuredOrigins)) {
+      throw new ForbiddenException('Untrusted session request');
+    }
+  }
+
   @Post('signup')
   @Throttle(THROTTLE_CONFIG) // 5 attempts per 15 minutes
   @ApiOperation({ summary: 'Register a new user account' })
   @ApiResponse({
     status: 201,
     description: 'User registered successfully',
-    type: AuthResponseDto,
+    type: SessionAuthResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 409, description: 'User already exists' })
   @ApiResponse({ status: 429, description: 'Too many requests' })
   async signUp(
     @Body() dto: SignUpDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
     @Ip() ip: string,
     @Headers('user-agent') userAgent: string,
-  ): Promise<AuthResponseDto> {
-    return this.authService.signUp(dto, { ip, userAgent });
+  ) {
+    if (!this.legacyTokenResponsesEnabled()) this.assertSessionRequest(request);
+    const result = await this.authService.signUp(dto, { ip, userAgent });
+    if (this.legacyTokenResponsesEnabled()) return result;
+    this.setSessionCookies(response, result);
+    return { user: result.user, expiresIn: result.expiresIn };
   }
 
   @Post('signin')
@@ -68,16 +124,90 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'User signed in successfully',
-    type: AuthResponseDto,
+    type: SessionAuthResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @ApiResponse({ status: 429, description: 'Too many failed attempts' })
   async signIn(
     @Body() dto: SignInDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
     @Ip() ip: string,
     @Headers('user-agent') userAgent: string,
-  ): Promise<AuthResponseDto> {
-    return this.authService.signIn(dto, { ip, userAgent });
+  ) {
+    if (!this.legacyTokenResponsesEnabled()) this.assertSessionRequest(request);
+    const result = await this.authService.signIn(dto, { ip, userAgent });
+    if (this.legacyTokenResponsesEnabled()) return result;
+    this.setSessionCookies(response, result);
+    return { user: result.user, expiresIn: result.expiresIn };
+  }
+
+  @Post('session/signup')
+  @Throttle(THROTTLE_CONFIG)
+  @ApiResponse({ status: 201, type: SessionAuthResponseDto })
+  async sessionSignUp(
+    @Body() dto: SignUpDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    this.assertSessionRequest(request);
+    const result = await this.authService.signUp(dto, { ip, userAgent });
+    this.setSessionCookies(response, result);
+    return { user: result.user, expiresIn: result.expiresIn };
+  }
+
+  @Post('session/signin')
+  @HttpCode(HttpStatus.OK)
+  @Throttle(THROTTLE_CONFIG)
+  @ApiResponse({ status: 200, type: SessionAuthResponseDto })
+  async sessionSignIn(
+    @Body() dto: SignInDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    this.assertSessionRequest(request);
+    const result = await this.authService.signIn(dto, { ip, userAgent });
+    this.setSessionCookies(response, result);
+    return { user: result.user, expiresIn: result.expiresIn };
+  }
+
+  @Post('session/refresh')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async sessionRefresh(
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    this.assertSessionRequest(request);
+    const refreshToken =
+      typeof request.cookies?.pulse_refresh === 'string'
+        ? request.cookies.pulse_refresh
+        : undefined;
+    if (!refreshToken) throw new UnauthorizedException('Session expired');
+    const result = await this.authService.refreshToken(refreshToken, { ip, userAgent });
+    this.setSessionCookies(response, result);
+    return { user: result.user, expiresIn: result.expiresIn };
+  }
+
+  @Post('session/logout')
+  @HttpCode(HttpStatus.OK)
+  async sessionLogout(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
+    this.assertSessionRequest(request);
+    const accessToken =
+      typeof request.cookies?.pulse_access === 'string' ? request.cookies.pulse_access : undefined;
+    const refreshToken =
+      typeof request.cookies?.pulse_refresh === 'string'
+        ? request.cookies.pulse_refresh
+        : undefined;
+    await this.authService.logout(undefined, accessToken, refreshToken);
+    this.clearSessionCookies(response);
+    return { message: 'Session closed' };
   }
 
   // ==================== GOOGLE OAUTH ====================
@@ -99,12 +229,18 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Handle Google OAuth callback' })
-  async googleAuthCallback(@Req() req: any, @Res() res: Response) {
-    const result = await this.authService.googleAuth(req.user);
+  async googleAuthCallback(
+    @Req() req: Request & { user: Parameters<AuthService['googleAuth']>[0] },
+    @Res() res: Response,
+  ) {
+    const result = await this.authService.googleAuth(req.user, {
+      ip: req.ip || '127.0.0.1',
+      userAgent: req.get?.('user-agent') || 'unknown',
+    });
 
-    // Redirect to frontend with token
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
-    res.redirect(`${frontendUrl}/auth/callback?token=${result.accessToken}&provider=google`);
+    this.setSessionCookies(res, result);
+    res.redirect(303, `${frontendUrl.split(',')[0]}/auth/callback?provider=google`);
   }
 
   // ==================== GITHUB OAUTH ====================
@@ -119,11 +255,18 @@ export class AuthController {
   @Get('github/callback')
   @UseGuards(GitHubAuthGuard)
   @ApiOperation({ summary: 'Handle GitHub OAuth callback' })
-  async githubAuthCallback(@Req() req: any, @Res() res: Response) {
-    const result = await this.authService.githubAuth(req.user);
+  async githubAuthCallback(
+    @Req() req: Request & { user: Parameters<AuthService['githubAuth']>[0] },
+    @Res() res: Response,
+  ) {
+    const result = await this.authService.githubAuth(req.user, {
+      ip: req.ip || '127.0.0.1',
+      userAgent: req.get?.('user-agent') || 'unknown',
+    });
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
-    res.redirect(`${frontendUrl}/auth/callback?token=${result.accessToken}&provider=github`);
+    this.setSessionCookies(res, result);
+    res.redirect(303, `${frontendUrl.split(',')[0]}/auth/callback?provider=github`);
   }
 
   // ==================== FIREBASE AUTH ====================
@@ -135,11 +278,21 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'User authenticated successfully',
-    type: AuthResponseDto,
+    type: SessionAuthResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Invalid Firebase token' })
-  async firebaseAuth(@Body() dto: FirebaseAuthDto): Promise<AuthResponseDto> {
-    return this.authService.firebaseAuth(dto.idToken);
+  async firebaseAuth(
+    @Body() dto: FirebaseAuthDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    if (!this.legacyTokenResponsesEnabled()) this.assertSessionRequest(request);
+    const result = await this.authService.firebaseAuth(dto.idToken, { ip, userAgent });
+    if (this.legacyTokenResponsesEnabled()) return result;
+    this.setSessionCookies(response, result);
+    return { user: result.user, expiresIn: result.expiresIn };
   }
 
   // ==================== PASSWORD RESET ====================
@@ -188,10 +341,23 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
   async refreshToken(
     @Body('refreshToken') refreshToken: string,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
     @Ip() ip: string,
     @Headers('user-agent') userAgent: string,
   ) {
-    return this.authService.refreshToken(refreshToken, { ip, userAgent });
+    if (this.legacyTokenResponsesEnabled()) {
+      return this.authService.refreshToken(refreshToken, { ip, userAgent });
+    }
+    this.assertSessionRequest(request);
+    const cookieRefreshToken =
+      typeof request.cookies?.pulse_refresh === 'string'
+        ? request.cookies.pulse_refresh
+        : undefined;
+    if (!cookieRefreshToken) throw new UnauthorizedException('Session expired');
+    const result = await this.authService.refreshToken(cookieRefreshToken, { ip, userAgent });
+    this.setSessionCookies(response, result);
+    return { user: result.user, expiresIn: result.expiresIn };
   }
 
   @Post('logout')
@@ -200,10 +366,32 @@ export class AuthController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Logout current session' })
   @ApiResponse({ status: 200, description: 'Logged out successfully' })
-  async logout(@CurrentUser() user: RequestUser, @Headers('authorization') authHeader: string) {
+  async logout(
+    @CurrentUser() user: RequestUser,
+    @Headers('authorization') authHeader: string,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const accessCookie =
+      typeof request.cookies?.pulse_access === 'string' ? request.cookies.pulse_access : undefined;
+    const refreshCookie =
+      typeof request.cookies?.pulse_refresh === 'string'
+        ? request.cookies.pulse_refresh
+        : undefined;
+    const cookieSession = Boolean(accessCookie);
+    if (cookieSession) this.assertSessionRequest(request);
     const token = authHeader?.replace('Bearer ', '');
-    await this.authService.logout(user.id, token);
+    await this.authService.logout(user.id, accessCookie || token, refreshCookie);
+    if (cookieSession) this.clearSessionCookies(response);
     return { message: 'Logged out successfully' };
+  }
+
+  private legacyTokenResponsesEnabled(): boolean {
+    const enabled = process.env.AUTH_LEGACY_TOKEN_RESPONSES === 'true';
+    if (enabled && process.env.NODE_ENV === 'production') {
+      throw new InternalServerErrorException('Legacy token responses are disabled in production');
+    }
+    return enabled;
   }
 
   @Post('logout/all')

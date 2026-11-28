@@ -1,27 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Manrope } from "next/font/google";
 
 import "./globals.css";
 import { Providers } from "./providers";
-
-// Premium font configuration for enterprise aesthetic
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const manrope = Manrope({
-  variable: "--font-display",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 // Enhanced metadata for enterprise SaaS
 export const metadata: Metadata = {
@@ -141,7 +121,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.variable} ${jetbrainsMono.variable} ${manrope.variable} font-sans antialiased bg-background text-foreground min-h-screen`}
+        className="font-sans antialiased bg-background text-foreground min-h-screen"
       >
         <Providers>{children}</Providers>
       </body>

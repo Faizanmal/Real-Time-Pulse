@@ -3,13 +3,13 @@
 import { createContext, useContext, ReactNode, useEffect, useState } from 'react';
 
 import { useAuthStore } from '@/store/auth';
+import { authApi } from '@/lib/api-client';
 import type { User } from '@/types';
 
 interface AuthContextType {
   user: User | null;
-  accessToken: string | null;
   isAuthenticated: boolean;
-  setAuth: (user: User, accessToken: string) => void;
+  setAuth: (user: User) => void;
   clearAuth: () => void;
 }
 
@@ -17,14 +17,22 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const authStore = useAuthStore();
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
 
   useEffect(() => {
-    setIsHydrated(true);
-  }, []);
+    if (!authStore.isHydrated) return;
+    if (!authStore.isAuthenticated) {
+      setSessionChecked(true);
+      return;
+    }
+    void authApi.me()
+      .then((user) => authStore.setAuth(user))
+      .catch(() => authStore.clearAuth())
+      .finally(() => setSessionChecked(true));
+  }, [authStore.isHydrated, authStore.isAuthenticated, authStore.setAuth, authStore.clearAuth]);
 
   // Prevent hydration mismatch by not rendering until hydrated
-  if (!isHydrated) {
+  if (!authStore.isHydrated || !sessionChecked) {
     return null;
   }
 

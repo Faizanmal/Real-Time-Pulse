@@ -4,6 +4,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface WooCommerceIntegration {
   accessToken: string; // Consumer key
   refreshToken: string; // Consumer secret
@@ -78,7 +79,7 @@ export class WooCommerceService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('WooCommerce connection test failed', error);
+      this.logger.error('WooCommerce connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -136,7 +137,7 @@ export class WooCommerceService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch WooCommerce orders', error);
+      this.logger.error('Failed to fetch WooCommerce orders' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -159,7 +160,7 @@ export class WooCommerceService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch WooCommerce products', error);
+      this.logger.error('Failed to fetch WooCommerce products' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -181,7 +182,7 @@ export class WooCommerceService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch WooCommerce customers', error);
+      this.logger.error('Failed to fetch WooCommerce customers' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -239,7 +240,7 @@ export class WooCommerceService {
         dailyRevenue,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch WooCommerce analytics', error);
+      this.logger.error('Failed to fetch WooCommerce analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -262,7 +263,7 @@ export class WooCommerceService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch WooCommerce reports', error);
+      this.logger.error('Failed to fetch WooCommerce reports' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -284,7 +285,7 @@ export class WooCommerceService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch WooCommerce coupons', error);
+      this.logger.error('Failed to fetch WooCommerce coupons' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

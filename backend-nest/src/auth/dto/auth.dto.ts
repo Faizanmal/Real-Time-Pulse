@@ -8,6 +8,7 @@ import {
   MaxLength,
   Matches,
   IsOptional,
+  IsBoolean,
 } from 'class-validator';
 
 export class SignUpDto {
@@ -71,6 +72,11 @@ export class SignUpDto {
   })
   @MaxLength(50)
   workspaceSlug?: string;
+
+  @ApiPropertyOptional({ description: 'Optional consent for pseudonymous onboarding funnel analytics' })
+  @IsBoolean()
+  @IsOptional()
+  onboardingAnalyticsConsent?: boolean;
 
   @ApiPropertyOptional({ description: 'reCAPTCHA token for bot protection' })
   @IsString()
@@ -167,4 +173,13 @@ export class AuthResponseDto {
   refreshToken?: string;
   expiresIn?: number;
   user: UserResponseDto;
+}
+
+/** Cookie-backed auth response. Credentials are delivered only by HttpOnly cookies. */
+export class SessionAuthResponseDto {
+  @ApiProperty({ type: UserResponseDto })
+  user: UserResponseDto;
+
+  @ApiProperty({ example: 900 })
+  expiresIn: number;
 }

@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { aiInsightsApi, AIInsight } from '@/lib/enterprise-api';
+import { aiInsightsApi, AIInsight, ClientConfidenceRisk } from '@/lib/enterprise-api';
 import { cn } from '@/lib/utils';
 
 interface AIInsightsPanelProps {
@@ -19,15 +19,27 @@ export function AIInsightsPanel({ portalId, className }: AIInsightsPanelProps) {
   const [insights, setInsights] = useState<AIInsight[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [risk, setRisk] = useState<ClientConfidenceRisk | null>(null);
+  const [riskError, setRiskError] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const loadInsights = useCallback(async () => {
     try {
       const data = await aiInsightsApi.getPortalInsights(portalId);
       setInsights(data);
+      setLoadError(false);
     } catch {
       console.error('Failed to load insights');
+      setLoadError(true);
     } finally {
       setLoading(false);
+    }
+    try {
+      setRisk(await aiInsightsApi.getPortalConfidenceRisk(portalId));
+      setRiskError(false);
+    } catch {
+      setRisk(null);
+      setRiskError(true);
     }
   }, [portalId]);
 
@@ -51,7 +63,7 @@ export function AIInsightsPanel({ portalId, className }: AIInsightsPanelProps) {
   const dismissInsight = async (insightId: string) => {
     try {
       await aiInsightsApi.dismissInsight(insightId);
-      setInsights(insights.filter(i => i.id !== insightId));
+      setInsights(insights.map(i => i.id === insightId ? { ...i, status: 'DISMISSED' as const } : i));
       toast.success('Insight dismissed');
     } catch {
       toast.error('Failed to dismiss insight');
@@ -101,6 +113,31 @@ export function AIInsightsPanel({ portalId, className }: AIInsightsPanelProps) {
           {generating ? 'Generating...' : 'Generate Insights'}
         </Button>
       </div>
+
+      {risk && (
+        <section aria-label="Client confidence risk" className="mb-6 rounded-lg border p-4">
+          <div className="flex items-center justify-between gap-3">
+            <h4 className="font-semibold">Client confidence: {risk.level.toLowerCase()}</h4>
+            <time className="text-xs text-gray-500" dateTime={risk.evaluatedAt}>
+              Checked {new Date(risk.evaluatedAt).toLocaleString()}
+            </time>
+          </div>
+          <p className="mt-1 text-xs text-gray-500">Rule-based signal · {risk.ruleVersion} · not a calibrated probability</p>
+          {risk.drivers.length ? (
+            <ol className="mt-3 list-decimal space-y-2 pl-5">
+              {risk.drivers.map((driver) => (
+                <li key={driver.code}>
+                  <span className="font-medium">{driver.title}</span>
+                  <p className="text-sm text-gray-600">{driver.evidence}</p>
+                </li>
+              ))}
+            </ol>
+          ) : <p className="mt-3 text-sm text-gray-600">No risk drivers detected by the current rules.</p>}
+        </section>
+      )}
+      {riskError && <p role="alert" className="mb-4 text-sm text-red-700">Client confidence risk could not be checked.</p>}
+
+      {loadError && <p role="alert" className="mb-4 text-sm text-red-700">Insights could not be loaded. Try again by refreshing.</p>}
 
       {insights.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
@@ -190,17 +227,18 @@ function InsightCard({ insight, onDismiss, onAction }: InsightCardProps) {
                 <Badge variant="outline" className="text-xs">
                   {insight.severity}
                 </Badge>
-                <span className="text-xs text-gray-500">
-                  {Math.round(insight.confidence * 100)}% confidence
-                </span>
+                <span className="text-xs text-gray-500">Rule result · not a calibrated probability</span>
               </div>
             </div>
-            <button
-              onClick={() => onDismiss(insight.id)}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            {insight.status === 'NEW' && (
+              <button
+                aria-label={`Acknowledge ${insight.title}`}
+                onClick={() => onDismiss(insight.id)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
           <p className="text-sm text-gray-700 mb-3">{insight.description}</p>
@@ -238,6 +276,7 @@ function InsightCard({ insight, onDismiss, onAction }: InsightCardProps) {
               ✓ Actioned
             </Badge>
           )}
+          {insight.status === 'DISMISSED' && <Badge variant="secondary" className="text-xs">Acknowledged · history retained</Badge>}
         </div>
       </div>
     </div>

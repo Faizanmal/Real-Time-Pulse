@@ -1,5 +1,1 @@
-import BillingDashboard from '@/components/billing/BillingDashboard';
-
-export default function BillingPage() {
-  return <BillingDashboard />;
-}
+export { default } from '../dashboard/billing/page';

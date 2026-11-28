@@ -2,79 +2,78 @@
 
 import { apiClient } from './client';
 
-export interface Alert {
-  id: string;
-  name: string;
-  description?: string;
-  type: 'THRESHOLD' | 'ANOMALY' | 'TREND' | 'CUSTOM';
+export type AlertSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type AlertChannel = 'email' | 'slack' | 'webhook';
+export type AlertOperator = '>' | '>=' | '<' | '<=' | '==' | '!=';
+
+export interface AlertCondition {
   metric: string;
-  condition: {
-    operator: 'gt' | 'lt' | 'eq' | 'gte' | 'lte' | 'ne';
-    value: number;
-    duration?: number;
-  };
-  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  channels: ('EMAIL' | 'SMS' | 'SLACK' | 'WEBHOOK')[];
-  enabled: boolean;
-  portalId?: string;
-  widgetId?: string;
-  createdAt: string;
-  updatedAt: string;
-  lastTriggeredAt?: string;
+  operator: AlertOperator;
+  threshold: number;
+}
+
+export interface AlertDelivery {
+  id: string;
+  channel: AlertChannel;
+  status: 'PENDING' | 'SENDING' | 'SENT' | 'FAILED';
+  attemptCount: number;
+  nextAttemptAt?: string | null;
+  sentAt?: string | null;
+  lastErrorCode?: string | null;
 }
 
 export interface AlertHistory {
   id: string;
+  eventId?: string | null;
   alertId: string;
   triggeredAt: string;
-  value: number;
-  status: 'TRIGGERED' | 'RESOLVED' | 'ACKNOWLEDGED';
-  acknowledgedBy?: string;
-  acknowledgedAt?: string;
+  triggeredValue: { metric?: string; value?: number };
+  source: string;
+  severity: AlertSeverity;
+  freshnessAt?: string | null;
+  reason?: string | null;
+  nextAction?: string | null;
+  status: 'TRIGGERED' | 'RESOLVED' | 'SUPPRESSED';
+  suppressedCount: number;
+  deliveries: AlertDelivery[];
 }
 
-export interface CreateAlertDto {
+export interface Alert {
+  id: string;
   name: string;
-  description?: string;
-  type: Alert['type'];
-  metric: string;
-  condition: Alert['condition'];
-  severity: Alert['severity'];
-  channels: Alert['channels'];
-  enabled?: boolean;
+  description?: string | null;
+  condition: AlertCondition;
+  severity: AlertSeverity;
+  channels: AlertChannel[];
+  emailRecipients: string[];
+  isActive: boolean;
+  isFiring: boolean;
+  suppressionWindowSeconds: number;
+  triggerCount: number;
+  lastTriggeredAt?: string | null;
+  lastEvaluatedAt?: string | null;
+  history?: AlertHistory[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateAlertDto = Pick<Alert, 'name' | 'condition' | 'channels'> & Partial<Pick<Alert, 'description' | 'severity' | 'emailRecipients' | 'isActive' | 'suppressionWindowSeconds'>> & {
   portalId?: string;
   widgetId?: string;
-}
+  webhookUrl?: string;
+  slackWebhook?: string;
+};
 
 export type UpdateAlertDto = Partial<CreateAlertDto>;
 
 export const alertsApi = {
-  getAll: async (): Promise<Alert[]> => {
-    return await apiClient.get<Alert[]>('/alerts');
-  },
-
-  getById: async (id: string): Promise<Alert> => {
-    return await apiClient.get<Alert>(`/alerts/${id}`);
-  },
-
-  create: async (data: CreateAlertDto): Promise<Alert> => {
-    return await apiClient.post<Alert>('/alerts', data);
-  },
-
-  update: async (id: string, data: UpdateAlertDto): Promise<Alert> => {
-    return await apiClient.patch<Alert>(`/alerts/${id}`, data);
-  },
-
-  delete: async (id: string): Promise<void> => {
-    await apiClient.delete(`/alerts/${id}`);
-  },
-
-  getHistory: async (id: string): Promise<AlertHistory[]> => {
-    return await apiClient.get<AlertHistory[]>(`/alerts/${id}/history`);
-  },
-
-  test: async (id: string): Promise<{ success: boolean; message: string }> => {
-    return await apiClient.post<{ success: boolean; message: string }>(`/alerts/${id}/test`);
-  },
+  getAll: () => apiClient.get<Alert[]>('/alerts'),
+  getById: (id: string) => apiClient.get<Alert>(`/alerts/${id}`),
+  create: (data: CreateAlertDto) => apiClient.post<Alert>('/alerts', data),
+  update: (id: string, data: UpdateAlertDto) => apiClient.patch<Alert>(`/alerts/${id}`, data),
+  delete: (id: string) => apiClient.delete<void>(`/alerts/${id}`),
+  getHistory: (id: string) => apiClient.get<AlertHistory[]>(`/alerts/${id}/history`),
+  retryDelivery: (alertId: string, deliveryId: string) =>
+    apiClient.post<AlertDelivery>(`/alerts/${alertId}/deliveries/${deliveryId}/retry`),
+  test: (id: string) => apiClient.post<{ message: string; alertId: string; deliverySent: false }>(`/alerts/${id}/test`),
 };
-

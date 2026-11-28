@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 type Integration = any;
 
 @Injectable()
@@ -23,8 +24,13 @@ export class GoogleAnalyticsService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('Google Analytics connection test failed', error);
-      return false;
+      const failure = error as { response?: { status?: number; data?: { error?: { status?: string } | string } } };
+      const code = typeof failure.response?.data?.error === 'string'
+        ? failure.response.data.error
+        : failure.response?.data?.error?.status;
+      throw Object.assign(new Error('Google Analytics connection test failed'), {
+        response: { status: failure.response?.status, data: { error: code } },
+      });
     }
   }
 
@@ -50,7 +56,8 @@ export class GoogleAnalyticsService {
 
   private async fetchReport(headers: any, params?: unknown): Promise<unknown> {
     try {
-      const propertyId = (params as { propertyId?: string }).propertyId;
+      const reportParams = (params || {}) as { propertyId?: string; offset?: number; limit?: number };
+      const propertyId = reportParams.propertyId;
 
       const response = await firstValueFrom(
         this.httpService.post(
@@ -71,6 +78,8 @@ export class GoogleAnalyticsService {
               { name: 'sessions' },
               { name: 'pageviews' },
             ],
+            offset: Math.max(0, Math.floor(Number(reportParams.offset) || 0)),
+            limit: Math.min(100000, Math.max(1, Math.floor(Number(reportParams.limit) || 10000))),
           },
           { headers },
         ),
@@ -78,7 +87,7 @@ export class GoogleAnalyticsService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch Google Analytics report', error);
+      this.logger.error(`Failed to fetch Google Analytics report (HTTP ${providerHttpStatus(error)})`);
       throw error;
     }
   }
@@ -100,7 +109,7 @@ export class GoogleAnalyticsService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch Google Analytics realtime data', error);
+      this.logger.error(`Failed to fetch Google Analytics realtime data (HTTP ${providerHttpStatus(error)})`);
       throw error;
     }
   }
@@ -115,7 +124,7 @@ export class GoogleAnalyticsService {
 
       return response.data.properties;
     } catch (error) {
-      this.logger.error('Failed to fetch Google Analytics properties', error);
+      this.logger.error(`Failed to fetch Google Analytics properties (HTTP ${providerHttpStatus(error)})`);
       throw error;
     }
   }

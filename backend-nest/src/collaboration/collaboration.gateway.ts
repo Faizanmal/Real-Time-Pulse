@@ -13,6 +13,8 @@ import { Server, Socket } from 'socket.io';
 
 import { CollaborationService } from './collaboration.service';
 import type { WidgetChange } from './collaboration.service';
+import { readCookieValue } from '../auth/cookie-token.util';
+import { createRealtimeEvent } from '../realtime/realtime-event';
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -53,6 +55,7 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
 
   // Track users by portal
   private portalUsers: Map<string, Map<string, UserPresence>> = new Map();
+  private portalTenants = new Map<string, string>();
 
   // Track editing locks
   private editingLocks: Map<string, { userId: string; userName: string; timestamp: number }> =
@@ -70,7 +73,8 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
     try {
       const authData = client.handshake.auth as any;
       const authHeader = client.handshake.headers.authorization;
-      const token = (authData.token as string | undefined) || authHeader?.split(' ')[1];
+      const token = readCookieValue(client.handshake.headers.cookie, 'pulse_access') ||
+        (authData.token as string | undefined) || authHeader?.split(' ')[1];
 
       if (!token) {
         this.logger.warn(`Client ${client.id} connection rejected: No token provided`);
@@ -88,43 +92,47 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
 
       this.logger.log(`Collaboration client connected: ${client.id} (User: ${client.userId})`);
 
-      client.emit('connected', {
+      client.emit('connected', createRealtimeEvent({
         message: 'Successfully connected to collaboration service',
         userId: client.userId,
         timestamp: new Date().toISOString(),
-      });
+      }, { tenantId: client.workspaceId ?? null, resourceType: 'user', resourceId: client.userId ?? client.id }));
     } catch (error) {
       this.logger.error(`Client ${client.id} authentication failed`, error);
       client.disconnect();
     }
   }
 
-  handleDisconnect(client: AuthenticatedSocket) {
+  async handleDisconnect(client: AuthenticatedSocket) {
     if (client.userId) {
       // Remove user from all portals they were in
-      this.portalUsers.forEach((users, portalId) => {
+      for (const [portalId, users] of this.portalUsers) {
         if (users.has(client.userId)) {
+          const sockets = await this.server.in(`portal:${portalId}`).fetchSockets();
+          if (sockets.some((socket) => socket.id !== client.id && (socket as unknown as AuthenticatedSocket).userId === client.userId)) continue;
           users.delete(client.userId);
           // Notify others in the portal
-          this.server.to(`portal:${portalId}`).emit('user:left', {
+          this.server.to(`portal:${portalId}`).emit('user:left', this.portalEvent(client, portalId, {
             userId: client.userId,
             userName: client.userName,
             timestamp: new Date().toISOString(),
-          });
+          }));
         }
-      });
+      }
 
       // Release any locks held by this user
-      this.editingLocks.forEach((lock, widgetId) => {
+      for (const [widgetId, lock] of this.editingLocks) {
         if (lock.userId === client.userId) {
-          this.editingLocks.delete(widgetId);
           const portalId = widgetId.split(':')[0];
-          this.server.to(`portal:${portalId}`).emit('widget:unlocked', {
+          const sockets = await this.server.in(`portal:${portalId}`).fetchSockets();
+          if (sockets.some((socket) => (socket as unknown as AuthenticatedSocket).userId === client.userId)) continue;
+          this.editingLocks.delete(widgetId);
+          this.server.to(`portal:${portalId}`).emit('widget:unlocked', this.portalEvent(client, portalId, {
             widgetId: widgetId.split(':')[1],
             timestamp: new Date().toISOString(),
-          });
+          }));
         }
-      });
+      }
     }
 
     this.logger.log(`Collaboration client disconnected: ${client.id}`);
@@ -135,7 +143,8 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { portalId: string },
   ) {
-    const { portalId } = data;
+    const portalId = data?.portalId;
+    if (!this.isPortalId(portalId) || !client.userId || !client.workspaceId) return { success: false, error: 'Access denied' };
 
     // Verify access to portal
     const hasAccess = await this.collaborationService.verifyPortalAccess(
@@ -150,6 +159,7 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
 
     // Join the portal room
     await client.join(`portal:${portalId}`);
+    this.portalTenants.set(portalId, client.workspaceId);
 
     // Initialize portal users map if needed
     if (!this.portalUsers.has(portalId)) {
@@ -170,10 +180,10 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
     const currentUsers = Array.from(this.portalUsers.get(portalId).values());
 
     // Notify others that user joined
-    client.to(`portal:${portalId}`).emit('user:joined', {
+    client.to(`portal:${portalId}`).emit('user:joined', this.portalEvent(client, portalId, {
       user: userPresence,
       timestamp: new Date().toISOString(),
-    });
+    }));
 
     // Log activity
     await this.collaborationService.logActivity({
@@ -197,32 +207,37 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { portalId: string },
   ) {
-    const { portalId } = data;
+    const portalId = data?.portalId;
+    if (!this.isPortalId(portalId) || !client.userId || !client.rooms.has(`portal:${portalId}`)) return { success: false, error: 'Access denied' };
 
     await client.leave(`portal:${portalId}`);
+    const remainingSockets = await this.server.in(`portal:${portalId}`).fetchSockets();
+    const anotherTabStillPresent = remainingSockets.some(
+      (socket) => (socket as unknown as AuthenticatedSocket).userId === client.userId,
+    );
 
     // Remove user from portal
     const portalUserMap = this.portalUsers.get(portalId);
-    if (portalUserMap) {
+    if (portalUserMap && !anotherTabStillPresent) {
       portalUserMap.delete(client.userId);
     }
 
     // Notify others
-    this.server.to(`portal:${portalId}`).emit('user:left', {
+    if (!anotherTabStillPresent) this.server.to(`portal:${portalId}`).emit('user:left', this.portalEvent(client, portalId, {
       userId: client.userId,
       userName: client.userName,
       timestamp: new Date().toISOString(),
-    });
+    }));
 
     // Release any locks
     const _lockKey = `${portalId}:*`;
-    this.editingLocks.forEach((lock, key) => {
+    if (!anotherTabStillPresent) this.editingLocks.forEach((lock, key) => {
       if (key.startsWith(`${portalId}:`) && lock.userId === client.userId) {
         this.editingLocks.delete(key);
-        this.server.to(`portal:${portalId}`).emit('widget:unlocked', {
+        this.server.to(`portal:${portalId}`).emit('widget:unlocked', this.portalEvent(client, portalId, {
           widgetId: key.split(':')[1],
           timestamp: new Date().toISOString(),
-        });
+        }));
       }
     });
 
@@ -232,11 +247,12 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
   }
 
   @SubscribeMessage('cursor:move')
-  handleCursorMove(
+  async handleCursorMove(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { portalId: string; cursor: CursorPosition },
   ) {
-    const { portalId, cursor } = data;
+    const { portalId, cursor } = data ?? ({} as typeof data);
+    if (!(await this.hasPortalAccess(client, portalId))) return { success: false, error: 'Access denied' };
 
     // Update user presence with cursor
     const portalUserMap = this.portalUsers.get(portalId);
@@ -248,13 +264,13 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
     }
 
     // Broadcast cursor position to others in portal
-    client.to(`portal:${portalId}`).emit('cursor:update', {
+    client.to(`portal:${portalId}`).emit('cursor:update', this.portalEvent(client, portalId, {
       userId: client.userId,
       userName: client.userName,
       avatar: client.userAvatar,
       cursor,
       timestamp: Date.now(),
-    });
+    }));
 
     return { success: true };
   }
@@ -264,7 +280,8 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { portalId: string; widgetId: string },
   ) {
-    const { portalId, widgetId } = data;
+    const { portalId, widgetId } = data ?? ({} as typeof data);
+    if (!(await this.hasPortalAccess(client, portalId)) || !this.isPortalId(widgetId)) return { success: false, error: 'Access denied' };
     const lockKey = `${portalId}:${widgetId}`;
 
     // Check if widget is already locked
@@ -288,14 +305,14 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
     });
 
     // Notify others
-    client.to(`portal:${portalId}`).emit('widget:locked', {
+    client.to(`portal:${portalId}`).emit('widget:locked', this.portalEvent(client, portalId, {
       widgetId,
       lockedBy: {
         userId: client.userId,
         userName: client.userName,
       },
       timestamp: new Date().toISOString(),
-    });
+    }));
 
     this.logger.log(`Widget ${widgetId} locked by user ${client.userId}`);
 
@@ -303,11 +320,12 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
   }
 
   @SubscribeMessage('widget:unlock')
-  handleWidgetUnlock(
+  async handleWidgetUnlock(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { portalId: string; widgetId: string },
   ) {
-    const { portalId, widgetId } = data;
+    const { portalId, widgetId } = data ?? ({} as typeof data);
+    if (!(await this.hasPortalAccess(client, portalId)) || !this.isPortalId(widgetId)) return { success: false, error: 'Access denied' };
     const lockKey = `${portalId}:${widgetId}`;
 
     const lock = this.editingLocks.get(lockKey);
@@ -315,10 +333,10 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
       this.editingLocks.delete(lockKey);
 
       // Notify others
-      this.server.to(`portal:${portalId}`).emit('widget:unlocked', {
+      this.server.to(`portal:${portalId}`).emit('widget:unlocked', this.portalEvent(client, portalId, {
         widgetId,
         timestamp: new Date().toISOString(),
-      });
+      }));
 
       this.logger.log(`Widget ${widgetId} unlocked by user ${client.userId}`);
     }
@@ -331,7 +349,12 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { portalId: string; change: WidgetChange },
   ) {
-    const { portalId, change } = data;
+    const { portalId, change } = data ?? ({} as typeof data);
+    if (!(await this.hasPortalAccess(client, portalId)) || !change || typeof change.widgetId !== 'string') return { success: false, error: 'Access denied' };
+    if (change.operationId !== undefined && !this.isOperationId(change.operationId)) return { success: false, error: 'Invalid operation ID' };
+    if (change.operationId && !(await this.collaborationService.claimRealtimeOperation(portalId, client.userId!, change.operationId))) {
+      return { success: true, duplicate: true };
+    }
 
     // Add user info to change
     change.userId = client.userId!;
@@ -341,11 +364,12 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
     const transformedChange = await this.collaborationService.transformChange(portalId, change);
 
     // Broadcast change to others
-    client.to(`portal:${portalId}`).emit('widget:changed', {
+    client.to(`portal:${portalId}`).emit('widget:changed', this.portalEvent(client, portalId, {
+      eventId: change.operationId,
       change: transformedChange,
       userName: client.userName,
       timestamp: new Date().toISOString(),
-    });
+    }));
 
     // Save change to history for undo/redo
     await this.collaborationService.saveChangeHistory(portalId, transformedChange);
@@ -364,7 +388,7 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
   }
 
   @SubscribeMessage('presence:update')
-  handlePresenceUpdate(
+  async handlePresenceUpdate(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody()
     data: {
@@ -373,7 +397,8 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
       activeWidgetId?: string;
     },
   ) {
-    const { portalId, status, activeWidgetId } = data;
+    const { portalId, status, activeWidgetId } = data ?? ({} as typeof data);
+    if (!(await this.hasPortalAccess(client, portalId)) || !['active', 'idle', 'away'].includes(status)) return { success: false, error: 'Access denied' };
 
     // Update user presence
     const portalUserMap = this.portalUsers.get(portalId);
@@ -385,13 +410,13 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
     }
 
     // Broadcast presence update
-    client.to(`portal:${portalId}`).emit('presence:changed', {
+    client.to(`portal:${portalId}`).emit('presence:changed', this.portalEvent(client, portalId, {
       userId: client.userId,
       userName: client.userName,
       status,
       activeWidgetId,
       timestamp: new Date().toISOString(),
-    });
+    }));
 
     return { success: true };
   }
@@ -401,7 +426,8 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { portalId: string; limit?: number },
   ) {
-    const { portalId, limit = 50 } = data;
+    const { portalId, limit = 50 } = data ?? ({} as typeof data);
+    if (!(await this.hasPortalAccess(client, portalId))) return { success: false, error: 'Access denied' };
 
     const activities = await this.collaborationService.getActivityFeed(portalId, limit);
 
@@ -412,12 +438,17 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
   async handleChatMessage(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody()
-    data: { portalId: string; message: string; widgetId?: string },
+    data: { portalId: string; message: string; widgetId?: string; operationId?: string },
   ) {
-    const { portalId, message, widgetId } = data;
+    const { portalId, message, widgetId } = data ?? ({} as typeof data);
+    if (!(await this.hasPortalAccess(client, portalId)) || typeof message !== 'string' || message.length < 1 || message.length > 4000) return { success: false, error: 'Access denied' };
+    if (data.operationId !== undefined && !this.isOperationId(data.operationId)) return { success: false, error: 'Invalid operation ID' };
+    if (data.operationId && !(await this.collaborationService.claimRealtimeOperation(portalId, client.userId!, data.operationId))) {
+      return { success: true, duplicate: true };
+    }
 
     const chatMessage = {
-      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: data.operationId ?? `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       userId: client.userId,
       userName: client.userName,
       avatar: client.userAvatar,
@@ -427,7 +458,10 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
     };
 
     // Broadcast message to portal
-    this.server.to(`portal:${portalId}`).emit('chat:new', chatMessage);
+    this.server.to(`portal:${portalId}`).emit('chat:new', this.portalEvent(client, portalId, {
+      ...chatMessage,
+      eventId: data.operationId,
+    }));
 
     // Save message
     await this.collaborationService.saveChatMessage(portalId, chatMessage);
@@ -437,7 +471,7 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
 
   // WebRTC Signaling for peer-to-peer collaboration
   @SubscribeMessage('webrtc:offer')
-  handleWebRTCOffer(
+  async handleWebRTCOffer(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody()
     data: {
@@ -447,22 +481,23 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
     },
   ) {
     const { portalId, targetUserId, offer } = data;
+    if (!(await this.hasPortalAccess(client, portalId))) return { success: false, error: 'Access denied' };
 
     // Find target user's socket
     const portalUserMap = this.portalUsers.get(portalId);
     if (portalUserMap && portalUserMap.has(targetUserId)) {
-      this.server.to(`portal:${portalId}`).emit('webrtc:offer', {
+      this.server.to(`portal:${portalId}`).emit('webrtc:offer', this.portalEvent(client, portalId, {
         fromUserId: client.userId,
         fromUserName: client.userName,
         offer,
-      });
+      }));
     }
 
     return { success: true };
   }
 
   @SubscribeMessage('webrtc:answer')
-  handleWebRTCAnswer(
+  async handleWebRTCAnswer(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody()
     data: {
@@ -472,17 +507,18 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
     },
   ) {
     const { portalId, targetUserId: _targetUserId, answer } = data;
+    if (!(await this.hasPortalAccess(client, portalId))) return { success: false, error: 'Access denied' };
 
-    this.server.to(`portal:${portalId}`).emit('webrtc:answer', {
+    this.server.to(`portal:${portalId}`).emit('webrtc:answer', this.portalEvent(client, portalId, {
       fromUserId: client.userId,
       answer,
-    });
+    }));
 
     return { success: true };
   }
 
   @SubscribeMessage('webrtc:ice-candidate')
-  handleWebRTCIceCandidate(
+  async handleWebRTCIceCandidate(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody()
     data: {
@@ -492,11 +528,12 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
     },
   ) {
     const { portalId, candidate } = data;
+    if (!(await this.hasPortalAccess(client, portalId))) return { success: false, error: 'Access denied' };
 
-    client.to(`portal:${portalId}`).emit('webrtc:ice-candidate', {
+    client.to(`portal:${portalId}`).emit('webrtc:ice-candidate', this.portalEvent(client, portalId, {
       fromUserId: client.userId,
       candidate,
-    });
+    }));
 
     return { success: true };
   }
@@ -510,6 +547,31 @@ export class CollaborationGateway implements OnGatewayConnection, OnGatewayDisco
 
   // Helper method to broadcast to portal
   broadcastToPortal(portalId: string, event: string, data: any): void {
-    this.server.to(`portal:${portalId}`).emit(event, data);
+    this.server.to(`portal:${portalId}`).emit(event, createRealtimeEvent(data ?? {}, {
+      tenantId: this.portalTenants.get(portalId) ?? null,
+      resourceType: 'portal',
+      resourceId: portalId,
+    }));
+  }
+
+  private isPortalId(value: unknown): value is string {
+    return typeof value === 'string' && value.length > 0 && value.length <= 128;
+  }
+
+  private isOperationId(value: unknown): value is string {
+    return typeof value === 'string' && value.length > 0 && value.length <= 128;
+  }
+
+  private async hasPortalAccess(client: AuthenticatedSocket, portalId: unknown): Promise<boolean> {
+    if (!this.isPortalId(portalId) || !client.userId || !client.workspaceId || !client.rooms.has(`portal:${portalId}`)) return false;
+    return this.collaborationService.verifyPortalAccess(client.userId, client.workspaceId, portalId);
+  }
+
+  private portalEvent(client: AuthenticatedSocket, portalId: string, data: Record<string, unknown>) {
+    return createRealtimeEvent(data, {
+      tenantId: client.workspaceId ?? this.portalTenants.get(portalId) ?? null,
+      resourceType: 'portal',
+      resourceId: portalId,
+    });
   }
 }

@@ -23,6 +23,7 @@ import {
   Link2,
   Download,
   MessageSquare,
+  ClipboardCheck,
   Mic,
   GitBranch,
   Building2,
@@ -36,10 +37,11 @@ import {
   Sun,
   Search,
   HelpCircle,
+  Rocket,
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useState, createContext, useContext } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useState, createContext, useContext, useEffect } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -51,6 +53,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { authApi } from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth';
 
 // Sidebar Context
@@ -68,9 +71,11 @@ const NAV_GROUPS = [
     title: 'Main',
     items: [
       { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'Onboarding', href: '/dashboard/onboarding', icon: Rocket },
       { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
       { name: 'Alerts', href: '/dashboard/alerts', icon: AlertTriangle },
       { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
+      { name: 'Decision inbox', href: '/dashboard/decision-inbox', icon: ClipboardCheck },
     ],
   },
   {
@@ -250,6 +255,10 @@ function Header() {
     document.documentElement.classList.toggle('dark');
   };
 
+  const handleLogout = async () => {
+    try { await authApi.logout(); } finally { logout(); }
+  };
+
   return (
     <header
       className="fixed top-0 right-0 h-16 bg-card border-b z-30 flex items-center justify-between px-6"
@@ -305,7 +314,7 @@ function Header() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={logout} className="text-red-600">
+            <DropdownMenuItem onClick={() => void handleLogout()} className="text-red-600">
               <LogOut className="w-4 h-4 mr-2" />
               Logout
             </DropdownMenuItem>
@@ -322,6 +331,34 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const router = useRouter();
+  const { user, isAuthenticated, isHydrated } = useAuthStore();
+  const [agencyAccess, setAgencyAccess] = useState<'checking' | 'allowed' | 'client-denied'>('checking');
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    if (!isAuthenticated || !user) {
+      setAgencyAccess('checking');
+      router.replace('/auth/login');
+      return;
+    }
+    if (user.role === 'MEMBER') {
+      setAgencyAccess('client-denied');
+      return;
+    }
+    setAgencyAccess('allowed');
+  }, [isHydrated, isAuthenticated, user, router]);
+
+  if (agencyAccess === 'checking') {
+    return <main role="status" aria-busy="true" className="mx-auto max-w-xl p-8">Checking account access…</main>;
+  }
+  if (agencyAccess === 'client-denied') {
+    return <main className="mx-auto max-w-xl p-8" aria-labelledby="agency-access-heading">
+      <h1 id="agency-access-heading" className="text-2xl font-semibold">Agency access required</h1>
+      <p className="mt-3 text-muted-foreground">Client accounts can open only the secure portal links shared with them. This agency page did not load.</p>
+      <Link href="/" className="mt-5 inline-block rounded border px-4 py-2">Return to home</Link>
+    </main>;
+  }
 
   return (
     <SidebarContext.Provider value={{ collapsed, setCollapsed }}>

@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface GoogleAdsIntegration {
   accessToken: string;
   refreshToken?: string;
@@ -44,7 +45,7 @@ export class GoogleAdsService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('Google Ads connection test failed', error);
+      this.logger.error('Google Ads connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -102,7 +103,7 @@ export class GoogleAdsService {
 
       return results;
     } catch (error) {
-      this.logger.error('Failed to execute Google Ads query', error);
+      this.logger.error('Failed to execute Google Ads query' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

@@ -84,6 +84,13 @@ export interface GenerateInsightsResponse {
   insights: AIInsight[];
 }
 
+export interface ClientConfidenceRisk {
+  level: 'LOW' | 'ELEVATED' | 'HIGH';
+  drivers: Array<{ code: string; title: string; evidence: string }>;
+  evaluatedAt: string;
+  ruleVersion: string;
+}
+
 export const aiInsightsApi = {
   /**
    * Get workspace insights
@@ -101,6 +108,11 @@ export const aiInsightsApi = {
    */
   getPortalInsights: async (portalId: string): Promise<AIInsight[]> => {
     const response = await apiClient.get(`/ai-insights/portal/${portalId}`);
+    return response.data;
+  },
+
+  getPortalConfidenceRisk: async (portalId: string): Promise<ClientConfidenceRisk> => {
+    const response = await apiClient.get(`/ai-insights/portal/${portalId}/risk`);
     return response.data;
   },
 
@@ -484,65 +496,186 @@ export const scheduledReportsApi = {
 export interface ShareLink {
   id: string;
   token: string;
-  resourceType: 'portal' | 'widget' | 'report';
-  resourceId: string;
-  name?: string;
-  expiresAt?: string;
-  passwordProtected: boolean;
+  portalId: string;
+  portal?: { id: string; name: string; slug: string };
+  expiresAt?: string | null;
+  hasPassword: boolean;
   maxViews?: number;
-  viewCount: number;
-  allowDownload: boolean;
-  permissions: string[];
+  currentViews: number;
+  allowExport: boolean;
+  allowComments: boolean;
+  allowDecisions: boolean;
   lastAccessedAt?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  assignments?: Array<{ userId: string; user: { email: string } }>;
 }
 
 export interface CreateShareLinkDto {
-  resourceType: 'portal' | 'widget' | 'report';
-  resourceId: string;
-  name?: string;
+  portalId: string;
   expiresAt?: string;
   password?: string;
   maxViews?: number;
-  allowDownload?: boolean;
-  permissions?: string[];
+  allowExport?: boolean;
+  allowComments?: boolean;
+  allowDecisions?: boolean;
+  isActive?: boolean;
+  clientUserIds?: string[];
+}
+
+export type DecisionResponseKind = 'APPROVE' | 'DECLINE' | 'REQUEST_CHANGES';
+export interface DecisionTimelineEvent {
+  eventId: string;
+  version: number;
+  revision: number;
+  eventType: string;
+  actorType: string;
+  workspaceId?: string;
+  resourceType?: string;
+  resourceId?: string;
+  actorId?: string | null;
+  details?: Record<string, unknown> | null;
+  serverTimestamp: string;
+}
+export interface ClientDecisionRecord {
+  id: string;
+  title: string;
+  prompt: string;
+  status: 'OPEN' | 'APPROVED' | 'DECLINED' | 'CHANGES_REQUESTED' | 'WITHDRAWN';
+  portalRevision: number;
+  currentPortalRevision?: number;
+  canRespond?: boolean;
+  isStale?: boolean;
+  dueAt?: string | null;
+  createdAt: string;
+  clientEmail?: string | null;
+  response?: {
+    response: DecisionResponseKind;
+    comment: string | null;
+    portalRevision: number;
+    createdAt: string;
+  } | null;
+  timeline: DecisionTimelineEvent[];
+}
+export interface DecisionEscalationPolicy {
+  workspaceId: string;
+  enabled: boolean;
+  notificationOptIn: boolean;
+  timeZone: string;
+  businessDays: number[];
+  businessHoursStart: string;
+  businessHoursEnd: string;
+  reminderIntervalMinutes: number;
+  maxReminders: number;
+}
+
+function unwrapShareResponse<T>(payload: { data?: T } | T): T {
+  return payload && typeof payload === 'object' && 'data' in payload
+    ? (payload as { data: T }).data
+    : (payload as T);
+}
+
+export const decisionInboxApi = {
+  list: async (): Promise<ClientDecisionRecord[]> => unwrapShareResponse((await apiClient.get('/decision-inbox')).data),
+  create: async (input: { sourceShareLinkId: string; clientUserId: string; title: string; prompt: string; dueAt?: string }): Promise<ClientDecisionRecord> => unwrapShareResponse((await apiClient.post('/decision-inbox', input)).data),
+  withdraw: async (id: string): Promise<ClientDecisionRecord> => unwrapShareResponse((await apiClient.post(`/decision-inbox/${id}/withdraw`, {})).data),
+  getPolicy: async (): Promise<DecisionEscalationPolicy> => unwrapShareResponse((await apiClient.get('/decision-inbox/policy')).data),
+  updatePolicy: async (input: Partial<DecisionEscalationPolicy>): Promise<DecisionEscalationPolicy> => unwrapShareResponse((await apiClient.patch('/decision-inbox/policy', input)).data),
+  listForClient: async (token: string, password?: string): Promise<{ currentPortalRevision: number; decisions: ClientDecisionRecord[] }> => unwrapShareResponse((await apiClient.post(`/share-links/public/${encodeURIComponent(token)}/decisions/list`, { password })).data),
+  respond: async (token: string, decisionId: string, input: { password?: string; expectedRevision: number; response: DecisionResponseKind; comment?: string }): Promise<ClientDecisionRecord> => unwrapShareResponse((await apiClient.post(`/share-links/public/${encodeURIComponent(token)}/decisions/${encodeURIComponent(decisionId)}/respond`, input)).data),
+};
+
+export interface ShareAccessRequest { id: string; email: string; message?: string | null; status: 'PENDING' | 'REVIEWED'; createdAt: string; reviewedAt?: string | null; shareLink?: { id: string; portal: { name: string } } | null }
+
+interface SharedPortalAccessResponse {
+  portal: {
+    id: string;
+    name: string;
+    description?: string | null;
+    widgets: Array<{
+      id: string;
+      name: string;
+      type: string;
+      data: { metrics?: Array<{ key: string; label: string; value: number | string; unit?: string }> } | null;
+      sourceLabel: string;
+      isDemo: boolean;
+    }>;
+    workspace: { name: string; logo?: string; primaryColor: string };
+    clientStatus?: string | null;
+    clientStatusNote?: string | null;
+    latestDeliverable?: string | null;
+    pendingDecision?: string | null;
+    clientUpdateAt?: string | null;
+    feedStatus?: { health: 'CURRENT' | 'STALE' | 'ATTENTION' | 'NO_DATA'; lastSyncedAt: string | null; lastValidDataAt: string | null; sourceCount: number };
+  };
+  permissions: { allowExport: boolean; allowComments: boolean; allowDecisions: boolean };
 }
 
 export const shareLinksApi = {
+  getAccessRequests: async (): Promise<ShareAccessRequest[]> => unwrapShareResponse((await apiClient.get('/share-links/access-requests')).data),
+  reviewAccessRequest: async (id: string): Promise<void> => { await apiClient.patch(`/share-links/access-requests/${id}/review`); },
+  getManagedComments: async (id: string): Promise<Array<{ id: string; displayName: string; content: string; createdAt: string }>> => unwrapShareResponse((await apiClient.get(`/share-links/${id}/comments`)).data),
+  deleteManagedComment: async (id: string, commentId: string): Promise<void> => { await apiClient.delete(`/share-links/${id}/comments/${commentId}`); },
   getAll: async (): Promise<ShareLink[]> => {
     const response = await apiClient.get('/share-links');
-    return response.data;
+    return unwrapShareResponse(response.data);
   },
 
   getById: async (id: string): Promise<ShareLink> => {
     const response = await apiClient.get(`/share-links/${id}`);
-    return response.data;
+    return unwrapShareResponse(response.data);
   },
 
   create: async (data: CreateShareLinkDto): Promise<ShareLink & { shareUrl: string }> => {
     const response = await apiClient.post('/share-links', data);
-    return response.data;
+    return unwrapShareResponse(response.data);
   },
 
   update: async (id: string, data: Partial<CreateShareLinkDto>): Promise<ShareLink> => {
     const response = await apiClient.patch(`/share-links/${id}`, data);
-    return response.data;
+    return unwrapShareResponse(response.data);
   },
 
   delete: async (id: string): Promise<void> => {
     await apiClient.delete(`/share-links/${id}`);
   },
 
-  regenerate: async (id: string): Promise<ShareLink & { shareUrl: string }> => {
+  regenerate: async (id: string): Promise<{ token: string; shareUrl: string }> => {
     const response = await apiClient.post(`/share-links/${id}/regenerate`);
-    return response.data;
+    return unwrapShareResponse(response.data);
   },
 
-  access: async (token: string, password?: string): Promise<{ resource: unknown; type: string }> => {
-    const response = await apiClient.post(`/share-links/access/${token}`, { password });
-    return response.data;
+  check: async (token: string): Promise<{ passwordRequired: boolean }> => {
+    const response = await apiClient.get(`/share-links/public/${encodeURIComponent(token)}/check`, {
+    });
+    return unwrapShareResponse(response.data);
+  },
+
+  access: async (token: string, password?: string): Promise<SharedPortalAccessResponse> => {
+    const response = await apiClient.post(`/share-links/public/${encodeURIComponent(token)}/access`, { password }, {
+    });
+    return unwrapShareResponse(response.data);
+  },
+
+  listPublicComments: async (token: string, password?: string) => {
+    const response = await apiClient.post(`/share-links/public/${encodeURIComponent(token)}/comments/list`, { password });
+    return unwrapShareResponse(response.data) as Array<{ id: string; displayName: string; content: string; createdAt: string }>;
+  },
+
+  addPublicComment: async (token: string, data: { password?: string; displayName: string; content: string }) => {
+    const response = await apiClient.post(`/share-links/public/${encodeURIComponent(token)}/comments`, data);
+    return unwrapShareResponse(response.data) as { id: string; displayName: string; content: string; createdAt: string };
+  },
+
+  exportPublicPortal: async (token: string, password?: string) => {
+    const response = await apiClient.post(`/share-links/public/${encodeURIComponent(token)}/export`, { password });
+    return unwrapShareResponse(response.data);
+  },
+
+  requestAccess: async (token: string, data: { email: string; message?: string }) => {
+    const response = await apiClient.post(`/share-links/public/${encodeURIComponent(token)}/request-access`, data);
+    return unwrapShareResponse(response.data) as { accepted: boolean };
   },
 };
 
@@ -732,12 +865,10 @@ export interface BillingPlan {
   limits: {
     portals: number;
     widgets: number;
-    integrations: number;
-    members: number;
-    storage: number;
+    users: number;
     apiCalls: number;
   };
-  stripePriceId?: string;
+  checkoutAvailable?: boolean;
 }
 
 export interface Subscription {
@@ -758,59 +889,102 @@ export interface Invoice {
   status: 'draft' | 'open' | 'paid' | 'void' | 'uncollectible';
   invoiceUrl?: string;
   invoicePdfUrl?: string;
-  periodStart: string;
-  periodEnd: string;
+  periodStart?: string | null;
+  periodEnd?: string | null;
   createdAt: string;
 }
 
 export interface UsageStats {
   portals: { used: number; limit: number };
   widgets: { used: number; limit: number };
-  integrations: { used: number; limit: number };
   members: { used: number; limit: number };
-  storage: { used: number; limit: number };
   apiCalls: { used: number; limit: number };
+}
+
+const billingPayload = <T>(response: { data: unknown }): T => {
+  const body = response.data;
+  if (body && typeof body === 'object' && 'data' in body) return (body as { data: T }).data;
+  return body as T;
+};
+
+interface BillingSubscriptionResponse extends Omit<Subscription, 'plan' | 'status'> {
+  plan?: BillingPlan;
+  planDetails?: BillingPlan;
+  status: string;
+}
+
+interface BillingInvoiceResponse extends Invoice {
+  hostedInvoiceUrl?: string;
+  pdfUrl?: string;
+}
+
+interface BillingLimitsResponse {
+  portals: UsageStats['portals'];
+  widgets: UsageStats['widgets'];
+  users: UsageStats['members'];
+  apiCalls: UsageStats['apiCalls'];
 }
 
 export const billingApi = {
   getPlans: async (): Promise<BillingPlan[]> => {
     const response = await apiClient.get('/billing/plans');
-    return response.data;
+    return billingPayload<BillingPlan[]>(response);
   },
 
   getCurrentSubscription: async (): Promise<Subscription | null> => {
-    const response = await apiClient.get('/billing/subscription');
-    return response.data;
+    try {
+      const response = await apiClient.get('/billing/subscription');
+      const raw = billingPayload<BillingSubscriptionResponse>(response);
+      return { ...raw, plan: raw.plan ?? raw.planDetails!, status: String(raw.status).toLowerCase() as Subscription['status'] };
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const response = (error as { response?: { status?: number } }).response;
+        if (response?.status === 404) return null;
+      }
+      throw error;
+    }
   },
 
-  createCheckoutSession: async (priceId: string): Promise<{ sessionUrl: string }> => {
-    const response = await apiClient.post('/billing/checkout', { priceId });
-    return response.data;
+  createCheckoutSession: async (planId: string): Promise<{ sessionUrl: string }> => {
+    const origin = window.location.origin;
+    const response = await apiClient.post('/billing/checkout', {
+      plan: planId.toUpperCase(),
+      successUrl: `${origin}/dashboard/billing?checkout=success`,
+      cancelUrl: `${origin}/dashboard/billing?checkout=cancelled`,
+    });
+    const data = billingPayload<{ url: string }>(response);
+    return { sessionUrl: data.url };
   },
 
   createPortalSession: async (): Promise<{ portalUrl: string }> => {
-    const response = await apiClient.post('/billing/portal');
-    return response.data;
+    const response = await apiClient.post('/billing/portal', { returnUrl: `${window.location.origin}/dashboard/billing` });
+    return { portalUrl: billingPayload<{ url: string }>(response).url };
   },
 
-  cancelSubscription: async (): Promise<Subscription> => {
+  cancelSubscription: async (): Promise<void> => {
     const response = await apiClient.post('/billing/cancel');
-    return response.data;
-  },
-
-  resumeSubscription: async (): Promise<Subscription> => {
-    const response = await apiClient.post('/billing/resume');
-    return response.data;
+    billingPayload(response);
   },
 
   getInvoices: async (): Promise<Invoice[]> => {
     const response = await apiClient.get('/billing/invoices');
-    return response.data;
+    return billingPayload<BillingInvoiceResponse[]>(response).map((invoice) => ({
+      ...invoice,
+      amount: invoice.amount ?? 0,
+      invoiceUrl: invoice.invoiceUrl ?? invoice.hostedInvoiceUrl,
+      invoicePdfUrl: invoice.invoicePdfUrl ?? invoice.pdfUrl,
+    }));
   },
 
   getUsage: async (): Promise<UsageStats> => {
-    const response = await apiClient.get('/billing/usage');
-    return response.data;
+    const response = await apiClient.get('/billing/limits');
+    const limits = billingPayload<BillingLimitsResponse>(response);
+    return {
+      portals: limits.portals,
+      widgets: limits.widgets,
+      members: limits.users,
+      apiCalls: limits.apiCalls,
+    };
   },
 };
 

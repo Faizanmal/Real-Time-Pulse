@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface GcpMonitoringIntegration {
   accessToken: string; // OAuth2 access token
   refreshToken?: string;
@@ -37,7 +38,7 @@ export class GcpMonitoringService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('GCP Monitoring connection test failed', error);
+      this.logger.error('GCP Monitoring connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -135,7 +136,7 @@ export class GcpMonitoringService {
         nextPageToken: response.data.nextPageToken,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch GCP time series', error);
+      this.logger.error('Failed to fetch GCP time series' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -176,7 +177,7 @@ export class GcpMonitoringService {
         nextPageToken: response.data.nextPageToken,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch GCP metric descriptors', error);
+      this.logger.error('Failed to fetch GCP metric descriptors' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -207,7 +208,7 @@ export class GcpMonitoringService {
         nextPageToken: response.data.nextPageToken,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch GCP monitored resources', error);
+      this.logger.error('Failed to fetch GCP monitored resources' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -244,7 +245,7 @@ export class GcpMonitoringService {
         nextPageToken: response.data.nextPageToken,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch GCP alert policies', error);
+      this.logger.error('Failed to fetch GCP alert policies' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -279,7 +280,7 @@ export class GcpMonitoringService {
         nextPageToken: response.data.nextPageToken,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch GCP notification channels', error);
+      this.logger.error('Failed to fetch GCP notification channels' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -316,7 +317,7 @@ export class GcpMonitoringService {
         nextPageToken: response.data.nextPageToken,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch GCP uptime checks', error);
+      this.logger.error('Failed to fetch GCP uptime checks' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -376,7 +377,7 @@ export class GcpMonitoringService {
         recentCpuMetrics: cpuMetrics?.timeSeries?.[0]?.points?.slice(0, 12) || [],
       };
     } catch (error) {
-      this.logger.error('Failed to fetch GCP Monitoring analytics', error);
+      this.logger.error('Failed to fetch GCP Monitoring analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -421,7 +422,7 @@ export class GcpMonitoringService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to create GCP alert policy', error);
+      this.logger.error('Failed to create GCP alert policy' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

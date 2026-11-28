@@ -12,6 +12,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AgencyRoleGuard } from '../auth/guards/agency-role.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 import type { RequestUser } from '../common/interfaces/auth.interface';
 
@@ -24,7 +25,7 @@ const API_KEY_REGENERATE_ROUTE = ':id/regenerate';
 
 @ApiTags('API Keys')
 @Controller('api-keys')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, AgencyRoleGuard)
 @ApiBearerAuth()
 export class ApiKeysController {
   constructor(private readonly apiKeysService: ApiKeysService) {}

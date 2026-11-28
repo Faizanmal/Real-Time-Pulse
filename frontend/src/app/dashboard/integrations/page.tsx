@@ -30,23 +30,36 @@ export default function IntegrationsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [syncingIds, setSyncingIds] = useState<Set<string>>(new Set());
   const [testingIds, setTestingIds] = useState<Set<string>>(new Set());
+  const [refreshingIds, setRefreshingIds] = useState<Set<string>>(new Set());
+  const [loadError, setLoadError] = useState('');
+  const [creatingDemo, setCreatingDemo] = useState(false);
+  const [freshness, setFreshness] = useState<Awaited<ReturnType<typeof integrationApi.getSyncFreshness>> | null>(null);
+  const [freshnessError, setFreshnessError] = useState('');
 
   const loadIntegrations = useCallback(async () => {
-    if (!user?.workspaceId) return;
+    if (!user?.workspaceId) { setIsLoading(false); return; }
 
     try {
+      setLoadError('');
       const data = await integrationApi.getAllByWorkspace(user.workspaceId);
       setIntegrations(data);
+      try {
+        setFreshness(await integrationApi.getSyncFreshness(user.workspaceId));
+        setFreshnessError('');
+      } catch {
+        setFreshnessError('Sync metrics are temporarily unavailable.');
+      }
     } catch (error) {
       console.error('Failed to load integrations:', error);
+      setLoadError('Could not load connectors. Check your connection and retry.');
     } finally {
       setIsLoading(false);
     }
   }, [user?.workspaceId]);
 
   const handleIntegrationSync = useCallback((event: Event) => {
-    const customEvent = event as CustomEvent<{ integrationId?: string }>;
-    const { integrationId } = customEvent.detail || {};
+    const customEvent = event as CustomEvent<{ integrationId?: string; integration?: { id?: string } }>;
+    const integrationId = customEvent.detail?.integrationId || customEvent.detail?.integration?.id;
     if (integrationId) {
       loadIntegrations();
       setSyncingIds((prev) => {
@@ -69,15 +82,18 @@ export default function IntegrationsPage() {
 
     // Listen for real-time sync updates
     window.addEventListener('integration:synced', handleIntegrationSync);
+    window.addEventListener('integration:error', handleIntegrationSync);
     return () => {
       window.removeEventListener('integration:synced', handleIntegrationSync);
+      window.removeEventListener('integration:error', handleIntegrationSync);
     };
   }, [isAuthenticated, isHydrated, router, handleIntegrationSync, loadIntegrations]);
 
   const handleSync = async (id: string) => {
     setSyncingIds((prev) => new Set(prev).add(id));
     try {
-      await integrationApi.triggerSync(id);
+      await integrationApi.triggerSync(id, 'incremental', false, crypto.randomUUID());
+      await loadIntegrations();
       toast.success('Sync started successfully');
     } catch (error) {
       console.error('Failed to sync integration:', error);
@@ -90,10 +106,32 @@ export default function IntegrationsPage() {
     }
   };
 
+  const handleDryRun = async (id: string) => {
+    try {
+      const result = await integrationApi.triggerSync(id, 'incremental', true);
+      toast.success(result.message);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Dry run could not be completed.');
+    }
+  };
+
+  const handleReplay = async (id: string) => {
+    setSyncingIds((prev) => new Set(prev).add(id));
+    try {
+      const result = await integrationApi.triggerSync(id, 'full', false, crypto.randomUUID());
+      await loadIntegrations();
+      toast.success(result.message);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Replay could not be queued.');
+      setSyncingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
+    }
+  };
+
   const handleTest = async (id: string) => {
     setTestingIds((prev) => new Set(prev).add(id));
     try {
       const result = await integrationApi.testConnection(id);
+      await loadIntegrations();
       if (result.success) {
         toast.success(result.message || 'Connection successful');
       } else {
@@ -108,6 +146,33 @@ export default function IntegrationsPage() {
         next.delete(id);
         return next;
       });
+    }
+  };
+
+  const handleRefresh = async (id: string) => {
+    setRefreshingIds((current) => new Set(current).add(id));
+    try {
+      const result = await integrationApi.refresh(id);
+      setIntegrations((current) => current.map((item) => item.id === id ? result : item));
+      toast.success(result.statusMessage || 'Provider authorization refreshed.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Reconnect could not be completed.');
+      await loadIntegrations();
+    } finally {
+      setRefreshingIds((current) => { const next = new Set(current); next.delete(id); return next; });
+    }
+  };
+
+  const handleCreateDemo = async () => {
+    setCreatingDemo(true);
+    try {
+      await integrationApi.createDemo();
+      await loadIntegrations();
+      toast.success('Fictional demo connector is ready. No provider account was contacted.');
+    } catch {
+      toast.error('Could not create the local demo connector. Retry after checking the API.');
+    } finally {
+      setCreatingDemo(false);
     }
   };
 
@@ -196,6 +261,15 @@ export default function IntegrationsPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {loadError && <div role="alert" className="mb-6 rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-red-200">{loadError} <button className="ml-3 underline" onClick={() => { setIsLoading(true); void loadIntegrations(); }}>Retry</button></div>}
+        <section aria-labelledby="sync-freshness-heading" className="mb-8 rounded-2xl border border-slate-700/60 bg-slate-900/40 p-5">
+          <h2 id="sync-freshness-heading" className="text-lg font-semibold text-white">Sync freshness and operations</h2>
+          {freshnessError ? <p role="alert" className="mt-2 text-sm text-amber-200">{freshnessError}</p> : !freshness ? <p className="mt-2 text-sm text-gray-400">Loading sync metrics…</p> : <>
+            <p className="mt-2 text-sm text-gray-300">Queue depth {freshness.queue.queueDepth} · active {freshness.queue.active} · failed {freshness.queue.failed} · attempts {freshness.queue.retries}</p>
+            <p className="mt-1 text-xs text-gray-500">Metrics updated {new Date(freshness.queue.asOf).toLocaleString()} · oldest queued {freshness.queue.oldestQueuedAt ? new Date(freshness.queue.oldestQueuedAt).toLocaleString() : 'none'}{freshness.queue.oldestQueuedAgeMs !== null ? ` (${Math.floor(freshness.queue.oldestQueuedAgeMs / 60000)} min old)` : ''}</p>
+            {freshness.integrations.length === 0 ? <p className="mt-3 text-sm text-gray-400">No connected feeds to monitor.</p> : <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{freshness.integrations.map((item) => <li key={item.id} className="rounded-lg bg-slate-800/60 p-3 text-sm"><span className="font-medium text-white">{item.provider}</span><span className="ml-2 text-gray-300">{item.health}</span><p className="mt-1 text-xs text-gray-400">Last updated: {item.lastUpdatedAt ? new Date(item.lastUpdatedAt).toLocaleString() : 'Never'}{item.lastErrorCode ? ` · Error: ${item.lastErrorCode}` : ''}</p>{item.latestRun && <p className="mt-1 text-xs text-gray-400">Latest run: {item.latestRun.status} · {item.latestRun.processedCount} records / {item.latestRun.pageCount} pages{item.latestRun.lastErrorCode ? ` · ${item.latestRun.lastErrorCode}` : ''}</p>}</li>)}</ul>}
+          </>}
+        </section>
         {/* Search */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -231,7 +305,7 @@ export default function IntegrationsPage() {
                   key={provider.id}
                   whileHover={{ scale: 1.05, y: -5 }}
                   whileTap={{ scale: 0.95 }}
-                  className="p-6 bg-slate-900/30 rounded-xl border border-slate-800/50 hover:border-green-500/50 transition-all text-center cursor-pointer"
+                  className="p-6 bg-slate-900/30 rounded-xl border border-slate-800/50 text-center"
                 >
                   <div className="text-4xl mb-2">{provider.icon}</div>
                   <p className="text-sm font-medium text-white">{provider.name}</p>
@@ -258,16 +332,10 @@ export default function IntegrationsPage() {
                 : 'Connect your first integration to get started'}
             </p>
             {!searchQuery && (
-              <Link href="/dashboard/integrations/new">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-6 py-3 bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-semibold rounded-xl transition-all"
-                >
-                  <Plus className="inline-block h-5 w-5 mr-2" />
-                  Add Integration
-                </motion.button>
-              </Link>
+              <div className="flex justify-center gap-3">
+                <button disabled={creatingDemo} onClick={() => void handleCreateDemo()} className="rounded-xl border border-emerald-500/40 px-6 py-3 font-semibold text-emerald-200 disabled:opacity-50">{creatingDemo ? 'Creating demo…' : 'Create fictional demo connector'}</button>
+                <Link href="/dashboard/integrations/new" className="rounded-xl bg-linear-to-r from-green-600 to-emerald-600 px-6 py-3 font-semibold text-white"><Plus className="inline-block h-5 w-5 mr-2" />Add Integration</Link>
+              </div>
             )}
           </motion.div>
         ) : (
@@ -279,14 +347,19 @@ export default function IntegrationsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
+                <div>
                 <IntegrationCard
                   {...integration}
                   onTest={handleTest}
                   onSync={handleSync}
                   onEdit={(id) => router.push(`/dashboard/integrations/${id}/edit`)}
                   onDelete={handleDelete}
+                  onRefresh={handleRefresh}
+                  isRefreshing={refreshingIds.has(integration.id)}
                   isSyncing={syncingIds.has(integration.id)}
                 />
+                <div className="mt-2 flex gap-2"><button onClick={() => void handleDryRun(integration.id)} className="rounded border border-slate-600 px-3 py-1 text-xs text-gray-200">Dry run</button><button onClick={() => void handleReplay(integration.id)} disabled={syncingIds.has(integration.id)} className="rounded border border-amber-500/50 px-3 py-1 text-xs text-amber-200 disabled:opacity-50">Replay full sync</button></div>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -308,7 +381,7 @@ export default function IntegrationsPage() {
                 <div>
                   <p className="text-sm text-gray-400">Active</p>
                   <p className="text-2xl font-bold text-white">
-                    {integrations.filter((i) => i.status === 'active').length}
+                    {integrations.filter((i) => i.connectionState === 'CONNECTED').length}
                   </p>
                 </div>
               </div>
@@ -322,7 +395,7 @@ export default function IntegrationsPage() {
                 <div>
                   <p className="text-sm text-gray-400">Inactive</p>
                   <p className="text-2xl font-bold text-white">
-                    {integrations.filter((i) => i.status === 'inactive').length}
+                    {integrations.filter((i) => i.connectionState === 'DISCONNECTED').length}
                   </p>
                 </div>
               </div>
@@ -336,7 +409,7 @@ export default function IntegrationsPage() {
                 <div>
                   <p className="text-sm text-gray-400">Errors</p>
                   <p className="text-2xl font-bold text-white">
-                    {integrations.filter((i) => i.status === 'error').length}
+                    {integrations.filter((i) => i.connectionState === 'DEGRADED' || i.connectionState === 'NEEDS_RECONNECT').length}
                   </p>
                 </div>
               </div>

@@ -3,6 +3,7 @@ import { AsyncLocalStorage } from 'async_hooks';
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import { sanitizeSensitivePath } from '../utils/sensitive-path';
 
 interface RequestUser {
   id: string;
@@ -45,7 +46,7 @@ export class RequestContextMiddleware implements NestMiddleware {
       workspaceId: user?.workspaceId,
       timestamp: new Date(),
       method: req.method,
-      path: req.path,
+      path: sanitizeSensitivePath(req.path),
       ip: req.ip || req.socket.remoteAddress || 'unknown',
       userAgent: req.headers['user-agent'],
     };

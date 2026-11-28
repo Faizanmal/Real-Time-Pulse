@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState, Suspense } from 'react';
 
 import { useAuthStore } from '@/store/auth';
+import { authApi } from '@/lib/api-client';
 
 function AuthCallbackContent() {
   const router = useRouter();
@@ -12,9 +13,7 @@ function AuthCallbackContent() {
   const [error, setError] = useState<string | null>(null);
   const handledRef = useRef(false);
 
-  const token = searchParams.get('token');
   const errorParam = searchParams.get('error');
-  const provider = searchParams.get('provider');
 
   useEffect(() => {
     if (handledRef.current) return;
@@ -26,56 +25,19 @@ function AuthCallbackContent() {
         return;
       }
 
-      if (!token) {
-        setError('No authentication token received');
-        return;
-      }
-
       try {
-        // Fetch user data with the token
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-        const response = await fetch(`${apiUrl}/api/v1/auth/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch user data');
-        }
-
-        const userData = await response.json();
-
-        // Map the user data to match the User type from @/types
-        const user = {
-          id: userData.sub || userData.id,
-          email: userData.email,
-          firstName: userData.firstName || null,
-          lastName: userData.lastName || null,
-          workspaceId: userData.workspaceId,
-          role: userData.role || 'USER',
-        };
-
-        // Set authentication state using the correct store
-        setAuth(user, token);
-
-        // Store token in sessionStorage as backup
-        if (typeof window !== 'undefined') {
-          sessionStorage.setItem('accessToken', token);
-        }
-
-        console.log(`OAuth ${provider || 'unknown'} login successful for:`, user.email);
+        const user = await authApi.me();
+        setAuth(user);
 
         // Redirect to dashboard
         router.push('/dashboard');
-      } catch (err) {
-        console.error('Auth callback error:', err);
+      } catch {
         setError('Authentication failed. Please try again.');
       }
     };
 
     handleCallback();
-  }, [token, errorParam, provider, setAuth, router]);
+  }, [errorParam, setAuth, router]);
 
   if (error) {
     return (

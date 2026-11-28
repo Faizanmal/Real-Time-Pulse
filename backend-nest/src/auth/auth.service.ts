@@ -6,6 +6,7 @@ import {
   UnauthorizedException,
   BadRequestException,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -18,6 +19,8 @@ import { EncryptionService } from '../common/services/encryption.service';
 import { RateLimitService } from '../common/services/rate-limit.service';
 import { RecaptchaService } from '../common/services/recaptcha.service';
 import { EmailService } from '../email/email.service';
+import { OnboardingFunnelService } from '../analytics/onboarding-funnel.service';
+import { ConsentType, OnboardingFunnelStage } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 // Extend JwtPayload to include exp
@@ -49,6 +52,8 @@ export class AuthService {
   private readonly SESSION_PREFIX = 'session:';
   private readonly USER_SESSIONS_PREFIX = 'user_sessions:';
   private readonly REFRESH_TOKEN_PREFIX = 'refresh_token:';
+  private readonly USER_REFRESH_TOKENS_PREFIX = 'user_refresh_tokens:';
+  private readonly USER_ACCESS_TOKENS_PREFIX = 'user_access_tokens:';
   private readonly BLACKLIST_PREFIX = 'token_blacklist:';
 
   constructor(
@@ -62,6 +67,7 @@ export class AuthService {
     private readonly rateLimitService: RateLimitService,
     private readonly firebaseAuthService: FirebaseAuthService,
     private readonly emailService: EmailService,
+    @Optional() private readonly onboardingFunnel?: OnboardingFunnelService,
   ) {}
 
   /**
@@ -150,8 +156,31 @@ export class AuthService {
         },
       });
 
+      if (dto.onboardingAnalyticsConsent === true) {
+        await tx.gDPRConsent.create({
+          data: {
+            workspaceId: workspace.id,
+            userId: user.id,
+            subjectEmail: user.email,
+            subjectName: `${user.firstName} ${user.lastName}`.slice(0, 100),
+            consentType: ConsentType.ANALYTICS,
+            purpose: 'Consent-based, pseudonymous onboarding funnel measurement',
+            consented: true,
+            consentedAt: new Date(),
+          },
+        });
+      }
+
       return { user, workspace };
     });
+
+    if (dto.onboardingAnalyticsConsent === true && this.onboardingFunnel) {
+      try {
+        await this.onboardingFunnel.recordStage(result.workspace.id, OnboardingFunnelStage.REGISTERED);
+      } catch {
+        // Funnel telemetry must never fail account registration.
+      }
+    }
 
     // Generate tokens
     const { accessToken, refreshToken } = await this.generateTokenPair(result.user, context);
@@ -276,13 +305,16 @@ export class AuthService {
   /**
    * Handle Google OAuth sign in/sign up
    */
-  async googleAuth(profile: {
-    googleId: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    avatar?: string;
-  }): Promise<AuthResponseDto> {
+  async googleAuth(
+    profile: {
+      googleId: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      avatar?: string;
+    },
+    context: AuthContext = { ip: '127.0.0.1', userAgent: 'oauth' },
+  ): Promise<AuthResponseDto> {
     let user = await this.prisma.user.findUnique({
       where: { googleId: profile.googleId },
     });
@@ -354,10 +386,10 @@ export class AuthService {
       data: { lastLoginAt: new Date() },
     });
 
-    const accessToken = this.generateAccessToken(user);
+    const tokens = await this.generateTokenPair(user, context);
 
     return {
-      accessToken,
+      ...tokens,
       user: {
         id: user.id,
         email: user.email,
@@ -372,14 +404,17 @@ export class AuthService {
   /**
    * Handle GitHub OAuth sign in/sign up
    */
-  async githubAuth(profile: {
-    githubId: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    avatar?: string;
-    username: string;
-  }): Promise<AuthResponseDto> {
+  async githubAuth(
+    profile: {
+      githubId: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      avatar?: string;
+      username: string;
+    },
+    context: AuthContext = { ip: '127.0.0.1', userAgent: 'oauth' },
+  ): Promise<AuthResponseDto> {
     let user = await this.prisma.user.findFirst({
       where: { githubId: profile.githubId },
     });
@@ -448,10 +483,10 @@ export class AuthService {
       data: { lastLoginAt: new Date() },
     });
 
-    const accessToken = this.generateAccessToken(user);
+    const tokens = await this.generateTokenPair(user, context);
 
     return {
-      accessToken,
+      ...tokens,
       user: {
         id: user.id,
         email: user.email,
@@ -466,19 +501,23 @@ export class AuthService {
   /**
    * Handle Firebase authentication
    */
-  async firebaseAuth(idToken: string): Promise<AuthResponseDto> {
+  async firebaseAuth(
+    idToken: string,
+    context: AuthContext = { ip: '127.0.0.1', userAgent: 'firebase' },
+  ): Promise<AuthResponseDto> {
     const decodedToken = await this.firebaseAuthService.verifyIdToken(idToken);
     const userData = await this.firebaseAuthService.createOrUpdateUser(decodedToken);
 
-    const accessToken = this.generateAccessToken({
+    const user = {
       id: userData.id,
       email: userData.email,
       workspaceId: userData.workspaceId,
       role: userData.role,
-    });
+    };
+    const tokens = await this.generateTokenPair(user, context);
 
     return {
-      accessToken,
+      ...tokens,
       user: {
         id: userData.id,
         email: userData.email,
@@ -496,18 +535,32 @@ export class AuthService {
   async refreshToken(
     refreshToken: string,
     context?: AuthContext,
-  ): Promise<{ accessToken: string; expiresIn: number }> {
+  ): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
+    user: Record<string, unknown>;
+  }> {
     const ctx = context || { ip: '127.0.0.1', userAgent: 'test' };
 
     try {
       // Verify refresh token
-      const storedData = await this.cacheService.get(`${this.REFRESH_TOKEN_PREFIX}${refreshToken}`);
+      const storedData = await this.cacheService.consume(
+        `${this.REFRESH_TOKEN_PREFIX}${refreshToken}`,
+      );
 
       if (!storedData) {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      const { userId, fingerprint } = JSON.parse(storedData);
+      const { userId, fingerprint } = JSON.parse(storedData) as {
+        userId: string;
+        fingerprint: string;
+      };
+      await this.cacheService.removeFromSet(
+        `${this.USER_REFRESH_TOKENS_PREFIX}${userId}`,
+        refreshToken,
+      );
 
       // Verify fingerprint matches
       const currentFingerprint = this.generateFingerprint(ctx);
@@ -526,12 +579,20 @@ export class AuthService {
         throw new UnauthorizedException('User not found');
       }
 
-      // Generate new access token
-      const accessToken = this.generateAccessToken(user);
+      // Rotate both tokens. Atomic consume above means concurrent tabs can only rotate once.
+      const tokens = await this.generateTokenPair(user, ctx);
 
       return {
-        accessToken,
+        ...tokens,
         expiresIn: 900,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          workspaceId: user.workspaceId,
+          role: user.role,
+        },
       };
     } catch (error) {
       if (error instanceof UnauthorizedException) {
@@ -591,7 +652,7 @@ export class AuthService {
     };
   }
 
-  async register(dto: any) {
+  async register(dto: SignUpDto) {
     const context: AuthContext = { ip: '127.0.0.1', userAgent: 'test' };
     return this.signUp(dto, context);
   }
@@ -699,14 +760,36 @@ export class AuthService {
   /**
    * Logout current session
    */
-  async logout(userId: string, token?: string): Promise<void> {
+  async logout(userId?: string, token?: string, refreshToken?: string): Promise<void> {
+    let tokenOwner = userId;
     if (token) {
       // Blacklist the token
       const decoded = this.jwtService.decode(token);
+      tokenOwner ||= decoded?.sub;
       if (decoded && decoded.exp) {
         const ttl = decoded.exp - Math.floor(Date.now() / 1000);
         if (ttl > 0) {
           await this.cacheService.set(`${this.BLACKLIST_PREFIX}${token}`, 'blacklisted', ttl);
+        }
+      }
+      if (tokenOwner) {
+        await this.cacheService.removeFromSet(
+          `${this.USER_ACCESS_TOKENS_PREFIX}${tokenOwner}`,
+          token,
+        );
+      }
+    }
+    if (refreshToken) {
+      const key = `${this.REFRESH_TOKEN_PREFIX}${refreshToken}`;
+      const storedData = await this.cacheService.consume(key);
+      if (storedData) {
+        const session = JSON.parse(storedData) as { userId?: string };
+        const ownerId = session.userId || userId;
+        if (ownerId) {
+          await this.cacheService.removeFromSet(
+            `${this.USER_REFRESH_TOKENS_PREFIX}${ownerId}`,
+            refreshToken,
+          );
         }
       }
     }
@@ -716,8 +799,21 @@ export class AuthService {
    * Logout all sessions for a user
    */
   async logoutAllSessions(userId: string): Promise<void> {
-    // In production, iterate through and invalidate all sessions
-    // For now, increment the user's token version
+    const sessionKey = `${this.USER_REFRESH_TOKENS_PREFIX}${userId}`;
+    const accessKey = `${this.USER_ACCESS_TOKENS_PREFIX}${userId}`;
+    const tokens = await this.cacheService.getSetMembers(sessionKey);
+    const accessTokens = await this.cacheService.getSetMembers(accessKey);
+    for (const accessToken of accessTokens) {
+      const decoded = this.jwtService.decode(accessToken);
+      const ttl = decoded?.exp ? decoded.exp - Math.floor(Date.now() / 1000) : 0;
+      if (ttl > 0)
+        await this.cacheService.set(`${this.BLACKLIST_PREFIX}${accessToken}`, 'blacklisted', ttl);
+    }
+    await this.cacheService.deleteMany([
+      ...tokens.map((token) => `${this.REFRESH_TOKEN_PREFIX}${token}`),
+      sessionKey,
+      accessKey,
+    ]);
     this.logger.log(`Logged out all sessions for user: ${userId}`);
   }
 
@@ -779,6 +875,20 @@ export class AuthService {
         createdAt: new Date().toISOString(),
       }),
       30 * 24 * 60 * 60, // 30 days
+    );
+    await this.cacheService.addToSet(
+      `${this.USER_REFRESH_TOKENS_PREFIX}${user.id}`,
+      refreshToken,
+      30 * 24 * 60 * 60,
+    );
+    const accessPayload = this.jwtService.decode(accessToken);
+    const accessTokenTtl = accessPayload?.exp
+      ? Math.max(1, accessPayload.exp - Math.floor(Date.now() / 1000))
+      : 15 * 60;
+    await this.cacheService.addToSet(
+      `${this.USER_ACCESS_TOKENS_PREFIX}${user.id}`,
+      accessToken,
+      accessTokenTtl,
     );
 
     return { accessToken, refreshToken };

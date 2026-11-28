@@ -22,7 +22,7 @@ export class CommentsService {
   async create(workspaceId: string, userId: string, dto: CreateCommentDto) {
     // Verify portal exists and user has access
     const portal = await this.prisma.portal.findFirst({
-      where: { id: dto.portalId, workspaceId },
+      where: { id: dto.portalId, workspaceId, deletedAt: null },
     });
 
     if (!portal) {
@@ -211,7 +211,7 @@ export class CommentsService {
   ) {
     // Verify portal access
     const portal = await this.prisma.portal.findFirst({
-      where: { id: portalId, workspaceId },
+      where: { id: portalId, workspaceId, deletedAt: null },
     });
 
     if (!portal) {
@@ -324,7 +324,7 @@ export class CommentsService {
 
     // Verify workspace access via portal
     const portal = await this.prisma.portal.findFirst({
-      where: { id: comment.portalId, workspaceId },
+      where: { id: comment.portalId, workspaceId, deletedAt: null },
     });
 
     if (!portal) {
@@ -337,7 +337,7 @@ export class CommentsService {
   /**
    * Update a comment
    */
-  async update(id: string, userId: string, dto: UpdateCommentDto) {
+  async update(id: string, userId: string, workspaceId: string, dto: UpdateCommentDto) {
     const comment = await this.prisma.comment.findFirst({
       where: { id, isDeleted: false },
     });
@@ -350,6 +350,12 @@ export class CommentsService {
     if (comment.authorId !== userId) {
       throw new ForbiddenException('You can only edit your own comments');
     }
+
+    const activePortal = await this.prisma.portal.findFirst({
+      where: { id: comment.portalId, workspaceId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!activePortal) throw new ForbiddenException('Access denied');
 
     // Extract new mentions
     const mentions = this.extractMentions(dto.content);
@@ -390,6 +396,12 @@ export class CommentsService {
     if (!comment) {
       throw new NotFoundException('Comment not found');
     }
+
+    const activePortal = await this.prisma.portal.findFirst({
+      where: { id: comment.portalId, workspaceId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!activePortal) throw new ForbiddenException('Access denied');
 
     // Check if user is author or workspace admin
     const user = await this.prisma.user.findFirst({

@@ -24,6 +24,7 @@ module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/src/'],
   moduleNameMapper: {
+    '^common/(.*)$': '<rootDir>/src/common/$1',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@common/(.*)$': '<rootDir>/src/common/$1',
     '^@testing/(.*)$': '<rootDir>/src/common/testing/$1',

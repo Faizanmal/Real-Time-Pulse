@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface SalesforceIntegration {
   accessToken: string;
   refreshToken?: string;
@@ -38,7 +39,7 @@ export class SalesforceService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('Salesforce connection test failed', error);
+      this.logger.error('Salesforce connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -88,7 +89,7 @@ export class SalesforceService {
 
       return this.executeSOQL(integration, query);
     } catch (error) {
-      this.logger.error('Failed to fetch Salesforce accounts', error);
+      this.logger.error('Failed to fetch Salesforce accounts' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -113,7 +114,7 @@ export class SalesforceService {
 
       return this.executeSOQL(integration, query);
     } catch (error) {
-      this.logger.error('Failed to fetch Salesforce contacts', error);
+      this.logger.error('Failed to fetch Salesforce contacts' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -138,7 +139,7 @@ export class SalesforceService {
 
       return this.executeSOQL(integration, query);
     } catch (error) {
-      this.logger.error('Failed to fetch Salesforce leads', error);
+      this.logger.error('Failed to fetch Salesforce leads' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -163,7 +164,7 @@ export class SalesforceService {
 
       return this.executeSOQL(integration, query);
     } catch (error) {
-      this.logger.error('Failed to fetch Salesforce opportunities', error);
+      this.logger.error('Failed to fetch Salesforce opportunities' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -188,7 +189,7 @@ export class SalesforceService {
 
       return this.executeSOQL(integration, query);
     } catch (error) {
-      this.logger.error('Failed to fetch Salesforce cases', error);
+      this.logger.error('Failed to fetch Salesforce cases' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -234,7 +235,7 @@ export class SalesforceService {
         },
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Salesforce analytics', error);
+      this.logger.error('Failed to fetch Salesforce analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -260,7 +261,7 @@ export class SalesforceService {
         return this.executeSOQL(integration, query);
       }
     } catch (error) {
-      this.logger.error('Failed to fetch Salesforce reports', error);
+      this.logger.error('Failed to fetch Salesforce reports' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -285,7 +286,7 @@ export class SalesforceService {
         return this.executeSOQL(integration, query);
       }
     } catch (error) {
-      this.logger.error('Failed to fetch Salesforce dashboards', error);
+      this.logger.error('Failed to fetch Salesforce dashboards' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -311,7 +312,7 @@ export class SalesforceService {
       );
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to execute Salesforce SOQL', error);
+      this.logger.error('Failed to execute Salesforce SOQL' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -336,7 +337,7 @@ export class SalesforceService {
       );
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to create Salesforce bulk job', error);
+      this.logger.error('Failed to create Salesforce bulk job' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

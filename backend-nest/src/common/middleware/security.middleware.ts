@@ -3,6 +3,7 @@ import * as crypto from 'crypto';
 import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response, NextFunction } from 'express';
+import { sanitizeSensitivePath } from '../utils/sensitive-path';
 
 import { CacheService } from '../../cache/cache.service';
 
@@ -45,8 +46,9 @@ export class SecurityMiddleware implements NestMiddleware {
       /%2e%2e%2f/gi,
       /%252e%252e%252f/gi,
 
-      // Command injection
-      /(\||;|`|\$\(|&&|\|\|)/,
+      // Command injection. Bare `;` is omitted — it is common in prose/JSON and caused
+      // false positives on legitimate portal descriptions and client-visible notes.
+      /(\||`|\$\(|&&|\|\|)/,
 
       // File inclusion
       /(php|data|file|zip|phar):\/\//i,
@@ -126,7 +128,7 @@ export class SecurityMiddleware implements NestMiddleware {
       userAgent,
       fingerprint,
       timestamp: new Date(),
-      path: req.path,
+      path: sanitizeSensitivePath(req.path),
       method: req.method,
     };
   }

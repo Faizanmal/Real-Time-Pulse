@@ -158,7 +158,9 @@ describe('AuthService', () => {
       const registerDto = {
         email: 'new@example.com',
         password: 'securepassword123',
-        name: 'New User',
+        firstName: 'New',
+        lastName: 'User',
+        workspaceName: 'New User Workspace',
       };
 
       prismaService.user.findUnique.mockResolvedValue(null);
@@ -180,7 +182,9 @@ describe('AuthService', () => {
         service.register({
           email: 'existing@example.com',
           password: 'password',
-          name: 'User',
+          firstName: 'Test',
+          lastName: 'User',
+          workspaceName: 'Existing Workspace',
         }),
       ).rejects.toThrow(BadRequestException);
     });

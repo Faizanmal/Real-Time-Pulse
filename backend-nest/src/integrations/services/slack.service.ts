@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 type Integration = any;
 
 @Injectable()
@@ -26,7 +27,7 @@ export class SlackService {
       );
       return response.data.ok === true;
     } catch (error) {
-      this.logger.error('Slack connection test failed', error);
+      this.logger.error('Slack connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -88,7 +89,7 @@ export class SlackService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to send Slack message', error);
+      this.logger.error('Failed to send Slack message' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -108,7 +109,7 @@ export class SlackService {
       await firstValueFrom(this.httpService.post(webhookUrl, message));
       return true;
     } catch (error) {
-      this.logger.error('Failed to send Slack webhook message', error);
+      this.logger.error('Failed to send Slack webhook message' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -132,7 +133,7 @@ export class SlackService {
 
       return response.data.channels;
     } catch (error) {
-      this.logger.error('Failed to fetch Slack channels', error);
+      this.logger.error('Failed to fetch Slack channels' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -155,7 +156,7 @@ export class SlackService {
       // Filter out bots and deactivated users
       return response.data.members.filter((user: any) => !user.is_bot && !user.deleted);
     } catch (error) {
-      this.logger.error('Failed to fetch Slack users', error);
+      this.logger.error('Failed to fetch Slack users' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -187,7 +188,7 @@ export class SlackService {
 
       return response.data.messages;
     } catch (error) {
-      this.logger.error('Failed to fetch Slack messages', error);
+      this.logger.error('Failed to fetch Slack messages' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -214,7 +215,7 @@ export class SlackService {
         },
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Slack analytics', error);
+      this.logger.error('Failed to fetch Slack analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

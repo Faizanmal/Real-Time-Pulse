@@ -18,7 +18,7 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { gdprApi, type GdprConsent, type GdprDataRequest, type GdprComplianceReport } from '@/lib/api/index';
+import { gdprApi, type GdprConsent, type GdprDataRequest, type GdprComplianceReport, type SelfDeletionRequest } from '@/lib/api/index';
 
 const requestTypeLabels: Record<string, string> = {
   access: 'Data Access (DSAR)',
@@ -47,6 +47,21 @@ export default function GdprPage() {
   const [requestType, setRequestType] = useState('access');
   const [requestEmail, setRequestEmail] = useState('');
   const [saving, setSaving] = useState(false);
+  const [selfDeletion, setSelfDeletion] = useState<SelfDeletionRequest | null>(null);
+  const [selfAccountLoading, setSelfAccountLoading] = useState(true);
+  const [selfAccountError, setSelfAccountError] = useState<string | null>(null);
+
+  const loadSelfAccount = useCallback(async () => {
+    setSelfAccountLoading(true);
+    setSelfAccountError(null);
+    try {
+      setSelfDeletion(await gdprApi.getSelfDeletionRequest());
+    } catch {
+      setSelfAccountError('Account privacy controls could not be loaded. Refresh to retry.');
+    } finally {
+      setSelfAccountLoading(false);
+    }
+  }, []);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -70,6 +85,8 @@ export default function GdprPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => { void loadSelfAccount(); }, [loadSelfAccount]);
 
   const handleSubmitRequest = async () => {
     if (!requestEmail.trim()) {
@@ -136,6 +153,29 @@ export default function GdprPage() {
     }
   };
 
+  const handleRequestSelfDeletion = async () => {
+    if (!confirm('Request account deletion? The request has a 30-day cancellation period and does not immediately remove workspace or billing records.')) return;
+    try {
+      setSelfDeletion(await gdprApi.requestSelfDeletion());
+      toast.success('Deletion request submitted. You can cancel it during the 30-day period.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Account deletion request failed.';
+      toast.error(message);
+    }
+  };
+
+  const handleCancelSelfDeletion = async () => {
+    if (!selfDeletion) return;
+    try {
+      await gdprApi.cancelSelfDeletion(selfDeletion.id);
+      setSelfDeletion(null);
+      toast.success('Deletion request cancelled.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Deletion request could not be cancelled.');
+      await loadSelfAccount();
+    }
+  };
+
   const stats = {
     totalConsents: consents.length,
     grantedConsents: consents.filter(c => c.granted).length,
@@ -175,6 +215,23 @@ export default function GdprPage() {
           </Button>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>My account data</CardTitle>
+          <CardDescription>Download a scoped export or request delayed account deletion. Workspace ownership and billing records require review before erasure.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center gap-3">
+          {selfAccountLoading ? <p role="status">Loading account privacy status…</p> : selfAccountError ? <p role="alert">{selfAccountError}</p> : selfDeletion ? (
+            <>
+              <p role="status">Deletion request pending{selfDeletion.metadata?.scheduledFor ? ` until ${new Date(selfDeletion.metadata.scheduledFor).toLocaleDateString()}` : ''}.</p>
+              <Button variant="outline" onClick={() => void handleCancelSelfDeletion()}>Cancel deletion request</Button>
+            </>
+          ) : (
+            <Button variant="destructive" onClick={() => void handleRequestSelfDeletion()}>Request account deletion</Button>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Compliance Score */}
       {complianceReport && (

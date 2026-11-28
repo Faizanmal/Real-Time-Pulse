@@ -13,13 +13,14 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AgencyRoleGuard } from '../auth/guards/agency-role.guard';
 
 import { CommentsService } from './comments.service';
 import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
 
 @ApiTags('Comments')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, AgencyRoleGuard)
 @Controller('comments')
 export class CommentsController {
   constructor(private readonly commentsService: CommentsService) {}
@@ -68,7 +69,7 @@ export class CommentsController {
   @ApiOperation({ summary: 'Update a comment' })
   @ApiResponse({ status: 200, description: 'Comment updated successfully' })
   async update(@Request() req: any, @Param('id') id: string, @Body() dto: UpdateCommentDto) {
-    return this.commentsService.update(id, req.user.id, dto);
+    return this.commentsService.update(id, req.user.id, req.user.workspaceId, dto);
   }
 
   @Delete(':id')

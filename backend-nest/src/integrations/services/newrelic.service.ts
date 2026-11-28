@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface NewRelicIntegration {
   accessToken: string; // API Key (User API Key or REST API Key)
   settings: {
@@ -56,7 +57,7 @@ export class NewRelicService {
 
       return response.status === 200 && !response.data.errors;
     } catch (error) {
-      this.logger.error('New Relic connection test failed', error);
+      this.logger.error('New Relic connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -104,7 +105,7 @@ export class NewRelicService {
 
       return response.data.applications || [];
     } catch (error) {
-      this.logger.error('Failed to fetch New Relic applications', error);
+      this.logger.error('Failed to fetch New Relic applications' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -142,7 +143,7 @@ export class NewRelicService {
 
       return response.data.data?.actor?.account?.nrql?.results || [];
     } catch (error) {
-      this.logger.error('Failed to fetch New Relic APM metrics', error);
+      this.logger.error('Failed to fetch New Relic APM metrics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -190,7 +191,7 @@ export class NewRelicService {
         }
       );
     } catch (error) {
-      this.logger.error('Failed to fetch New Relic alerts', error);
+      this.logger.error('Failed to fetch New Relic alerts' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -234,7 +235,7 @@ export class NewRelicService {
 
       return response.data.data?.actor?.entitySearch?.results?.entities || [];
     } catch (error) {
-      this.logger.error('Failed to fetch New Relic synthetics', error);
+      this.logger.error('Failed to fetch New Relic synthetics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -264,7 +265,7 @@ export class NewRelicService {
 
       return response.data.data?.actor?.account?.nrql?.results || [];
     } catch (error) {
-      this.logger.error('Failed to fetch New Relic infrastructure', error);
+      this.logger.error('Failed to fetch New Relic infrastructure' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -306,7 +307,7 @@ export class NewRelicService {
 
       return response.data.data?.actor?.account?.nrql || {};
     } catch (error) {
-      this.logger.error('Failed to execute NRQL query', error);
+      this.logger.error('Failed to execute NRQL query' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -345,7 +346,7 @@ export class NewRelicService {
         errorRate: response.data.data?.actor?.account?.errorRate?.results || [],
       };
     } catch (error) {
-      this.logger.error('Failed to fetch New Relic error analytics', error);
+      this.logger.error('Failed to fetch New Relic error analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -404,7 +405,7 @@ export class NewRelicService {
         topTransactions: data.topTransactions?.results || [],
       };
     } catch (error) {
-      this.logger.error('Failed to fetch New Relic analytics', error);
+      this.logger.error('Failed to fetch New Relic analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -462,7 +463,7 @@ export class NewRelicService {
 
       return response.data.data?.alertsNrqlConditionStaticCreate;
     } catch (error) {
-      this.logger.error('Failed to create New Relic alert condition', error);
+      this.logger.error('Failed to create New Relic alert condition' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface ShopifyIntegration {
   accessToken: string;
   settings: {
@@ -78,7 +79,7 @@ export class ShopifyService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('Shopify connection test failed', error);
+      this.logger.error('Shopify connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -141,7 +142,7 @@ export class ShopifyService {
 
       return response.data.orders;
     } catch (error) {
-      this.logger.error('Failed to fetch Shopify orders', error);
+      this.logger.error('Failed to fetch Shopify orders' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -164,7 +165,7 @@ export class ShopifyService {
 
       return response.data.products;
     } catch (error) {
-      this.logger.error('Failed to fetch Shopify products', error);
+      this.logger.error('Failed to fetch Shopify products' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -186,7 +187,7 @@ export class ShopifyService {
 
       return response.data.customers;
     } catch (error) {
-      this.logger.error('Failed to fetch Shopify customers', error);
+      this.logger.error('Failed to fetch Shopify customers' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -209,7 +210,7 @@ export class ShopifyService {
 
       return response.data.inventory_levels;
     } catch (error) {
-      this.logger.error('Failed to fetch Shopify inventory', error);
+      this.logger.error('Failed to fetch Shopify inventory' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -275,7 +276,7 @@ export class ShopifyService {
         dailyRevenue,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Shopify analytics', error);
+      this.logger.error('Failed to fetch Shopify analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -287,7 +288,7 @@ export class ShopifyService {
       );
       return response.data.shop;
     } catch (error) {
-      this.logger.error('Failed to fetch Shopify shop info', error);
+      this.logger.error('Failed to fetch Shopify shop info' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -309,7 +310,7 @@ export class ShopifyService {
 
       return response.data.custom_collections;
     } catch (error) {
-      this.logger.error('Failed to fetch Shopify collections', error);
+      this.logger.error('Failed to fetch Shopify collections' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -342,7 +343,7 @@ export class ShopifyService {
       );
       return response.data.webhook;
     } catch (error) {
-      this.logger.error('Failed to register Shopify webhook', error);
+      this.logger.error('Failed to register Shopify webhook' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

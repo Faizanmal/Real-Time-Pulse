@@ -9,6 +9,7 @@ interface PipedriveIntegration {
   };
 }
 
+import { providerHttpStatus } from '../connector-security.util';
 @Injectable()
 export class PipedriveService {
   private readonly logger = new Logger(PipedriveService.name);
@@ -32,7 +33,7 @@ export class PipedriveService {
       );
       return response.data.success === true;
     } catch (error) {
-      this.logger.error('Pipedrive connection test failed', error);
+      this.logger.error('Pipedrive connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -88,7 +89,7 @@ export class PipedriveService {
 
       return response.data.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Pipedrive deals', error);
+      this.logger.error('Failed to fetch Pipedrive deals' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -109,7 +110,7 @@ export class PipedriveService {
 
       return response.data.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Pipedrive persons', error);
+      this.logger.error('Failed to fetch Pipedrive persons' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -130,7 +131,7 @@ export class PipedriveService {
 
       return response.data.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Pipedrive organizations', error);
+      this.logger.error('Failed to fetch Pipedrive organizations' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -159,7 +160,7 @@ export class PipedriveService {
 
       return response.data.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Pipedrive activities', error);
+      this.logger.error('Failed to fetch Pipedrive activities' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -177,7 +178,7 @@ export class PipedriveService {
 
       return response.data.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Pipedrive pipelines', error);
+      this.logger.error('Failed to fetch Pipedrive pipelines' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -198,7 +199,7 @@ export class PipedriveService {
 
       return response.data.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Pipedrive stages', error);
+      this.logger.error('Failed to fetch Pipedrive stages' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -219,7 +220,7 @@ export class PipedriveService {
 
       return response.data.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Pipedrive products', error);
+      this.logger.error('Failed to fetch Pipedrive products' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -279,7 +280,7 @@ export class PipedriveService {
         })),
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Pipedrive analytics', error);
+      this.logger.error('Failed to fetch Pipedrive analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

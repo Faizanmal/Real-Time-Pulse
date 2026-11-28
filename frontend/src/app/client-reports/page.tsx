@@ -1,5 +1,5 @@
-import ClientReports from '@/components/client-report/ClientReports';
+import ClientReportingDashboard from '@/components/reporting/ClientReportingDashboard';
 
 export default function ClientReportsPage() {
-  return <ClientReports />;
+  return <ClientReportingDashboard />;
 }

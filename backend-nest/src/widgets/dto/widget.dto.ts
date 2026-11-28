@@ -15,21 +15,21 @@ export class CreateWidgetDto {
   name: string;
 
   @IsEnum([
-    'METRIC',
-    'CHART_LINE',
-    'CHART_BAR',
-    'CHART_PIE',
-    'CHART_AREA',
-    'TABLE',
-    'LIST',
-    'PROGRESS',
-    'KANBAN',
-    'TIMELINE',
-    'CALENDAR',
-    'MAP',
-    'GAUGE',
-    'TEXT',
+    'TEXT_BLOCK',
     'IMAGE',
+    'VIDEO_EMBED',
+    'ASANA_TASK_LIST',
+    'ASANA_PROJECT_PROGRESS',
+    'CLICKUP_TASK_LIST',
+    'CLICKUP_PROJECT_PROGRESS',
+    'TRELLO_CARD_LIST',
+    'TRELLO_BOARD_PROGRESS',
+    'GA4_METRIC_KPI',
+    'GA4_LINE_GRAPH',
+    'GA4_TOP_PAGES',
+    'HARVEST_BUDGET_TRACKER',
+    'HARVEST_TOTAL_HOURS',
+    'TOGGL_TOTAL_HOURS',
   ])
   type: string;
 

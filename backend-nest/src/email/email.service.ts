@@ -28,6 +28,11 @@ export class EmailService {
   }
 
   private initializeTransporter() {
+    if (process.env.EMAIL_TEST_TRANSPORT === 'true') {
+      this.transporter = nodemailer.createTransport({ jsonTransport: true });
+      this.logger.log('Using local JSON email transport; messages will not be sent externally.');
+      return;
+    }
     const config = this.configService.get('email');
 
     this.transporter = nodemailer.createTransport({

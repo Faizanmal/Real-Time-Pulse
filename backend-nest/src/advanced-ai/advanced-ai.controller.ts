@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Param, Query, UseGuards, Req, Patch } from
 import { AIModelType, AIProvider } from '@prisma/client';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AiUsageLimitGuard } from '../billing/ai-usage-limit.guard';
 import type { AuthenticatedRequest } from '../common/interfaces/auth.interface';
 
 import { AdvancedAiService } from './advanced-ai.service';
@@ -48,6 +49,7 @@ export class AdvancedAiController {
 
   // Predictions
   @Post('predictions')
+  @UseGuards(AiUsageLimitGuard)
   async createPrediction(
     @Req() req: AuthenticatedRequest,
     @Body()
@@ -80,6 +82,7 @@ export class AdvancedAiController {
 
   // Natural Language Queries
   @Post('query')
+  @UseGuards(AiUsageLimitGuard)
   async processNaturalLanguageQuery(
     @Req() req: AuthenticatedRequest,
     @Body()
@@ -97,6 +100,7 @@ export class AdvancedAiController {
   }
 
   @Post('sql-generation')
+  @UseGuards(AiUsageLimitGuard)
   async generateSQL(@Req() req: AuthenticatedRequest, @Body() data: { query: string }) {
     return this.advancedAiService.generateSQLFromNaturalLanguage(
       req.user.workspaceId,
@@ -112,6 +116,7 @@ export class AdvancedAiController {
 
   // Forecasting
   @Post('forecast')
+  @UseGuards(AiUsageLimitGuard)
   async forecastTimeSeries(
     @Req() req: AuthenticatedRequest,
     @Body()
@@ -126,6 +131,7 @@ export class AdvancedAiController {
 
   // Anomaly Detection
   @Post('anomalies')
+  @UseGuards(AiUsageLimitGuard)
   async detectAnomalies(
     @Req() req: AuthenticatedRequest,
     @Body()
@@ -140,6 +146,7 @@ export class AdvancedAiController {
 
   // Recommendations
   @Get('recommendations/:portalId')
+  @UseGuards(AiUsageLimitGuard)
   async generateRecommendations(
     @Req() req: AuthenticatedRequest,
     @Param('portalId') portalId: string,

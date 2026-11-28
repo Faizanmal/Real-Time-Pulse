@@ -1,18 +1,111 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards, Request, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { UsageMetricType, PeriodType } from '@prisma/client';
+import type { Response } from 'express';
 
+import { AgencyRoleGuard } from '../auth/guards/agency-role.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { AuthenticatedRequest } from '../common/interfaces/auth.interface';
 
 import { AnalyticsService } from './analytics.service';
+import { MetricProvenanceService } from './metric-provenance.service';
+import { RecordProductTelemetryDto } from './product-analytics.dto';
+import { ProductAnalyticsService } from './product-analytics.service';
+import { CreateValueLedgerInput, ValueLedgerService } from './value-ledger.service';
 
 @ApiTags('Analytics')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('analytics')
 export class AnalyticsController {
-  constructor(private readonly analyticsService: AnalyticsService) {}
+  constructor(
+    private readonly analyticsService: AnalyticsService,
+    private readonly metricProvenance: MetricProvenanceService,
+    private readonly valueLedger: ValueLedgerService,
+    private readonly productAnalytics: ProductAnalyticsService,
+  ) {}
+
+  @Get('metric-catalog')
+  @UseGuards(AgencyRoleGuard)
+  async getMetricCatalog(@Request() req: AuthenticatedRequest) {
+    return this.metricProvenance.listCatalog(req.user.workspaceId);
+  }
+
+  @Get('metric-mappings')
+  @UseGuards(AgencyRoleGuard)
+  async getMetricMappings(@Request() req: AuthenticatedRequest) {
+    return this.metricProvenance.listMappings(req.user.workspaceId);
+  }
+
+  @Post('metric-mappings')
+  @UseGuards(AgencyRoleGuard)
+  async createMetricMapping(
+    @Request() req: AuthenticatedRequest,
+    @Body()
+    body: {
+      portalId: string;
+      integrationId: string;
+      metricDefinitionId: string;
+      displayName: string;
+      clientVisible?: boolean;
+      allowSourceDrilldown?: boolean;
+      targetValue?: number;
+      targetUnit?: string;
+    },
+  ) {
+    return this.metricProvenance.createMapping(req.user.workspaceId, body);
+  }
+
+  @Post('metric-mappings/:id/reprocess')
+  @UseGuards(AgencyRoleGuard)
+  async reprocessMetric(
+    @Request() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: { reason: string },
+  ) {
+    return this.metricProvenance.reprocess(req.user.workspaceId, req.user.id, id, body.reason);
+  }
+
+  @Post('metric-mappings/:id/milestones')
+  @UseGuards(AgencyRoleGuard)
+  async createMetricMilestone(
+    @Request() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: { name: string; description?: string; targetValue: number; targetDate: string },
+  ) {
+    return this.metricProvenance.createMilestone(req.user.workspaceId, id, body);
+  }
+
+  @Get('value-ledger')
+  @UseGuards(AgencyRoleGuard)
+  async getValueLedger(@Request() req: AuthenticatedRequest, @Query('portalId') portalId: string) {
+    return this.valueLedger.list(req.user.workspaceId, req.user.id, portalId);
+  }
+
+  @Post('value-ledger')
+  @UseGuards(AgencyRoleGuard)
+  async createValueLedgerDraft(
+    @Request() req: AuthenticatedRequest,
+    @Body() body: CreateValueLedgerInput,
+  ) {
+    return this.valueLedger.createDraft(req.user.workspaceId, req.user.id, body);
+  }
+
+  @Post('value-ledger/:id/approve')
+  @UseGuards(AgencyRoleGuard)
+  async approveValueLedgerEntry(
+    @Request() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: { expectedRevision: number; clientVisible: boolean },
+  ) {
+    return this.valueLedger.approve(
+      req.user.workspaceId,
+      req.user.id,
+      id,
+      body.expectedRevision,
+      body.clientVisible,
+    );
+  }
 
   @Get('dashboard')
   @ApiOperation({ summary: 'Get workspace dashboard overview' })
@@ -94,5 +187,46 @@ export class AnalyticsController {
       metadata: body.metadata,
     });
     return { message: 'Metric recorded' };
+  }
+
+  @Post('product-events')
+  @UseGuards(AgencyRoleGuard)
+  @ApiOperation({ summary: 'Record a tenant-scoped, idempotent product or cost event' })
+  async recordProductEvent(
+    @Request() req: AuthenticatedRequest,
+    @Body() body: RecordProductTelemetryDto,
+  ) {
+    return this.productAnalytics.record(req.user.workspaceId, body);
+  }
+
+  @Get('product-analytics')
+  @UseGuards(AgencyRoleGuard)
+  @ApiOperation({ summary: 'Get feature adoption, guardrail, cost and experiment summaries' })
+  async getProductAnalytics(@Request() req: AuthenticatedRequest, @Query('days') days?: string) {
+    return this.productAnalytics.summary(
+      req.user.workspaceId,
+      days === undefined ? 30 : Number(days),
+    );
+  }
+
+  @Get('product-analytics/experiments.csv')
+  @UseGuards(AgencyRoleGuard)
+  @ApiOperation({ summary: 'Export aggregated experiment results for this workspace as CSV' })
+  async exportExperimentResults(
+    @Request() req: AuthenticatedRequest,
+    @Query('days') days: string | undefined,
+    @Res() response: Response,
+  ): Promise<void> {
+    const csv = await this.productAnalytics.exportExperimentsCsv(
+      req.user.workspaceId,
+      days === undefined ? 30 : Number(days),
+    );
+    response.set({
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="experiment-results.csv"',
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff',
+    });
+    response.send(csv);
   }
 }

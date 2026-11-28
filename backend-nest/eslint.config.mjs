@@ -65,6 +65,8 @@ export default tseslint.config(
     },
 
     rules: {
+      // Existing checked-in source uses CRLF on Windows; respect either line ending.
+      'prettier/prettier': ['error', { endOfLine: 'auto' }],
       // TypeScript safety
       '@typescript-eslint/no-explicit-any': 'off', // 1889
       '@typescript-eslint/no-unsafe-assignment': 'off', // 1750

@@ -10,6 +10,7 @@ export interface BillingPlan {
   interval: 'month' | 'year';
   features: string[];
   popular?: boolean;
+  checkoutAvailable?: boolean;
   limits: {
     portals: number;
     widgets: number;
@@ -17,7 +18,7 @@ export interface BillingPlan {
     dataRetentionDays: number;
     apiCalls: number;
   };
-  stripePriceId: string;
+  stripePriceId?: string;
 }
 
 export interface Subscription {
@@ -74,7 +75,13 @@ export const billingApi = {
   },
 
   createCheckoutSession: async (planId: string): Promise<{ url: string; sessionId: string }> => {
-    return apiClient.post<{ url: string; sessionId: string }>('/billing/checkout', { planId });
+    if (planId === 'TRIAL') throw new Error('The Trial plan does not require checkout.');
+    const origin = window.location.origin;
+    return apiClient.post<{ url: string; sessionId: string }>('/billing/checkout', {
+      plan: planId.toUpperCase(),
+      successUrl: `${origin}/dashboard/billing?checkout=success`,
+      cancelUrl: `${origin}/dashboard/billing?checkout=cancelled`,
+    });
   },
 
   createPortalSession: async (returnUrl?: string): Promise<{ url: string }> => {

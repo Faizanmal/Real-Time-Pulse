@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean, IsNumber, IsDateString, Min } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsNumber, IsDateString, Min, IsEmail, MaxLength, MinLength, IsArray, ArrayUnique, IsUUID } from 'class-validator';
 
 export class CreateShareLinkDto {
   @ApiProperty({ description: 'Portal ID to create share link for' })
@@ -39,10 +39,22 @@ export class CreateShareLinkDto {
   @IsOptional()
   allowComments?: boolean;
 
+  @ApiPropertyOptional({
+    description: 'Allow assigned client accounts to respond to versioned decisions',
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  allowDecisions?: boolean;
+
   @ApiPropertyOptional({ description: 'Whether the share link is active' })
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @ApiPropertyOptional({ description: 'When set, only these same-workspace client accounts can use the link. Empty preserves bearer-link access.' })
+  @IsArray() @ArrayUnique() @IsUUID('all', { each: true }) @IsOptional()
+  clientUserIds?: string[];
 }
 
 export class UpdateShareLinkDto extends PartialType(CreateShareLinkDto) {}
@@ -52,4 +64,15 @@ export class AccessShareLinkDto {
   @IsString()
   @IsOptional()
   password?: string;
+}
+
+export class SharedCommentDto {
+  @IsString() @MinLength(1) @MaxLength(80) displayName: string;
+  @IsString() @MinLength(1) @MaxLength(2000) content: string;
+  @IsString() @IsOptional() password?: string;
+}
+
+export class ShareAccessRequestDto {
+  @IsEmail() @MaxLength(254) email: string;
+  @IsString() @IsOptional() @MaxLength(1000) message?: string;
 }

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Patch, Param, Body, UseGuards, Query } from '@ne
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AiUsageLimitGuard } from '../billing/ai-usage-limit.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 import type { RequestUser } from '../common/interfaces/auth.interface';
 
@@ -29,6 +30,15 @@ export class AIInsightsController {
   /**
    * Get insights for a specific portal
    */
+  @Get('portal/:portalId/risk')
+  @ApiOperation({ summary: 'Get explainable rule-based client confidence risk' })
+  async getPortalConfidenceRisk(
+    @Param('portalId') portalId: string,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.aiInsightsService.getPortalConfidenceRisk(portalId, user.workspaceId);
+  }
+
   @Get('portal/:portalId')
   @ApiOperation({ summary: 'Get portal-specific insights' })
   async getPortalInsights(@Param('portalId') portalId: string, @CurrentUser() user: RequestUser) {
@@ -39,6 +49,7 @@ export class AIInsightsController {
    * Generate new insights for a portal
    */
   @Post('portal/:portalId/generate')
+  @UseGuards(AiUsageLimitGuard)
   @ApiOperation({ summary: 'Generate AI insights for portal' })
   async generateInsights(@Param('portalId') portalId: string, @CurrentUser() user: RequestUser) {
     return this.aiInsightsService.generateInsights(portalId, user.workspaceId);
@@ -48,6 +59,7 @@ export class AIInsightsController {
    * Generate predictive insights for a portal
    */
   @Post('portal/:portalId/predict')
+  @UseGuards(AiUsageLimitGuard)
   @ApiOperation({ summary: 'Generate predictive insights for portal' })
   async generatePredictiveInsights(
     @Param('portalId') portalId: string,
@@ -60,6 +72,7 @@ export class AIInsightsController {
    * Natural language query
    */
   @Post('query')
+  @UseGuards(AiUsageLimitGuard)
   @ApiOperation({ summary: 'Ask AI about your workspace data' })
   @ApiBody({
     schema: {
@@ -84,7 +97,7 @@ export class AIInsightsController {
   @Patch(':id/dismiss')
   @ApiOperation({ summary: 'Dismiss an insight' })
   async dismissInsight(@Param('id') id: string, @CurrentUser() user: RequestUser) {
-    return this.aiInsightsService.dismissInsight(id, user.id);
+    return this.aiInsightsService.dismissInsight(id, user.id, user.workspaceId);
   }
 
   /**
@@ -92,7 +105,7 @@ export class AIInsightsController {
    */
   @Patch(':id/action')
   @ApiOperation({ summary: 'Mark insight as actioned' })
-  async actionInsight(@Param('id') id: string) {
-    return this.aiInsightsService.actionInsight(id);
+  async actionInsight(@Param('id') id: string, @CurrentUser() user: RequestUser) {
+    return this.aiInsightsService.actionInsight(id, user.id, user.workspaceId);
   }
 }

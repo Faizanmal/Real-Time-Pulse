@@ -5,7 +5,7 @@
  * GraphQL resolver for Portal operations with subscriptions and data loading.
  */
 
-import { UseGuards } from '@nestjs/common';
+import { ForbiddenException, UseGuards } from '@nestjs/common';
 import {
   Resolver,
   Query,
@@ -18,10 +18,12 @@ import {
   Context,
 } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
+import { randomUUID } from 'crypto';
 
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { GqlAuthGuard } from '../../auth/guards/gql-auth.guard';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CacheService } from '../../cache/cache.service';
 import { DataLoaderService } from '../dataloader.service';
 // GraphQL Object Types (would be defined in separate files)
 import {
@@ -41,6 +43,7 @@ export class PortalResolver {
   constructor(
     private readonly prisma: PrismaService,
     private readonly dataLoader: DataLoaderService,
+    private readonly cache: CacheService,
   ) {}
 
   // ============================================
@@ -56,10 +59,12 @@ export class PortalResolver {
     @Args({ name: 'id', type: () => ID }) id: string,
     @CurrentUser() user: any,
   ): Promise<any> {
+    this.assertAgencyUser(user);
     return this.prisma.portal.findFirst({
       where: {
         id,
         workspaceId: user.workspaceId,
+        deletedAt: null,
       },
     });
   }
@@ -74,7 +79,8 @@ export class PortalResolver {
     @Args({ name: 'sort', nullable: true }) sort: PortalSortInput,
     @CurrentUser() user: any,
   ): Promise<any> {
-    const where: any = { workspaceId: user.workspaceId };
+    this.assertAgencyUser(user);
+    const where: any = { workspaceId: user.workspaceId, deletedAt: null };
 
     // Apply filters
     if (filter) {
@@ -134,7 +140,7 @@ export class PortalResolver {
         endCursor: edges[edges.length - 1]?.cursor,
       },
       totalCount: await this.prisma.portal.count({
-        where: { workspaceId: user.workspaceId },
+        where: { workspaceId: user.workspaceId, deletedAt: null },
       }),
     };
   }
@@ -145,8 +151,9 @@ export class PortalResolver {
     @Args({ name: 'limit', type: () => Int, defaultValue: 5 }) limit: number,
     @CurrentUser() user: any,
   ): Promise<any[]> {
+    this.assertAgencyUser(user);
     return this.prisma.portal.findMany({
-      where: { workspaceId: user.workspaceId },
+      where: { workspaceId: user.workspaceId, deletedAt: null },
       orderBy: { updatedAt: 'desc' },
       take: limit,
     });
@@ -161,6 +168,7 @@ export class PortalResolver {
       where: {
         shareToken,
         isPublic: true,
+        deletedAt: null,
       },
     });
   }
@@ -175,6 +183,7 @@ export class PortalResolver {
     @Args('input') input: CreatePortalInput,
     @CurrentUser() user: any,
   ): Promise<any> {
+    this.assertAgencyUser(user);
     const portal = await this.prisma.portal.create({
       data: {
         name: input.name,
@@ -203,17 +212,26 @@ export class PortalResolver {
     @Args('input') input: UpdatePortalInput,
     @CurrentUser() user: any,
   ): Promise<any> {
+    this.assertAgencyUser(user);
     // Verify ownership
     const existing = await this.prisma.portal.findFirst({
-      where: { id, workspaceId: user.workspaceId },
+      where: { id, workspaceId: user.workspaceId, deletedAt: null },
     });
 
     if (!existing) {
       throw new Error('Portal not found');
     }
 
-    const portal = await this.prisma.portal.update({
-      where: { id },
+    if (input.isPublic === true) {
+      const assignedLink = await this.prisma.shareLink.findFirst({
+        where: { portalId: id, isActive: true, assignments: { some: {} }, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+        select: { id: true },
+      });
+      if (assignedLink) throw new ForbiddenException('Disable assigned client links before making this portal public');
+    }
+
+    const changed = await this.prisma.portal.updateMany({
+      where: { id, workspaceId: user.workspaceId, deletedAt: null },
       data: {
         name: input.name,
         slug: input.slug,
@@ -222,6 +240,10 @@ export class PortalResolver {
         layout: input.layout,
       },
     });
+    if (changed.count !== 1) throw new Error('Portal not found');
+    const portal = await this.prisma.portal.findFirst({ where: { id, workspaceId: user.workspaceId, deletedAt: null } });
+    if (!portal) throw new Error('Portal not found');
+    await this.cache.invalidatePortal(id);
 
     // Publish event for subscriptions
     void pubSub.publish('portalUpdated', {
@@ -238,16 +260,24 @@ export class PortalResolver {
     @Args({ name: 'id', type: () => ID }) id: string,
     @CurrentUser() user: any,
   ): Promise<boolean> {
+    this.assertAgencyUser(user);
     // Verify ownership
     const existing = await this.prisma.portal.findFirst({
-      where: { id, workspaceId: user.workspaceId },
+      where: { id, workspaceId: user.workspaceId, deletedAt: null },
     });
 
     if (!existing) {
       throw new Error('Portal not found');
     }
 
-    await this.prisma.portal.delete({ where: { id } });
+    if (!['OWNER', 'ADMIN'].includes(user.role)) throw new Error('Insufficient permissions');
+    const widgets = await this.prisma.widget.findMany({ where: { portalId: id }, select: { id: true } });
+    const changed = await this.prisma.portal.updateMany({
+      where: { id, workspaceId: user.workspaceId, deletedAt: null },
+      data: { deletedAt: new Date(), isPublic: false, shareToken: randomUUID() },
+    });
+    if (changed.count !== 1) throw new Error('Portal not found');
+    await this.cache.invalidatePortal(id, widgets.map((widget) => widget.id));
 
     // Publish event for subscriptions
     void pubSub.publish('portalDeleted', {
@@ -265,8 +295,9 @@ export class PortalResolver {
     @Args('newName') newName: string,
     @CurrentUser() user: any,
   ): Promise<any> {
+    this.assertAgencyUser(user);
     const original = await this.prisma.portal.findFirst({
-      where: { id, workspaceId: user.workspaceId },
+      where: { id, workspaceId: user.workspaceId, deletedAt: null },
       include: { widgets: true },
     });
 
@@ -371,6 +402,12 @@ export class PortalResolver {
   // ============================================
   // HELPERS
   // ============================================
+
+  private assertAgencyUser(user: { role?: string }): void {
+    if (user?.role === 'MEMBER') {
+      throw new ForbiddenException('Use a portal link assigned to your client account');
+    }
+  }
 
   private generateSlug(name: string): string {
     return (

@@ -10,6 +10,7 @@ interface DatadogIntegration {
   };
 }
 
+import { providerHttpStatus } from '../connector-security.util';
 @Injectable()
 export class DatadogService {
   private readonly logger = new Logger(DatadogService.name);
@@ -38,7 +39,7 @@ export class DatadogService {
       );
       return response.data.valid === true;
     } catch (error) {
-      this.logger.error('Datadog connection test failed', error);
+      this.logger.error('Datadog connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -100,7 +101,7 @@ export class DatadogService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch Datadog metrics', error);
+      this.logger.error('Failed to fetch Datadog metrics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -127,7 +128,7 @@ export class DatadogService {
 
       return response.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Datadog monitors', error);
+      this.logger.error('Failed to fetch Datadog monitors' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -158,7 +159,7 @@ export class DatadogService {
 
       return response.data.events || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Datadog events', error);
+      this.logger.error('Failed to fetch Datadog events' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -176,7 +177,7 @@ export class DatadogService {
 
       return response.data.dashboards || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Datadog dashboards', error);
+      this.logger.error('Failed to fetch Datadog dashboards' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -203,7 +204,7 @@ export class DatadogService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch Datadog hosts', error);
+      this.logger.error('Failed to fetch Datadog hosts' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -237,7 +238,7 @@ export class DatadogService {
 
       return response.data.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Datadog logs', error);
+      this.logger.error('Failed to fetch Datadog logs' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -262,7 +263,7 @@ export class DatadogService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch Datadog APM data', error);
+      this.logger.error('Failed to fetch Datadog APM data' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -313,7 +314,7 @@ export class DatadogService {
           })),
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Datadog analytics', error);
+      this.logger.error('Failed to fetch Datadog analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

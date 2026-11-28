@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 type Integration = any;
 
 @Injectable()
@@ -29,7 +30,7 @@ export class JiraService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('Jira connection test failed', error);
+      this.logger.error('Jira connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -70,7 +71,7 @@ export class JiraService {
       );
       return response.data.values;
     } catch (error) {
-      this.logger.error('Failed to fetch Jira projects', error);
+      this.logger.error('Failed to fetch Jira projects' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -94,7 +95,7 @@ export class JiraService {
       );
       return response.data.issues;
     } catch (error) {
-      this.logger.error('Failed to fetch Jira issues', error);
+      this.logger.error('Failed to fetch Jira issues' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -114,7 +115,7 @@ export class JiraService {
       );
       return response.data.values;
     } catch (error) {
-      this.logger.error('Failed to fetch Jira sprints', error);
+      this.logger.error('Failed to fetch Jira sprints' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -128,7 +129,7 @@ export class JiraService {
       );
       return response.data.values;
     } catch (error) {
-      this.logger.error('Failed to fetch Jira boards', error);
+      this.logger.error('Failed to fetch Jira boards' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

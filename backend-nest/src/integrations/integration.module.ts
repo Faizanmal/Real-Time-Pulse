@@ -1,11 +1,14 @@
 import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
+import { AgencyRoleGuard } from '../auth/guards/agency-role.guard';
 
 import { JobsModule } from '../jobs/jobs.module';
 import { PrismaModule } from '../prisma/prisma.module';
+import { AnalyticsModule } from '../analytics/analytics.module';
 
 import { IntegrationController } from './integration.controller';
 import { IntegrationService } from './integration.service';
+import { DemoConnectorService } from './services/demo-connector.service';
 // Existing integrations
 import { AsanaService } from './services/asana.service';
 import { AWSCloudWatchService } from './services/aws-cloudwatch.service';
@@ -61,10 +64,12 @@ import { ZohoCRMService } from './services/zoho-crm.service';
 // Payment integrations
 
 @Module({
-  imports: [HttpModule, PrismaModule, JobsModule],
+  imports: [HttpModule, PrismaModule, JobsModule, AnalyticsModule],
   controllers: [IntegrationController],
   providers: [
+    AgencyRoleGuard,
     IntegrationService,
+    DemoConnectorService,
     // Existing
     AsanaService,
     GoogleAnalyticsService,
@@ -115,6 +120,7 @@ import { ZohoCRMService } from './services/zoho-crm.service';
   ],
   exports: [
     IntegrationService,
+    DemoConnectorService,
     SlackService,
     // Export commonly used services
     ShopifyService,

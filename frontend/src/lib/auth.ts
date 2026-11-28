@@ -14,9 +14,8 @@ interface User {
 
 interface AuthState {
   user: User | null;
-  accessToken: string | null;
   isAuthenticated: boolean;
-  setAuth: (user: User, accessToken: string) => void;
+  setAuth: (user: User) => void;
   clearAuth: () => void;
   updateUser: (user: Partial<User>) => void;
 }
@@ -25,12 +24,10 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      accessToken: null,
       isAuthenticated: false,
-      setAuth: (user, accessToken) => 
-        set({ user, accessToken, isAuthenticated: true }),
+      setAuth: (user) => set({ user, isAuthenticated: true }),
       clearAuth: () => 
-        set({ user: null, accessToken: null, isAuthenticated: false }),
+        set({ user: null, isAuthenticated: false }),
       updateUser: (userData) =>
         set((state) => ({
           user: state.user ? { ...state.user, ...userData } : null,
@@ -41,7 +38,6 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({ 
         user: state.user,
         isAuthenticated: state.isAuthenticated,
-        accessToken: state.accessToken,
       }),
     }
   )
@@ -60,9 +56,8 @@ export interface SignInData {
 
 export interface AuthResponse {
   user: User;
-  accessToken: string;
 }
 
 export interface RefreshResponse {
-  accessToken: string;
+  user: User;
 }

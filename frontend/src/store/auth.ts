@@ -6,8 +6,7 @@ import type { User } from '@/types';
 
 interface AuthState {
   user: User | null;
-  accessToken: string | null;
-  setAuth: (user: User, accessToken: string) => void;
+  setAuth: (user: User) => void;
   clearAuth: () => void;
   logout: () => void;
   isAuthenticated: boolean;
@@ -15,52 +14,44 @@ interface AuthState {
   setHydrated: (state: boolean) => void;
 }
 
-// Create the store without persist first
+const removeLegacyCredentials = () => {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('accessToken');
+};
+
 const createAuthStore: StateCreator<AuthState> = (set) => ({
   user: null,
-  accessToken: null,
   isAuthenticated: false,
   isHydrated: false,
-  setHydrated: (state: boolean) => set({ isHydrated: state }),
-  setAuth: (user: User, accessToken: string) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('access_token', accessToken);
-      localStorage.setItem('user', JSON.stringify(user));
-    }
-    set({ user, accessToken, isAuthenticated: true });
-  },
+  setHydrated: (state) => set({ isHydrated: state }),
+  setAuth: (user) => set({ user, isAuthenticated: true }),
   clearAuth: () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
-    }
-    set({ user: null, accessToken: null, isAuthenticated: false });
+    removeLegacyCredentials();
+    set({ user: null, isAuthenticated: false });
   },
   logout: () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
-    }
-    set({ user: null, accessToken: null, isAuthenticated: false });
-    if (typeof window !== 'undefined') {
-      window.location.href = '/auth/login';
-    }
+    removeLegacyCredentials();
+    set({ user: null, isAuthenticated: false });
+    if (typeof window !== 'undefined') window.location.href = '/auth/login';
   },
 });
 
-// Conditionally apply persist middleware only on client side
 export const useAuthStore = typeof window !== 'undefined'
-  ? create<AuthState>()(
-      persist(createAuthStore, {
-        name: 'auth-storage',
-        partialize: (state) => ({
-          user: state.user,
-          accessToken: state.accessToken,
-          isAuthenticated: state.isAuthenticated
-        }),
-        onRehydrateStorage: () => (state) => {
-          state?.setHydrated(true);
-        },
-      })
-    )
+  ? create<AuthState>()(persist(createAuthStore, {
+      name: 'auth-storage',
+      version: 2,
+      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }) as AuthState,
+      migrate: (persistedState) => {
+        removeLegacyCredentials();
+        const prior = persistedState as Partial<AuthState> | undefined;
+        return { user: prior?.user || null, isAuthenticated: Boolean(prior?.isAuthenticated), isHydrated: false } as AuthState;
+      },
+      onRehydrateStorage: () => (state) => {
+        removeLegacyCredentials();
+        state?.setHydrated(true);
+      },
+    }))
   : create<AuthState>()(createAuthStore);

@@ -5,6 +5,8 @@ import { HealthStatus, IntegrationProvider } from '@prisma/client';
 import { firstValueFrom } from 'rxjs';
 
 import { NotificationService } from '../notifications/notification.service';
+import { EncryptionService } from '../common/services/encryption.service';
+import { revealIntegrationTokens } from '../integrations/connector-security.util';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { DataHealthService } from './data-health.service';
@@ -19,6 +21,7 @@ export class HealthMonitorService {
     @Inject(forwardRef(() => NotificationService))
     private notificationService: NotificationService,
     private httpService: HttpService,
+    private encryptionService: EncryptionService,
   ) {}
 
   // Run health checks every 5 minutes
@@ -84,6 +87,9 @@ export class HealthMonitorService {
             provider: true,
             settings: true,
             accountName: true,
+            accessToken: true,
+            refreshToken: true,
+            tokenEncryptionVersion: true,
           },
         },
       },
@@ -165,6 +171,7 @@ export class HealthMonitorService {
     schema?: any;
   }> {
     try {
+      integration = revealIntegrationTokens(this.encryptionService, integration);
       // Implement provider-specific health checks
       switch (integration.provider) {
         case IntegrationProvider.GOOGLE_ANALYTICS:

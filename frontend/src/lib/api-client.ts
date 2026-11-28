@@ -24,14 +24,15 @@ export const authApi = {
     lastName: string;
     workspaceName: string;
     workspaceSlug: string;
+    onboardingAnalyticsConsent?: boolean;
   }): Promise<AuthResponse> => {
-    const response = await apiClient.post('/auth/signup', data);
-    return response.data;
+    const response = await apiClient.post('/auth/session/signup', data);
+    return response.data.data;
   },
 
   signin: async (data: { email: string; password: string }): Promise<AuthResponse> => {
-    const response = await apiClient.post('/auth/signin', data);
-    return response.data;
+    const response = await apiClient.post('/auth/session/signin', data);
+    return response.data.data;
   },
 
   forgotPassword: async (email: string): Promise<{ message: string }> => {
@@ -46,7 +47,11 @@ export const authApi = {
 
   me: async (): Promise<User> => {
     const response = await apiClient.get('/auth/me');
-    return response.data;
+    return response.data.data;
+  },
+
+  logout: async (): Promise<void> => {
+    await apiClient.post('/auth/session/logout');
   },
 };
 
@@ -113,6 +118,25 @@ export const workspaceApi = {
 
 // Portal API
 export const portalApi = {
+  createDemoClientPortal: async (): Promise<{
+    portalId: string;
+    name: string;
+    shareToken: string;
+    clientPath: string;
+    demoLabel: string;
+    isDemo: true;
+  }> => {
+    const response = await apiClient.post('/portals/demo');
+    return response.data.data as {
+      portalId: string; name: string; shareToken: string; clientPath: string; demoLabel: string; isDemo: true;
+    };
+  },
+
+  getClientView: async (shareToken: string) => {
+    const response = await apiClient.get(`/portals/share/${encodeURIComponent(shareToken)}/view`);
+    return response.data.data as import('../types').PublicPortalView;
+  },
+
   create: async (data: {
     name: string;
     slug: string;
@@ -120,22 +144,42 @@ export const portalApi = {
     isPublic?: boolean;
   }): Promise<Portal> => {
     const response = await apiClient.post('/portals', data);
-    return response.data;
+    return response.data.data;
   },
 
   getAll: async (page = 1, pageSize = 20): Promise<{ portals: Portal[]; total: number }> => {
     const response = await apiClient.get('/portals', { params: { page, pageSize } });
-    return response.data;
+    return response.data.data;
+  },
+
+  getAttention: async (page = 1, pageSize = 5): Promise<{
+    items: Array<Pick<Portal, 'id' | 'name' | 'clientStatus' | 'clientStatusNote' | 'pendingDecision' | 'clientUpdateAt' | 'updatedAt'>>;
+    total: number;
+    page: number;
+    pageSize: number;
+  }> => {
+    const response = await apiClient.get('/portals/attention', { params: { page, pageSize } });
+    return response.data.data;
+  },
+
+  bulkUnpublish: async (portalIds: string[]): Promise<{
+    requestedCount: number;
+    succeededCount: number;
+    unavailableCount: number;
+    succeededPortalIds: string[];
+  }> => {
+    const response = await apiClient.post('/portals/bulk-unpublish', { portalIds });
+    return response.data.data;
   },
 
   getOne: async (portalId: string): Promise<Portal> => {
     const response = await apiClient.get(`/portals/${portalId}`);
-    return response.data;
+    return response.data.data;
   },
 
   getByShareToken: async (shareToken: string): Promise<Portal> => {
     const response = await apiClient.get(`/portals/share/${shareToken}`);
-    return response.data;
+    return response.data.data;
   },
 
   update: async (
@@ -145,10 +189,31 @@ export const portalApi = {
       description?: string;
       isPublic?: boolean;
       layout?: Record<string, unknown> | null;
+    clientStatus?: Portal['clientStatus'];
+    clientStatusNote?: string | null;
+    latestDeliverable?: string | null;
+    pendingDecision?: string | null;
     }
   ): Promise<Portal> => {
     const response = await apiClient.patch(`/portals/${portalId}`, data);
-    return response.data;
+    return response.data.data;
+  },
+
+  previewDraft: async (portalId: string): Promise<import('../types').PublicPortalView> => {
+    const response = await apiClient.get(`/portals/${portalId}/preview`);
+    return response.data.data;
+  },
+
+  publishDraft: async (portalId: string, expectedUpdatedAt: string): Promise<{
+    portalId: string; publishedAt: string; publishRevision: number; isPublic: boolean;
+  }> => {
+    const response = await apiClient.post(`/portals/${portalId}/publish`, { expectedUpdatedAt });
+    return response.data.data;
+  },
+
+  unpublish: async (portalId: string): Promise<{ portalId: string; isPublic: false }> => {
+    const response = await apiClient.post(`/portals/${portalId}/unpublish`);
+    return response.data.data;
   },
 
   delete: async (portalId: string): Promise<void> => {
@@ -157,7 +222,7 @@ export const portalApi = {
 
   regenerateToken: async (portalId: string): Promise<{ shareToken: string }> => {
     const response = await apiClient.post(`/portals/${portalId}/regenerate-token`);
-    return response.data;
+    return response.data.data;
   },
 };
 
@@ -176,17 +241,24 @@ export const widgetApi = {
     refreshInterval?: number;
   }): Promise<Widget> => {
     const response = await apiClient.post('/widgets', data);
-    return response.data;
+    return response.data.data;
   },
 
   refreshData: async (widgetId: string): Promise<Widget> => {
     const response = await apiClient.post(`/widgets/${widgetId}/refresh`);
-    return response.data;
+    return response.data.data;
   },
 
   getAllByPortal: async (portalId: string): Promise<Widget[]> => {
     const response = await apiClient.get(`/widgets/portal/${portalId}`);
-    return response.data;
+    return response.data.data;
+  },
+
+  update: async (widgetId: string, data: {
+    name?: string; gridWidth?: number; gridHeight?: number; gridX?: number; gridY?: number;
+  }): Promise<Widget> => {
+    const response = await apiClient.patch(`/widgets/${widgetId}`, data);
+    return response.data.data;
   },
 
   delete: async (widgetId: string): Promise<void> => {
@@ -195,7 +267,25 @@ export const widgetApi = {
 };
 
 // Integration API
+const mapIntegrationDto = (item: Record<string, unknown>): Integration => {
+  const connectionState = item.connectionState ?? (item.status === 'EXPIRED' ? 'NEEDS_RECONNECT' : item.status === 'ERROR' ? 'DEGRADED' : item.status === 'INACTIVE' ? 'DISCONNECTED' : 'CONNECTED');
+  return {
+    ...item,
+    name: item.accountName || item.provider,
+    connectionState,
+    statusMessage: item.statusMessage || 'Connector status is not available.',
+    lastSyncAt: item.lastSyncedAt ?? null,
+    lastValidDataAt: item.lastValidDataAt ?? item.lastSyncedAt ?? null,
+    status: connectionState === 'CONNECTED' ? 'active' : connectionState === 'DISCONNECTED' ? 'inactive' : 'error',
+    settings: item.settings || {},
+  } as Integration;
+};
+
 export const integrationApi = {
+  createDemo: async (): Promise<Integration> => {
+    const response = await apiClient.post('/v1/integrations/demo');
+    return mapIntegrationDto(response.data);
+  },
   create: async (data: {
     workspaceId: string;
     provider: string;
@@ -203,22 +293,30 @@ export const integrationApi = {
     settings: Record<string, unknown>;
   }): Promise<Integration> => {
     const response = await apiClient.post('/v1/integrations', data);
-    return response.data;
+    return mapIntegrationDto(response.data);
   },
 
   getAllByWorkspace: async (workspaceId: string): Promise<Integration[]> => {
     const response = await apiClient.get(`/v1/integrations/workspace/${workspaceId}`);
+    return (response.data as Record<string, unknown>[]).map(mapIntegrationDto);
+  },
+
+  getSyncFreshness: async (workspaceId: string): Promise<{
+    integrations: Array<{ id: string; provider: string; health: string; lastUpdatedAt: string | null; freshnessAgeMs: number | null; lastErrorCode: string | null; latestRun: { status: string; processedCount: number; pageCount: number; lastErrorCode: string | null; startedAt: string } | null }>;
+    queue: { queueDepth: number; active: number; failed: number; retries: number; oldestQueuedAt: string | null; oldestQueuedAgeMs: number | null; asOf: string };
+  }> => {
+    const response = await apiClient.get(`/v1/integrations/workspace/${workspaceId}/sync-freshness`);
     return response.data;
   },
 
   getById: async (id: string): Promise<Integration> => {
     const response = await apiClient.get(`/v1/integrations/${id}`);
-    return response.data;
+    return mapIntegrationDto(response.data);
   },
 
   update: async (id: string, settings: Record<string, unknown>): Promise<Integration> => {
     const response = await apiClient.put(`/v1/integrations/${id}`, settings);
-    return response.data;
+    return mapIntegrationDto(response.data);
   },
 
   delete: async (id: string): Promise<void> => {
@@ -227,14 +325,21 @@ export const integrationApi = {
 
   testConnection: async (id: string): Promise<{ success: boolean; message: string }> => {
     const response = await apiClient.get(`/v1/integrations/${id}/test`);
-    return response.data;
+    return { ...response.data, success: response.data.connected };
+  },
+
+  refresh: async (id: string): Promise<Integration> => {
+    const response = await apiClient.post(`/v1/integrations/${id}/refresh`);
+    return mapIntegrationDto(response.data);
   },
 
   triggerSync: async (
     id: string,
-    syncType: 'full' | 'incremental' = 'incremental'
-  ): Promise<{ message: string }> => {
-    const response = await apiClient.post(`/v1/integrations/${id}/sync`, { syncType });
+    syncType: 'full' | 'incremental' = 'incremental',
+    dryRun = false,
+    requestId?: string,
+  ): Promise<{ message: string; queued?: boolean; dryRun?: boolean }> => {
+    const response = await apiClient.post(`/v1/integrations/${id}/sync`, { syncType, dryRun, requestId });
     return response.data;
   },
 
@@ -572,41 +677,79 @@ export const aiInsightsApi = {
 // ========================================
 
 export const clientReportApi = {
+  getProjectOptions: async () => {
+    const response = await apiClient.get('/client-reports/project-options');
+    return response.data.data as Array<{ id: string; name: string; clientName: string }>;
+  },
+  listSharedReports: async (token: string, password?: string) => {
+    const response = await apiClient.post(`/share-links/public/${encodeURIComponent(token)}/client-reports/list`, { password });
+    return response.data.data;
+  },
+  getBriefingFeatureState: async (): Promise<{ enabled: boolean }> => {
+    const response = await apiClient.get('/client-reports/briefing-feature');
+    return response.data.data;
+  },
+
   createReport: async (data: Record<string, unknown>) => {
     const response = await apiClient.post('/client-reports', data);
-    return response.data;
+    return response.data.data;
   },
 
   getReports: async (workspaceId: string, filters?: Record<string, unknown>) => {
     const response = await apiClient.get(`/client-reports/workspace/${workspaceId}`, {
       params: filters,
     });
-    return response.data;
+    return response.data.data;
   },
 
   getReportById: async (reportId: string) => {
     const response = await apiClient.get(`/client-reports/${reportId}`);
-    return response.data;
+    return response.data.data;
   },
 
   updateReport: async (reportId: string, data: Record<string, unknown>) => {
     const response = await apiClient.patch(`/client-reports/${reportId}`, data);
-    return response.data;
+    return response.data.data;
   },
 
   deleteReport: async (reportId: string) => {
     const response = await apiClient.delete(`/client-reports/${reportId}`);
-    return response.data;
+    return response.data.data;
   },
 
   generateReport: async (reportId: string) => {
     const response = await apiClient.post(`/client-reports/${reportId}/generate`);
-    return response.data;
+    return response.data.data;
+  },
+
+  approve: async (reportId: string, data: { notifyClient: boolean; consentNote?: string }) => {
+    const response = await apiClient.post(`/client-reports/${reportId}/approve`, data);
+    return response.data.data;
+  },
+
+  preview: async (reportId: string) => {
+    const response = await apiClient.get(`/client-reports/${reportId}/preview`);
+    return response.data.data;
+  },
+
+  retryDelivery: async (reportId: string) => {
+    const response = await apiClient.post(`/client-reports/${reportId}/retry-delivery`);
+    return response.data.data;
+  },
+
+  revise: async (reportId: string) => {
+    const response = await apiClient.post(`/client-reports/${reportId}/revise`);
+    return response.data.data;
+  },
+
+  downloadRevision: async (reportId: string, version: number, format: 'pdf' | 'csv'): Promise<Blob> => {
+    const response = await apiClient.get(`/client-reports/${reportId}/revisions/${version}/${format}`, { responseType: 'blob' });
+    return response.data as Blob;
   },
 
   getStats: async (workspaceId: string) => {
     const response = await apiClient.get(`/client-reports/workspace/${workspaceId}/stats`);
-    return response.data;
+    return response.data.data;
   },
 };
 

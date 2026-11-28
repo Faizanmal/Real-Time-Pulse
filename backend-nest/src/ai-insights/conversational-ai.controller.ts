@@ -2,6 +2,7 @@ import { Controller, Post, Get, Body, Query, UseGuards, Req } from '@nestjs/comm
 import type { Request } from 'express';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AiUsageLimitGuard } from '../billing/ai-usage-limit.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 import type { AuthenticatedRequest, RequestUser } from '../common/interfaces/auth.interface';
 
@@ -38,6 +39,7 @@ export class ConversationalAIController {
    * Process a natural language query
    */
   @Post('query')
+  @UseGuards(AiUsageLimitGuard)
   async processQuery(@Body() dto: QueryRequestDto, @CurrentUser() user: RequestUser) {
     const context: ConversationContext = {
       workspaceId: user.workspaceId,
@@ -55,6 +57,7 @@ export class ConversationalAIController {
    * Get proactive insights
    */
   @Get('insights')
+  @UseGuards(AiUsageLimitGuard)
   async getProactiveInsights(@CurrentUser() user: RequestUser) {
     return this.conversationalAIService.getProactiveInsights(user.workspaceId, user.id);
   }
@@ -72,6 +75,7 @@ export class ConversationalAIController {
    * Ask a question about specific data
    */
   @Post('ask')
+  @UseGuards(AiUsageLimitGuard)
   async askAboutData(@Body() dto: AskDataDto, @Req() req: any) {
     const context: ConversationContext = {
       workspaceId: req.user.workspaceId,
@@ -90,6 +94,7 @@ export class ConversationalAIController {
    * Generate a data story
    */
   @Post('story')
+  @UseGuards(AiUsageLimitGuard)
   async generateDataStory(@Body() dto: DataStoryDto, @Req() req: Request & AuthenticatedRequest) {
     return this.conversationalAIService.generateDataStory(req.user.workspaceId, dto.metrics);
   }

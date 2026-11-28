@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 type Integration = any;
 
 @Injectable()
@@ -23,7 +24,7 @@ export class TrelloService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('Trello connection test failed', error);
+      this.logger.error('Trello connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -65,7 +66,7 @@ export class TrelloService {
       );
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch Trello boards', error);
+      this.logger.error('Failed to fetch Trello boards' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -88,7 +89,7 @@ export class TrelloService {
       );
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch Trello lists', error);
+      this.logger.error('Failed to fetch Trello lists' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -119,7 +120,7 @@ export class TrelloService {
       );
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch Trello cards', error);
+      this.logger.error('Failed to fetch Trello cards' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -141,7 +142,7 @@ export class TrelloService {
       );
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch Trello members', error);
+      this.logger.error('Failed to fetch Trello members' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

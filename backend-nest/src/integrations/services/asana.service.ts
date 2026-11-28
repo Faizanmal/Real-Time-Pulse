@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 type Integration = any;
 
 @Injectable()
@@ -22,7 +23,7 @@ export class AsanaService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('Asana connection test failed', error);
+      this.logger.error('Asana connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -61,7 +62,7 @@ export class AsanaService {
 
       return response.data.data;
     } catch (error) {
-      this.logger.error('Failed to fetch Asana projects', error);
+      this.logger.error('Failed to fetch Asana projects' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -81,7 +82,7 @@ export class AsanaService {
 
       return response.data.data;
     } catch (error) {
-      this.logger.error('Failed to fetch Asana tasks', error);
+      this.logger.error('Failed to fetch Asana tasks' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -94,7 +95,7 @@ export class AsanaService {
 
       return response.data.data;
     } catch (error) {
-      this.logger.error('Failed to fetch Asana teams', error);
+      this.logger.error('Failed to fetch Asana teams' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

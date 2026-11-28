@@ -1,9 +1,12 @@
-import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
 
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AiUsageLimitGuard } from '../billing/ai-usage-limit.guard';
 import { CausalInferenceService } from './causal-inference.service';
 import { MLModelService } from './ml-model.service';
 
 @Controller('ml')
+@UseGuards(JwtAuthGuard)
 export class MLController {
   constructor(
     private readonly mlService: MLModelService,
@@ -42,6 +45,7 @@ export class MLController {
   }
 
   @Post('models/:id/train')
+  @UseGuards(AiUsageLimitGuard)
   async trainModel(
     @Param('id') id: string,
     @Body()
@@ -59,6 +63,7 @@ export class MLController {
   }
 
   @Post('models/:id/predict')
+  @UseGuards(AiUsageLimitGuard)
   async predict(
     @Param('id') id: string,
     @Body()
@@ -78,6 +83,7 @@ export class MLController {
   }
 
   @Post('models/:id/batch-predict')
+  @UseGuards(AiUsageLimitGuard)
   async batchPredict(
     @Param('id') id: string,
     @Body()
@@ -89,6 +95,7 @@ export class MLController {
   }
 
   @Post('features/analyze')
+  @UseGuards(AiUsageLimitGuard)
   async analyzeFeatures(@Body() body: { data: any[]; targetColumn: string }) {
     return this.mlService.analyzeFeatures(body.data, body.targetColumn);
   }
@@ -121,6 +128,7 @@ export class MLController {
   }
 
   @Post('causal/estimate')
+  @UseGuards(AiUsageLimitGuard)
   async estimateCausalEffect(
     @Body()
     body: {
@@ -144,6 +152,7 @@ export class MLController {
   }
 
   @Post('causal/counterfactual')
+  @UseGuards(AiUsageLimitGuard)
   async computeCounterfactual(
     @Body()
     body: {
@@ -163,6 +172,7 @@ export class MLController {
   }
 
   @Post('causal/ab-test')
+  @UseGuards(AiUsageLimitGuard)
   async analyzeABTest(
     @Body()
     body: {
@@ -178,6 +188,7 @@ export class MLController {
   }
 
   @Post('causal/sensitivity')
+  @UseGuards(AiUsageLimitGuard)
   async performSensitivityAnalysis(
     @Body()
     body: {
@@ -197,6 +208,7 @@ export class MLController {
   }
 
   @Post('causal/mediation')
+  @UseGuards(AiUsageLimitGuard)
   async performMediationAnalysis(
     @Body()
     body: {

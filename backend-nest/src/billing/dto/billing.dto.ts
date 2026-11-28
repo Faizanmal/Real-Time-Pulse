@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsEnum, IsUrl, IsOptional, IsBoolean, IsNumber, Min } from 'class-validator';
+import { PLAN_CATALOG } from '../plan-catalog';
 
 export enum SubscriptionPlanTier {
   PRO = 'PRO',
@@ -100,17 +101,17 @@ export interface PlanPricing {
 export const PLAN_PRICING: Record<SubscriptionPlanTier, PlanPricing> = {
   [SubscriptionPlanTier.PRO]: {
     id: 'pro',
-    name: 'Pro',
-    description: 'Advanced features for growing teams',
-    monthlyPrice: 29,
-    yearlyPrice: 290,
+    name: PLAN_CATALOG.PRO.name,
+    description: PLAN_CATALOG.PRO.description,
+    monthlyPrice: PLAN_CATALOG.PRO.monthlyPriceCents / 100,
+    yearlyPrice: (PLAN_CATALOG.PRO.monthlyPriceCents * 10) / 100,
     features: {
-      portals: 1,
-      widgets: 5,
+      portals: PLAN_CATALOG.PRO.maxPortals,
+      widgets: PLAN_CATALOG.PRO.maxWidgets,
       integrations: 2,
-      users: 1,
+      users: PLAN_CATALOG.PRO.maxUsers,
       storage: 1,
-      apiCalls: 1000,
+      apiCalls: PLAN_CATALOG.PRO.maxAiRequestsPerMonth,
       scheduledReports: 0,
       customBranding: false,
       prioritySupport: false,
@@ -122,17 +123,17 @@ export const PLAN_PRICING: Record<SubscriptionPlanTier, PlanPricing> = {
   },
   [SubscriptionPlanTier.AGENCY]: {
     id: 'agency',
-    name: 'Agency',
-    description: 'Full-featured for agencies and enterprises',
-    monthlyPrice: 99,
-    yearlyPrice: 990,
+    name: PLAN_CATALOG.AGENCY.name,
+    description: PLAN_CATALOG.AGENCY.description,
+    monthlyPrice: PLAN_CATALOG.AGENCY.monthlyPriceCents / 100,
+    yearlyPrice: (PLAN_CATALOG.AGENCY.monthlyPriceCents * 10) / 100,
     features: {
-      portals: 20,
-      widgets: 100,
+      portals: PLAN_CATALOG.AGENCY.maxPortals,
+      widgets: PLAN_CATALOG.AGENCY.maxWidgets,
       integrations: 15,
-      users: 10,
+      users: PLAN_CATALOG.AGENCY.maxUsers,
       storage: 50,
-      apiCalls: 50000,
+      apiCalls: PLAN_CATALOG.AGENCY.maxAiRequestsPerMonth,
       scheduledReports: 25,
       customBranding: true,
       prioritySupport: true,

@@ -52,6 +52,45 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     await this.client.del(key);
   }
 
+  /** Atomically read and delete a one-time value, preventing concurrent refresh reuse. */
+  async consume(key: string): Promise<string | null> {
+    const result = await this.client.eval(
+      "local value = redis.call('GET', KEYS[1]); if value then redis.call('DEL', KEYS[1]); end; return value",
+      1,
+      key,
+    );
+    return typeof result === 'string' ? result : null;
+  }
+
+  async addToSet(key: string, value: string, ttlSeconds?: number): Promise<void> {
+    await this.client.sadd(key, value);
+    if (ttlSeconds) await this.client.expire(key, ttlSeconds);
+  }
+
+  /** Claim an idempotency token with a TTL in one Redis transaction. */
+  async claimSetMember(key: string, value: string, ttlSeconds: number): Promise<boolean> {
+    const claimed = await this.client.eval(
+      "local added = redis.call('SADD', KEYS[1], ARGV[1]); if added == 1 then redis.call('EXPIRE', KEYS[1], ARGV[2]); end; return added",
+      1,
+      key,
+      value,
+      String(ttlSeconds),
+    );
+    return Number(claimed) === 1;
+  }
+
+  async removeFromSet(key: string, value: string): Promise<void> {
+    await this.client.srem(key, value);
+  }
+
+  async getSetMembers(key: string): Promise<string[]> {
+    return this.client.smembers(key);
+  }
+
+  async deleteMany(keys: string[]): Promise<void> {
+    if (keys.length) await this.client.del(...keys);
+  }
+
   async exists(key: string): Promise<boolean> {
     const result = await this.client.exists(key);
     return result === 1;

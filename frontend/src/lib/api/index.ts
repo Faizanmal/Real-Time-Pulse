@@ -29,7 +29,7 @@ export { exportsApi } from './exports';
 export type { ExportFormat, ExportOptions } from './exports';
 
 export { gdprApi } from './gdpr';
-export type { GdprConsent, GdprDataRequest, GdprComplianceReport, GdprDashboard } from './gdpr';
+export type { GdprConsent, GdprDataRequest, GdprComplianceReport, GdprDashboard, SelfDeletionRequest } from './gdpr';
 
 export { iotApi } from './iot';
 export type { IoTDevice, IoTMetric, IoTAlert, EdgeNode, EdgeRule } from './iot';

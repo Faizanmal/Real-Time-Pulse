@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 type Integration = any;
 
 @Injectable()
@@ -23,8 +24,10 @@ export class GitHubService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('GitHub connection test failed', error);
-      return false;
+      const failure = error as { response?: { status?: number; data?: { error?: string } } };
+      throw Object.assign(new Error('GitHub connection test failed'), {
+        response: { status: failure.response?.status, data: { error: failure.response?.data?.error } },
+      });
     }
   }
 
@@ -60,7 +63,8 @@ export class GitHubService {
 
   private async fetchRepos(headers: any, params?: unknown): Promise<unknown> {
     try {
-      const org = (params as { org?: string })?.org;
+      const query = (params || {}) as { org?: string; page?: number; perPage?: number };
+      const org = query.org;
       const url = org ? `${this.baseUrl}/orgs/${org}/repos` : `${this.baseUrl}/user/repos`;
 
       const response = await firstValueFrom(
@@ -68,13 +72,14 @@ export class GitHubService {
           headers,
           params: {
             sort: 'updated',
-            per_page: 50,
+            page: Math.max(1, Math.floor(Number(query.page) || 1)),
+            per_page: Math.min(100, Math.max(1, Math.floor(Number(query.perPage) || 50))),
           },
         }),
       );
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch GitHub repos', error);
+      this.logger.error(`Failed to fetch GitHub repos (HTTP ${providerHttpStatus(error)})`);
       throw error;
     }
   }
@@ -98,7 +103,7 @@ export class GitHubService {
       );
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch GitHub issues', error);
+      this.logger.error(`Failed to fetch GitHub issues (HTTP ${providerHttpStatus(error)})`);
       throw error;
     }
   }
@@ -122,7 +127,7 @@ export class GitHubService {
       );
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch GitHub pull requests', error);
+      this.logger.error(`Failed to fetch GitHub pull requests (HTTP ${providerHttpStatus(error)})`);
       throw error;
     }
   }
@@ -149,7 +154,7 @@ export class GitHubService {
       );
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch GitHub commits', error);
+      this.logger.error(`Failed to fetch GitHub commits (HTTP ${providerHttpStatus(error)})`);
       throw error;
     }
   }
@@ -180,7 +185,7 @@ export class GitHubService {
         recentRuns: runs.data.workflow_runs,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch GitHub workflows', error);
+      this.logger.error(`Failed to fetch GitHub workflows (HTTP ${providerHttpStatus(error)})`);
       throw error;
     }
   }
@@ -215,7 +220,7 @@ export class GitHubService {
         weeklyCommits: participation.data,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch GitHub stats', error);
+      this.logger.error(`Failed to fetch GitHub stats (HTTP ${providerHttpStatus(error)})`);
       throw error;
     }
   }

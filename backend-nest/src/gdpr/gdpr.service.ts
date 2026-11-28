@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
 import { ConsentType, GDPRRequestType, GDPRRequestStatus, Prisma } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
@@ -8,6 +8,85 @@ export class GdprService {
   private readonly logger = new Logger(GdprService.name);
 
   constructor(private prisma: PrismaService) {}
+
+  async exportSelfServiceData(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, workspaceId: true, email: true, firstName: true, lastName: true, name: true, role: true, createdAt: true, updatedAt: true },
+    });
+    if (!user) throw new NotFoundException('Account not found');
+    const [workspace, portals, comments, consents] = await Promise.all([
+      this.prisma.workspace.findUnique({ where: { id: user.workspaceId }, select: { id: true, name: true, slug: true, createdAt: true } }),
+      this.prisma.portal.findMany({ where: { createdById: userId, workspaceId: user.workspaceId }, select: { id: true, name: true, slug: true, createdAt: true } }),
+      this.prisma.comment.findMany({ where: { authorId: userId }, select: { id: true, content: true, createdAt: true } }),
+      this.prisma.gDPRConsent.findMany({ where: { userId }, select: { id: true, consentType: true, purpose: true, consented: true, consentedAt: true, revokedAt: true, createdAt: true } }),
+    ]);
+    const safeUser = {
+      id: user.id,
+      workspaceId: user.workspaceId,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      name: user.name,
+      role: user.role,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+    return { exportedAt: new Date().toISOString(), user: safeUser, workspace, portals, comments, consents };
+  }
+
+  async getSelfDeletionRequest(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { workspaceId: true, email: true } });
+    if (!user) throw new NotFoundException('Account not found');
+    return this.prisma.gDPRDataRequest.findFirst({
+      where: { workspaceId: user.workspaceId, requesterEmail: user.email, requestType: 'ERASURE', status: 'PENDING', metadata: { path: ['requestedUserId'], equals: userId } },
+      select: { id: true, status: true, submittedAt: true, metadata: true },
+      orderBy: { submittedAt: 'desc' },
+    });
+  }
+
+  async requestSelfDeletion(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true, workspaceId: true, email: true, name: true, role: true } });
+    if (!user) throw new NotFoundException('Account not found');
+    if (user.role === 'OWNER') {
+      const otherMembers = await this.prisma.user.count({ where: { workspaceId: user.workspaceId, id: { not: userId } } });
+      if (otherMembers > 0) throw new ConflictException('Transfer workspace ownership before requesting account deletion.');
+    }
+    const pending = await this.getSelfDeletionRequest(userId);
+    if (pending) return pending;
+    const submittedAt = new Date();
+    const scheduledFor = new Date(submittedAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+    return this.prisma.$transaction(async (tx) => {
+      const request = await tx.gDPRDataRequest.create({
+        data: {
+          workspaceId: user.workspaceId,
+          requesterEmail: user.email,
+          requesterName: user.name,
+          requestType: 'ERASURE',
+          status: 'PENDING',
+          submittedAt,
+          metadata: { requestedUserId: user.id, scope: 'account', scheduledFor: scheduledFor.toISOString(), requiresBillingAndTenantReview: true },
+        },
+        select: { id: true, status: true, submittedAt: true, metadata: true },
+      });
+      await tx.gDPRDataRequestAudit.create({ data: { requestId: request.id, action: 'Self-service account deletion requested', performedBy: user.id } });
+      return request;
+    });
+  }
+
+  async cancelSelfDeletion(userId: string, requestId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { workspaceId: true, email: true } });
+    if (!user) throw new NotFoundException('Account not found');
+    const request = await this.prisma.gDPRDataRequest.findFirst({
+      where: { id: requestId, workspaceId: user.workspaceId, requesterEmail: user.email, requestType: 'ERASURE', status: 'PENDING', metadata: { path: ['requestedUserId'], equals: userId } },
+    });
+    if (!request) throw new NotFoundException('Pending deletion request not found');
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.gDPRDataRequest.update({ where: { id: request.id }, data: { status: 'CANCELLED' }, select: { id: true, status: true, submittedAt: true } });
+      await tx.gDPRDataRequestAudit.create({ data: { requestId: request.id, action: 'Self-service account deletion cancelled', performedBy: userId } });
+      return updated;
+    });
+  }
 
   // Consent Management
   async recordConsent(data: {

@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface FacebookAdsIntegration {
   accessToken: string;
   settings: {
@@ -59,7 +60,7 @@ export class FacebookAdsService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('Facebook Ads connection test failed', error);
+      this.logger.error('Facebook Ads connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -118,7 +119,7 @@ export class FacebookAdsService {
 
       return response.data.data;
     } catch (error) {
-      this.logger.error('Failed to fetch Facebook campaigns', error);
+      this.logger.error('Failed to fetch Facebook campaigns' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -145,7 +146,7 @@ export class FacebookAdsService {
 
       return response.data.data;
     } catch (error) {
-      this.logger.error('Failed to fetch Facebook ad sets', error);
+      this.logger.error('Failed to fetch Facebook ad sets' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -171,7 +172,7 @@ export class FacebookAdsService {
 
       return response.data.data;
     } catch (error) {
-      this.logger.error('Failed to fetch Facebook ads', error);
+      this.logger.error('Failed to fetch Facebook ads' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -212,7 +213,7 @@ export class FacebookAdsService {
 
       return response.data.data;
     } catch (error) {
-      this.logger.error('Failed to fetch Facebook insights', error);
+      this.logger.error('Failed to fetch Facebook insights' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -273,7 +274,7 @@ export class FacebookAdsService {
         actions: insights.actions || [],
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Facebook analytics', error);
+      this.logger.error('Failed to fetch Facebook analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -299,7 +300,7 @@ export class FacebookAdsService {
 
       return response.data.data;
     } catch (error) {
-      this.logger.error('Failed to fetch Facebook audiences', error);
+      this.logger.error('Failed to fetch Facebook audiences' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

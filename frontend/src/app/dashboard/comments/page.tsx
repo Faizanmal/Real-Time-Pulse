@@ -138,8 +138,8 @@ export default function CommentsPage() {
     async function fetchDefaultPortal() {
       try {
         const res = await portalsApi.getPortals();
-        if (res && res.data && res.data.length > 0) {
-          setEntityId(res.data[0].id);
+        if (res && res.portals && res.portals.length > 0) {
+          setEntityId(res.portals[0].id);
         } else {
           setLoading(false);
         }

@@ -2,6 +2,7 @@ import { Controller, Get, Param, UseGuards, Res, StreamableFile } from '@nestjs/
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import type { Response } from 'express';
 
+import { AgencyRoleGuard } from '../auth/guards/agency-role.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 import type { RequestUser } from '../common/interfaces/auth.interface';
@@ -17,7 +18,7 @@ export class ExportController {
    * Export portal data to PDF
    */
   @Get('portal/:id/pdf')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AgencyRoleGuard)
   @ApiOperation({ summary: 'Export portal to PDF' })
   async exportPortalToPDF(
     @Param('id') portalId: string,
@@ -35,11 +36,30 @@ export class ExportController {
     return new StreamableFile(buffer);
   }
 
+  @Get('portal/:id/value-ledger.json')
+  @UseGuards(JwtAuthGuard, AgencyRoleGuard)
+  @ApiOperation({ summary: 'Export approved client-visible value claims with provenance' })
+  async exportClientValuePacket(
+    @Param('id') portalId: string,
+    @CurrentUser() user: RequestUser,
+    @Res() res: Response,
+  ): Promise<void> {
+    const buffer = await this.exportService.exportClientValuePacket(portalId, user.workspaceId);
+    res.set({
+      'Content-Type': 'application/json; charset=utf-8',
+      'Content-Disposition': `attachment; filename="portal-${portalId}-value-ledger.json"`,
+      'Content-Length': buffer.length,
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff',
+    });
+    res.send(buffer);
+  }
+
   /**
    * Export portal data to CSV
    */
   @Get('portal/:id/csv')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AgencyRoleGuard)
   @ApiOperation({ summary: 'Export portal data to CSV' })
   async exportPortalToCSV(
     @Param('id') portalId: string,
@@ -61,7 +81,7 @@ export class ExportController {
    * Export portal data to Excel
    */
   @Get('portal/:id/excel')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AgencyRoleGuard)
   @ApiOperation({ summary: 'Export portal data to Excel' })
   async exportPortalToExcel(
     @Param('id') portalId: string,
@@ -83,7 +103,7 @@ export class ExportController {
    * Export widget data
    */
   @Get('widget/:id/:format')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AgencyRoleGuard)
   @ApiOperation({ summary: 'Export widget data in specified format' })
   @ApiQuery({
     name: 'format',

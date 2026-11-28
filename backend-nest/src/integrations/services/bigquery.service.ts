@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface BigQueryIntegration {
   accessToken: string; // OAuth2 access token
   refreshToken?: string;
@@ -36,7 +37,7 @@ export class BigQueryService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('BigQuery connection test failed', error);
+      this.logger.error('BigQuery connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -111,7 +112,7 @@ export class BigQueryService {
 
       return this.formatQueryResult(data);
     } catch (error) {
-      this.logger.error('Failed to execute BigQuery query', error);
+      this.logger.error('Failed to execute BigQuery query' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -187,7 +188,7 @@ export class BigQueryService {
         })) || []
       );
     } catch (error) {
-      this.logger.error('Failed to fetch BigQuery datasets', error);
+      this.logger.error('Failed to fetch BigQuery datasets' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -219,7 +220,7 @@ export class BigQueryService {
         })) || []
       );
     } catch (error) {
-      this.logger.error('Failed to fetch BigQuery tables', error);
+      this.logger.error('Failed to fetch BigQuery tables' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -256,7 +257,7 @@ export class BigQueryService {
         clustering: response.data.clustering,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch BigQuery table schema', error);
+      this.logger.error('Failed to fetch BigQuery table schema' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -299,7 +300,7 @@ export class BigQueryService {
         })) || []
       );
     } catch (error) {
-      this.logger.error('Failed to fetch BigQuery jobs', error);
+      this.logger.error('Failed to fetch BigQuery jobs' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -373,7 +374,7 @@ export class BigQueryService {
         })),
       };
     } catch (error) {
-      this.logger.error('Failed to fetch BigQuery analytics', error);
+      this.logger.error('Failed to fetch BigQuery analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -407,7 +408,7 @@ export class BigQueryService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to create BigQuery dataset', error);
+      this.logger.error('Failed to create BigQuery dataset' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -450,7 +451,7 @@ export class BigQueryService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to load data from GCS to BigQuery', error);
+      this.logger.error('Failed to load data from GCS to BigQuery' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

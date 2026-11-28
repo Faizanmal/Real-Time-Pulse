@@ -4,6 +4,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface RedshiftIntegration {
   accessToken: string; // AWS Access Key ID
   refreshToken: string; // AWS Secret Access Key
@@ -89,7 +90,7 @@ export class RedshiftService {
       const result = await this.executeStatement(integration, 'SELECT 1');
       return !!result;
     } catch (error) {
-      this.logger.error('Redshift connection test failed', error);
+      this.logger.error('Redshift connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -153,7 +154,7 @@ export class RedshiftService {
       // Wait for statement completion
       return this.waitForStatementResult(integration, statementId);
     } catch (error) {
-      this.logger.error('Failed to execute Redshift statement', error);
+      this.logger.error('Failed to execute Redshift statement' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -323,7 +324,7 @@ export class RedshiftService {
         availabilityZone: cluster.AvailabilityZone,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Redshift cluster info', error);
+      this.logger.error('Failed to fetch Redshift cluster info' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -396,7 +397,7 @@ export class RedshiftService {
         clusterInfo: clusterInfo || {},
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Redshift analytics', error);
+      this.logger.error('Failed to fetch Redshift analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

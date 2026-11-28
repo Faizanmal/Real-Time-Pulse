@@ -1,6 +1,7 @@
 {
   "name": "backend-nest",
   "version": "0.0.1",
+  "packageManager": "npm@11.20.0",
   "description": "",
   "author": "",
   "private": true,
@@ -8,10 +9,19 @@
   "overrides": {
     "multer": "^2.3.0",
     "deepmerge-ts": "^8.0.0",
-    "mysql2": "^3.23.1"
+    "mysql2": "^3.23.1",
+    "@graphql-tools/utils": "^12.0.2",
+    "effect": "^3.22.1",
+    "bull": {
+      "uuid": "^11.1.1"
+    },
+    "exceljs": {
+      "uuid": "^11.1.1"
+    }
   },
   "scripts": {
     "build": "nest build",
+    "typecheck": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch --preserveWatchOutput",
@@ -23,6 +33,20 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "prisma:validate": "node ./scripts/prisma-runner.cjs validate",
+    "prisma:migrate:deploy": "node ./scripts/prisma-runner.cjs migrate deploy",
+    "integration:tokens:plan": "node ./scripts/migrate-integration-tokens.cjs",
+    "integration:tokens:encrypt": "node ./scripts/migrate-integration-tokens.cjs --apply",
+    "integration:tokens:decrypt-rollback": "node ./scripts/migrate-integration-tokens.cjs --decrypt --apply",
+    "services:up": "docker compose --profile local up -d --wait postgres redis",
+    "services:down": "docker compose --profile local down",
+    "test:db:up": "docker compose -f docker-compose.test.yml up -d --wait postgres-test redis-test",
+    "test:db:down": "docker compose -f docker-compose.test.yml down",
+    "test:db:migrate": "node ./scripts/test-db-runner.cjs migrate",
+    "test:db:seed": "node ./scripts/test-db-runner.cjs seed",
+    "test:ci": "jest --runInBand --coverage=false",
+    "test:ci:security-tenant": "jest --runInBand --coverage=false src/integrations/connector-security.util.spec.ts src/integrations/integration-token-encryption.spec.ts src/integrations/integration.service.contract.spec.ts src/auth/auth.controller.session.spec.ts src/config/validate-env.spec.ts src/jobs/processors/data-sync-queue.processor.spec.ts",
+    "test:integration": "node ./scripts/test-db-runner.cjs integration",
     "prisma:migrate": "node ./scripts/prisma-runner.cjs migrate dev",
     "prisma:dbpush": "node ./scripts/prisma-runner.cjs db push --accept-data-loss"
   },
@@ -31,16 +55,16 @@
     "@aws-sdk/client-s3": "^3.962.0",
     "@aws-sdk/lib-storage": "^3.962.0",
     "@nestjs/apollo": "^13.2.5",
-    "@nestjs/axios": "^12.0.1",
+    "@nestjs/axios": "^4.0.1",
     "@nestjs/bull": "^12.0.0",
     "@nestjs/common": "^11.1.12",
-    "@nestjs/config": "^12.0.0",
+    "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.1.11",
-    "@nestjs/event-emitter": "^12.0.1",
+    "@nestjs/event-emitter": "^3.1.0",
     "@nestjs/graphql": "^13.2.3",
-    "@nestjs/jwt": "^12.0.2",
+    "@nestjs/jwt": "^11.0.2",
     "@nestjs/mapped-types": "^12.0.0",
-    "@nestjs/passport": "^12.0.0",
+    "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.1.11",
     "@nestjs/platform-socket.io": "^11.1.11",
     "@nestjs/schedule": "^12.0.2",
@@ -138,5 +162,9 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.51.0"
+  },
+  "allowScripts": {
+    "@prisma/engines@7.10.1": true,
+    "bcrypt@6.0.0": true
   }
 }

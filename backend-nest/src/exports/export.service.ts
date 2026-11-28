@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
 
+import { ValueLedgerService } from '../analytics/value-ledger.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 interface ExportResult {
@@ -12,14 +13,44 @@ interface ExportResult {
 
 @Injectable()
 export class ExportService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly valueLedger: ValueLedgerService,
+  ) {}
+
+  async exportClientValuePacket(portalId: string, workspaceId: string): Promise<Buffer> {
+    const portal = await this.prisma.portal.findFirst({
+      where: { id: portalId, workspaceId, deletedAt: null },
+      select: { id: true, name: true, workspace: { select: { name: true } } },
+    });
+    if (!portal) throw new NotFoundException('Portal not found');
+    const claims = await this.valueLedger.publicClaims(portal.id);
+    return Buffer.from(
+      JSON.stringify(
+        {
+          packetVersion: 1,
+          portal: { id: portal.id, name: portal.name, workspaceName: portal.workspace.name },
+          exportedAt: new Date().toISOString(),
+          claims,
+          calculationNotes: [
+            'Each displayed value is calculated from the named, versioned formula and listed assumptions.',
+            'Low/base/high are sensitivity scenarios, not confidence intervals.',
+            'Estimates do not establish causal attribution or guaranteed savings.',
+          ],
+        },
+        null,
+        2,
+      ),
+      'utf-8',
+    );
+  }
 
   /**
    * Export portal to PDF
    */
   async exportPortalToPDF(portalId: string, workspaceId: string): Promise<Buffer> {
     const portal = await this.prisma.portal.findFirst({
-      where: { id: portalId, workspaceId },
+      where: { id: portalId, workspaceId, deletedAt: null },
       include: {
         widgets: {
           include: {
@@ -99,7 +130,7 @@ export class ExportService {
    */
   async exportPortalToCSV(portalId: string, workspaceId: string): Promise<Buffer> {
     const portal = await this.prisma.portal.findFirst({
-      where: { id: portalId, workspaceId },
+      where: { id: portalId, workspaceId, deletedAt: null },
       include: {
         widgets: {
           include: {
@@ -148,7 +179,7 @@ export class ExportService {
    */
   async exportPortalToExcel(portalId: string, workspaceId: string): Promise<Uint8Array> {
     const portal = await this.prisma.portal.findFirst({
-      where: { id: portalId, workspaceId },
+      where: { id: portalId, workspaceId, deletedAt: null },
       include: {
         widgets: {
           include: {
@@ -245,7 +276,7 @@ export class ExportService {
     const widget = await this.prisma.widget.findFirst({
       where: {
         id: widgetId,
-        portal: { workspaceId },
+        portal: { workspaceId, deletedAt: null },
       },
       include: {
         integration: true,

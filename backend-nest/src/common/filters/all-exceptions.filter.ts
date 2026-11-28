@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { sanitizeSensitivePath } from '../utils/sensitive-path';
 
 export interface ErrorResponse {
   success: boolean;
@@ -32,6 +33,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let message = 'Internal server error';
     let error = 'Internal Server Error';
     let errors: unknown[] | undefined;
+    const safePath = sanitizeSensitivePath(request.url);
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
@@ -61,7 +63,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message,
       error,
       timestamp: new Date().toISOString(),
-      path: request.url,
+      path: safePath,
     };
 
     if (errors) {
@@ -75,7 +77,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     // Log error
     this.logger.error(
-      `${request.method} ${request.url}`,
+      `${request.method} ${safePath}`,
       exception instanceof Error ? exception.stack : 'Unknown error',
     );
 

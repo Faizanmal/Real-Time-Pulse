@@ -7,6 +7,7 @@ import { ExportService } from '../exports/export.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { CreateScheduledReportDto, UpdateScheduledReportDto } from './dto/scheduled-report.dto';
+import { nextScheduledInstant } from './schedule-time';
 
 @Injectable()
 export class ScheduledReportsService {
@@ -374,44 +375,7 @@ export class ScheduledReportsService {
   /**
    * Calculate the next run time based on cron expression
    */
-  private calculateNextRun(cronExpression: string, _timezone: string): Date {
-    // Simple cron parser for common patterns
-    // In production, use a library like 'cron-parser'
-    const parts = cronExpression.split(' ');
-
-    if (parts.length !== 5) {
-      // Default to next hour if invalid cron
-      const nextHour = new Date();
-      nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
-      return nextHour;
-    }
-
-    // For now, return next occurrence (simplified)
-    // Use cron-parser for accurate calculation
-    const now = new Date();
-    const [minute, hour, _dayOfMonth, _month, _dayOfWeek] = parts;
-
-    const next = new Date(now);
-    next.setSeconds(0, 0);
-
-    // Parse hour
-    if (hour !== '*') {
-      const targetHour = parseInt(hour, 10);
-      if (now.getHours() >= targetHour) {
-        next.setDate(next.getDate() + 1);
-      }
-      next.setHours(targetHour);
-    } else {
-      next.setHours(next.getHours() + 1);
-    }
-
-    // Parse minute
-    if (minute !== '*') {
-      next.setMinutes(parseInt(minute, 10));
-    } else {
-      next.setMinutes(0);
-    }
-
-    return next;
+  private calculateNextRun(cronExpression: string, timezone: string): Date {
+    return nextScheduledInstant(cronExpression, timezone);
   }
 }

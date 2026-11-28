@@ -11,6 +11,7 @@ import {
 import { CacheService } from '../cache/cache.service';
 import { IntegrationService } from '../integrations/integration.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { PLAN_CATALOG } from '../billing/plan-catalog';
 
 import { CreateWidgetDto, UpdateWidgetDto, WidgetResponseDto } from './dto/widget.dto';
 
@@ -38,9 +39,18 @@ export class WidgetService {
     if (!portal) {
       throw new NotFoundException('Portal not found');
     }
+    if (portal.deletedAt) throw new NotFoundException('Portal not found');
 
     if (portal.workspaceId !== workspaceId) {
       throw new ForbiddenException('Access denied to this portal');
+    }
+
+    const subscription = await this.prisma.subscription.findUnique({ where: { workspaceId }, select: { plan: true } });
+    if (!subscription) throw new ForbiddenException('A workspace subscription is required to create widgets.');
+    const widgetLimit = PLAN_CATALOG[subscription.plan].maxWidgets;
+    const widgetCount = await (this.prisma as any).widget.count({ where: { portal: { workspaceId } } });
+    if (widgetCount >= widgetLimit) {
+      throw new ForbiddenException(`Widget limit reached (${widgetLimit}). Upgrade your plan to continue.`);
     }
 
     // Verify integration if provided
@@ -99,6 +109,7 @@ export class WidgetService {
     if (!portal) {
       throw new NotFoundException('Portal not found');
     }
+    if (portal.deletedAt) throw new NotFoundException('Portal not found');
 
     if (portal.workspaceId !== workspaceId) {
       throw new ForbiddenException('Access denied to this portal');
@@ -146,6 +157,7 @@ export class WidgetService {
     if (widget.portal.workspaceId !== workspaceId) {
       throw new ForbiddenException('Access denied to this widget');
     }
+    if (widget.portal.deletedAt) throw new NotFoundException('Portal not found');
 
     return this.formatWidgetResponse(widget);
   }
@@ -172,6 +184,7 @@ export class WidgetService {
     if (existingWidget.portal.workspaceId !== workspaceId) {
       throw new ForbiddenException('Access denied to this widget');
     }
+    if (existingWidget.portal.deletedAt) throw new NotFoundException('Portal not found');
 
     const widget = await (this.prisma as any).widget.update({
       where: { id: widgetId },
@@ -223,6 +236,7 @@ export class WidgetService {
     if (widget.portal.workspaceId !== workspaceId) {
       throw new ForbiddenException('Access denied to this widget');
     }
+    if (widget.portal.deletedAt) throw new NotFoundException('Portal not found');
 
     await (this.prisma as any).widget.delete({
       where: { id: widgetId },
@@ -256,6 +270,7 @@ export class WidgetService {
     if (widget.portal.workspaceId !== workspaceId) {
       throw new ForbiddenException('Access denied to this widget');
     }
+    if (widget.portal.deletedAt) throw new NotFoundException('Portal not found');
 
     if (!widget.integration) {
       throw new BadRequestException('Widget has no integration configured');

@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface ZohoCRMIntegration {
   accessToken: string;
   refreshToken?: string;
@@ -36,7 +37,7 @@ export class ZohoCRMService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('Zoho CRM connection test failed', error);
+      this.logger.error('Zoho CRM connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -97,7 +98,7 @@ export class ZohoCRMService {
 
       return response.data.data || [];
     } catch (error) {
-      this.logger.error(`Failed to fetch Zoho CRM ${module}`, error);
+      this.logger.error(`Failed to fetch Zoho CRM ${module}` + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -157,7 +158,7 @@ export class ZohoCRMService {
 
       return response.data.modules || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Zoho CRM modules', error);
+      this.logger.error('Failed to fetch Zoho CRM modules' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -218,7 +219,7 @@ export class ZohoCRMService {
         stageBreakdown,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Zoho CRM analytics', error);
+      this.logger.error('Failed to fetch Zoho CRM analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -239,7 +240,7 @@ export class ZohoCRMService {
 
       return response.data.data || [];
     } catch (error) {
-      this.logger.error('Failed to search Zoho CRM', error);
+      this.logger.error('Failed to search Zoho CRM' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -257,7 +258,7 @@ export class ZohoCRMService {
 
       return response.data.data || [];
     } catch (error) {
-      this.logger.error('Failed to execute Zoho COQL', error);
+      this.logger.error('Failed to execute Zoho COQL' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

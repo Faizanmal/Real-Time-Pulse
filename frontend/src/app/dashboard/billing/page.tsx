@@ -170,19 +170,18 @@ export default function BillingPage() {
             <UsageBar 
               label="Team Members" 
               used={limits?.users.used || 0} 
-              limit={limits?.users.limit || 3}
+              limit={limits?.users.limit || 1}
               icon={Users}
             />
-            <UsageBar 
-              label="Storage" 
-              used={limits?.storage.used || 0} 
-              limit={limits?.storage.limit || 1024}
-              unit="MB"
-              icon={Database}
+            <UsageBar
+              label="Widgets"
+              used={limits?.widgets.used || 0}
+              limit={limits?.widgets.limit || 25}
+              icon={Sparkles}
             />
             <UsageBar 
-              label="API Calls (this month)" 
-              used={limits?.apiCalls.used || 0} 
+              label="AI requests (this month)"
+              used={limits?.apiCalls.used || 0}
               limit={limits?.apiCalls.limit || 10000}
               icon={Zap}
             />
@@ -213,7 +212,7 @@ export default function BillingPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold">${plan.price}</span>
+                    <span className="text-4xl font-bold">{plan.price === 0 ? 'Free' : `$${plan.price}`}</span>
                     <span className="text-muted-foreground">/{plan.interval}</span>
                   </div>
                   <ul className="space-y-2">
@@ -229,11 +228,12 @@ export default function BillingPage() {
                   <Button 
                     className="w-full" 
                     variant={plan.id === currentPlan?.id ? 'outline' : 'default'}
-                    disabled={plan.id === currentPlan?.id}
+                    disabled={plan.id === currentPlan?.id || plan.id === 'TRIAL' || plan.checkoutAvailable === false}
                     onClick={() => handleUpgrade(plan)}
                   >
-                    {plan.id === currentPlan?.id ? 'Current Plan' : 'Select Plan'}
+                    {plan.id === currentPlan?.id ? 'Current Plan' : plan.id === 'TRIAL' ? 'Included' : plan.checkoutAvailable === false ? 'Unavailable' : 'Select Plan'}
                   </Button>
+                  {plan.id !== 'TRIAL' && plan.checkoutAvailable === false && <p className="mt-2 text-xs text-muted-foreground">Billing is not configured in this environment.</p>}
                 </CardFooter>
               </Card>
             </motion.div>

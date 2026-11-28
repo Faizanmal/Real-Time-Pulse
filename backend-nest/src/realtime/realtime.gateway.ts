@@ -22,6 +22,8 @@ import {
 import { Server, Socket } from 'socket.io';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { readCookieValue } from '../auth/cookie-token.util';
+import { createRealtimeEvent } from './realtime-event';
 
 // --- Types & Interfaces ---
 
@@ -65,6 +67,10 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   private readonly presence = new Map<string, Map<string, PresenceInfo>>(); // workspaceId -> userId -> presence
   private readonly userSockets = new Map<string, Set<string>>(); // userId -> socketIds
   private readonly ipConnectionCounts = new Map<string, number>();
+  private readonly portalTenants = new Map<string, string>();
+  private readonly widgetTenants = new Map<string, string>();
+  private readonly userTenants = new Map<string, string>();
+  private cleanupTimer?: ReturnType<typeof setInterval>;
 
   private readonly MAX_CONNECTIONS_PER_IP = parseInt(
     process.env.WS_MAX_CONNECTIONS_PER_IP || '50',
@@ -77,6 +83,19 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     private readonly prisma: PrismaService,
   ) {}
 
+  async revokePortalSubscriptions(portalId: string): Promise<void> {
+    if (!this.server) return;
+    const room = `portal:${portalId}`;
+    this.server.to(room).emit('portal:access:revoked', this.portalEvent(portalId, { portalId }));
+    await this.server.in(room).socketsLeave(room);
+    const widgets = await this.prisma.widget.findMany({ where: { portalId }, select: { id: true } });
+    for (const widget of widgets) {
+      const widgetRoom = `widget:${widget.id}`;
+      this.server.to(widgetRoom).emit('portal:access:revoked', this.widgetEvent(widget.id, { portalId }));
+      await this.server.in(widgetRoom).socketsLeave(widgetRoom);
+    }
+  }
+
   // ============================================
   // LIFECYCLE HOOKS
   // ============================================
@@ -84,7 +103,11 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   afterInit(_server: Server): void {
     this.logger.log('WebSocket Gateway initialized');
     // Periodic cleanup of stale connections every minute
-    setInterval(() => this.cleanupStaleConnections(), 60000);
+    this.cleanupTimer = setInterval(() => this.cleanupStaleConnections(), 60000);
+  }
+
+  onModuleDestroy(): void {
+    if (this.cleanupTimer) clearInterval(this.cleanupTimer);
   }
 
   async handleConnection(client: Socket): Promise<void> {
@@ -109,6 +132,12 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
 
       const payload = await this.verifyToken(token);
       const { userId, workspaceId } = payload;
+      const account = await this.prisma.user.findFirst({ where: { id: userId, workspaceId }, select: { role: true } });
+      if (!account || account.role === 'MEMBER') {
+        client.emit('error', { message: 'Use a portal link assigned to your client account' });
+        client.disconnect();
+        return;
+      }
 
       // Store connection metadata
       this.connections.set(client.id, {
@@ -119,6 +148,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
         device: client.handshake.headers['user-agent'],
         ipAddress: ip,
       });
+      this.userTenants.set(userId, workspaceId);
 
       // Track user's multi-device sockets
       if (!this.userSockets.has(userId)) {
@@ -134,10 +164,10 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       await this.updatePresence(workspaceId, userId, 'online');
 
       // Notify others in workspace
-      client.to(`workspace:${workspaceId}`).emit('user:joined', {
+      client.to(`workspace:${workspaceId}`).emit('user:joined', createRealtimeEvent({
         userId,
         timestamp: new Date(),
-      });
+      }, { tenantId: workspaceId, resourceType: 'workspace', resourceId: workspaceId }));
 
       this.logger.log(`Client connected: ${client.id} (User: ${userId})`);
     } catch (error: unknown) {
@@ -165,10 +195,10 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
         this.userSockets.delete(userId);
         await this.updatePresence(workspaceId, userId, 'offline');
 
-        this.server.to(`workspace:${workspaceId}`).emit('user:left', {
+        this.server.to(`workspace:${workspaceId}`).emit('user:left', createRealtimeEvent({
           userId,
           timestamp: new Date(),
-        });
+        }, { tenantId: workspaceId, resourceType: 'workspace', resourceId: workspaceId }));
       }
 
       this.connections.delete(client.id);
@@ -186,10 +216,10 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     @MessageBody() data: { portalId: string },
   ): Promise<void> {
     const metadata = this.connections.get(client.id);
-    if (!metadata) return;
+    if (!metadata || !this.isPortalId(data?.portalId)) return;
 
     const portal = await this.prisma.portal.findFirst({
-      where: { id: data.portalId, workspaceId: metadata.workspaceId },
+      where: { id: data.portalId, workspaceId: metadata.workspaceId, deletedAt: null },
     });
 
     if (!portal) {
@@ -198,17 +228,18 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     }
 
     await client.join(`portal:${data.portalId}`);
+    this.portalTenants.set(data.portalId, metadata.workspaceId);
 
     await this.updatePresence(metadata.workspaceId, metadata.userId, 'online', data.portalId);
 
-    client.to(`portal:${data.portalId}`).emit('portal:viewer:joined', {
+    client.to(`portal:${data.portalId}`).emit('portal:viewer:joined', this.portalEvent(data.portalId, {
       userId: metadata.userId,
       portalId: data.portalId,
       timestamp: new Date(),
-    });
+    }));
 
     const viewers = await this.getPortalViewers(data.portalId);
-    client.emit('portal:viewers', { portalId: data.portalId, viewers });
+    client.emit('portal:viewers', this.portalEvent(data.portalId, { portalId: data.portalId, viewers }));
   }
 
   @SubscribeMessage('portal:leave')
@@ -217,16 +248,16 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     @MessageBody() data: { portalId: string },
   ): Promise<void> {
     const metadata = this.connections.get(client.id);
-    if (!metadata) return;
+    if (!metadata || !this.isPortalId(data?.portalId) || !client.rooms.has(`portal:${data.portalId}`)) return;
 
     await client.leave(`portal:${data.portalId}`);
     await this.updatePresence(metadata.workspaceId, metadata.userId, 'online');
 
-    client.to(`portal:${data.portalId}`).emit('portal:viewer:left', {
+    client.to(`portal:${data.portalId}`).emit('portal:viewer:left', this.portalEvent(data.portalId, {
       userId: metadata.userId,
       portalId: data.portalId,
       timestamp: new Date(),
-    });
+    }));
   }
 
   // ============================================
@@ -238,10 +269,25 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { widgetIds: string[] },
   ): Promise<void> {
-    for (const widgetId of data.widgetIds) {
+    const metadata = this.connections.get(client.id);
+    if (!metadata || !Array.isArray(data?.widgetIds) || data.widgetIds.length > 100 ||
+      data.widgetIds.some((id) => typeof id !== 'string' || !id || id.length > 128)) {
+      client.emit('error', { message: 'Access denied' });
+      return;
+    }
+    const widgets = await this.prisma.widget.findMany({
+      where: {
+        id: { in: data.widgetIds },
+        portal: { workspaceId: metadata.workspaceId, deletedAt: null },
+      },
+      select: { id: true, portalId: true },
+    });
+    const allowedIds = widgets.map((widget) => widget.id);
+    for (const widget of widgets) this.widgetTenants.set(widget.id, metadata.workspaceId);
+    for (const widgetId of allowedIds) {
       await client.join(`widget:${widgetId}`);
     }
-    client.emit('widget:subscribed', { widgetIds: data.widgetIds });
+    client.emit('widget:subscribed', { widgetIds: allowedIds });
   }
 
   @SubscribeMessage('widget:unsubscribe')
@@ -249,6 +295,8 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { widgetIds: string[] },
   ): Promise<void> {
+    if (!Array.isArray(data?.widgetIds) || data.widgetIds.length > 100 ||
+      data.widgetIds.some((id) => typeof id !== 'string' || !id || id.length > 128)) return;
     for (const widgetId of data.widgetIds) {
       await client.leave(`widget:${widgetId}`);
     }
@@ -264,16 +312,16 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     @MessageBody() data: { portalId: string; x: number; y: number },
   ): Promise<void> {
     const metadata = this.connections.get(client.id);
-    if (!metadata) return;
+    if (!metadata || !this.isPortalId(data?.portalId) || !client.rooms.has(`portal:${data.portalId}`)) return;
     metadata.lastActivity = new Date(); // Keep connection alive
 
-    client.to(`portal:${data.portalId}`).emit('cursor:moved', {
+    client.to(`portal:${data.portalId}`).emit('cursor:moved', this.portalEvent(data.portalId, {
       userId: metadata.userId,
       portalId: data.portalId,
       x: data.x,
       y: data.y,
       timestamp: Date.now(),
-    });
+    }));
   }
 
   @SubscribeMessage('selection:change')
@@ -283,13 +331,14 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     data: { portalId: string; widgetId?: string; selection: unknown },
   ): Promise<void> {
     const metadata = this.connections.get(client.id);
-    if (!metadata) return;
+    if (!metadata || !this.isPortalId(data?.portalId) || !client.rooms.has(`portal:${data.portalId}`)) return;
+    if (data.widgetId && !(await this.widgetBelongsToPortal(data.widgetId, data.portalId, metadata.workspaceId))) return;
 
-    client.to(`portal:${data.portalId}`).emit('selection:changed', {
+    client.to(`portal:${data.portalId}`).emit('selection:changed', this.portalEvent(data.portalId, {
       userId: metadata.userId,
       ...data,
       timestamp: Date.now(),
-    });
+    }));
   }
 
   @SubscribeMessage('comment:typing')
@@ -298,20 +347,21 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     @MessageBody() data: { portalId: string; widgetId?: string },
   ): Promise<void> {
     const metadata = this.connections.get(client.id);
-    if (!metadata) return;
+    if (!metadata || !this.isPortalId(data?.portalId) || !client.rooms.has(`portal:${data.portalId}`)) return;
+    if (data.widgetId && !(await this.widgetBelongsToPortal(data.widgetId, data.portalId, metadata.workspaceId))) return;
 
     const user = await this.prisma.user.findUnique({
       where: { id: metadata.userId },
       select: { firstName: true, lastName: true, avatar: true },
     });
 
-    client.to(`portal:${data.portalId}`).emit('comment:user:typing', {
+    client.to(`portal:${data.portalId}`).emit('comment:user:typing', this.portalEvent(data.portalId, {
       userId: metadata.userId,
       userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
       avatar: user?.avatar,
       portalId: data.portalId,
       widgetId: data.widgetId,
-    });
+    }));
   }
 
   @SubscribeMessage('comment:stop-typing')
@@ -320,12 +370,12 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     @MessageBody() data: { portalId: string },
   ): Promise<void> {
     const metadata = this.connections.get(client.id);
-    if (!metadata) return;
+    if (!metadata || !this.isPortalId(data?.portalId) || !client.rooms.has(`portal:${data.portalId}`)) return;
 
-    client.to(`portal:${data.portalId}`).emit('comment:user:stopped-typing', {
+    client.to(`portal:${data.portalId}`).emit('comment:user:stopped-typing', this.portalEvent(data.portalId, {
       userId: metadata.userId,
       portalId: data.portalId,
-    });
+    }));
   }
 
   // ============================================
@@ -333,29 +383,64 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   // ============================================
 
   broadcastToWorkspace(workspaceId: string, event: string, data: unknown): void {
-    this.server
-      .to(`workspace:${workspaceId}`)
-      .emit(event, { ...(data as object), timestamp: new Date() });
+    this.server.to(`workspace:${workspaceId}`).emit(event, createRealtimeEvent(
+      { ...(data as object), timestamp: new Date() },
+      { tenantId: workspaceId, resourceType: 'workspace', resourceId: workspaceId },
+    ));
   }
 
   broadcastToPortal(portalId: string, event: string, data: unknown): void {
-    this.server
-      .to(`portal:${portalId}`)
-      .emit(event, { ...(data as object), timestamp: new Date() });
+    this.server.to(`portal:${portalId}`).emit(event, createRealtimeEvent(
+      { ...(data as object), timestamp: new Date() },
+      { tenantId: this.portalTenants.get(portalId) ?? (data as any)?.workspaceId ?? (data as any)?.tenantId ?? null, resourceType: 'portal', resourceId: portalId },
+    ));
   }
 
   broadcastToWidget(widgetId: string, event: string, data: unknown): void {
-    this.server
-      .to(`widget:${widgetId}`)
-      .emit(event, { ...(data as object), timestamp: new Date() });
+    this.server.to(`widget:${widgetId}`).emit(event, createRealtimeEvent(
+      { ...(data as object), timestamp: new Date() },
+      { tenantId: this.widgetTenants.get(widgetId) ?? (data as any)?.workspaceId ?? (data as any)?.tenantId ?? null, resourceType: 'widget', resourceId: widgetId },
+    ));
   }
 
   broadcastToUser(userId: string, event: string, data: unknown): void {
-    this.server.to(`user:${userId}`).emit(event, { ...(data as object), timestamp: new Date() });
+    this.server.to(`user:${userId}`).emit(event, createRealtimeEvent(
+      { ...(data as object), timestamp: new Date() },
+      { tenantId: this.userTenants.get(userId) ?? null, resourceType: 'user', resourceId: userId },
+    ));
   }
 
   broadcastToAll(event: string, data: unknown): void {
-    this.server.emit(event, { ...(data as object), timestamp: new Date() });
+    this.server.emit(event, createRealtimeEvent(
+      { ...(data as object), timestamp: new Date() },
+      { tenantId: null, resourceType: 'system', resourceId: 'all' },
+    ));
+  }
+
+  private isPortalId(portalId: unknown): portalId is string {
+    return typeof portalId === 'string' && portalId.length > 0 && portalId.length <= 128;
+  }
+
+  private async widgetBelongsToPortal(widgetId: string, portalId: string, workspaceId: string): Promise<boolean> {
+    const widget = await this.prisma.widget.findFirst({
+      where: { id: widgetId, portalId, portal: { workspaceId, deletedAt: null } },
+      select: { id: true },
+    });
+    return Boolean(widget);
+  }
+
+  private portalEvent(portalId: string, data: Record<string, unknown>) {
+    return createRealtimeEvent(data, {
+      tenantId: this.portalTenants.get(portalId) ?? null,
+      resourceType: 'portal', resourceId: portalId,
+    });
+  }
+
+  private widgetEvent(widgetId: string, data: Record<string, unknown>) {
+    return createRealtimeEvent(data, {
+      tenantId: this.widgetTenants.get(widgetId) ?? null,
+      resourceType: 'widget', resourceId: widgetId,
+    });
   }
 
   emitWidgetUpdate(widgetId: string, data: unknown): void {
@@ -440,9 +525,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   private extractToken(client: Socket): string | null {
     const authHeader = client.handshake.headers.authorization;
     if (authHeader?.startsWith('Bearer ')) return authHeader.slice(7);
-    const queryToken = client.handshake.query.token;
-    if (typeof queryToken === 'string') return queryToken;
-    return client.handshake.auth?.token || null;
+    return readCookieValue(client.handshake.headers.cookie, 'pulse_access') || client.handshake.auth?.token || null;
   }
 
   private async verifyToken(token: string): Promise<{ userId: string; workspaceId: string }> {

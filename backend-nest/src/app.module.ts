@@ -40,6 +40,7 @@ import redisConfig from './config/redis.config';
 import s3Config from './config/s3.config';
 import securityConfig from './config/security.config';
 import throttleConfig from './config/throttle.config';
+import { validateEnvironment } from './config/validate-env';
 import { DataHealthModule } from './data-health/data-health.module';
 import { DataValidationModule } from './data-validation/data-validation.module';
 import { EmailModule } from './email/email.module';
@@ -68,6 +69,7 @@ import { ScheduledReportsModule } from './scheduled-reports/scheduled-reports.mo
 import { ScriptingModule } from './scripting/scripting.module';
 import { SecurityModule } from './security/security.module';
 import { ShareLinksModule } from './share-links/share-links.module';
+import { DecisionInboxModule } from './decision-inbox/decision-inbox.module';
 import { VoiceModule } from './voice/voice.module';
 import { VoiceControlModule } from './voice-control/voice-control.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
@@ -80,6 +82,7 @@ import { IoTModule } from './iot/iot.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      validate: validateEnvironment,
       load: [
         appConfig,
         databaseConfig,
@@ -156,6 +159,7 @@ import { IoTModule } from './iot/iot.module';
     ARVisualizationModule,
     ApiMarketplaceModule,
     ShareLinksModule,
+    DecisionInboxModule,
     CommentsModule,
     // TemplatesModule,
     BillingModule,

@@ -26,6 +26,7 @@ export interface DataSyncJobData {
   workspaceId: string;
   integrationId: string;
   syncType: 'full' | 'incremental';
+  requestId?: string;
 }
 
 @Injectable()
@@ -98,6 +99,8 @@ export class JobsService {
 
       const job = await this.dataSyncQueue.add('sync-data', data, {
         attempts: 3,
+        backoff: { type: 'exponential', delay: 1000 },
+        ...(data.requestId ? { jobId: `sync-${data.integrationId}-${data.requestId}` } : {}),
       });
 
       this.logger.log(`Data sync job queued: ${job.id}`);
@@ -195,6 +198,45 @@ export class JobsService {
       completed,
       failed,
       delayed,
+    };
+  }
+
+  /** Workspace-scoped operational view for integration freshness. Job payloads are never returned. */
+  async getDataSyncMetrics(workspaceId: string) {
+    const [waiting, active, delayed, failed, completed] = await Promise.all([
+      this.dataSyncQueue.getJobs(['waiting'], 0, 499),
+      this.dataSyncQueue.getJobs(['active'], 0, 499),
+      this.dataSyncQueue.getJobs(['delayed'], 0, 499),
+      this.dataSyncQueue.getJobs(['failed'], 0, 499),
+      this.dataSyncQueue.getJobs(['completed'], 0, 499),
+    ]);
+    const scope = (items: any[]) => items.filter((job) => job.data?.workspaceId === workspaceId);
+    const waitingJobs = scope(waiting);
+    const delayedJobs = scope(delayed);
+    const activeJobs = scope(active);
+    const failedJobs = scope(failed);
+    const completedJobs = scope(completed);
+    const scoped = [...waitingJobs, ...delayedJobs, ...activeJobs, ...failedJobs, ...completedJobs];
+    const queued = [...waitingJobs, ...delayedJobs];
+    const oldestQueuedAt = queued.reduce(
+      (oldest: number | null, job: any) => Math.min(oldest ?? Infinity, job.timestamp ?? Date.now()),
+      null as number | null,
+    );
+    return {
+      queueDepth: queued.length,
+      active: activeJobs.length,
+      failed: failedJobs.length,
+      retries: scoped.reduce((total: number, job: any) => total + Math.max(0, (job.attemptsMade ?? 0) - 1), 0),
+      oldestQueuedAt: oldestQueuedAt === null ? null : new Date(oldestQueuedAt).toISOString(),
+      oldestQueuedAgeMs: oldestQueuedAt === null ? null : Math.max(0, Date.now() - oldestQueuedAt),
+      queueByState: {
+        waiting: waitingJobs.length,
+        delayed: delayedJobs.length,
+        active: activeJobs.length,
+        failed: failedJobs.length,
+        completed: completedJobs.length,
+      },
+      asOf: new Date().toISOString(),
     };
   }
 

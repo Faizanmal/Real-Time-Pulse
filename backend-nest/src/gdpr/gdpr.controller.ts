@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Patch, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import {
   ConsentType,
@@ -6,6 +6,10 @@ import {
   GDPRRequestStatus,
   ComplianceReportType,
 } from '@prisma/client';
+
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/user.decorator';
+import type { RequestUser } from '../common/interfaces/auth.interface';
 
 import { ComplianceService } from './compliance.service';
 import { GdprService } from './gdpr.service';
@@ -18,6 +22,32 @@ export class GdprController {
     private readonly gdprService: GdprService,
     private readonly complianceService: ComplianceService,
   ) {}
+
+  @Get('self/export')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Export the authenticated user’s account data' })
+  exportSelfData(@CurrentUser() user: RequestUser) {
+    return this.gdprService.exportSelfServiceData(user.id);
+  }
+
+  @Get('self/deletion-request')
+  @UseGuards(JwtAuthGuard)
+  getSelfDeletionRequest(@CurrentUser() user: RequestUser) {
+    return this.gdprService.getSelfDeletionRequest(user.id);
+  }
+
+  @Post('self/deletion-request')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Request delayed deletion of the authenticated account' })
+  requestSelfDeletion(@CurrentUser() user: RequestUser) {
+    return this.gdprService.requestSelfDeletion(user.id);
+  }
+
+  @Patch('self/deletion-request/:requestId/cancel')
+  @UseGuards(JwtAuthGuard)
+  cancelSelfDeletion(@CurrentUser() user: RequestUser, @Param('requestId') requestId: string) {
+    return this.gdprService.cancelSelfDeletion(user.id, requestId);
+  }
 
   // Consent Management
   @Post('consents')

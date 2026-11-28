@@ -11,6 +11,7 @@ interface StripeConnectIntegration {
   };
 }
 
+import { providerHttpStatus } from '../connector-security.util';
 @Injectable()
 export class StripeConnectService {
   private readonly logger = new Logger(StripeConnectService.name);
@@ -40,7 +41,7 @@ export class StripeConnectService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('Stripe Connect connection test failed', error);
+      this.logger.error('Stripe Connect connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -98,7 +99,7 @@ export class StripeConnectService {
         defaultCurrency: response.data.default_currency,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Stripe account', error);
+      this.logger.error('Failed to fetch Stripe account' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -118,7 +119,7 @@ export class StripeConnectService {
         livemode: response.data.livemode,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Stripe balance', error);
+      this.logger.error('Failed to fetch Stripe balance' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -157,7 +158,7 @@ export class StripeConnectService {
         hasMore: response.data.has_more,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Stripe charges', error);
+      this.logger.error('Failed to fetch Stripe charges' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -189,7 +190,7 @@ export class StripeConnectService {
         hasMore: response.data.has_more,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Stripe payment intents', error);
+      this.logger.error('Failed to fetch Stripe payment intents' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -226,7 +227,7 @@ export class StripeConnectService {
         hasMore: response.data.has_more,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Stripe customers', error);
+      this.logger.error('Failed to fetch Stripe customers' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -266,7 +267,7 @@ export class StripeConnectService {
         hasMore: response.data.has_more,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Stripe subscriptions', error);
+      this.logger.error('Failed to fetch Stripe subscriptions' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -304,7 +305,7 @@ export class StripeConnectService {
         hasMore: response.data.has_more,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Stripe invoices', error);
+      this.logger.error('Failed to fetch Stripe invoices' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -336,7 +337,7 @@ export class StripeConnectService {
         hasMore: response.data.has_more,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Stripe payouts', error);
+      this.logger.error('Failed to fetch Stripe payouts' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -368,7 +369,7 @@ export class StripeConnectService {
         hasMore: response.data.has_more,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Stripe disputes', error);
+      this.logger.error('Failed to fetch Stripe disputes' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -404,7 +405,7 @@ export class StripeConnectService {
         hasMore: response.data.has_more,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Stripe connected accounts', error);
+      this.logger.error('Failed to fetch Stripe connected accounts' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -494,7 +495,7 @@ export class StripeConnectService {
         recentPayouts: payoutsArray.slice(0, 5),
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Stripe analytics', error);
+      this.logger.error('Failed to fetch Stripe analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -531,7 +532,7 @@ export class StripeConnectService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to create Stripe connected account', error);
+      this.logger.error('Failed to create Stripe connected account' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -562,7 +563,7 @@ export class StripeConnectService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to create Stripe transfer', error);
+      this.logger.error('Failed to create Stripe transfer' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

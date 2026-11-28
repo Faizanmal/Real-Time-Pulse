@@ -340,11 +340,16 @@ interface IntegrationCardProps {
   provider: string;
   name: string;
   status: 'active' | 'inactive' | 'error';
+  connectionState?: 'CONNECTED' | 'DEGRADED' | 'NEEDS_RECONNECT' | 'DISCONNECTED';
+  statusMessage?: string;
+  lastValidDataAt?: string | null;
   lastSyncAt?: string | null;
   onTest?: (id: string) => void;
   onSync?: (id: string) => void;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
+  onRefresh?: (id: string) => void;
+  isRefreshing?: boolean;
   isSyncing?: boolean;
   className?: string;
 }
@@ -360,11 +365,16 @@ export function IntegrationCard({
   provider,
   name,
   status,
+  connectionState,
+  statusMessage,
+  lastValidDataAt,
   lastSyncAt,
   onTest,
   onSync,
   onEdit,
   onDelete,
+  onRefresh,
+  isRefreshing = false,
   isSyncing = false,
   className,
 }: IntegrationCardProps) {
@@ -385,10 +395,12 @@ export function IntegrationCard({
           <h4 className="text-lg font-bold text-white mb-1">{name}</h4>
           <p className="text-sm text-gray-400">{provider}</p>
         </div>
-        <span className={cn('px-3 py-1 rounded-full text-xs font-medium border', statusColors[status])}>
-          {status}
+        <span className={cn('px-3 py-1 rounded-full text-xs font-medium border', connectionState ? (connectionState === 'CONNECTED' ? statusColors.active : connectionState === 'DISCONNECTED' ? statusColors.inactive : statusColors.error) : statusColors[status])}>
+          {(connectionState || status).replaceAll('_', ' ').toLowerCase()}
         </span>
       </div>
+
+      {statusMessage && <p className="mb-3 text-xs text-gray-400">{statusMessage}</p>}
 
       <div className="flex items-center gap-2 mb-4">
         <motion.button
@@ -412,14 +424,25 @@ export function IntegrationCard({
       </div>
 
       <div className="flex items-center justify-between pt-3 border-t border-slate-700/50">
-        {lastSyncAt ? (
+        {(lastValidDataAt || lastSyncAt) ? (
           <span className="text-xs text-gray-500">
-            Synced {new Date(lastSyncAt).toLocaleString()}
+            Last valid data {new Date(lastValidDataAt || lastSyncAt!).toLocaleString()}
           </span>
         ) : (
           <span className="text-xs text-gray-600">Never synced</span>
         )}
         <div className="flex gap-1">
+          {connectionState === 'NEEDS_RECONNECT' && onRefresh && (
+            <motion.button
+              aria-label="Reconnect provider"
+              title="Reconnect provider"
+              disabled={isRefreshing}
+              onClick={() => onRefresh(id)}
+              className="rounded-md bg-amber-500/20 px-2 text-xs text-amber-300 disabled:opacity-50"
+            >
+              {isRefreshing ? 'Checking…' : 'Reconnect'}
+            </motion.button>
+          )}
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}

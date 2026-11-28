@@ -62,6 +62,7 @@ model User {
   // Relations
   createdPortals     Portal[]
   shareLinks         ShareLink[]
+  shareLinkAssignments ShareLinkAssignment[]
   alerts             Alert[]
   scheduledReports   ScheduledReport[]
   webhooks           Webhook[]
@@ -122,6 +123,30 @@ enum WorkspaceRole {
   MEMBER
 }
 
+enum OnboardingFunnelStage {
+  REGISTERED
+  CONNECTED
+  FIRST_VALID_SYNC
+  FIRST_PUBLISH
+  FIRST_CLIENT_VIEW
+  FIRST_DECISION
+  PAID_CONVERSION
+}
+
+/// Consent-gated, pseudonymous first-occurrence funnel events. No user, workspace,
+/// portal, connector or client identifiers are stored in this table.
+model OnboardingFunnelEvent {
+  id         String               @id @default(uuid())
+  journeyKey String               @db.VarChar(64)
+  eventKey   String               @unique @db.VarChar(64)
+  stage      OnboardingFunnelStage
+  happenedAt DateTime             @default(now())
+
+  @@unique([journeyKey, stage])
+  @@index([stage, happenedAt])
+  @@map("onboarding_funnel_events")
+}
+
 // ========================================
 // WORKSPACE (TENANT)
 // ========================================
@@ -172,6 +197,8 @@ model Workspace {
   workflows             Workflow[]
   complianceAssessments ComplianceAssessment[]
   dataMappings          DataMapping[]
+  clientDecisions       ClientDecision[]
+  decisionEscalationPolicy DecisionEscalationPolicy?
   securityIncidents     SecurityIncident[]
   iotDevices            IoTDevice[]
   edgeNodes             EdgeNode[]
@@ -184,8 +211,16 @@ model Workspace {
   invoices              Invoice[]
   usageAlerts           UsageAlert[]
   usageTotals           UsageTotal[]
+  aiUsageMeters         AIUsageMeter[]
   operationLogs         OperationLog[]
   workspaceInvites      WorkspaceInvite[]
+  shareAccessRequests   ShareAccessRequest[]
+  metricDefinitions    MetricDefinition[]
+  metricMappings      MetricMapping[]
+  metricSnapshots     MetricSnapshot[]
+  metricReprocessRuns MetricReprocessRun[]
+  valueLedgerEntries  ValueLedgerEntry[]
+  productTelemetryEvents ProductTelemetryEvent[]
   organizationId        String?
   organization          Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 
@@ -209,6 +244,7 @@ model Subscription {
   stripePriceId          String?
   stripeCurrentPeriodEnd DateTime?
   currentPeriodStart     DateTime?
+  stripeStateUpdatedAt   DateTime?
 
   // Plan details
   plan   SubscriptionPlan   @default(TRIAL)
@@ -266,6 +302,8 @@ model Integration {
   // OAuth tokens (ENCRYPTED in application layer)
   accessToken  String    @db.Text
   refreshToken String?   @db.Text
+  /// 0 = legacy plaintext pending migration; 1 = AES-256-GCM ciphertext.
+  tokenEncryptionVersion Int @default(0)
   expiresAt    DateTime?
 
   // Provider-specific metadata
@@ -278,8 +316,11 @@ model Integration {
 
   // Status
   status        IntegrationStatus @default(ACTIVE)
+  connectionState ConnectorConnectionState @default(CONNECTED)
   lastSyncedAt  DateTime?
+  lastValidDataAt DateTime?
   lastSyncError String?
+  syncCursor Json?
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -291,6 +332,10 @@ model Integration {
   dataValidationRules  DataValidationRule[]
   rateLimitConfig      RateLimitConfig?
   rateLimitMetrics     RateLimitMetric[]
+  syncRecords          SyncRecord[]
+  syncRuns             SyncRun[]
+  metricSourceObservations MetricSourceObservation[]
+  metricMappings       MetricMapping[]
 
   @@unique([workspaceId, provider])
   @@index([workspaceId])
@@ -298,7 +343,285 @@ model Integration {
   @@map("integrations")
 }
 
+model SyncRecord {
+  id              String      @id @default(uuid())
+  integrationId   String
+  integration     Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  externalId      String
+  payload         Json
+  sourceUpdatedAt DateTime?
+  syncedAt        DateTime    @default(now())
+
+  @@unique([integrationId, externalId])
+  @@index([integrationId, sourceUpdatedAt])
+  @@map("integration_sync_records")
+}
+
+model SyncRun {
+  id              String      @id @default(uuid())
+  integrationId   String
+  integration     Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  idempotencyKey  String
+  status          String      @default("RUNNING")
+  processedCount  Int         @default(0)
+  pageCount       Int         @default(0)
+  lastErrorCode   String?
+  leaseToken      String?
+  leaseExpiresAt  DateTime?
+  startedAt       DateTime    @default(now())
+  completedAt     DateTime?
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([integrationId, idempotencyKey])
+  @@index([integrationId, startedAt])
+  @@map("integration_sync_runs")
+}
+
+enum MetricValueType {
+  NUMBER
+  BOOLEAN
+}
+
+enum MetricAggregation {
+  SUM
+  AVG
+  MIN
+  MAX
+  COUNT
+  LAST
+}
+
+enum MetricQualityStatus {
+  VALID
+  PARTIAL
+  MISSING
+  SCHEMA_CHANGED
+  LOW_SAMPLE
+  UNSUPPORTED
+}
+
+enum MetricMilestoneStatus {
+  UPCOMING
+  AT_RISK
+  ACHIEVED
+  MISSED
+}
+
+enum ValueLedgerStatus {
+  DRAFT
+  APPROVED
+}
+
+model MetricDefinition {
+  id               String             @id @default(uuid())
+  workspaceId      String
+  workspace        Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  namespace        String
+  key              String
+  version          Int                @default(1)
+  name             String
+  source           String
+  provider         IntegrationProvider
+  entity           String
+  grain            String
+  valueType        MetricValueType    @default(NUMBER)
+  unit             String
+  aggregation      MetricAggregation
+  timeZone         String             @default("UTC")
+  samplePeriod     String
+  definition       String
+  owner            String
+  sensitivity      DataSensitivity    @default(INTERNAL)
+  transformKey     String
+  transformVersion String
+  sourceFields     String[]           @default([])
+  active           Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  normalizedObservations MetricNormalizedObservation[]
+  mappings         MetricMapping[]
+
+  @@unique([workspaceId, namespace, key, version])
+  @@index([workspaceId, provider, active])
+  @@map("metric_definitions")
+}
+
+/// Immutable, curated source projection. Credentials, URLs, user data and free-form body text are excluded.
+model MetricSourceObservation {
+  id                String      @id @default(uuid())
+  workspaceId       String
+  integrationId     String
+  integration       Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  externalId        String
+  sourceVersionHash String
+  sourceSchemaHash  String
+  sourceUpdatedAt   DateTime?
+  observedAt        DateTime    @default(now())
+  sourcePayload     Json
+  normalized        MetricNormalizedObservation[]
+  snapshotSources   MetricSnapshotSource[]
+
+  @@unique([integrationId, externalId, sourceVersionHash])
+  @@index([workspaceId, integrationId, observedAt])
+  @@index([integrationId, externalId, sourceUpdatedAt])
+  @@map("metric_source_observations")
+}
+
+model MetricNormalizedObservation {
+  id                  String                 @id @default(uuid())
+  workspaceId         String
+  sourceObservationId String
+  sourceObservation   MetricSourceObservation @relation(fields: [sourceObservationId], references: [id], onDelete: Cascade)
+  metricDefinitionId  String
+  metricDefinition    MetricDefinition       @relation(fields: [metricDefinitionId], references: [id], onDelete: Cascade)
+  value               Decimal?               @db.Decimal(20, 6)
+  unit                String
+  quality             MetricQualityStatus    @default(VALID)
+  missingReason       String?
+  transformVersion    String
+  normalizedAt        DateTime               @default(now())
+
+  @@unique([sourceObservationId, metricDefinitionId, transformVersion])
+  @@index([workspaceId, metricDefinitionId, normalizedAt])
+  @@map("metric_normalized_observations")
+}
+
+/// Client binding is portal-scoped even when provider credentials are shared within an agency workspace.
+model MetricMapping {
+  id                   String           @id @default(uuid())
+  workspaceId          String
+  workspace            Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  portalId             String
+  portal               Portal           @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  integrationId        String
+  integration          Integration      @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  metricDefinitionId   String
+  metricDefinition     MetricDefinition @relation(fields: [metricDefinitionId], references: [id], onDelete: Cascade)
+  displayName          String
+  clientVisible        Boolean          @default(false)
+  allowSourceDrilldown Boolean          @default(false)
+  targetValue          Decimal?         @db.Decimal(20, 6)
+  targetUnit           String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  snapshots            MetricSnapshot[]
+  milestones           MetricMilestone[]
+  reprocessRuns        MetricReprocessRun[]
+
+  @@unique([portalId, metricDefinitionId])
+  @@index([workspaceId, portalId, clientVisible])
+  @@map("metric_mappings")
+}
+
+model MetricMilestone {
+  id          String                @id @default(uuid())
+  workspaceId String
+  mappingId   String
+  mapping     MetricMapping         @relation(fields: [mappingId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  targetValue Decimal               @db.Decimal(20, 6)
+  targetDate  DateTime
+  status      MetricMilestoneStatus @default(UPCOMING)
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@index([workspaceId, mappingId, targetDate])
+  @@map("metric_milestones")
+}
+
+model MetricSnapshot {
+  id                 String               @id @default(uuid())
+  workspaceId        String
+  workspace          Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  mappingId          String
+  mapping            MetricMapping        @relation(fields: [mappingId], references: [id], onDelete: Cascade)
+  periodStart        DateTime
+  periodEnd          DateTime
+  value              Decimal?             @db.Decimal(20, 6)
+  unit               String
+  aggregation        MetricAggregation
+  timeZone           String
+  quality            MetricQualityStatus
+  confidence         Decimal?              @db.Decimal(5, 4)
+  sampleCount        Int                   @default(0)
+  sourceLatestAt     DateTime?
+  calculationVersion String
+  transformVersion  String
+  limitations        Json?
+  calculatedAt       DateTime              @default(now())
+  sources            MetricSnapshotSource[]
+
+  @@unique([mappingId, periodStart, periodEnd, calculationVersion])
+  @@index([workspaceId, mappingId, periodEnd])
+  @@map("metric_snapshots")
+}
+
+model MetricSnapshotSource {
+  snapshotId          String
+  snapshot            MetricSnapshot          @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  sourceObservationId String
+  sourceObservation   MetricSourceObservation @relation(fields: [sourceObservationId], references: [id], onDelete: Restrict)
+
+  @@id([snapshotId, sourceObservationId])
+  @@index([sourceObservationId])
+  @@map("metric_snapshot_sources")
+}
+
+model MetricReprocessRun {
+  id               String        @id @default(uuid())
+  workspaceId      String
+  workspace        Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  mappingId        String
+  mapping          MetricMapping @relation(fields: [mappingId], references: [id], onDelete: Cascade)
+  requestedBy      String
+  reason           String
+  transformVersion String
+  status           String        @default("RUNNING")
+  sourceCount      Int           @default(0)
+  snapshotId       String?
+  errorCode        String?
+  startedAt        DateTime      @default(now())
+  completedAt      DateTime?
+
+  @@index([workspaceId, mappingId, startedAt])
+  @@map("metric_reprocess_runs")
+}
+
+/// Immutable, versioned value claim. Corrections create a new revision.
+model ValueLedgerEntry {
+  id              String            @id @default(uuid())
+  workspaceId     String
+  workspace       Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  portalId        String
+  portal          Portal            @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  revision        Int
+  title           String            @db.VarChar(160)
+  formulaKey      String            @db.VarChar(80)
+  formulaVersion  String            @db.VarChar(40)
+  periodStart     DateTime
+  periodEnd       DateTime
+  timeZone        String            @db.VarChar(80)
+  resultValue     Decimal           @db.Decimal(20, 6)
+  unit            String            @db.VarChar(24)
+  assumptions     Json
+  sensitivity     Json
+  status          ValueLedgerStatus @default(DRAFT)
+  clientVisible   Boolean           @default(false)
+  createdById     String
+  createdByLabel  String            @db.VarChar(120)
+  createdAt       DateTime          @default(now())
+  approvedById    String?
+  approvedByLabel String?           @db.VarChar(120)
+  approvedAt      DateTime?
+
+  @@unique([portalId, revision])
+  @@index([workspaceId, portalId, status, revision])
+  @@map("value_ledger_entries")
+}
+
 enum IntegrationProvider {
+  DEMO
   // Original Integrations
   ASANA
   CLICKUP
@@ -411,6 +734,13 @@ enum IntegrationStatus {
   EXPIRED
 }
 
+enum ConnectorConnectionState {
+  CONNECTED
+  DEGRADED
+  NEEDS_RECONNECT
+  DISCONNECTED
+}
+
 // ========================================
 // PORTALS (The Core Product)
 // ========================================
@@ -430,6 +760,17 @@ model Portal {
   // Public sharing
   isPublic   Boolean @default(true)
   shareToken String  @unique @default(uuid()) // Used in public URL: portal.to/v/{shareToken}
+  // New builder records keep edits in the draft until an explicit publish.
+  // Existing records remain in live compatibility mode until their owner publishes.
+  draftMode         Boolean   @default(false)
+  publishedSnapshot Json?
+  publishedAt       DateTime?
+  publishRevision   Int       @default(0)
+  clientStatus      String?   @db.VarChar(24)
+  clientStatusNote  String?   @db.VarChar(500)
+  latestDeliverable String?   @db.VarChar(240)
+  pendingDecision   String?   @db.VarChar(240)
+  clientUpdateAt    DateTime?
 
   // Layout configuration (JSON)
   layout Json @default("[]") // Array of widget positions/sizes for react-grid-layout
@@ -445,11 +786,14 @@ model Portal {
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 
   // Relations
   widgets          Widget[]
   shareLinks       ShareLink[]
+  clientDecisions  ClientDecision[]
   scheduledReports ScheduledReport[]
+  clientReports    ClientReport[]
   aiInsights       AIInsight[]
   aiConversations  AIConversation[]
   industryDeployment IndustryDeployment?
@@ -457,10 +801,13 @@ model Portal {
   aiQueries        AIQuery[]
   arScenes         ARScene[]
   templateInstallations TemplateInstallation[]
+  metricMappings     MetricMapping[]
+  valueLedgerEntries  ValueLedgerEntry[]
 
   @@unique([workspaceId, slug])
   @@index([workspaceId])
   @@index([shareToken])
+  @@index([workspaceId, deletedAt])
   @@map("portals")
 }
 
@@ -856,6 +1203,7 @@ enum NotificationType {
   ACHIEVEMENT
   LEVEL_UP
   USAGE_ALERT
+  DECISION_REMINDER
 }
 
 // ========================================
@@ -881,6 +1229,7 @@ model ShareLink {
   // Permissions
   allowExport   Boolean @default(false) // Allow export from shared link
   allowComments Boolean @default(false)
+  allowDecisions Boolean @default(false)
 
   // Creator
   createdById String
@@ -896,10 +1245,63 @@ model ShareLink {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  guestComments SharedPortalComment[]
+  accessRequests ShareAccessRequest[]
+  assignments ShareLinkAssignment[]
+
   @@index([portalId])
   @@index([token])
   @@index([isActive])
   @@map("share_links")
+}
+
+model ShareLinkAssignment {
+  id          String    @id @default(uuid())
+  shareLinkId String
+  shareLink   ShareLink @relation(fields: [shareLinkId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@unique([shareLinkId, userId])
+  @@index([userId])
+  @@map("share_link_assignments")
+}
+
+// Guest comments are isolated from workspace-authored comments. A share link
+// is the capability and deletion/revocation cascades its guest content.
+model SharedPortalComment {
+  id          String    @id @default(uuid())
+  shareLinkId String
+  shareLink   ShareLink @relation(fields: [shareLinkId], references: [id], onDelete: Cascade)
+  displayName String    @db.VarChar(80)
+  content     String    @db.VarChar(2000)
+  createdAt   DateTime  @default(now())
+
+  @@index([shareLinkId, createdAt])
+  @@map("shared_portal_comments")
+}
+
+enum ShareAccessRequestStatus {
+  PENDING
+  REVIEWED
+}
+
+model ShareAccessRequest {
+  id          String                   @id @default(uuid())
+  workspaceId String
+  workspace   Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  shareLinkId String?
+  shareLink   ShareLink?               @relation(fields: [shareLinkId], references: [id], onDelete: SetNull)
+  email       String                   @db.VarChar(254)
+  message     String?                  @db.VarChar(1000)
+  status      ShareAccessRequestStatus @default(PENDING)
+  createdAt   DateTime                 @default(now())
+  reviewedAt  DateTime?
+
+  @@index([workspaceId, status, createdAt])
+  @@index([shareLinkId, email, status])
+  @@map("share_access_requests")
 }
 
 // ========================================
@@ -940,6 +1342,10 @@ model Alert {
   // Tracking
   lastTriggeredAt DateTime?
   triggerCount    Int       @default(0)
+  lastEvaluatedAt DateTime?
+  isFiring        Boolean   @default(false)
+  suppressionWindowSeconds Int @default(900)
+  deletedAt       DateTime?
 
   // Creator
   createdById String
@@ -953,6 +1359,7 @@ model Alert {
   history AlertHistory[]
 
   @@index([workspaceId])
+  @@index([workspaceId, deletedAt])
   @@index([portalId])
   @@index([isActive])
   @@map("alerts")
@@ -971,13 +1378,58 @@ model AlertHistory {
   
   // Notification status
   notificationsSent Json // {email: true, slack: false, webhook: true}
+  eventId       String?
+  source        String                @default("legacy")
+  freshnessAt   DateTime?
+  reason        String?
+  nextAction    String?
+  severity      AlertSeverity         @default(MEDIUM)
+  status        AlertOccurrenceStatus @default(TRIGGERED)
+  suppressedCount Int                 @default(0)
+  deliveries    AlertDelivery[]
   
   // Timestamp
   triggeredAt DateTime @default(now())
 
   @@index([alertId])
   @@index([triggeredAt])
+  @@unique([alertId, eventId])
+  @@index([status, triggeredAt])
   @@map("alert_history")
+}
+
+enum AlertOccurrenceStatus {
+  TRIGGERED
+  RESOLVED
+  SUPPRESSED
+}
+
+enum AlertDeliveryStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+}
+
+/// Durable per-channel delivery state. SENDING is not auto-replayed after a
+/// worker crash because the remote channel may already have accepted it.
+model AlertDelivery {
+  id             String              @id @default(uuid())
+  historyId      String
+  history        AlertHistory        @relation(fields: [historyId], references: [id], onDelete: Cascade)
+  channel        String
+  status         AlertDeliveryStatus @default(PENDING)
+  attemptCount   Int                 @default(0)
+  nextAttemptAt  DateTime?
+  lastAttemptAt  DateTime?
+  sentAt         DateTime?
+  lastErrorCode  String?             @db.VarChar(80)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@unique([historyId, channel])
+  @@index([status, nextAttemptAt])
+  @@map("alert_deliveries")
 }
 
 // ========================================
@@ -2049,6 +2501,8 @@ model ClientReport {
   
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  portalId  String?
+  portal    Portal?  @relation(fields: [portalId], references: [id], onDelete: SetNull)
   
   title           String
   clientName      String
@@ -2066,6 +2520,7 @@ model ClientReport {
   
   // Delivery
   status          ClientReportStatus @default(DRAFT)
+  revision        Int                @default(1)
   scheduledFor    DateTime?
   sentAt          DateTime?
   recipientEmails String[]
@@ -2076,13 +2531,62 @@ model ClientReport {
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  revisions       ClientReportRevision[]
+  deliveries      ClientReportDelivery[]
   
   @@index([workspaceId])
   @@index([projectId])
+  @@index([portalId])
   @@index([status])
   @@index([scheduledFor])
   @@index([status, scheduledFor])
   @@map("client_reports")
+}
+
+/// Immutable report content captured at approval; all delivery formats use this snapshot.
+model ClientReportRevision {
+  id                   String      @id @default(uuid())
+  reportId             String
+  report               ClientReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  version              Int
+  snapshot             Json
+  snapshotDigest       String      @db.VarChar(64)
+  approvedById         String
+  approvedAt           DateTime    @default(now())
+  notificationConsent Boolean     @default(false)
+  consentNote          String?     @db.VarChar(500)
+  createdAt            DateTime    @default(now())
+  delivery             ClientReportDelivery?
+
+  @@unique([reportId, version])
+  @@index([reportId, approvedAt])
+  @@map("client_report_revisions")
+}
+
+enum ClientReportDeliveryStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+}
+
+/// One delivery state per immutable revision; retries are counted and serialized.
+model ClientReportDelivery {
+  id          String                    @id @default(uuid())
+  reportId    String
+  report      ClientReport              @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  revisionId  String                    @unique
+  revision    ClientReportRevision      @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  status      ClientReportDeliveryStatus @default(PENDING)
+  attemptCount Int                      @default(0)
+  lastError   String?                   @db.VarChar(240)
+  sentAt      DateTime?
+  updatedAt   DateTime                  @updatedAt
+  createdAt   DateTime                  @default(now())
+
+  @@index([reportId, createdAt])
+  @@index([status, updatedAt])
+  @@map("client_report_deliveries")
 }
 
 enum ReportType {
@@ -2096,6 +2600,7 @@ enum ReportType {
 
 enum ClientReportStatus {
   DRAFT
+  APPROVED
   SCHEDULED
   GENERATING
   SENT
@@ -2976,6 +3481,7 @@ model EventStoreEvent {
   aggregateId   String
   aggregateType String
   eventType     String
+  envelopeVersion Int      @default(1)
   version       Int
   timestamp     DateTime @default(now())
   payload       String   // JSON string
@@ -3813,6 +4319,67 @@ model UsageTotal {
   @@map("usage_totals")
 }
 
+model AIUsageMeter {
+  id          String   @id @default(uuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  period      String
+  requestCount Int     @default(0)
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  @@unique([workspaceId, period])
+  @@index([period])
+  @@map("ai_usage_meters")
+}
+
+enum ProductTelemetryKind {
+  FEATURE_ADOPTION
+  FEATURE_SUCCESS
+  FEATURE_GUARDRAIL
+  COST
+  EXPERIMENT
+}
+
+enum ProductCostCategory {
+  PROVIDER_CALL
+  JOB_RUNTIME
+  EMAIL
+  STORAGE
+  AI_TOKENS
+}
+
+enum ProductCostBasis {
+  OBSERVED
+  ESTIMATED
+}
+
+/// Minimal, tenant-scoped product analytics and cost ledger. Payloads intentionally contain no arbitrary JSON.
+model ProductTelemetryEvent {
+  id             String              @id @default(uuid())
+  workspaceId    String
+  workspace      Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  eventId        String              @db.VarChar(128)
+  featureKey     String              @db.VarChar(80)
+  kind           ProductTelemetryKind
+  eventName      String              @db.VarChar(80)
+  value          Float?
+  unit           String?             @db.VarChar(32)
+  costCategory   ProductCostCategory?
+  costBasis      ProductCostBasis?
+  costMicros     BigInt?
+  currency       String?             @db.Char(3)
+  experimentKey  String?             @db.VarChar(80)
+  variantKey     String?             @db.VarChar(80)
+  createdAt      DateTime            @default(now())
+
+  @@unique([workspaceId, eventId])
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, featureKey, kind, createdAt])
+  @@index([workspaceId, experimentKey, variantKey, eventName, createdAt])
+  @@map("product_telemetry_events")
+}
+
 // ========================================
 // COLLABORATION EXTENSIONS
 // ========================================
@@ -3882,4 +4449,114 @@ model WorkspaceInvite {
   @@index([email])
   @@index([token])
   @@map("workspace_invites")
+}
+
+enum ClientDecisionStatus {
+  OPEN
+  APPROVED
+  DECLINED
+  CHANGES_REQUESTED
+  WITHDRAWN
+}
+
+enum ClientDecisionResponseKind {
+  APPROVE
+  DECLINE
+  REQUEST_CHANGES
+}
+
+model ClientDecision {
+  id                 String                 @id @default(uuid())
+  workspaceId        String
+  workspace          Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  portalId           String
+  portal             Portal                 @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  sourceShareLinkId  String
+  clientUserId       String
+  createdById        String
+  title              String                 @db.VarChar(160)
+  prompt             String                 @db.VarChar(4000)
+  portalRevision     Int
+  snapshotDigest     String                 @db.VarChar(64)
+  status             ClientDecisionStatus   @default(OPEN)
+  dueAt              DateTime?
+  reminderCount      Int                    @default(0)
+  lastReminderAt     DateTime?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  response           ClientDecisionResponse?
+  timeline           DecisionTimelineEvent[]
+  reminders          DecisionReminder[]
+
+  @@index([workspaceId, status, dueAt])
+  @@index([portalId, createdAt])
+  @@index([sourceShareLinkId, clientUserId, status])
+  @@map("client_decisions")
+}
+
+// One response per request. The unique decisionId and append-only service API
+// make the client's original response immutable under retries and refreshes.
+model ClientDecisionResponse {
+  id              String                     @id @default(uuid())
+  decisionId      String                     @unique
+  decision        ClientDecision             @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+  responderUserId String
+  response        ClientDecisionResponseKind
+  comment         String?                    @db.VarChar(2000)
+  portalRevision  Int
+  createdAt       DateTime                   @default(now())
+
+  @@map("client_decision_responses")
+}
+
+model DecisionTimelineEvent {
+  id         String         @id @default(uuid())
+  eventId    String         @unique @default(uuid())
+  version    Int            @default(1)
+  decisionId String
+  decision   ClientDecision @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+  workspaceId String
+  resourceType String        @default("CLIENT_DECISION") @db.VarChar(40)
+  resourceId String
+  revision   Int
+  eventType  String         @db.VarChar(40)
+  actorType  String         @db.VarChar(20)
+  actorId    String?
+  details    Json?
+  serverTimestamp DateTime  @default(now())
+
+  @@index([decisionId, serverTimestamp])
+  @@index([workspaceId, resourceType, resourceId])
+  @@map("decision_timeline_events")
+}
+
+model DecisionEscalationPolicy {
+  id                     String    @id @default(uuid())
+  workspaceId            String    @unique
+  workspace              Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  enabled                Boolean   @default(false)
+  notificationOptIn      Boolean   @default(false)
+  timeZone               String    @default("UTC") @db.VarChar(80)
+  businessDays           Int[]     @default([1, 2, 3, 4, 5])
+  businessHoursStart     String    @default("09:00") @db.VarChar(5)
+  businessHoursEnd       String    @default("17:00") @db.VarChar(5)
+  reminderIntervalMinutes Int      @default(1440)
+  maxReminders           Int       @default(3)
+  updatedById            String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@map("decision_escalation_policies")
+}
+
+model DecisionReminder {
+  id         String         @id @default(uuid())
+  decisionId String
+  decision   ClientDecision @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+  ordinal    Int
+  createdAt  DateTime       @default(now())
+
+  @@unique([decisionId, ordinal])
+  @@index([createdAt])
+  @@map("decision_reminders")
 }

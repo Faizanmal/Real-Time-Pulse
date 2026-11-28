@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface FreshdeskIntegration {
   accessToken: string; // API key
   settings: {
@@ -36,7 +37,7 @@ export class FreshdeskService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('Freshdesk connection test failed', error);
+      this.logger.error('Freshdesk connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -94,7 +95,7 @@ export class FreshdeskService {
 
       return response.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Freshdesk tickets', error);
+      this.logger.error('Failed to fetch Freshdesk tickets' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -115,7 +116,7 @@ export class FreshdeskService {
 
       return response.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Freshdesk contacts', error);
+      this.logger.error('Failed to fetch Freshdesk contacts' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -136,7 +137,7 @@ export class FreshdeskService {
 
       return response.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Freshdesk companies', error);
+      this.logger.error('Failed to fetch Freshdesk companies' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -157,7 +158,7 @@ export class FreshdeskService {
 
       return response.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Freshdesk agents', error);
+      this.logger.error('Failed to fetch Freshdesk agents' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -175,7 +176,7 @@ export class FreshdeskService {
 
       return response.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Freshdesk groups', error);
+      this.logger.error('Failed to fetch Freshdesk groups' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -201,7 +202,7 @@ export class FreshdeskService {
 
       return response.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Freshdesk satisfaction ratings', error);
+      this.logger.error('Failed to fetch Freshdesk satisfaction ratings' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -271,7 +272,7 @@ export class FreshdeskService {
         priorityBreakdown,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Freshdesk analytics', error);
+      this.logger.error('Failed to fetch Freshdesk analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -288,7 +289,7 @@ export class FreshdeskService {
 
       return response.data.results || [];
     } catch (error) {
-      this.logger.error('Failed to search Freshdesk tickets', error);
+      this.logger.error('Failed to search Freshdesk tickets' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

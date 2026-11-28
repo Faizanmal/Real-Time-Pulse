@@ -10,7 +10,7 @@ import { Injectable, Logger, Inject, OnModuleInit } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
 
-import { DomainEvent } from './event-sourcing.service';
+import { DOMAIN_EVENT_ENVELOPE_VERSION, DomainEvent } from './event-sourcing.service';
 
 // Event Store Interface
 export interface IEventStore {
@@ -82,6 +82,7 @@ export class EventStore implements IEventStore, OnModuleInit {
               aggregateId: event.aggregateId,
               aggregateType: event.aggregateType,
               eventType: event.eventType,
+              envelopeVersion: event.envelopeVersion,
               version: event.version,
               timestamp: event.timestamp,
               payload: JSON.stringify(event.payload),
@@ -255,11 +256,17 @@ export class EventStore implements IEventStore, OnModuleInit {
 
   // Map database record to DomainEvent
   private mapToEvent(record: any): DomainEvent {
+    const envelopeVersion = record.envelopeVersion ?? DOMAIN_EVENT_ENVELOPE_VERSION;
+    if (envelopeVersion !== DOMAIN_EVENT_ENVELOPE_VERSION) {
+      throw new Error(`Unsupported domain event envelope version: ${envelopeVersion}`);
+    }
     return {
       eventId: record.eventId,
       aggregateId: record.aggregateId,
       aggregateType: record.aggregateType,
       eventType: record.eventType,
+      // Historical event rows predate envelope versioning and are version 1 by contract.
+      envelopeVersion,
       version: record.version,
       timestamp: record.timestamp,
       payload: typeof record.payload === 'string' ? JSON.parse(record.payload) : record.payload,
@@ -287,6 +294,7 @@ export interface EventStoreEventRecord {
   aggregateId: string;
   aggregateType: string;
   eventType: string;
+  envelopeVersion: number;
   version: number;
   timestamp: Date;
   payload: string;

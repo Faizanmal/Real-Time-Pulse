@@ -9,6 +9,7 @@ interface IntercomIntegration {
   };
 }
 
+import { providerHttpStatus } from '../connector-security.util';
 @Injectable()
 export class IntercomService {
   private readonly logger = new Logger(IntercomService.name);
@@ -34,7 +35,7 @@ export class IntercomService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('Intercom connection test failed', error);
+      this.logger.error('Intercom connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -86,7 +87,7 @@ export class IntercomService {
 
       return response.data.conversations || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Intercom conversations', error);
+      this.logger.error('Failed to fetch Intercom conversations' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -107,7 +108,7 @@ export class IntercomService {
 
       return response.data.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Intercom contacts', error);
+      this.logger.error('Failed to fetch Intercom contacts' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -128,7 +129,7 @@ export class IntercomService {
 
       return response.data.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Intercom companies', error);
+      this.logger.error('Failed to fetch Intercom companies' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -146,7 +147,7 @@ export class IntercomService {
 
       return response.data.admins || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Intercom admins', error);
+      this.logger.error('Failed to fetch Intercom admins' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -164,7 +165,7 @@ export class IntercomService {
 
       return response.data.teams || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Intercom teams', error);
+      this.logger.error('Failed to fetch Intercom teams' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -185,7 +186,7 @@ export class IntercomService {
 
       return response.data.data || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Intercom articles', error);
+      this.logger.error('Failed to fetch Intercom articles' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -237,7 +238,7 @@ export class IntercomService {
         stateBreakdown,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Intercom analytics', error);
+      this.logger.error('Failed to fetch Intercom analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -258,7 +259,7 @@ export class IntercomService {
 
       return response.data.data || [];
     } catch (error) {
-      this.logger.error('Failed to search Intercom contacts', error);
+      this.logger.error('Failed to search Intercom contacts' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface TikTokAdsIntegration {
   accessToken: string;
   settings: {
@@ -36,7 +37,7 @@ export class TikTokAdsService {
       );
       return response.data.code === 0;
     } catch (error) {
-      this.logger.error('TikTok Ads connection test failed', error);
+      this.logger.error('TikTok Ads connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -96,7 +97,7 @@ export class TikTokAdsService {
 
       return response.data.data?.list || [];
     } catch (error) {
-      this.logger.error('Failed to fetch TikTok campaigns', error);
+      this.logger.error('Failed to fetch TikTok campaigns' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -133,7 +134,7 @@ export class TikTokAdsService {
 
       return response.data.data?.list || [];
     } catch (error) {
-      this.logger.error('Failed to fetch TikTok ad groups', error);
+      this.logger.error('Failed to fetch TikTok ad groups' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -170,7 +171,7 @@ export class TikTokAdsService {
 
       return response.data.data?.list || [];
     } catch (error) {
-      this.logger.error('Failed to fetch TikTok ads', error);
+      this.logger.error('Failed to fetch TikTok ads' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -263,7 +264,7 @@ export class TikTokAdsService {
         dailyData: data,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch TikTok analytics', error);
+      this.logger.error('Failed to fetch TikTok analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -291,7 +292,7 @@ export class TikTokAdsService {
 
       return response.data.data?.list || [];
     } catch (error) {
-      this.logger.error('Failed to fetch TikTok audiences', error);
+      this.logger.error('Failed to fetch TikTok audiences' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -319,7 +320,7 @@ export class TikTokAdsService {
 
       return response.data.data?.list || [];
     } catch (error) {
-      this.logger.error('Failed to fetch TikTok creatives', error);
+      this.logger.error('Failed to fetch TikTok creatives' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

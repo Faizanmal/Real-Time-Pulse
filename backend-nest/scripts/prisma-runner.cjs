@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Simple runner: load .env then forward args to Prisma CLI via npx
+// Load .env and invoke the checked-in dependency installation without npx downloads.
 try {
   require('dotenv').config();
 } catch (e) {
@@ -7,14 +7,19 @@ try {
 }
 
 const { spawnSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 const args = process.argv.slice(2);
 
-// If a datasource URL is available, and user did not pass --url explicitly, append it so Prisma CLI can run without relying on config parsing
-const hasUrlFlag = args.some((a) => a === '--url' || a.startsWith('--url='));
-if (!hasUrlFlag && process.env.DATABASE_URL) {
-  args.push('--url', process.env.DATABASE_URL);
+const cli = path.join(process.cwd(), 'node_modules', 'prisma', 'build', 'index.js');
+if (!fs.existsSync(cli)) {
+  console.error('Prisma CLI is not installed. Restore the backend package lockfile and dependencies, then retry.');
+  process.exit(1);
 }
 
-const cmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-const res = spawnSync(cmd, ['prisma', ...args], { stdio: 'inherit' });
-process.exit(res.status);
+const res = spawnSync(process.execPath, [cli, ...args], { stdio: 'inherit', env: process.env });
+if (res.error) {
+  console.error(`Could not start Prisma CLI: ${res.error.message}`);
+  process.exit(1);
+}
+process.exit(res.status ?? 1);

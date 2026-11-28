@@ -7,7 +7,7 @@
  * WebSocket context provider for real-time communication.
  */
 
-import React, { createContext, useContext, useEffect, useLayoutEffect, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useLayoutEffect, useState, useCallback, useRef, ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 import type { Annotation as ApiAnnotation } from '@/lib/api/annotations';
@@ -78,6 +78,8 @@ export interface SocketEvents {
   'reconnect_failed': () => void;
 }
 
+type SocketEventHandler = (...args: never[]) => void;
+
 // Context value type
 interface SocketContextValue {
   socket: Socket | null;
@@ -117,12 +119,16 @@ export function SocketProvider({ children }: SocketProviderProps) {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionState, setConnectionState] = useState<SocketContextValue['connectionState']>('disconnected');
+  const desiredWidgetsRef = useRef(new Set<string>());
+  const wrappedHandlersRef = useRef(new WeakMap<SocketEventHandler, Map<string, SocketEventHandler>>());
+  const handlerRevisionsRef = useRef(new WeakMap<SocketEventHandler, Map<string, number>>());
+  const handlerEventIdsRef = useRef(new WeakMap<SocketEventHandler, Set<string>>());
 
-  const { accessToken, isAuthenticated } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
 
   // Initialize socket connection
   useLayoutEffect(() => {
-    if (!isAuthenticated || !accessToken) {
+    if (!isAuthenticated) {
       if (socket) {
         socket.disconnect();
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -135,7 +141,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
 
     // Connect to the realtime namespace
     const newSocket = io(`${apiUrl}/realtime`, {
-      auth: { token: accessToken },
+      withCredentials: true,
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 10,
@@ -147,12 +153,17 @@ export function SocketProvider({ children }: SocketProviderProps) {
 
     // Connection handlers
     newSocket.on('connect', () => {
+      handlerRevisionsRef.current = new WeakMap();
       console.log('Socket connected:', newSocket.id);
       setIsConnected(true);
       setConnectionState('connected');
+      if (desiredWidgetsRef.current.size) {
+        newSocket.emit('widget:subscribe', { widgetIds: [...desiredWidgetsRef.current] });
+      }
     });
 
     newSocket.on('disconnect', (reason: string) => {
+      handlerRevisionsRef.current = new WeakMap();
       console.log('Socket disconnected:', reason);
       setIsConnected(false);
       setConnectionState('disconnected');
@@ -183,12 +194,14 @@ export function SocketProvider({ children }: SocketProviderProps) {
     setConnectionState('connecting');
 
     return () => {
+      newSocket.removeAllListeners();
+      newSocket.io.removeAllListeners();
       newSocket.disconnect();
       setSocket(null);
       setIsConnected(false);
       setConnectionState('disconnected');
     };
-  }, [isAuthenticated, accessToken]);
+  }, [isAuthenticated]);
 
   // Event subscription
   const on = useCallback(<K extends keyof SocketEvents>(
@@ -196,7 +209,42 @@ export function SocketProvider({ children }: SocketProviderProps) {
     handler: SocketEvents[K],
   ) => {
     if (socket) {
-      socket.on(event as string, handler);
+      const wrapped = (data: unknown) => {
+        if (data && typeof data === 'object') {
+          const envelope = data as { eventId?: unknown; revision?: unknown; tenantId?: unknown; resourceType?: unknown; resourceId?: unknown };
+          if (typeof envelope.eventId === 'string' && Number.isInteger(envelope.revision) &&
+            typeof envelope.resourceType === 'string' && typeof envelope.resourceId === 'string') {
+            let seenEventIds = handlerEventIdsRef.current.get(handler as SocketEventHandler);
+            if (!seenEventIds) {
+              seenEventIds = new Set();
+              handlerEventIdsRef.current.set(handler as SocketEventHandler, seenEventIds);
+            }
+            if (seenEventIds.has(envelope.eventId)) return;
+            seenEventIds.add(envelope.eventId);
+            if (seenEventIds.size > 2000) {
+              const oldestEventId = seenEventIds.values().next().value;
+              if (oldestEventId) seenEventIds.delete(oldestEventId);
+            }
+            const key = `${String(envelope.tenantId ?? '')}:${envelope.resourceType}:${envelope.resourceId}`;
+            let handlerRevisions = handlerRevisionsRef.current.get(handler as SocketEventHandler);
+            if (!handlerRevisions) {
+              handlerRevisions = new Map();
+              handlerRevisionsRef.current.set(handler as SocketEventHandler, handlerRevisions);
+            }
+            const previousRevision = handlerRevisions.get(key) ?? 0;
+            if ((envelope.revision as number) <= previousRevision) return;
+            handlerRevisions.set(key, envelope.revision as number);
+          }
+        }
+        (handler as (eventData: unknown) => void)(data);
+      };
+      let handlersByEvent = wrappedHandlersRef.current.get(handler as SocketEventHandler);
+      if (!handlersByEvent) {
+        handlersByEvent = new Map();
+        wrappedHandlersRef.current.set(handler as SocketEventHandler, handlersByEvent);
+      }
+      handlersByEvent.set(event as string, wrapped as SocketEventHandler);
+      socket.on(event as string, wrapped as typeof handler);
     }
   }, [socket]);
 
@@ -205,7 +253,11 @@ export function SocketProvider({ children }: SocketProviderProps) {
     handler: SocketEvents[K],
   ) => {
     if (socket) {
-      socket.off(event as string, handler);
+      const handlersByEvent = wrappedHandlersRef.current.get(handler as SocketEventHandler);
+      const wrapped = handlersByEvent?.get(event as string);
+      socket.off(event as string, (wrapped ?? handler) as typeof handler);
+      handlersByEvent?.delete(event as string);
+      if (handlersByEvent?.size === 0) wrappedHandlersRef.current.delete(handler as SocketEventHandler);
     }
   }, [socket]);
 
@@ -224,12 +276,14 @@ export function SocketProvider({ children }: SocketProviderProps) {
 
   // Widget methods
   const subscribeToWidgets = useCallback((widgetIds: string[]) => {
+    widgetIds.forEach((id) => desiredWidgetsRef.current.add(id));
     if (socket && isConnected) {
-      socket.emit('widget:subscribe', { widgetIds });
+      socket.emit('widget:subscribe', { widgetIds: [...new Set(widgetIds)] });
     }
   }, [socket, isConnected]);
 
   const unsubscribeFromWidgets = useCallback((widgetIds: string[]) => {
+    widgetIds.forEach((id) => desiredWidgetsRef.current.delete(id));
     if (socket && isConnected) {
       socket.emit('widget:unsubscribe', { widgetIds });
     }
@@ -300,33 +354,58 @@ export function useSocketEvent<K extends keyof SocketEvents>(
   handler: SocketEvents[K],
 ) {
   const { on, off } = useSocket();
+  const handlerRef = useRef(handler);
+
+  useLayoutEffect(() => {
+    handlerRef.current = handler;
+  }, [handler]);
+
+  const stableHandler = useCallback((...args: Parameters<SocketEvents[K]>) => {
+    (handlerRef.current as (...handlerArgs: Parameters<SocketEvents[K]>) => void)(...args);
+  }, []);
 
   useEffect(() => {
-    on(event, handler);
-    return () => off(event, handler);
-  }, [event, handler, on, off]);
+    on(event, stableHandler as SocketEvents[K]);
+    return () => off(event, stableHandler as SocketEvents[K]);
+  }, [event, stableHandler, on, off]);
 }
 
 // Hook for portal room subscription
 export function usePortalRoom(portalId: string | null) {
   const { joinPortal, leavePortal, isConnected } = useSocket();
-  const [viewers, setViewers] = useState<{ userId: string }[]>([]);
+  const [viewerState, setViewerState] = useState<{ portalId: string | null; viewers: { userId: string }[] }>({
+    portalId: null,
+    viewers: [],
+  });
 
   useSocketEvent('portal:viewers', (data) => {
     if (data.portalId === portalId) {
-      setViewers(data.viewers as { userId: string }[]);
+      setViewerState({ portalId, viewers: data.viewers as { userId: string }[] });
     }
   });
 
   useSocketEvent('portal:viewer:joined', (data) => {
     if (data.portalId === portalId) {
-      setViewers((prev) => [...prev, { userId: data.userId }]);
+      setViewerState((current) => {
+        const prev = current.portalId === portalId ? current.viewers : [];
+        return {
+          portalId,
+          viewers: prev.some((viewer) => viewer.userId === data.userId)
+            ? prev
+            : [...prev, { userId: data.userId }],
+        };
+      });
     }
   });
 
   useSocketEvent('portal:viewer:left', (data) => {
     if (data.portalId === portalId) {
-      setViewers((prev) => prev.filter((v) => v.userId !== data.userId));
+      setViewerState((current) => ({
+        portalId,
+        viewers: current.portalId === portalId
+          ? current.viewers.filter((viewer) => viewer.userId !== data.userId)
+          : [],
+      }));
     }
   });
 
@@ -337,5 +416,7 @@ export function usePortalRoom(portalId: string | null) {
     }
   }, [portalId, isConnected, joinPortal, leavePortal]);
 
-  return { viewers };
+  useSocketEvent('disconnect', () => setViewerState({ portalId, viewers: [] }));
+
+  return { viewers: viewerState.portalId === portalId ? viewerState.viewers : [] };
 }

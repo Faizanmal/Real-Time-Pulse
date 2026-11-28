@@ -25,7 +25,8 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [rateLimited, setRateLimited] = useState<{ until: Date } | null>(null);
+  const [rateLimitSecondsRemaining, setRateLimitSecondsRemaining] = useState(0);
+  const rateLimited = rateLimitSecondsRemaining > 0;
 
   const {
     register,
@@ -40,9 +41,7 @@ export default function LoginPage() {
     if (!rateLimited) return;
 
     const interval = setInterval(() => {
-      if (new Date() >= rateLimited.until) {
-        setRateLimited(null);
-      }
+      setRateLimitSecondsRemaining((remaining) => Math.max(0, remaining - 1));
     }, 1000);
 
     return () => clearInterval(interval);
@@ -50,7 +49,7 @@ export default function LoginPage() {
 
   const getRateLimitCountdown = () => {
     if (!rateLimited) return '';
-    const remaining = Math.ceil((rateLimited.until.getTime() - Date.now()) / 1000);
+    const remaining = rateLimitSecondsRemaining;
     const minutes = Math.floor(remaining / 60);
     const seconds = remaining % 60;
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -63,26 +62,19 @@ export default function LoginPage() {
 
     try {
       const response = await authApi.signin(data);
-      setAuth(response.user, response.accessToken);
-      
-      // Persist tokens for API client and refresh flow
-      if (typeof window !== 'undefined') {
-        // add refresh token
-        if (response.refreshToken) {
-          localStorage.setItem('refreshToken', response.refreshToken);
-        }
-        // also keep a legacy access token key for compatibility
-        localStorage.setItem('access_token', response.accessToken);
-      }
-      
-      router.push('/dashboard');
+      setAuth(response.user);
+      const requestedPath = new URLSearchParams(window.location.search).get('returnTo');
+      const safeReturnTo = requestedPath?.startsWith('/') && !requestedPath.startsWith('//') && !requestedPath.includes('\\')
+        ? requestedPath
+        : '/dashboard';
+      router.push(safeReturnTo);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string }, status?: number, headers?: { get?: (key: string) => string | null } } };
       
       // Handle rate limiting
       if (error.response?.status === 429) {
         const retryAfter = parseInt(error.response?.headers?.get?.('Retry-After') || '900', 10);
-        setRateLimited({ until: new Date(Date.now() + retryAfter * 1000) });
+        setRateLimitSecondsRemaining(retryAfter);
         setError('Too many login attempts. Please wait before trying again.');
       } else {
         setError(error.response?.data?.message || 'Login failed. Please check your credentials.');
@@ -105,9 +97,9 @@ export default function LoginPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
-          <h2 className="text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+          <h1 className="text-center text-3xl font-extrabold text-gray-900 dark:text-white">
             Welcome Back
-          </h2>
+          </h1>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
             Sign in to your account securely
           </p>
@@ -115,14 +107,14 @@ export default function LoginPage() {
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {error && (
-            <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 flex items-start gap-3">
+            <div id="signin-error" role="alert" aria-live="assertive" className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 flex items-start gap-3">
               <svg className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               <div>
                 <p className="text-sm font-medium text-red-800 dark:text-red-300">{error}</p>
                 {rateLimited && (
-                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                  <p role="status" aria-live="polite" className="text-sm text-red-600 dark:text-red-400 mt-1">
                     Try again in: {getRateLimitCountdown()}
                   </p>
                 )}
@@ -176,13 +168,16 @@ export default function LoginPage() {
               </label>
               <input
                 {...register('email')}
+                id="email"
                 type="email"
                 autoComplete="email"
+                aria-invalid={errors.email ? 'true' : undefined}
+                aria-describedby={errors.email ? 'email-error' : undefined}
                 className="mt-1 appearance-none relative block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm"
                 placeholder="you@example.com"
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
+                <p id="email-error" className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
               )}
             </div>
 
@@ -193,14 +188,19 @@ export default function LoginPage() {
               <div className="relative">
                 <input
                   {...register('password')}
+                  id="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
+                  aria-invalid={errors.password ? 'true' : undefined}
+                  aria-describedby={errors.password ? 'password-error' : undefined}
                   className="mt-1 appearance-none relative block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm pr-10"
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mt-1"
                 >
                   {showPassword ? (
@@ -216,7 +216,7 @@ export default function LoginPage() {
                 </button>
               </div>
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
+                <p id="password-error" className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
               )}
             </div>
           </div>
@@ -247,13 +247,14 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading || !!rateLimited}
+              aria-busy={isLoading}
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isLoading ? (
-                <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                <><svg aria-hidden="true" className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
+                </svg><span className="sr-only">Signing in</span></>
               ) : (
                 'Sign in'
               )}

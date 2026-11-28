@@ -1,12 +1,14 @@
 import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
+import { sanitizeSensitivePath } from '../utils/sensitive-path';
 
 @Injectable()
 export class LoggerMiddleware implements NestMiddleware {
   private logger = new Logger('HTTP');
 
   use(req: Request, res: Response, next: NextFunction): void {
-    const { method, originalUrl, ip } = req;
+    const { method, path, ip } = req;
+    const safePath = sanitizeSensitivePath(path);
     const userAgent = req.get('user-agent') || '';
     const startTime = Date.now();
 
@@ -15,7 +17,7 @@ export class LoggerMiddleware implements NestMiddleware {
       const contentLength = res.get('content-length');
       const responseTime = Date.now() - startTime;
 
-      const logMessage = `${method} ${originalUrl} ${statusCode} ${contentLength || 0}b - ${responseTime}ms - ${ip} ${userAgent}`;
+      const logMessage = `${method} ${safePath} ${statusCode} ${contentLength || 0}b - ${responseTime}ms - ${ip} ${userAgent}`;
 
       if (statusCode >= 500) {
         this.logger.error(logMessage);

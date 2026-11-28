@@ -63,6 +63,14 @@ export class ReportQueueProcessor {
   private async fetchReportData(jobData: ReportJobData): Promise<unknown[]> {
     const { reportType, workspaceId, portalId, startDate, endDate } = jobData;
 
+    if (portalId) {
+      const activePortal = await this.prisma.portal.findFirst({
+        where: { id: portalId, workspaceId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!activePortal) throw new Error('Portal is no longer available for this report');
+    }
+
     this.logger.log(
       `Fetching report data for workspace ${workspaceId}, type: ${reportType}, period: ${startDate?.toISOString()} to ${endDate?.toISOString()}${portalId ? `, portal: ${portalId}` : ''}`,
     );
@@ -113,6 +121,7 @@ export class ReportQueueProcessor {
           where: {
             portal: {
               workspaceId,
+              deletedAt: null,
               ...(portalId && { id: portalId }),
             },
           },

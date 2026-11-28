@@ -2,6 +2,13 @@
 
 import { apiClient } from './client';
 
+export interface SelfDeletionRequest {
+  id: string;
+  status: string;
+  submittedAt: string;
+  metadata?: { scheduledFor?: string };
+}
+
 export interface GdprConsent {
   id: string;
   userId: string;
@@ -193,8 +200,15 @@ export const gdprApi = {
   },
 
   exportPersonalData: async (): Promise<Blob> => {
-    const response = await apiClient.get<Blob>('/gdpr/export', { responseType: 'blob' });
+    const response = await apiClient.get<Blob>('/gdpr/self/export', { responseType: 'blob' });
     return response as Blob;
   },
+
+  getSelfDeletionRequest: async (): Promise<SelfDeletionRequest | null> => apiClient.get('/gdpr/self/deletion-request'),
+
+  requestSelfDeletion: async (): Promise<SelfDeletionRequest> => apiClient.post('/gdpr/self/deletion-request', {}),
+
+  cancelSelfDeletion: async (requestId: string): Promise<SelfDeletionRequest> =>
+    apiClient.patch(`/gdpr/self/deletion-request/${requestId}/cancel`, {}),
 };
 

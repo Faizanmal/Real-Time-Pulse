@@ -10,7 +10,11 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 // Base Domain Event
+export const DOMAIN_EVENT_ENVELOPE_VERSION = 1 as const;
+
 export interface DomainEvent {
+  /** Version of this transport/storage envelope, separate from aggregate sequence version. */
+  envelopeVersion: typeof DOMAIN_EVENT_ENVELOPE_VERSION;
   eventId: string;
   aggregateId: string;
   aggregateType: string;
@@ -24,6 +28,29 @@ export interface DomainEvent {
     correlationId?: string;
     causationId?: string;
     source?: string;
+  };
+}
+
+/** Stable v1 external envelope; legacy DomainEvent fields remain available during migration. */
+export interface VersionedDomainEventEnvelope<T = Record<string, any>> {
+  envelopeVersion: typeof DOMAIN_EVENT_ENVELOPE_VERSION;
+  eventId: string;
+  eventType: string;
+  occurredAt: string;
+  aggregate: { id: string; type: string; version: number };
+  data: T;
+  metadata: DomainEvent['metadata'];
+}
+
+export function toVersionedEventEnvelope<T extends DomainEvent>(event: T): VersionedDomainEventEnvelope<T['payload']> {
+  return {
+    envelopeVersion: event.envelopeVersion,
+    eventId: event.eventId,
+    eventType: event.eventType,
+    occurredAt: event.timestamp.toISOString(),
+    aggregate: { id: event.aggregateId, type: event.aggregateType, version: event.version },
+    data: event.payload,
+    metadata: event.metadata,
   };
 }
 
@@ -106,6 +133,7 @@ export class EventSourcingService {
     version?: number,
   ): DomainEvent {
     return {
+      envelopeVersion: DOMAIN_EVENT_ENVELOPE_VERSION,
       eventId: this.generateEventId(),
       aggregateId,
       aggregateType,
@@ -143,6 +171,7 @@ export class EventSourcingService {
     // Also emit to the event emitter for async processing
     this.eventEmitter.emit(event.eventType, event);
     this.eventEmitter.emit('domain.event', event);
+    this.eventEmitter.emit('domain.event.v1', toVersionedEventEnvelope(event));
   }
 
   // Generate a unique event ID
@@ -167,6 +196,7 @@ export class PortalAggregate extends AggregateRoot {
   static create(id: string, name: string, workspaceId: string, userId: string): PortalAggregate {
     const portal = new PortalAggregate(id);
     portal.apply({
+      envelopeVersion: DOMAIN_EVENT_ENVELOPE_VERSION,
       eventId: `evt_${Date.now()}`,
       aggregateId: id,
       aggregateType: 'Portal',
@@ -183,6 +213,7 @@ export class PortalAggregate extends AggregateRoot {
   public rename(newName: string, userId: string): void {
     if (this.isDeleted) throw new Error('Cannot rename deleted portal');
     this.apply({
+      envelopeVersion: DOMAIN_EVENT_ENVELOPE_VERSION,
       eventId: `evt_${Date.now()}`,
       aggregateId: this.id,
       aggregateType: 'Portal',
@@ -198,6 +229,7 @@ export class PortalAggregate extends AggregateRoot {
     if (this.isDeleted) throw new Error('Cannot add widget to deleted portal');
     if (this.widgets.includes(widgetId)) throw new Error('Widget already exists');
     this.apply({
+      envelopeVersion: DOMAIN_EVENT_ENVELOPE_VERSION,
       eventId: `evt_${Date.now()}`,
       aggregateId: this.id,
       aggregateType: 'Portal',
@@ -212,6 +244,7 @@ export class PortalAggregate extends AggregateRoot {
   public removeWidget(widgetId: string, userId: string): void {
     if (!this.widgets.includes(widgetId)) throw new Error('Widget not found');
     this.apply({
+      envelopeVersion: DOMAIN_EVENT_ENVELOPE_VERSION,
       eventId: `evt_${Date.now()}`,
       aggregateId: this.id,
       aggregateType: 'Portal',
@@ -226,6 +259,7 @@ export class PortalAggregate extends AggregateRoot {
   public setVisibility(isPublic: boolean, userId: string): void {
     if (this.isDeleted) throw new Error('Cannot change visibility of deleted portal');
     this.apply({
+      envelopeVersion: DOMAIN_EVENT_ENVELOPE_VERSION,
       eventId: `evt_${Date.now()}`,
       aggregateId: this.id,
       aggregateType: 'Portal',
@@ -240,6 +274,7 @@ export class PortalAggregate extends AggregateRoot {
   public delete(userId: string): void {
     if (this.isDeleted) throw new Error('Portal already deleted');
     this.apply({
+      envelopeVersion: DOMAIN_EVENT_ENVELOPE_VERSION,
       eventId: `evt_${Date.now()}`,
       aggregateId: this.id,
       aggregateType: 'Portal',

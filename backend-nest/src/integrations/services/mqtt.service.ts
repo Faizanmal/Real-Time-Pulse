@@ -3,6 +3,7 @@ import { EventEmitter } from 'events';
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import * as mqtt from 'mqtt';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface MqttIntegration {
   accessToken?: string; // Username
   refreshToken?: string; // Password
@@ -49,7 +50,7 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
       try {
         pool.client.end(true);
       } catch (error) {
-        this.logger.error('Error disconnecting MQTT client', error);
+        this.logger.error('Error disconnecting MQTT client' + " (HTTP " + providerHttpStatus(error) + ")");
       }
     }
     this.connectionPool.clear();
@@ -112,13 +113,13 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
       };
 
       client.on('connect', () => {
-        this.logger.log(`MQTT connected to ${integration.settings.brokerUrl}`);
+        this.logger.log('MQTT connector connected');
         this.connectionPool.set(key, pool);
         resolve(pool);
       });
 
       client.on('error', (error) => {
-        this.logger.error('MQTT connection error', error);
+        this.logger.error('MQTT connection error' + " (HTTP " + providerHttpStatus(error) + ")");
         reject(error);
       });
 
@@ -127,11 +128,11 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
       });
 
       client.on('close', () => {
-        this.logger.warn(`MQTT connection closed: ${integration.settings.brokerUrl}`);
+        this.logger.warn('MQTT connector connection closed');
       });
 
       client.on('reconnect', () => {
-        this.logger.log(`MQTT reconnecting to ${integration.settings.brokerUrl}`);
+        this.logger.log('MQTT connector reconnecting');
       });
     });
   }
@@ -171,7 +172,7 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
       const pool = await this.getClient(integration);
       return pool.client.connected;
     } catch (error) {
-      this.logger.error('MQTT connection test failed', error);
+      this.logger.error('MQTT connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -316,7 +317,7 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
         });
       });
     } catch (error) {
-      this.logger.error('Failed to subscribe to MQTT topic', error);
+      this.logger.error('Failed to subscribe to MQTT topic' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -356,7 +357,7 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
         });
       });
     } catch (error) {
-      this.logger.error('Failed to unsubscribe from MQTT topic', error);
+      this.logger.error('Failed to unsubscribe from MQTT topic' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -450,7 +451,7 @@ export class MqttService extends EventEmitter implements OnModuleDestroy {
         );
       });
     } catch (error) {
-      this.logger.error('Failed to publish MQTT message', error);
+      this.logger.error('Failed to publish MQTT message' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

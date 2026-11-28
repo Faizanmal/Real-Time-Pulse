@@ -4,6 +4,7 @@ import { CacheService } from '../cache/cache.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface WidgetChange {
+  operationId?: string;
   widgetId: string;
   changeType: 'config' | 'position' | 'size' | 'content';
   oldValue: any;
@@ -47,6 +48,14 @@ export class CollaborationService {
     private readonly cache: CacheService,
   ) {}
 
+  async claimRealtimeOperation(portalId: string, userId: string, operationId: string, ttlSeconds = 86400): Promise<boolean> {
+    return this.cache.claimSetMember(
+      `collaboration:idempotency:${portalId}:${userId}`,
+      operationId,
+      ttlSeconds,
+    );
+  }
+
   /**
    * Verify user has access to a portal
    */
@@ -60,9 +69,12 @@ export class CollaborationService {
         where: {
           id: portalId,
           workspaceId,
+          deletedAt: null,
         },
       });
-      return !!portal;
+      if (!portal) return false;
+      const user = await this.prisma.user.findFirst({ where: { id: userId, workspaceId }, select: { role: true } });
+      return user?.role === 'OWNER' || user?.role === 'ADMIN';
     } catch (error) {
       this.logger.error(`Error verifying portal access: ${error}`);
       return false;

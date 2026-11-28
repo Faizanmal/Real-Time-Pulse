@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface ZendeskIntegration {
   accessToken: string;
   settings: {
@@ -35,7 +36,7 @@ export class ZendeskService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('Zendesk connection test failed', error);
+      this.logger.error('Zendesk connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -93,7 +94,7 @@ export class ZendeskService {
 
       return response.data.tickets || response.data.results || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Zendesk tickets', error);
+      this.logger.error('Failed to fetch Zendesk tickets' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -114,7 +115,7 @@ export class ZendeskService {
 
       return response.data.users || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Zendesk users', error);
+      this.logger.error('Failed to fetch Zendesk users' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -135,7 +136,7 @@ export class ZendeskService {
 
       return response.data.users || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Zendesk agents', error);
+      this.logger.error('Failed to fetch Zendesk agents' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -156,7 +157,7 @@ export class ZendeskService {
 
       return response.data.organizations || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Zendesk organizations', error);
+      this.logger.error('Failed to fetch Zendesk organizations' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -174,7 +175,7 @@ export class ZendeskService {
 
       return response.data.groups || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Zendesk groups', error);
+      this.logger.error('Failed to fetch Zendesk groups' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -195,7 +196,7 @@ export class ZendeskService {
 
       return response.data.satisfaction_ratings || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Zendesk satisfaction ratings', error);
+      this.logger.error('Failed to fetch Zendesk satisfaction ratings' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -254,7 +255,7 @@ export class ZendeskService {
         priorityBreakdown,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Zendesk analytics', error);
+      this.logger.error('Failed to fetch Zendesk analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -269,7 +270,7 @@ export class ZendeskService {
 
       return response.data.count || { count: 0 };
     } catch (error) {
-      this.logger.error('Failed to fetch Zendesk ticket counts', error);
+      this.logger.error('Failed to fetch Zendesk ticket counts' + " (HTTP " + providerHttpStatus(error) + ")");
       return { count: 0 };
     }
   }
@@ -290,7 +291,7 @@ export class ZendeskService {
 
       return response.data.results || [];
     } catch (error) {
-      this.logger.error('Failed to search Zendesk', error);
+      this.logger.error('Failed to search Zendesk' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

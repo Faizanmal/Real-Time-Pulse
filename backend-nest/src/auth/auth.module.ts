@@ -8,6 +8,7 @@ import { AuditModule } from '../audit/audit.module';
 import { CacheModule } from '../cache/cache.module';
 import { CommonModule } from '../common/common.module';
 import { EmailModule } from '../email/email.module';
+import { AnalyticsModule } from '../analytics/analytics.module';
 import { PrismaModule } from '../prisma/prisma.module';
 
 import { AuthController } from './auth.controller';
@@ -40,6 +41,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     CacheModule,
     AuditModule,
     EmailModule,
+    AnalyticsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, GoogleStrategy, GitHubStrategy, FirebaseAuthService],

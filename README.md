@@ -2,11 +2,13 @@
 
 > Transform 2-hour weekly status reports into beautiful, auto-updating client dashboards with enterprise-grade features and modern animations.
 
-**Real-Time Pulse** is a **100% Production-Ready**, enterprise-grade, multi-tenant B2B SaaS platform that enables agencies and freelancers to create branded, real-time client dashboards that automatically pull data from tools like Asana, Google Analytics, and Harvest.
+**Real-Time Pulse** is a multi-tenant B2B dashboard application for agencies and freelancers. Production readiness and third-party integration behavior require deployment-specific verification.
 
-## ✅ Production Status: READY FOR DEPLOYMENT
+**Local contributor setup:** follow the single [clean-room boot and demo guide](./docs/agent-execution/01-clean-room-boot.md). Its fictional agency-to-client smoke flow needs no external provider keys. Backend/frontend builds and database/E2E smoke have passed locally; the full backend lint baseline remains blocked by existing repository-wide findings. See the phase reports for exact commands and exit codes.
 
-**All features are fully implemented, tested, and verified.**
+## ⚠️ Production Status: Not verified in this checkout
+
+**The statements below describe intended product scope; they are not a current verification result.** See the Phase 00 audit and Phase 01/02 execution reports for observed evidence and blockers.
 - ✅ Zero incomplete TODOs
 - ✅ All integrations fully functional
 - ✅ Comprehensive error handling
@@ -19,9 +21,9 @@
 📋 **See [PRODUCTION_READY.md](./PRODUCTION_READY.md) for complete feature checklist**
 📚 **See [PRODUCTION_DEPLOYMENT.md](./PRODUCTION_DEPLOYMENT.md) for deployment instructions**
 
-## ✨ What's New - Production-Ready Edition (December 2025)
+## ✨ Product Scope (verification varies by feature)
 
-### 🎯 Production-Ready Enhancements - All Completed ✅
+### 🎯 Product capabilities
 
 #### 1. Real Integration Data Fetching ✅
 - **Live Data Sync** - Actual data fetching from integrations (Asana, Google Analytics, Harvest, etc.)
@@ -104,8 +106,8 @@
 
 ## 📋 Table of Contents
 
-- [Quick Start](#-quick-start)
-- [What's New](#-whats-new---production-ready-edition-december-2025)
+- [Local development and test mode](#local-development-and-test-mode)
+- [Product Scope](#-product-scope-verification-varies-by-feature)
 - [Enterprise Features](#-enterprise-features)
 - [Production Features](#-production-features)
 - [Tech Stack](#-tech-stack)
@@ -113,41 +115,17 @@
 - [Development](#-development)
 - [Deployment](#-deployment)
 
-### Option 1: Docker (Fastest)
-```bash
-# Clone repository
-git clone <repository-url>
-cd Real-Time-Pulse/backend-nest
-docker-compose up -d
+### Local development and test mode
 
-# Setup database
-npx prisma generate
-<!--
-npx prisma migrate dev --name init
-
-# API is now running at http://localhost:3000/api
-```
-cp .env.example .env  # Edit with your credentials
-npx prisma generate
-npx prisma migrate dev --name init
-npm run start:dev
-
-# Frontend (separate terminal)
-cd ../frontend
-npm install
-cp .env.example .env.local  # Edit with API URL
-npm run dev
-```
-
-📚 **Detailed Instructions:** See [QUICK_START_DEPLOYMENT.md](./QUICK_START_DEPLOYMENT.md)
+Follow the [clean-room boot and demo guide](./docs/agent-execution/01-clean-room-boot.md). It uses isolated loopback Postgres/Redis services, the disposable `pulse_test` database, fictional tenant fixtures, and a local demo connector. Do not run the legacy seed for auth or provider testing. Production deployment instructions are separate and are not needed for local verification.
 
 ---
 
 ## 🎯 Project Status
 
-**Current Milestone:** 🎉 **PRODUCTION-READY COMPLETE!** (100% complete)
+**Current Milestone:** Feature implementation is in progress; production readiness is not verified.
 
-### ✅ Production-Ready Infrastructure (100% Complete)
+### Infrastructure capabilities
 - ✅ **Enhanced Error Handling** - Global boundaries with recovery and retry logic
 - ✅ **Production Logging & Monitoring** - Web Vitals, performance tracking, session analytics
 - ✅ **Accessibility (A11Y)** - WCAG 2.1 AA compliance with focus management and keyboard navigation
@@ -159,7 +137,7 @@ npm run dev
 - ✅ **Security Dashboard** - Security score, session management, 2FA, audit logs
 - ✅ **Production Configuration** - Environment validation, health checks, graceful shutdown
 
-### ✅ Backend Infrastructure (100% Complete)
+### Backend capabilities
 - ✅ Multi-tenant database architecture (Prisma + PostgreSQL)
 - ✅ Complete authentication system (Email/Password + Google OAuth + SSO)
 - ✅ JWT-based API security with rate limiting
@@ -184,7 +162,7 @@ npm run dev
 
 ## ✨ Features
 
-### 🆕 Production-Ready Features (10 New Modules)
+### Product feature areas
 
 #### Enhanced Error Handling System
 - **Global Error Boundaries** - Catch React errors with recovery options
@@ -408,7 +386,7 @@ npm run dev
 - **Framework**: NestJS 11 (Node.js)
 - **Language**: TypeScript 5.7
 - **Database**: PostgreSQL 15
-- **ORM**: Prisma 6.18
+- **ORM**: Prisma 7 (Prisma config and generated client are used in `backend-nest`)
 - **Cache**: Redis 7
 - **Queue**: BullMQ 5.63
 - **WebSocket**: Socket.io
@@ -703,7 +681,7 @@ Proprietary - All rights reserved
 
 ## 🎯 Next Steps
 
-**All Production-Ready Features Complete!** 🎉
+**Feature inventory and evidence:** see [the evidence-backed inventory](./docs/product/feature-inventory.csv) and [current-system architecture](./docs/architecture/current-system.md).
 
 ### Ready for Production:
 - ✅ **10 Production Modules** - All features implemented and tested

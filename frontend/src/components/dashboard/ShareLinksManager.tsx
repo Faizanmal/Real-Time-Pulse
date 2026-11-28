@@ -70,9 +70,7 @@ export function ShareLinksManager({
       const data = await shareLinksApi.getAll();
       // Filter by resource if specified
       const filtered = resourceType && resourceId
-        ? data.filter(
-            (l) => l.resourceType === resourceType && l.resourceId === resourceId
-          )
+        ? (resourceType === 'portal' ? data.filter((l) => l.portalId === resourceId) : [])
         : data;
       setLinks(filtered);
     } catch (error) {
@@ -114,7 +112,7 @@ export function ShareLinksManager({
 
   const toggleLink = async (linkId: string, isActive: boolean) => {
     try {
-      await shareLinksApi.update(linkId, { });
+      await shareLinksApi.update(linkId, { isActive });
       setLinks(links.map((l) => (l.id === linkId ? { ...l, isActive } : l)));
       toast.success(`Link ${isActive ? 'enabled' : 'disabled'}`);
     } catch (error) {
@@ -156,7 +154,7 @@ export function ShareLinksManager({
               onSuccess={(shareUrl) => {
                 setIsDialogOpen(false);
                 loadLinks();
-                copyToClipboard(shareUrl);
+                if (shareUrl) copyToClipboard(shareUrl);
               }}
             />
           </DialogContent>
@@ -211,7 +209,7 @@ function ShareLinkCard({
   const shareUrl = `${baseUrl}/share/${link.token}`;
 
   const isExpired = link.expiresAt && new Date(link.expiresAt) < new Date();
-  const isMaxViewsReached = link.maxViews && link.viewCount >= link.maxViews;
+  const isMaxViewsReached = link.maxViews && link.currentViews >= link.maxViews;
 
   return (
     <div className="border rounded-lg p-4">
@@ -219,10 +217,10 @@ function ShareLinkCard({
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <h4 className="font-semibold">
-              {link.name || `${link.resourceType} Link`}
+              {link.portal?.name || 'Portal share link'}
             </h4>
             <Badge variant="outline" className="text-xs">
-              {link.resourceType}
+              Portal
             </Badge>
             {link.isActive && !isExpired && !isMaxViewsReached ? (
               <Badge variant="default" className="bg-green-500">
@@ -255,7 +253,7 @@ function ShareLinkCard({
 
           <div className="flex flex-wrap gap-4 text-sm text-gray-600">
             <div className="flex items-center gap-1">
-              {link.passwordProtected ? (
+              {link.hasPassword ? (
                 <>
                   <Lock className="h-4 w-4" />
                   <span>Password Protected</span>
@@ -271,15 +269,15 @@ function ShareLinkCard({
             <div className="flex items-center gap-1">
               <Eye className="h-4 w-4" />
               <span>
-                {link.viewCount}
+                {link.currentViews}
                 {link.maxViews ? ` / ${link.maxViews}` : ''} views
               </span>
             </div>
 
-            {link.allowDownload && (
+            {link.allowExport && (
               <div className="flex items-center gap-1">
                 <Download className="h-4 w-4" />
-                <span>Downloads allowed</span>
+                <span>Exports allowed</span>
               </div>
             )}
 
@@ -345,13 +343,11 @@ interface ShareLinkFormProps {
 
 function ShareLinkForm({ resourceType, resourceId, onSuccess }: ShareLinkFormProps) {
   const [formData, setFormData] = useState<CreateShareLinkDto>({
-    resourceType: resourceType || 'portal',
-    resourceId: resourceId || '',
-    name: '',
+    portalId: resourceId || '',
     password: '',
     maxViews: undefined,
-    allowDownload: true,
-    permissions: ['view'],
+    allowExport: false,
+    allowComments: false,
   });
   const [hasExpiration, setHasExpiration] = useState(false);
   const [hasPassword, setHasPassword] = useState(false);
@@ -360,8 +356,12 @@ function ShareLinkForm({ resourceType, resourceId, onSuccess }: ShareLinkFormPro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.resourceId) {
-      toast.error('Please enter a resource ID');
+    if (resourceType && resourceType !== 'portal') {
+      toast.error('Share links currently support portals only.');
+      return;
+    }
+    if (!formData.portalId) {
+      toast.error('Please enter a portal ID');
       return;
     }
 
@@ -395,51 +395,29 @@ function ShareLinkForm({ resourceType, resourceId, onSuccess }: ShareLinkFormPro
       </DialogHeader>
 
       <div className="space-y-4">
-        <div>
-          <Label htmlFor="name">Link Name (optional)</Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="Marketing Dashboard Link"
-          />
-        </div>
-
-        {!resourceType && (
-          <div>
-            <Label htmlFor="resourceType">Resource Type *</Label>
-            <Select
-              value={formData.resourceType}
-              onValueChange={(value: 'portal' | 'widget' | 'report') =>
-                setFormData({ ...formData, resourceType: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="portal">Portal</SelectItem>
-                <SelectItem value="widget">Widget</SelectItem>
-                <SelectItem value="report">Report</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
         {!resourceId && (
           <div>
-            <Label htmlFor="resourceId">Resource ID *</Label>
+            <Label htmlFor="portalId">Portal ID *</Label>
             <Input
-              id="resourceId"
-              value={formData.resourceId}
-              onChange={(e) =>
-                setFormData({ ...formData, resourceId: e.target.value })
-              }
+              id="portalId"
+              value={formData.portalId}
+              onChange={(e) => setFormData({ ...formData, portalId: e.target.value })}
               placeholder="portal-123"
               required
             />
           </div>
         )}
+
+        <div>
+          <Label htmlFor="clientUserIds">Assigned client account IDs (optional)</Label>
+          <Input
+            id="clientUserIds"
+            value={(formData.clientUserIds || []).join(', ')}
+            onChange={(e) => setFormData({ ...formData, clientUserIds: e.target.value.split(',').map((id) => id.trim()).filter(Boolean) })}
+            placeholder="Leave blank for bearer-link access"
+          />
+          <p className="mt-1 text-xs text-gray-500">Assigned links require the client to sign in.</p>
+        </div>
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -510,14 +488,18 @@ function ShareLinkForm({ resourceType, resourceId, onSuccess }: ShareLinkFormPro
         <div className="flex items-center justify-between">
           <Label className="flex items-center gap-2">
             <Download className="h-4 w-4" />
-            Allow Downloads
+            Allow Export
           </Label>
           <Switch
-            checked={formData.allowDownload}
+            checked={formData.allowExport}
             onCheckedChange={(checked) =>
-              setFormData({ ...formData, allowDownload: checked })
+              setFormData({ ...formData, allowExport: checked })
             }
           />
+        </div>
+        <div className="flex items-center justify-between">
+          <Label>Allow comments</Label>
+          <Switch checked={formData.allowComments} onCheckedChange={(checked) => setFormData({ ...formData, allowComments: checked })} />
         </div>
       </div>
 

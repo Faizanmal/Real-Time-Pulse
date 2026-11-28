@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface BigCommerceIntegration {
   accessToken: string;
   settings: {
@@ -35,7 +36,7 @@ export class BigCommerceService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('BigCommerce connection test failed', error);
+      this.logger.error('BigCommerce connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -92,7 +93,7 @@ export class BigCommerceService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch BigCommerce orders', error);
+      this.logger.error('Failed to fetch BigCommerce orders' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -118,7 +119,7 @@ export class BigCommerceService {
 
       return response.data.data;
     } catch (error) {
-      this.logger.error('Failed to fetch BigCommerce products', error);
+      this.logger.error('Failed to fetch BigCommerce products' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -140,7 +141,7 @@ export class BigCommerceService {
 
       return response.data.data;
     } catch (error) {
-      this.logger.error('Failed to fetch BigCommerce customers', error);
+      this.logger.error('Failed to fetch BigCommerce customers' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -191,7 +192,7 @@ export class BigCommerceService {
         statusBreakdown,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch BigCommerce analytics', error);
+      this.logger.error('Failed to fetch BigCommerce analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -213,7 +214,7 @@ export class BigCommerceService {
 
       return response.data.data;
     } catch (error) {
-      this.logger.error('Failed to fetch BigCommerce categories', error);
+      this.logger.error('Failed to fetch BigCommerce categories' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -235,7 +236,7 @@ export class BigCommerceService {
 
       return response.data.data;
     } catch (error) {
-      this.logger.error('Failed to fetch BigCommerce brands', error);
+      this.logger.error('Failed to fetch BigCommerce brands' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

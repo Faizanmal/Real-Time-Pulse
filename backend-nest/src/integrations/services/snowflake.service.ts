@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface SnowflakeIntegration {
   accessToken: string; // JWT Token or Key Pair Token
   refreshToken?: string;
@@ -38,7 +39,7 @@ export class SnowflakeService {
       const result = await this.executeQuery(integration, 'SELECT CURRENT_VERSION()');
       return !!result;
     } catch (error) {
-      this.logger.error('Snowflake connection test failed', error);
+      this.logger.error('Snowflake connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -107,7 +108,7 @@ export class SnowflakeService {
 
       return this.formatQueryResult(response.data);
     } catch (error) {
-      this.logger.error('Failed to execute Snowflake query', error);
+      this.logger.error('Failed to execute Snowflake query' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -332,7 +333,7 @@ export class SnowflakeService {
         topUsers: (userActivity as any).rows || [],
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Snowflake analytics', error);
+      this.logger.error('Failed to fetch Snowflake analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

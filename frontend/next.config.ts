@@ -123,42 +123,6 @@ const nextConfig: NextConfig & { eslint?: unknown } = {
   // Turbopack configuration (Next.js 16+)
   turbopack: {},
 
-  // Webpack customization
-  webpack: (config, { isServer: _isServer }) => {
-    // Optimize for production
-    if (isProd) {
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
-          chunks: 'all',
-          cacheGroups: {
-            default: false,
-            vendors: false,
-            // Vendor chunk for node_modules
-            vendor: {
-              name: 'vendor',
-              chunks: 'all',
-              test: /[\\/]node_modules[\\/]/,
-              priority: 20,
-            },
-            // Common chunk for shared code
-            common: {
-              name: 'common',
-              minChunks: 2,
-              chunks: 'async',
-              priority: 10,
-              reuseExistingChunk: true,
-              enforce: true,
-            },
-          },
-        },
-      };
-    }
-
-    // Add any custom webpack rules here
-    return config;
-  },
-
   // Headers configuration
   async headers() {
     return [
@@ -209,7 +173,8 @@ const nextConfig: NextConfig & { eslint?: unknown } = {
   },
 
   // Output configuration for Docker/serverless
-  output: isProd ? 'standalone' : undefined,
+  output: isProd && process.env.NEXT_STANDALONE_OUTPUT !== 'false' ? 'standalone' : undefined,
+  distDir: process.env.NEXT_DIST_DIR || '.next',
 
   // Trailing slash configuration
   trailingSlash: false,

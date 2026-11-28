@@ -4,10 +4,12 @@ import {
   ExecutionContext,
   CallHandler,
   HttpStatus,
+  StreamableFile,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { sanitizeSensitivePath } from '../utils/sensitive-path';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -27,6 +29,9 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
 
     return next.handle().pipe(
       map((data: unknown) => {
+        // Preserve binary downloads; wrapping StreamableFile in the JSON API
+        // envelope makes Nest serialize its internals instead of streaming bytes.
+        if (data instanceof StreamableFile) return data as unknown as ApiResponse<T>;
         const dataObj = data as { message?: string; data?: T } | null;
         return {
           success: true,
@@ -34,7 +39,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
           message: dataObj?.message || 'Request successful',
           data: (dataObj?.data || data) as T,
           timestamp: new Date().toISOString(),
-          path: request.url,
+          path: sanitizeSensitivePath(request.url),
         };
       }),
     );

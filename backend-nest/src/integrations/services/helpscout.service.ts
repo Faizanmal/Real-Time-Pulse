@@ -9,6 +9,7 @@ interface HelpScoutIntegration {
   };
 }
 
+import { providerHttpStatus } from '../connector-security.util';
 @Injectable()
 export class HelpScoutService {
   private readonly logger = new Logger(HelpScoutService.name);
@@ -32,7 +33,7 @@ export class HelpScoutService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('Help Scout connection test failed', error);
+      this.logger.error('Help Scout connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -86,7 +87,7 @@ export class HelpScoutService {
 
       return response.data._embedded?.conversations || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Help Scout conversations', error);
+      this.logger.error('Failed to fetch Help Scout conversations' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -107,7 +108,7 @@ export class HelpScoutService {
 
       return response.data._embedded?.customers || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Help Scout customers', error);
+      this.logger.error('Failed to fetch Help Scout customers' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -125,7 +126,7 @@ export class HelpScoutService {
 
       return response.data._embedded?.mailboxes || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Help Scout mailboxes', error);
+      this.logger.error('Failed to fetch Help Scout mailboxes' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -146,7 +147,7 @@ export class HelpScoutService {
 
       return response.data._embedded?.users || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Help Scout users', error);
+      this.logger.error('Failed to fetch Help Scout users' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -164,7 +165,7 @@ export class HelpScoutService {
 
       return response.data._embedded?.teams || [];
     } catch (error) {
-      this.logger.error('Failed to fetch Help Scout teams', error);
+      this.logger.error('Failed to fetch Help Scout teams' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -199,7 +200,7 @@ export class HelpScoutService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to fetch Help Scout reports', error);
+      this.logger.error('Failed to fetch Help Scout reports' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -254,7 +255,7 @@ export class HelpScoutService {
         },
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Help Scout analytics', error);
+      this.logger.error('Failed to fetch Help Scout analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -273,7 +274,7 @@ export class HelpScoutService {
       );
       return response.data;
     } catch (error) {
-      this.logger.error(`Failed to fetch Help Scout ${reportType} report`, error);
+      this.logger.error(`Failed to fetch Help Scout ${reportType} report` + " (HTTP " + providerHttpStatus(error) + ")");
       return {};
     }
   }
@@ -290,7 +291,7 @@ export class HelpScoutService {
 
       return response.data._embedded?.conversations || [];
     } catch (error) {
-      this.logger.error('Failed to search Help Scout conversations', error);
+      this.logger.error('Failed to search Help Scout conversations' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

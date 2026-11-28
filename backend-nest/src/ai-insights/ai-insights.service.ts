@@ -1,8 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InsightType, InsightSeverity, InsightStatus } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
+
+import { evaluateClientConfidenceRisk } from './client-confidence-risk';
 
 interface GeneratedInsight {
   type: InsightType;
@@ -72,10 +74,57 @@ export class AIInsightsService {
       where: {
         portalId,
         workspaceId,
-        status: { not: DISMISSED_STATUS },
       },
       orderBy: [{ severity: 'desc' }, { createdAt: 'desc' }],
     });
+  }
+
+  async getPortalConfidenceRisk(portalId: string, workspaceId: string) {
+    const portal = await this.prisma.portal.findFirst({
+      where: { id: portalId, workspaceId, deletedAt: null },
+      select: {
+        clientStatus: true,
+        widgets: {
+          select: {
+            name: true,
+            lastRefreshedAt: true,
+            integration: {
+              select: {
+                provider: true,
+                status: true,
+                connectionState: true,
+                lastValidDataAt: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!portal) throw new NotFoundException(PORTAL_NOT_FOUND_MESSAGE);
+    const now = new Date();
+    const feeds = portal.widgets.map((widget) => {
+      const lastValidDataAt = widget.integration?.lastValidDataAt ?? widget.lastRefreshedAt;
+      const validAt = lastValidDataAt ? new Date(lastValidDataAt) : null;
+      const stale =
+        validAt &&
+        (!Number.isFinite(validAt.getTime()) ||
+          now.getTime() - validAt.getTime() > 24 * 60 * 60 * 1000);
+      return {
+        source: widget.integration?.provider ?? widget.name,
+        connectorStatus: widget.integration?.status ?? null,
+        connectionState: widget.integration?.connectionState ?? null,
+        lastValidDataAt,
+        health:
+          widget.integration?.connectionState === 'NEEDS_RECONNECT'
+            ? 'DEGRADED'
+            : !validAt
+              ? 'NO_DATA'
+              : stale
+                ? 'STALE'
+                : 'CURRENT',
+      };
+    });
+    return evaluateClientConfidenceRisk({ feeds, clientStatus: portal.clientStatus, now });
   }
 
   /**
@@ -110,10 +159,10 @@ export class AIInsightsService {
 
     if (staleWidgets.length > 0) {
       insights.push({
-        type: 'ANOMALY' as InsightType,
+        type: 'ANOMALY',
         title: 'Stale Widget Data Detected',
         description: `${staleWidgets.length} widget(s) haven't been refreshed in over 24 hours. This may impact data accuracy.`,
-        severity: 'MEDIUM' as InsightSeverity,
+        severity: 'MEDIUM',
         confidence: 0.95,
         data: {
           affectedWidgets: staleWidgets.map((w) => ({
@@ -136,10 +185,10 @@ export class AIInsightsService {
     const widgetCount = portal.widgets.length;
     if (widgetCount < 3) {
       insights.push({
-        type: 'RECOMMENDATION' as InsightType,
+        type: 'RECOMMENDATION',
         title: 'Enhance Portal Visibility',
         description: `Your portal has only ${widgetCount} widget(s). Adding more widgets can provide better insights to your clients.`,
-        severity: 'LOW' as InsightSeverity,
+        severity: 'LOW',
         confidence: 0.8,
         data: {
           currentWidgets: widgetCount,
@@ -159,11 +208,11 @@ export class AIInsightsService {
     const hasIntegrations = portal.widgets.some((w) => w.integrationId);
     if (!hasIntegrations) {
       insights.push({
-        type: 'RECOMMENDATION' as InsightType,
+        type: 'RECOMMENDATION',
         title: 'Connect Integrations',
         description:
           'No integrations detected. Connect tools like Asana, Google Analytics, or Harvest for automatic data updates.',
-        severity: 'HIGH' as InsightSeverity,
+        severity: 'HIGH',
         confidence: 1.0,
         data: {
           availableIntegrations: ['Asana', 'Google Analytics', 'Harvest', 'GitHub', 'Jira'],
@@ -186,10 +235,10 @@ export class AIInsightsService {
 
     if (daysSinceUpdate > 7) {
       insights.push({
-        type: 'SUMMARY' as InsightType,
+        type: 'SUMMARY',
         title: 'Portal Activity Summary',
         description: `Portal hasn't been updated in ${daysSinceUpdate} days. Regular updates keep clients engaged.`,
-        severity: 'INFO' as InsightSeverity,
+        severity: 'INFO',
         confidence: 1.0,
         data: {
           daysSinceUpdate,
@@ -213,7 +262,7 @@ export class AIInsightsService {
             ...insight,
             workspaceId,
             portalId,
-            status: 'NEW' as InsightStatus,
+            status: 'NEW',
           },
         }),
       ),
@@ -228,26 +277,52 @@ export class AIInsightsService {
   /**
    * Dismiss an insight
    */
-  async dismissInsight(id: string, userId: string) {
-    return this.prisma.aIInsight.update({
-      where: { id },
-      data: {
-        status: 'DISMISSED',
-        dismissedBy: userId,
-        dismissedAt: new Date(),
-      },
-    });
+  async dismissInsight(id: string, userId: string, workspaceId: string) {
+    return this.updateInsightStatus(id, userId, workspaceId, 'DISMISSED');
   }
 
   /**
    * Mark insight as actioned
    */
-  async actionInsight(id: string) {
-    return this.prisma.aIInsight.update({
-      where: { id },
-      data: {
-        status: 'ACTIONED',
-      },
+  async actionInsight(id: string, userId: string, workspaceId: string) {
+    return this.updateInsightStatus(id, userId, workspaceId, 'ACTIONED');
+  }
+
+  /** Append an acknowledgement record while preserving the original insight row. */
+  private async updateInsightStatus(
+    id: string,
+    userId: string,
+    workspaceId: string,
+    status: 'ACTIONED' | 'DISMISSED',
+  ) {
+    const actor = await this.prisma.user.findFirst({
+      where: { id: userId, workspaceId, role: { in: ['OWNER', 'ADMIN'] } },
+      select: { id: true },
+    });
+    if (!actor) throw new ForbiddenException('Owner or admin role required');
+
+    const insight = await this.prisma.aIInsight.findFirst({ where: { id, workspaceId } });
+    if (!insight) throw new NotFoundException('Insight not found');
+    if (insight.status === status) return insight;
+
+    const changedAt = new Date();
+    return this.prisma.$transaction(async (tx) => {
+      await tx.aIInsight.update({
+        where: { id },
+        data: {
+          status,
+          ...(status === 'DISMISSED' ? { dismissedBy: userId, dismissedAt: changedAt } : {}),
+        },
+      });
+      await tx.aIFeedback.create({
+        data: {
+          insightId: id,
+          userId,
+          rating: 'acknowledged',
+          actionTaken: status,
+        },
+      });
+      return tx.aIInsight.findFirst({ where: { id, workspaceId } });
     });
   }
 
@@ -294,10 +369,10 @@ export class AIInsightsService {
 
     if (staleRiskWidgets.length > 0) {
       insights.push({
-        type: 'PREDICTION' as InsightType,
+        type: 'PREDICTION',
         title: 'Data Staleness Risk Detected',
         description: `${staleRiskWidgets.length} widget(s) are at risk of showing stale data based on their refresh patterns.`,
-        severity: 'MEDIUM' as InsightSeverity,
+        severity: 'MEDIUM',
         confidence: 0.85,
         data: {
           atRiskWidgets: staleRiskWidgets,
@@ -321,10 +396,10 @@ export class AIInsightsService {
 
     if (widgetGrowthRate < 0.1 && daysSinceCreation > 7) {
       insights.push({
-        type: 'TREND' as InsightType,
+        type: 'TREND',
         title: 'Low Portal Growth Detected',
         description: `This portal has had minimal widget additions since creation. Consider adding more widgets to improve client value.`,
-        severity: 'LOW' as InsightSeverity,
+        severity: 'LOW',
         confidence: 0.9,
         data: {
           daysSinceCreation,
@@ -349,7 +424,7 @@ export class AIInsightsService {
             ...insight,
             workspaceId,
             portalId,
-            status: 'NEW' as InsightStatus,
+            status: 'NEW',
           },
         }),
       ),

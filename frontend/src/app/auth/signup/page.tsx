@@ -31,6 +31,7 @@ const signupSchema = z.object({
     .min(3, 'Workspace slug must be at least 3 characters')
     .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens'),
   acceptTerms: z.boolean().refine((val) => val === true, 'You must accept the terms and conditions'),
+  onboardingAnalyticsConsent: z.boolean(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ['confirmPassword'],
@@ -77,6 +78,7 @@ export default function SignupPage() {
     resolver: zodResolver(signupSchema),
     defaultValues: {
       acceptTerms: false,
+      onboardingAnalyticsConsent: false,
     },
   });
 
@@ -104,12 +106,7 @@ export default function SignupPage() {
     try {
       const { confirmPassword, acceptTerms, ...signupData } = data;
       const response = await authApi.signup(signupData);
-      setAuth(response.user, response.accessToken);
-
-      // Persist refresh token for refresh flow
-      if (typeof window !== 'undefined' && response.refreshToken) {
-        localStorage.setItem('refreshToken', response.refreshToken);
-      }
+      setAuth(response.user);
 
       router.push('/dashboard');
     } catch (err: unknown) {
@@ -409,6 +406,20 @@ export default function SignupPage() {
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.acceptTerms.message}</p>
                 )}
               </div>
+            </div>
+
+            <div className="flex items-start">
+              <div className="flex h-5 items-center">
+                <input
+                  {...register('onboardingAnalyticsConsent')}
+                  id="onboardingAnalyticsConsent"
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
+                />
+              </div>
+              <label htmlFor="onboardingAnalyticsConsent" className="ml-3 text-sm text-gray-600 dark:text-gray-400">
+                Share anonymous onboarding milestones to help improve setup. This is optional and can be revoked later in Onboarding settings. No names, email addresses, or provider data are included in funnel events.
+              </label>
             </div>
           </div>
 

@@ -12,9 +12,11 @@ import {
 import type { RawBodyRequest } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 
+import { AgencyRoleGuard } from '../auth/guards/agency-role.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { AuthenticatedRequest } from '../common/interfaces/auth.interface';
 
+import { BillingRoleGuard } from './billing-role.guard';
 import { BillingService } from './billing.service';
 import { CreateCheckoutDto, CreatePortalSessionDto, ChangePlanDto } from './dto/billing.dto';
 
@@ -29,16 +31,22 @@ export class BillingController {
 
   @Get('subscription')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AgencyRoleGuard, BillingRoleGuard)
   @ApiOperation({ summary: 'Get current subscription' })
   @ApiResponse({ status: 200, description: 'Returns subscription details' })
   async getSubscription(@Request() req: AuthenticatedRequest) {
     return this.billingService.getSubscription(req.user.workspaceId);
   }
 
+  @Get('plans')
+  @ApiOperation({ summary: 'Get the canonical plans and enforced limits' })
+  getPlans() {
+    return this.billingService.getPlanCatalog();
+  }
+
   @Post('customer')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AgencyRoleGuard, BillingRoleGuard)
   @ApiOperation({ summary: 'Create Stripe customer' })
   @ApiResponse({ status: 201, description: 'Customer created' })
   async createCustomer(@Request() req: AuthenticatedRequest) {
@@ -51,7 +59,7 @@ export class BillingController {
 
   @Post('checkout')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AgencyRoleGuard, BillingRoleGuard)
   @ApiOperation({ summary: 'Create checkout session' })
   @ApiResponse({ status: 201, description: 'Checkout session created' })
   async createCheckoutSession(
@@ -68,7 +76,7 @@ export class BillingController {
 
   @Post('portal')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AgencyRoleGuard, BillingRoleGuard)
   @ApiOperation({ summary: 'Create billing portal session' })
   @ApiResponse({ status: 201, description: 'Portal session created' })
   async createPortalSession(
@@ -80,7 +88,7 @@ export class BillingController {
 
   @Post('cancel')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AgencyRoleGuard, BillingRoleGuard)
   @ApiOperation({ summary: 'Cancel subscription' })
   @ApiResponse({ status: 200, description: 'Subscription canceled' })
   async cancelSubscription(
@@ -92,7 +100,7 @@ export class BillingController {
 
   @Post('change-plan')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AgencyRoleGuard, BillingRoleGuard)
   @ApiOperation({ summary: 'Change subscription plan' })
   @ApiResponse({ status: 200, description: 'Plan changed' })
   async changePlan(@Request() req: AuthenticatedRequest, @Body() dto: ChangePlanDto) {
@@ -101,7 +109,7 @@ export class BillingController {
 
   @Get('history')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AgencyRoleGuard, BillingRoleGuard)
   @ApiOperation({ summary: 'Get billing history' })
   @ApiResponse({ status: 200, description: 'Returns billing events' })
   async getBillingHistory(@Request() req: AuthenticatedRequest, @Query('limit') limit?: number) {
@@ -110,7 +118,7 @@ export class BillingController {
 
   @Get('invoices')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AgencyRoleGuard, BillingRoleGuard)
   @ApiOperation({ summary: 'Get invoices' })
   @ApiResponse({ status: 200, description: 'Returns invoices' })
   async getInvoices(@Request() req: AuthenticatedRequest): Promise<any> {
@@ -119,7 +127,7 @@ export class BillingController {
 
   @Get('limits')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AgencyRoleGuard)
   @ApiOperation({ summary: 'Check subscription limits' })
   @ApiResponse({ status: 200, description: 'Returns usage limits' })
   async checkLimits(@Request() req: AuthenticatedRequest) {

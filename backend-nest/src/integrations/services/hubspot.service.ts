@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 type Integration = any;
 
 @Injectable()
@@ -22,7 +23,7 @@ export class HubSpotService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('HubSpot connection test failed', error);
+      this.logger.error('HubSpot connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -69,7 +70,7 @@ export class HubSpotService {
       );
       return response.data.results;
     } catch (error) {
-      this.logger.error('Failed to fetch HubSpot contacts', error);
+      this.logger.error('Failed to fetch HubSpot contacts' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -89,7 +90,7 @@ export class HubSpotService {
       );
       return response.data.results;
     } catch (error) {
-      this.logger.error('Failed to fetch HubSpot companies', error);
+      this.logger.error('Failed to fetch HubSpot companies' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -109,7 +110,7 @@ export class HubSpotService {
       );
       return response.data.results;
     } catch (error) {
-      this.logger.error('Failed to fetch HubSpot deals', error);
+      this.logger.error('Failed to fetch HubSpot deals' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -146,7 +147,7 @@ export class HubSpotService {
         stages: stageData,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch HubSpot pipeline', error);
+      this.logger.error('Failed to fetch HubSpot pipeline' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -195,7 +196,7 @@ export class HubSpotService {
         },
       };
     } catch (error) {
-      this.logger.error('Failed to fetch HubSpot analytics', error);
+      this.logger.error('Failed to fetch HubSpot analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

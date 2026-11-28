@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface AzureMonitorIntegration {
   accessToken: string; // Azure AD Access Token
   refreshToken?: string;
@@ -37,7 +38,7 @@ export class AzureMonitorService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('Azure Monitor connection test failed', error);
+      this.logger.error('Azure Monitor connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -125,7 +126,7 @@ export class AzureMonitorService {
         timespan: response.data.timespan,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Azure metrics', error);
+      this.logger.error('Failed to fetch Azure metrics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -161,7 +162,7 @@ export class AzureMonitorService {
           })) || [],
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Azure metric definitions', error);
+      this.logger.error('Failed to fetch Azure metric definitions' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -201,7 +202,7 @@ export class AzureMonitorService {
           })) || [],
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Azure alert rules', error);
+      this.logger.error('Failed to fetch Azure alert rules' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -238,7 +239,7 @@ export class AzureMonitorService {
           })) || [],
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Azure action groups', error);
+      this.logger.error('Failed to fetch Azure action groups' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -278,7 +279,7 @@ export class AzureMonitorService {
         nextLink: response.data.nextLink,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Azure activity log', error);
+      this.logger.error('Failed to fetch Azure activity log' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -312,7 +313,7 @@ export class AzureMonitorService {
         nextLink: response.data.nextLink,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Azure resources', error);
+      this.logger.error('Failed to fetch Azure resources' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -359,7 +360,7 @@ export class AzureMonitorService {
 
       return { results: result };
     } catch (error) {
-      this.logger.error('Failed to query Azure logs', error);
+      this.logger.error('Failed to query Azure logs' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -429,7 +430,7 @@ export class AzureMonitorService {
         })),
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Azure Monitor analytics', error);
+      this.logger.error('Failed to fetch Azure Monitor analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -492,7 +493,7 @@ export class AzureMonitorService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to create Azure metric alert', error);
+      this.logger.error('Failed to create Azure metric alert' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

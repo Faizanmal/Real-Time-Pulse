@@ -13,18 +13,17 @@ export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
-  const { accessToken, isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
+    if (!isAuthenticated || user?.role === 'MEMBER') {
+      setIsConnected(false);
       return;
     }
 
     // Create WebSocket connection
     const socket = io(`${WS_URL}/notifications`, {
-      auth: {
-        token: accessToken,
-      },
+      withCredentials: true,
       transports: ['websocket'],
       reconnection: true,
       reconnectionDelay: 1000,
@@ -63,6 +62,10 @@ export function useNotifications() {
       window.dispatchEvent(new CustomEvent('integration:synced', { detail: data }));
     });
 
+    socket.on('integration:error', (data: { integration?: { id?: string; connectionState?: string }; error?: string }) => {
+      window.dispatchEvent(new CustomEvent('integration:error', { detail: data }));
+    });
+
     socket.on('workspace:member:added', (data: { memberId: string; member?: unknown }) => {
       console.log('Member added:', data);
       window.dispatchEvent(new CustomEvent('workspace:member:added', { detail: data }));
@@ -76,7 +79,7 @@ export function useNotifications() {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [isAuthenticated, accessToken]);
+  }, [isAuthenticated, user?.role]);
 
   const markAsRead = useCallback((notificationId: string) => {
     setNotifications((prev) =>

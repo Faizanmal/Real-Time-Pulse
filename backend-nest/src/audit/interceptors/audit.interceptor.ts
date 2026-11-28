@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 
 import type { RequestUser } from '../../common/interfaces/auth.interface';
+import { sanitizeSensitivePath } from '../../common/utils/sensitive-path';
 import { AuditService } from '../audit.service';
 import { AUDIT_LOG_KEY, AuditLogMetadata } from '../decorators/audit-log.decorator';
 
@@ -43,7 +44,7 @@ export class AuditInterceptor implements NestInterceptor {
       ipAddress: request.ip,
       userAgent: request.get('user-agent') || 'unknown',
       method: request.method,
-      endpoint: request.url,
+      endpoint: sanitizeSensitivePath(request.url),
       oldValues: body,
     };
 

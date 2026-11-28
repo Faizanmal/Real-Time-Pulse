@@ -5,6 +5,7 @@ import { tap, catchError } from 'rxjs/operators';
 import { v4 as uuidv4 } from 'uuid';
 
 import { TRACE_METADATA_KEY, TraceMetadata } from '../decorators/trace.decorator';
+import { sanitizeSensitivePath } from '../utils/sensitive-path';
 
 interface TraceContext {
   correlationId: string;
@@ -45,7 +46,7 @@ export class TraceInterceptor implements NestInterceptor {
       startTime: Date.now(),
       userId: request.user?.id,
       workspaceId: request.user?.workspaceId,
-      path: request.url,
+      path: sanitizeSensitivePath(request.url),
       method: request.method,
     };
 

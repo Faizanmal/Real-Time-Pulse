@@ -1,11 +1,18 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import type { IntegrationProvider } from '@prisma/client';
+import { HttpService } from '@nestjs/axios';
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
+import { IntegrationProvider, OnboardingFunnelStage, Prisma } from '@prisma/client';
+import { firstValueFrom } from 'rxjs';
+import { randomUUID } from 'node:crypto';
 
 import { JobsService } from '../jobs/jobs.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { OnboardingFunnelService } from '../analytics/onboarding-funnel.service';
+import { EncryptionService } from '../common/services/encryption.service';
 
 // Existing integrations
 import { AsanaService } from './services/asana.service';
+import { DemoConnectorService } from './services/demo-connector.service';
+import { classifyConnectorFailure, connectorStateMessage, protectIntegrationTokens, redactConnectorSettings, revealIntegrationTokens, toPublicIntegration } from './connector-security.util';
 import { AWSCloudWatchService } from './services/aws-cloudwatch.service';
 import { AwsIotService } from './services/aws-iot.service';
 import { AzureMonitorService } from './services/azure-monitor.service';
@@ -74,6 +81,7 @@ export class IntegrationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jobsService: JobsService,
+    private readonly demoConnectorService: DemoConnectorService,
     // Existing integrations
     private readonly asanaService: AsanaService,
     private readonly googleAnalyticsService: GoogleAnalyticsService,
@@ -121,30 +129,42 @@ export class IntegrationService {
     private readonly awsIotService: AwsIotService,
     // Payment integrations
     private readonly stripeConnectService: StripeConnectService,
+    private readonly httpService: HttpService,
+    private readonly encryptionService: EncryptionService,
+    @Optional() private readonly onboardingFunnel?: OnboardingFunnelService,
   ) {}
 
   /**
    * Create a new integration
    */
   async createIntegration(config: IntegrationConfig) {
+    if (config.provider === 'DEMO') {
+      throw new BadRequestException('Create the Demo Connector with POST /api/v1/integrations/demo.');
+    }
+
     const integration = await this.prisma.integration.create({
       data: {
         workspaceId: config.workspaceId,
         provider: config.provider,
-        accessToken: config.accessToken,
-        refreshToken: config.refreshToken,
+        ...protectIntegrationTokens(this.encryptionService, {
+          accessToken: config.accessToken,
+          refreshToken: config.refreshToken,
+        }),
         expiresAt: config.expiresAt,
         settings: config.settings || {},
         status: 'ACTIVE',
+        connectionState: 'CONNECTED',
       },
     });
 
     this.logger.log(`Integration created: ${integration.id} (${config.provider})`);
 
+    void this.onboardingFunnel?.recordStage(config.workspaceId, OnboardingFunnelStage.CONNECTED).catch(() => undefined);
+
     // Trigger initial sync
     await this.triggerSync(integration.id, 'full');
 
-    return integration;
+    return toPublicIntegration(integration);
   }
 
   /**
@@ -159,15 +179,77 @@ export class IntegrationService {
         status: true,
         lastSyncedAt: true,
         createdAt: true,
+        accountName: true,
+        accountId: true,
+        scopes: true,
         settings: true,
+        connectionState: true,
+        lastValidDataAt: true,
+        updatedAt: true,
       },
-    });
+    }).then((items) => items.map((item) => toPublicIntegration(item)));
+  }
+
+  async getSyncFreshness(workspaceId: string) {
+    const [items, queue] = await Promise.all([
+      this.prisma.integration.findMany({
+        where: { workspaceId },
+        select: {
+          id: true,
+          provider: true,
+          connectionState: true,
+          lastSyncedAt: true,
+          lastValidDataAt: true,
+          lastSyncError: true,
+        },
+      }),
+      this.jobsService.getDataSyncMetrics(workspaceId),
+    ]);
+    const runs = items.length > 0 && this.prisma.syncRun?.findMany
+      ? await this.prisma.syncRun.findMany({
+        where: { integrationId: { in: items.map((item) => item.id) } },
+        orderBy: { startedAt: 'desc' },
+        select: { integrationId: true, status: true, processedCount: true, pageCount: true, lastErrorCode: true, startedAt: true },
+      })
+      : [];
+    const latestRunByIntegration = new Map<string, (typeof runs)[number]>();
+    for (const run of runs) if (!latestRunByIntegration.has(run.integrationId)) latestRunByIntegration.set(run.integrationId, run);
+    const now = Date.now();
+    return {
+      integrations: items.map((item) => {
+        const timestamp = item.lastValidDataAt ?? item.lastSyncedAt;
+        const ageMs = timestamp ? Math.max(0, now - timestamp.getTime()) : null;
+        return {
+          id: item.id,
+          provider: item.provider,
+          connectionState: item.connectionState,
+          lastUpdatedAt: timestamp,
+          freshnessAgeMs: ageMs,
+          health: item.connectionState === 'NEEDS_RECONNECT' || item.connectionState === 'DISCONNECTED'
+            ? 'ERROR'
+            : item.connectionState === 'DEGRADED'
+              ? 'DEGRADED'
+              : ageMs === null
+                ? 'NEVER_SYNCED'
+                : ageMs > 24 * 60 * 60 * 1000
+                  ? 'STALE'
+                  : 'HEALTHY',
+          lastErrorCode: item.lastSyncError,
+          latestRun: latestRunByIntegration.get(item.id) ?? null,
+        };
+      }),
+      queue,
+    };
   }
 
   /**
    * Get a single integration
    */
   async getIntegration(integrationId: string) {
+    return toPublicIntegration(await this.getIntegrationRecord(integrationId));
+  }
+
+  private async getIntegrationRecord(integrationId: string) {
     const integration = await this.prisma.integration.findUnique({
       where: { id: integrationId },
     });
@@ -176,17 +258,50 @@ export class IntegrationService {
       throw new NotFoundException('Integration not found');
     }
 
-    return integration;
+    return revealIntegrationTokens(this.encryptionService, integration);
+  }
+
+  /** Reject cross-workspace integration identifiers before any secret-bearing operation. */
+  async assertWorkspaceAccess(integrationId: string, workspaceId: string): Promise<void> {
+    const integration = await this.prisma.integration.findUnique({
+      where: { id: integrationId },
+      select: { workspaceId: true },
+    });
+    if (!integration) throw new NotFoundException('Integration not found');
+    if (integration.workspaceId !== workspaceId) throw new ForbiddenException('Access denied to this integration');
+  }
+
+  async createDemoIntegration(workspaceId: string) {
+    const integration = await this.prisma.integration.upsert({
+      where: { workspaceId_provider: { workspaceId, provider: 'DEMO' } },
+      update: {},
+      create: {
+        workspaceId,
+        provider: 'DEMO',
+        accessToken: 'DEMO_ONLY_NO_CREDENTIAL',
+        accountName: 'Real-Time Pulse Demo Connector (fictional data)',
+        settings: this.demoConnectorService.getSettings() as Prisma.InputJsonObject,
+        status: 'ACTIVE',
+        connectionState: 'CONNECTED',
+      },
+    });
+    void this.onboardingFunnel?.recordStage(workspaceId, OnboardingFunnelStage.CONNECTED).catch(() => undefined);
+    return toPublicIntegration(integration);
   }
 
   /**
    * Update integration settings
    */
   async updateIntegration(integrationId: string, settings: Record<string, any>) {
-    return this.prisma.integration.update({
+    const safeSettings = redactConnectorSettings(settings) as Record<string, unknown>;
+    if (JSON.stringify(safeSettings) !== JSON.stringify(settings)) {
+      throw new BadRequestException('Credential fields cannot be changed through connector settings. Reconnect the provider instead.');
+    }
+    const integration = await this.prisma.integration.update({
       where: { id: integrationId },
-      data: { settings },
+      data: { settings: safeSettings as Prisma.InputJsonObject },
     });
+    return toPublicIntegration(integration);
   }
 
   /**
@@ -203,31 +318,61 @@ export class IntegrationService {
   /**
    * Trigger data sync for an integration
    */
-  async triggerSync(integrationId: string, syncType: 'full' | 'incremental' = 'incremental') {
-    const integration = await this.getIntegration(integrationId);
+  async triggerSync(
+    integrationId: string,
+    syncType: 'full' | 'incremental' = 'incremental',
+    dryRun = false,
+    requestId?: string,
+  ) {
+    const integration = await this.getIntegrationRecord(integrationId);
+
+    if (integration.provider === 'DEMO') {
+      return { queued: false, dryRun, message: 'Demo data is deterministic and local; no provider sync job was queued.' };
+    }
+
+    if (dryRun) {
+      return {
+        queued: false,
+        dryRun: true,
+        provider: integration.provider,
+        syncType,
+        cursorAvailable: Boolean(integration.syncCursor),
+        message: 'Dry run only: no provider request or queue job was created.',
+      };
+    }
+
+    if (requestId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId)) {
+      throw new BadRequestException('requestId must be a UUID');
+    }
 
     await this.jobsService.queueDataSync({
       workspaceId: integration.workspaceId,
       integrationId: integration.id,
       syncType,
+      requestId: requestId ?? randomUUID(),
     });
 
     this.logger.log(`Sync triggered for integration: ${integrationId}`);
-    return { message: 'Sync queued successfully' };
+    return { queued: true, dryRun: false, message: 'Sync queued successfully' };
   }
 
   /**
    * Fetch data from an integration
    */
   async fetchData(integrationId: string, dataType: string, params?: unknown): Promise<unknown> {
-    const integration = await this.getIntegration(integrationId);
+    const integration = await this.getIntegrationRecord(integrationId);
     const integrationConfig = {
       accessToken: integration.accessToken,
       refreshToken: integration.refreshToken ?? undefined,
       settings: (integration.settings as Record<string, any>) || {},
     };
 
-    switch (integration.provider) {
+    try {
+      const data = await (async () => {
+        switch (integration.provider) {
+      case 'DEMO':
+        return this.demoConnectorService.fetchData(dataType);
+
       // Existing integrations
       case 'ASANA':
         return this.asanaService.fetchData(integration, dataType, params);
@@ -376,6 +521,21 @@ export class IntegrationService {
 
       default:
         throw new Error(`Unsupported provider: ${integration.provider}`);
+        }
+      })();
+      await this.prisma.integration.update({
+        where: { id: integrationId },
+        data: { connectionState: 'CONNECTED', lastValidDataAt: new Date(), lastSyncError: null },
+      });
+      return data;
+    } catch (error) {
+      const failure = classifyConnectorFailure(error);
+      await this.prisma.integration.update({
+        where: { id: integrationId },
+        data: { connectionState: failure.state, lastSyncError: failure.code },
+      });
+      this.logger.warn(`Connector ${integration.provider} data request failed (${failure.code}); previous valid data timestamp preserved`);
+      throw new BadRequestException(failure.message);
     }
   }
 
@@ -383,24 +543,67 @@ export class IntegrationService {
    * Refresh access token
    */
   async refreshToken(integrationId: string) {
-    const integration = await this.getIntegration(integrationId);
-
+    const integration = await this.getIntegrationRecord(integrationId);
+    if (integration.provider === 'DEMO') {
+      const updated = await this.prisma.integration.update({ where: { id: integrationId }, data: { connectionState: 'CONNECTED', lastSyncError: null } });
+      return toPublicIntegration(updated);
+    }
     if (!integration.refreshToken) {
-      throw new Error('No refresh token available');
+      await this.prisma.integration.update({ where: { id: integrationId }, data: { connectionState: 'NEEDS_RECONNECT', lastSyncError: 'invalid_grant' } });
+      throw new BadRequestException('This provider account needs to be reconnected.');
     }
 
-    // Implement OAuth refresh flow based on provider
-    // This is provider-specific and would require actual OAuth implementation
-    this.logger.log(`Token refresh requested for integration: ${integrationId}`);
+    const oauth = integration.provider === 'GITHUB'
+      ? { endpoint: 'https://github.com/login/oauth/access_token', clientId: process.env.GITHUB_INTEGRATION_CLIENT_ID, clientSecret: process.env.GITHUB_INTEGRATION_CLIENT_SECRET }
+      : ['GOOGLE_ANALYTICS', 'GOOGLE_ANALYTICS_4'].includes(integration.provider)
+        ? { endpoint: 'https://oauth2.googleapis.com/token', clientId: process.env.GOOGLE_INTEGRATION_CLIENT_ID, clientSecret: process.env.GOOGLE_INTEGRATION_CLIENT_SECRET }
+        : undefined;
+    if (!oauth) throw new BadRequestException('Automatic token refresh is not supported for this provider. Reconnect the account.');
+    if (!oauth.clientId || !oauth.clientSecret) {
+      throw new BadRequestException('Automatic refresh is not configured for this provider. Contact your workspace administrator.');
+    }
 
-    return { message: 'Token refresh not yet implemented' };
+    const body = new URLSearchParams({
+      client_id: oauth.clientId,
+      client_secret: oauth.clientSecret,
+      refresh_token: integration.refreshToken,
+      grant_type: 'refresh_token',
+    });
+    try {
+      const response = await firstValueFrom(this.httpService.post(oauth.endpoint, body.toString(), {
+        headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+        timeout: 10000,
+      }));
+      const refreshed = response.data as { access_token?: string; refresh_token?: string; expires_in?: number; error?: string };
+      if (!refreshed.access_token || refreshed.error) {
+        throw { code: refreshed.error || 'invalid_grant', response: { status: 401, data: { error: refreshed.error } } };
+      }
+      const updated = await this.prisma.integration.update({
+        where: { id: integrationId },
+        data: {
+          ...protectIntegrationTokens(this.encryptionService, {
+            accessToken: refreshed.access_token,
+            ...(refreshed.refresh_token ? { refreshToken: refreshed.refresh_token } : {}),
+          }, process.env, integration.tokenEncryptionVersion ?? 0),
+          expiresAt: refreshed.expires_in ? new Date(Date.now() + refreshed.expires_in * 1000) : null,
+          connectionState: 'CONNECTED',
+          lastSyncError: null,
+        },
+      });
+      return toPublicIntegration(updated);
+    } catch (error) {
+      const failure = classifyConnectorFailure(error);
+      await this.prisma.integration.update({ where: { id: integrationId }, data: { connectionState: failure.state, lastSyncError: failure.code } });
+      this.logger.warn(`Connector ${integration.provider} token refresh failed (${failure.code})`);
+      throw new BadRequestException(failure.message);
+    }
   }
 
   /**
    * Test integration connection
    */
   async testConnection(integrationId: string) {
-    const integration = await this.getIntegration(integrationId);
+    const integration = await this.getIntegrationRecord(integrationId);
     const integrationConfig = {
       accessToken: integration.accessToken,
       refreshToken: integration.refreshToken ?? undefined,
@@ -411,6 +614,10 @@ export class IntegrationService {
       let result: boolean;
 
       switch (integration.provider) {
+        case 'DEMO':
+          result = true;
+          break;
+
         // Existing integrations
         case 'ASANA':
           result = await this.asanaService.testConnection(integration);
@@ -578,12 +785,30 @@ export class IntegrationService {
           throw new Error(`Unsupported provider: ${integration.provider}`);
       }
 
-      return { connected: result };
+      if (result) {
+        await this.prisma.integration.update({
+          where: { id: integrationId },
+          data: { connectionState: 'CONNECTED', lastSyncError: null },
+        });
+        return { connected: true, connectionState: 'CONNECTED', message: connectorStateMessage('CONNECTED') };
+      }
+      const failure = classifyConnectorFailure({ response: { status: 503 } });
+      await this.prisma.integration.update({
+        where: { id: integrationId },
+        data: { connectionState: failure.state, lastSyncError: failure.code },
+      });
+      return { connected: false, connectionState: failure.state, message: failure.message };
     } catch (error) {
-      this.logger.error(`Connection test failed for integration: ${integrationId}`, error);
+      const failure = classifyConnectorFailure(error);
+      await this.prisma.integration.update({
+        where: { id: integrationId },
+        data: { connectionState: failure.state, lastSyncError: failure.code },
+      });
+      this.logger.warn(`Connector ${integration.provider} connection test failed (${failure.code})`);
       return {
         connected: false,
-        error: (error as { message: string }).message,
+        connectionState: failure.state,
+        message: failure.message,
       };
     }
   }

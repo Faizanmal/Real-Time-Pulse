@@ -96,7 +96,7 @@
     <div class="container">
         <div class="header">
             <div class="alert-icon">🚨</div>
-            <h1>Alert Triggered</h1>
+            <h1>{{severity}} Alert: {{alertName}}</h1>
         </div>
         
         <div class="content">
@@ -106,23 +106,25 @@
                 <p>{{description}}</p>
                 {{/if}}
                 <p><strong>Workspace:</strong> {{workspaceName}}</p>
+                <p><strong>Severity:</strong> {{severity}}</p>
+                <p><strong>Source:</strong> {{source}}</p>
             </div>
 
             <div class="condition">
                 <h4>🎯 Condition Met</h4>
-                <p><strong>Metric:</strong> {{condition.metric}}</p>
-                <p><strong>Operator:</strong> {{condition.operator}}</p>
-                <p><strong>Threshold:</strong> {{condition.threshold}}</p>
+                <p><strong>Metric:</strong> {{metric}}</p>
+                <p><strong>Value:</strong> {{value}}</p>
+                <p><strong>Reason:</strong> {{reason}}</p>
+                <p><strong>Source freshness:</strong> {{freshnessAt}}</p>
             </div>
 
             <div class="value">
-                <strong>Current Value:</strong><br>
-                <code>{{triggeredValue}}</code>
+                <strong>Next action:</strong><br>
+                <code>{{nextAction}}</code>
             </div>
 
             <p style="margin-top: 20px;">
-                This alert was triggered because the monitored metric exceeded your defined threshold. 
-                Please review your dashboard for more details.
+                This alert reflects the source signal and observation details above. Review the named source before taking action.
             </p>
 
             <center>

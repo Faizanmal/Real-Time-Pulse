@@ -23,6 +23,7 @@ const ALERT_ID_PARAM = 'id';
 const ALERT_ID_ROUTE = ':id';
 const ALERT_HISTORY_ROUTE = ':id/history';
 const ALERT_TEST_ROUTE = ':id/test';
+const ALERT_DELIVERY_RETRY_ROUTE = ':id/deliveries/:deliveryId/retry';
 
 @ApiTags('Alerts')
 @Controller('alerts')
@@ -87,6 +88,16 @@ export class AlertsController {
   @ApiOperation({ summary: 'Get alert trigger history' })
   async getHistory(@Param(ALERT_ID_PARAM) id: string, @CurrentUser() user: RequestUser) {
     return this.alertsService.getHistory(id, user.workspaceId);
+  }
+
+  @Post(ALERT_DELIVERY_RETRY_ROUTE)
+  @ApiOperation({ summary: 'Retry a failed alert channel delivery in this workspace' })
+  async retryDelivery(
+    @Param(ALERT_ID_PARAM) id: string,
+    @Param('deliveryId') deliveryId: string,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.alertsService.retryDelivery(id, deliveryId, user.workspaceId);
   }
 
   /**

@@ -11,6 +11,7 @@ import { Observable, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 
 import { CorrelationService } from './correlation.service';
+import { sanitizeSensitivePath } from '../utils/sensitive-path';
 
 @Injectable()
 export class CorrelationInterceptor implements NestInterceptor {
@@ -40,7 +41,7 @@ export class CorrelationInterceptor implements NestInterceptor {
           workspaceId: request.user?.workspaceId,
           metadata: {
             method: request.method,
-            path: request.url,
+            path: sanitizeSensitivePath(request.url),
             ip: request.ip,
             userAgent: request.headers['user-agent'],
           },

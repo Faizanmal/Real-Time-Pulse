@@ -10,11 +10,9 @@ import {
   Zap,
   BarChart3,
   Users,
-  Database,
   Globe,
-  TrendingUp,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -56,11 +54,7 @@ export function BillingDashboard({ className }: BillingDashboardProps) {
   const [selectedPlan, setSelectedPlan] = useState<BillingPlan | null>(null);
   const [processingCheckout, setProcessingCheckout] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [plansData, subData, invoicesData, usageData] = await Promise.all([
         billingApi.getPlans(),
@@ -78,17 +72,21 @@ export function BillingDashboard({ className }: BillingDashboardProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   const handleSubscribe = async (plan: BillingPlan) => {
-    if (!plan.stripePriceId) {
-      toast.error('This plan is not available for purchase');
+    if (!plan.checkoutAvailable || plan.id === 'TRIAL') {
+      toast.error('Checkout is unavailable in this environment.');
       return;
     }
 
     setProcessingCheckout(true);
     try {
-      const { sessionUrl } = await billingApi.createCheckoutSession(plan.stripePriceId);
+      const { sessionUrl } = await billingApi.createCheckoutSession(plan.id);
       window.location.href = sessionUrl;
     } catch (error) {
       console.error('Failed to create checkout session:', error);
@@ -113,23 +111,12 @@ export function BillingDashboard({ className }: BillingDashboardProps) {
     }
 
     try {
-      const updated = await billingApi.cancelSubscription();
-      setSubscription(updated);
+      await billingApi.cancelSubscription();
+      await loadData();
       toast.success('Subscription will be cancelled at the end of the billing period');
     } catch (error) {
       console.error('Failed to cancel subscription:', error);
       toast.error('Failed to cancel subscription');
-    }
-  };
-
-  const handleResumeSubscription = async () => {
-    try {
-      const updated = await billingApi.resumeSubscription();
-      setSubscription(updated);
-      toast.success('Subscription resumed');
-    } catch (error) {
-      console.error('Failed to resume subscription:', error);
-      toast.error('Failed to resume subscription');
     }
   };
 
@@ -179,7 +166,6 @@ export function BillingDashboard({ className }: BillingDashboardProps) {
               <CurrentPlanCard
                 subscription={subscription}
                 onCancel={handleCancelSubscription}
-                onResume={handleResumeSubscription}
               />
             </div>
           )}
@@ -263,10 +249,9 @@ export function BillingDashboard({ className }: BillingDashboardProps) {
 interface CurrentPlanCardProps {
   subscription: Subscription;
   onCancel: () => void;
-  onResume: () => void;
 }
 
-function CurrentPlanCard({ subscription, onCancel, onResume }: CurrentPlanCardProps) {
+function CurrentPlanCard({ subscription, onCancel }: CurrentPlanCardProps) {
   const statusColors: Record<string, string> = {
     active: 'bg-green-100 text-green-800',
     trialing: 'bg-blue-100 text-blue-800',
@@ -303,9 +288,7 @@ function CurrentPlanCard({ subscription, onCancel, onResume }: CurrentPlanCardPr
               <p className="text-sm text-gray-500 mt-1">
                 Ends {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
               </p>
-              <Button size="sm" className="mt-2" onClick={onResume}>
-                Resume Subscription
-              </Button>
+              <p className="text-sm text-gray-500 mt-1">Manage or resume this subscription in the Stripe billing portal.</p>
             </div>
           ) : (
             <div>
@@ -334,18 +317,10 @@ function CurrentPlanCard({ subscription, onCancel, onResume }: CurrentPlanCardPr
           </div>
           <div>
             <span className="text-gray-500">Members:</span>{' '}
-            <span className="font-medium">{subscription.plan.limits.members}</span>
+            <span className="font-medium">{subscription.plan.limits.users}</span>
           </div>
           <div>
-            <span className="text-gray-500">Integrations:</span>{' '}
-            <span className="font-medium">{subscription.plan.limits.integrations}</span>
-          </div>
-          <div>
-            <span className="text-gray-500">Storage:</span>{' '}
-            <span className="font-medium">{subscription.plan.limits.storage} GB</span>
-          </div>
-          <div>
-            <span className="text-gray-500">API Calls:</span>{' '}
+            <span className="text-gray-500">AI requests:</span>{' '}
             <span className="font-medium">
               {subscription.plan.limits.apiCalls.toLocaleString()}/mo
             </span>
@@ -404,10 +379,10 @@ function PlanCard({ plan, isCurrentPlan, onSelect }: PlanCardProps) {
       <Button
         className="w-full"
         variant={isCurrentPlan ? 'outline' : isPopular ? 'default' : 'outline'}
-        disabled={isCurrentPlan}
+        disabled={isCurrentPlan || plan.id === 'TRIAL' || plan.checkoutAvailable === false}
         onClick={onSelect}
       >
-        {isCurrentPlan ? 'Current Plan' : 'Select Plan'}
+        {isCurrentPlan ? 'Current Plan' : plan.id === 'TRIAL' ? 'Included' : plan.checkoutAvailable === false ? 'Unavailable' : 'Select Plan'}
       </Button>
     </div>
   );
@@ -432,25 +407,13 @@ function UsageSection({ usage }: UsageSectionProps) {
       limit: usage.widgets.limit,
     },
     {
-      name: 'Integrations',
-      icon: TrendingUp,
-      used: usage.integrations.used,
-      limit: usage.integrations.limit,
-    },
-    {
       name: 'Team Members',
       icon: Users,
       used: usage.members.used,
       limit: usage.members.limit,
     },
     {
-      name: 'Storage (GB)',
-      icon: Database,
-      used: usage.storage.used,
-      limit: usage.storage.limit,
-    },
-    {
-      name: 'API Calls',
+      name: 'AI requests',
       icon: BarChart3,
       used: usage.apiCalls.used,
       limit: usage.apiCalls.limit,
@@ -551,8 +514,9 @@ function InvoicesSection({ invoices }: InvoicesSectionProps) {
                 {new Date(invoice.createdAt).toLocaleDateString()}
               </td>
               <td className="px-4 py-3 text-sm text-gray-500">
-                {new Date(invoice.periodStart).toLocaleDateString()} -{' '}
-                {new Date(invoice.periodEnd).toLocaleDateString()}
+                {invoice.periodStart && invoice.periodEnd
+                  ? `${new Date(invoice.periodStart).toLocaleDateString()} - ${new Date(invoice.periodEnd).toLocaleDateString()}`
+                  : 'Period details unavailable'}
               </td>
               <td className="px-4 py-3 text-sm font-medium">
                 ${(invoice.amount / 100).toFixed(2)} {invoice.currency.toUpperCase()}

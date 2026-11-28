@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { Kafka, Consumer, Producer, Admin, EachMessagePayload } from 'kafkajs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface KafkaIntegration {
   accessToken?: string; // For SASL authentication
   refreshToken?: string; // SASL password
@@ -40,7 +41,7 @@ export class KafkaService implements OnModuleDestroy {
           await consumer.disconnect();
         }
       } catch (error) {
-        this.logger.error('Error disconnecting Kafka clients', error);
+        this.logger.error('Error disconnecting Kafka clients' + " (HTTP " + providerHttpStatus(error) + ")");
       }
     }
     this.connectionPool.clear();
@@ -130,7 +131,7 @@ export class KafkaService implements OnModuleDestroy {
       await admin.listTopics();
       return true;
     } catch (error) {
-      this.logger.error('Kafka connection test failed', error);
+      this.logger.error('Kafka connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -178,7 +179,7 @@ export class KafkaService implements OnModuleDestroy {
         })),
       }));
     } catch (error) {
-      this.logger.error('Failed to fetch Kafka topics', error);
+      this.logger.error('Failed to fetch Kafka topics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -217,7 +218,7 @@ export class KafkaService implements OnModuleDestroy {
         replicationFactor: topicInfo.partitions[0]?.replicas.length || 0,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Kafka topic metadata', error);
+      this.logger.error('Failed to fetch Kafka topic metadata' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -247,7 +248,7 @@ export class KafkaService implements OnModuleDestroy {
         }),
       );
     } catch (error) {
-      this.logger.error('Failed to fetch Kafka consumer groups', error);
+      this.logger.error('Failed to fetch Kafka consumer groups' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -306,7 +307,7 @@ export class KafkaService implements OnModuleDestroy {
         }),
       );
     } catch (error) {
-      this.logger.error('Failed to fetch Kafka consumer group offsets', error);
+      this.logger.error('Failed to fetch Kafka consumer group offsets' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -371,7 +372,7 @@ export class KafkaService implements OnModuleDestroy {
           });
       });
     } catch (error) {
-      this.logger.error('Failed to consume Kafka messages', error);
+      this.logger.error('Failed to consume Kafka messages' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -392,7 +393,7 @@ export class KafkaService implements OnModuleDestroy {
         })),
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Kafka cluster info', error);
+      this.logger.error('Failed to fetch Kafka cluster info' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -441,7 +442,7 @@ export class KafkaService implements OnModuleDestroy {
         brokers: cluster.brokers || [],
       };
     } catch (error) {
-      this.logger.error('Failed to fetch Kafka analytics', error);
+      this.logger.error('Failed to fetch Kafka analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -478,7 +479,7 @@ export class KafkaService implements OnModuleDestroy {
         topicPartitions: result,
       };
     } catch (error) {
-      this.logger.error('Failed to produce Kafka messages', error);
+      this.logger.error('Failed to produce Kafka messages' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -509,7 +510,7 @@ export class KafkaService implements OnModuleDestroy {
 
       return { success: true, topic: data.topic };
     } catch (error) {
-      this.logger.error('Failed to create Kafka topic', error);
+      this.logger.error('Failed to create Kafka topic' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -522,7 +523,7 @@ export class KafkaService implements OnModuleDestroy {
 
       return { success: true, topic };
     } catch (error) {
-      this.logger.error('Failed to delete Kafka topic', error);
+      this.logger.error('Failed to delete Kafka topic' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

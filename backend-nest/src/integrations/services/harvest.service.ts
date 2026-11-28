@@ -51,6 +51,7 @@ interface HarvestClient {
   is_active: boolean;
 }
 
+import { providerHttpStatus } from '../connector-security.util';
 @Injectable()
 export class HarvestService {
   private readonly logger = new Logger(HarvestService.name);
@@ -66,7 +67,7 @@ export class HarvestService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('Harvest connection test failed', error);
+      this.logger.error('Harvest connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -126,7 +127,7 @@ export class HarvestService {
 
       return response.data.time_entries;
     } catch (error) {
-      this.logger.error('Failed to fetch Harvest time entries', error);
+      this.logger.error('Failed to fetch Harvest time entries' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -142,7 +143,7 @@ export class HarvestService {
 
       return response.data.projects;
     } catch (error) {
-      this.logger.error('Failed to fetch Harvest projects', error);
+      this.logger.error('Failed to fetch Harvest projects' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -158,7 +159,7 @@ export class HarvestService {
 
       return response.data.clients;
     } catch (error) {
-      this.logger.error('Failed to fetch Harvest clients', error);
+      this.logger.error('Failed to fetch Harvest clients' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -182,7 +183,7 @@ export class HarvestService {
 
       return response.data.results;
     } catch (error) {
-      this.logger.error('Failed to fetch Harvest reports', error);
+      this.logger.error('Failed to fetch Harvest reports' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

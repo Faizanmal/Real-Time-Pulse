@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+import { providerHttpStatus } from '../connector-security.util';
 export interface LinkedInAdsIntegration {
   accessToken: string;
   settings: {
@@ -35,7 +36,7 @@ export class LinkedInAdsService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('LinkedIn Ads connection test failed', error);
+      this.logger.error('LinkedIn Ads connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -91,7 +92,7 @@ export class LinkedInAdsService {
 
       return response.data.elements || [];
     } catch (error) {
-      this.logger.error('Failed to fetch LinkedIn campaigns', error);
+      this.logger.error('Failed to fetch LinkedIn campaigns' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -117,7 +118,7 @@ export class LinkedInAdsService {
 
       return response.data.elements || [];
     } catch (error) {
-      this.logger.error('Failed to fetch LinkedIn campaign groups', error);
+      this.logger.error('Failed to fetch LinkedIn campaign groups' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -143,7 +144,7 @@ export class LinkedInAdsService {
 
       return response.data.elements || [];
     } catch (error) {
-      this.logger.error('Failed to fetch LinkedIn creatives', error);
+      this.logger.error('Failed to fetch LinkedIn creatives' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -230,7 +231,7 @@ export class LinkedInAdsService {
         dailyData: elements,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch LinkedIn analytics', error);
+      this.logger.error('Failed to fetch LinkedIn analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -254,7 +255,7 @@ export class LinkedInAdsService {
 
       return response.data.elements || [];
     } catch (error) {
-      this.logger.error('Failed to fetch LinkedIn conversions', error);
+      this.logger.error('Failed to fetch LinkedIn conversions' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -280,7 +281,7 @@ export class LinkedInAdsService {
 
       return response.data.elements || [];
     } catch (error) {
-      this.logger.error('Failed to fetch LinkedIn audiences', error);
+      this.logger.error('Failed to fetch LinkedIn audiences' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }

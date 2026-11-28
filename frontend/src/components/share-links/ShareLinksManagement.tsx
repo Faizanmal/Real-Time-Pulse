@@ -1,347 +1,169 @@
 'use client';
 
-import { Share2, Copy, ExternalLink, Trash2, Calendar, Eye, Lock, Unlock } from 'lucide-react';
-import React, { useState, useEffect, useCallback } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-
-interface ShareLink {
-  id: string;
-  name: string;
-  url: string;
-  resourceType: string;
-  resourceId: string;
-  accessLevel: 'view' | 'edit' | 'admin';
-  expiresAt: string | null;
-  password: string | null;
-  views: number;
-  maxViews: number | null;
-  createdAt: string;
-  createdBy: string;
-  enabled: boolean;
-}
+import { shareLinksApi, type ShareLink, type ShareAccessRequest, type CreateShareLinkDto } from '@/lib/enterprise-api';
 
 export default function ShareLinksManagement() {
-  const [shareLinks, setShareLinks] = useState<ShareLink[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    resourceType: 'dashboard',
-    resourceId: '',
-    accessLevel: 'view' as 'view' | 'edit' | 'admin',
-    expiresInDays: 0,
-    password: '',
-    maxViews: 0,
-    enabled: true
-  });
+  const [links, setLinks] = useState<ShareLink[]>([]);
+  const [requests, setRequests] = useState<ShareAccessRequest[]>([]);
+  const [guestComments, setGuestComments] = useState<Record<string, Array<{ id: string; displayName: string; content: string; createdAt: string }>>>({});
+  const [commentsOpen, setCommentsOpen] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [portalId, setPortalId] = useState('');
+  const [password, setPassword] = useState('');
+  const [expiresAt, setExpiresAt] = useState('');
+  const [maxViews, setMaxViews] = useState('');
+  const [allowExport, setAllowExport] = useState(false);
+  const [allowComments, setAllowComments] = useState(false);
+  const [allowDecisions, setAllowDecisions] = useState(false);
+  const [clientUserIds, setClientUserIds] = useState('');
 
-  const fetchShareLinks = useCallback(async () => {
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
     try {
-      const response = await fetch('/api/share-links');
-      const data = await response.json();
-      setShareLinks(data);
-    } catch (error) {
-      console.error('Failed to fetch share links:', error);
+      const [loadedLinks, loadedRequests] = await Promise.all([shareLinksApi.getAll(), shareLinksApi.getAccessRequests()]);
+      setLinks(loadedLinks);
+      setRequests(loadedRequests);
+    } catch {
+      setError('Share links could not be loaded. Retry or contact your workspace administrator.');
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      try {
-        const response = await fetch('/api/share-links');
-        const data = await response.json();
-        if (mounted) setShareLinks(data);
-      } catch (error) {
-        console.error('Failed to fetch share links:', error);
-      }
-    };
-    load();
-    return () => { mounted = false; };
-  }, []);
+  useEffect(() => { void load(); }, [load]);
 
-  const copyToClipboard = useCallback((text: string) => {
-    navigator.clipboard.writeText(text);
-  }, []);
-
-  const resetForm = useCallback(() => {
-    setFormData({
-      name: '',
-      resourceType: 'dashboard',
-      resourceId: '',
-      accessLevel: 'view',
-      expiresInDays: 0,
-      password: '',
-      maxViews: 0,
-      enabled: true
-    });
-  }, []);
-
-  const createShareLink = useCallback(async () => {
+  const create = async (event: FormEvent) => {
+    event.preventDefault();
+    setSaving(true);
+    setError('');
     try {
-      const response = await fetch('/api/share-links', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      const data = await response.json();
-      fetchShareLinks();
-      setIsDialogOpen(false);
-      resetForm();
-      copyToClipboard(data.url);
-    } catch (error) {
-      console.error('Failed to create share link:', error);
+      const dto: CreateShareLinkDto = {
+        portalId: portalId.trim(),
+        password: password || undefined,
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+        maxViews: maxViews ? Number(maxViews) : undefined,
+        allowExport,
+        allowComments,
+        allowDecisions,
+        clientUserIds: clientUserIds.split(',').map((id) => id.trim()).filter(Boolean),
+      };
+      const result = await shareLinksApi.create(dto);
+      setLinks((current) => [result, ...current]);
+      await navigator.clipboard.writeText(result.shareUrl);
+      setPortalId(''); setPassword(''); setExpiresAt(''); setMaxViews(''); setClientUserIds('');
+      setAllowExport(false); setAllowComments(false); setAllowDecisions(false);
+    } catch {
+      setError('The link was not created. Check that the portal belongs to your workspace and try again.');
+    } finally {
+      setSaving(false);
     }
-  }, [formData, fetchShareLinks, copyToClipboard, resetForm]);
+  };
 
-  const deleteShareLink = useCallback(async (id: string) => {
+  const toggle = async (link: ShareLink) => {
     try {
-      await fetch(`/api/share-links/${id}`, { method: 'DELETE' });
-      fetchShareLinks();
-    } catch (error) {
-      console.error('Failed to delete share link:', error);
+      const updated = await shareLinksApi.update(link.id, { isActive: !link.isActive });
+      setLinks((current) => current.map((item) => item.id === link.id ? updated : item));
+    } catch {
+      setError('The link status could not be changed.');
     }
-  }, [fetchShareLinks]);
+  };
 
-  const toggleShareLink = useCallback(async (id: string, enabled: boolean) => {
+  const revoke = async (link: ShareLink) => {
+    if (!window.confirm('Revoke this link? Anyone with its URL will lose access.')) return;
     try {
-      await fetch(`/api/share-links/${id}/toggle`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled })
-      });
-      fetchShareLinks();
-    } catch (error) {
-      console.error('Failed to toggle share link:', error);
+      await shareLinksApi.delete(link.id);
+      setLinks((current) => current.filter((item) => item.id !== link.id));
+    } catch {
+      setError('The link could not be revoked.');
     }
-  }, [fetchShareLinks]);
+  };
 
-  const resourceTypes = ['dashboard', 'report', 'chart', 'dataset'];
-  const accessLevels = ['view', 'edit', 'admin'];
+  const rotate = async (link: ShareLink) => {
+    try {
+      const rotated = await shareLinksApi.regenerate(link.id);
+      const url = rotated.shareUrl;
+      setLinks((current) => current.map((item) => item.id === link.id ? { ...item, token: rotated.token, currentViews: 0 } : item));
+      await navigator.clipboard.writeText(url);
+    } catch {
+      setError('The link could not be rotated.');
+    }
+  };
+
+  const reviewRequest = async (request: ShareAccessRequest) => {
+    try { await shareLinksApi.reviewAccessRequest(request.id); setRequests((items) => items.map((item) => item.id === request.id ? { ...item, status: 'REVIEWED' } : item)); }
+    catch { setError('The access request could not be marked reviewed.'); }
+  };
+
+  const toggleComments = async (link: ShareLink) => {
+    if (commentsOpen === link.id) { setCommentsOpen(null); return; }
+    try { const loaded = await shareLinksApi.getManagedComments(link.id); setGuestComments((items) => ({ ...items, [link.id]: loaded })); setCommentsOpen(link.id); }
+    catch { setError('Comments could not be loaded for this share link.'); }
+  };
+
+  const toggleDecisionReplies = async (link: ShareLink) => {
+    try {
+      const updated = await shareLinksApi.update(link.id, { allowDecisions: !link.allowDecisions });
+      setLinks((current) => current.map((item) => item.id === link.id ? updated : item));
+    } catch {
+      setError('Decision reply access could not be changed.');
+    }
+  };
+
+  const deleteGuestComment = async (linkId: string, commentId: string) => {
+    try { await shareLinksApi.deleteManagedComment(linkId, commentId); setGuestComments((items) => ({ ...items, [linkId]: (items[linkId] || []).filter((comment) => comment.id !== commentId) })); }
+    catch { setError('The comment could not be removed.'); }
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Share2 className="h-8 w-8" />
-            Share Links
-          </h1>
-          <p className="text-muted-foreground">Create and manage secure share links</p>
-        </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Share2 className="h-4 w-4 mr-2" />
-              Create Share Link
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create Share Link</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Link Name</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Q4 Dashboard Share"
-                />
-              </div>
-              <div>
-                <Label>Resource Type</Label>
-                <Select value={formData.resourceType} onValueChange={(value) => setFormData({ ...formData, resourceType: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {resourceTypes.map(type => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Resource ID</Label>
-                <Input
-                  value={formData.resourceId}
-                  onChange={(e) => setFormData({ ...formData, resourceId: e.target.value })}
-                  placeholder="dashboard-123"
-                />
-              </div>
-              <div>
-                <Label>Access Level</Label>
-                <Select value={formData.accessLevel} onValueChange={(value: string) => setFormData({ ...formData, accessLevel: value as 'view' | 'edit' | 'admin' })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accessLevels.map(level => (
-                      <SelectItem key={level} value={level}>{level}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Expires In Days (0 for never)</Label>
-                <Input
-                  type="number"
-                  value={formData.expiresInDays}
-                  onChange={(e) => setFormData({ ...formData, expiresInDays: parseInt(e.target.value) })}
-                />
-              </div>
-              <div>
-                <Label>Password Protection (optional)</Label>
-                <Input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Leave empty for no password"
-                />
-              </div>
-              <div>
-                <Label>Max Views (0 for unlimited)</Label>
-                <Input
-                  type="number"
-                  value={formData.maxViews}
-                  onChange={(e) => setFormData({ ...formData, maxViews: parseInt(e.target.value) })}
-                />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="enabled"
-                  checked={formData.enabled}
-                  onCheckedChange={(checked) => setFormData({ ...formData, enabled: checked })}
-                />
-                <Label htmlFor="enabled">Link Enabled</Label>
-              </div>
-              <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                <Button onClick={createShareLink}>Create Link</Button>
-              </div>
+    <main className="mx-auto max-w-5xl space-y-8 p-6">
+      <header>
+        <h1 className="text-3xl font-bold">Share links</h1>
+        <p className="mt-2 text-slate-600">Create unlisted portal links with optional password, expiry, and view limits.</p>
+      </header>
+      <form onSubmit={create} className="grid gap-4 rounded-xl border bg-white p-5 md:grid-cols-2">
+        <label className="text-sm">Portal ID<input className="mt-1 block w-full rounded border p-2" value={portalId} onChange={(event) => setPortalId(event.target.value)} required /></label>
+        <label className="text-sm">Password (optional)<input className="mt-1 block w-full rounded border p-2" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+        <label className="text-sm">Expires at (optional)<input className="mt-1 block w-full rounded border p-2" type="datetime-local" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} /></label>
+        <label className="text-sm">Maximum views (optional)<input className="mt-1 block w-full rounded border p-2" type="number" min="1" value={maxViews} onChange={(event) => setMaxViews(event.target.value)} /></label>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={allowExport} onChange={(event) => setAllowExport(event.target.checked)} />Allow export</label>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={allowComments} onChange={(event) => setAllowComments(event.target.checked)} />Allow comments</label>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={allowDecisions} onChange={(event) => setAllowDecisions(event.target.checked)} />Allow assigned clients to respond to decisions</label>
+        <label className="text-sm md:col-span-2">Client account user IDs (comma separated; leave blank for bearer link)<input className="mt-1 block w-full rounded border p-2" value={clientUserIds} onChange={(event) => setClientUserIds(event.target.value)} placeholder="00000000-0000-4000-8000-000000000012" /></label>
+        <button className="rounded bg-slate-900 px-4 py-2 text-white disabled:opacity-50 md:col-span-2" disabled={saving}>{saving ? 'Creating…' : 'Create and copy link'}</button>
+      </form>
+      {error && <p role="alert" className="rounded border border-red-300 bg-red-50 p-3 text-red-800">{error} <button className="ml-2 underline" onClick={() => void load()}>Reload</button></p>}
+      {loading ? <p role="status" aria-busy="true">Loading share links…</p> : links.length === 0 ? <p className="rounded border p-5 text-slate-600">No share links yet.</p> : (
+        <ul className="space-y-3">{links.map((link) => (
+          <li key={link.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-white p-4">
+            <div>
+              <h2 className="font-semibold">{link.portal?.name || `Portal ${link.portalId}`}</h2>
+              <p className="text-sm text-slate-600">{link.currentViews}{link.maxViews ? ` / ${link.maxViews}` : ''} views · {link.hasPassword ? 'Password protected' : 'No password'} · {link.expiresAt ? `Expires ${new Date(link.expiresAt).toLocaleString()}` : 'No expiry'}</p>
+              <p className="mt-1 text-xs text-slate-500">{link.allowExport ? 'Export allowed' : 'Export disabled'} · {link.allowComments ? 'Comments enabled' : 'Comments disabled'} · {link.allowDecisions ? 'Decision replies enabled' : 'Decision replies disabled'}</p>
+              {link.assignments?.length ? <p className="mt-1 text-xs text-slate-500">Assigned to: {link.assignments.map(({ user }) => user.email).join(', ')}</p> : <p className="mt-1 text-xs text-slate-500">Anyone with the link can request access.</p>}
             </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Links</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{shareLinks.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Active Links</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {shareLinks.filter(l => l.enabled).length}
+            <div className="flex gap-2">
+              <button className="rounded border px-3 py-1" onClick={() => void toggle(link)}>{link.isActive ? 'Disable' : 'Enable'}</button>
+              <button className="rounded border px-3 py-1" onClick={() => void rotate(link)}>Rotate link</button>
+              {link.allowComments && <button className="rounded border px-3 py-1" onClick={() => void toggleComments(link)}>{commentsOpen === link.id ? 'Hide comments' : 'Review comments'}</button>}
+              {link.assignments?.length ? <button className="rounded border px-3 py-1" onClick={() => void toggleDecisionReplies(link)}>{link.allowDecisions ? 'Disable decisions' : 'Enable decisions'}</button> : null}
+              <button className="rounded border border-red-300 px-3 py-1 text-red-700" onClick={() => void revoke(link)}>Revoke</button>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Views</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {shareLinks.reduce((acc, l) => acc + l.views, 0)}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Protected Links</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {shareLinks.filter(l => l.password).length}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="space-y-4">
-        {shareLinks.map((link) => (
-          <Card key={link.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    {link.password ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
-                    {link.name}
-                  </CardTitle>
-                  <CardDescription className="mt-1 font-mono text-xs">
-                    {link.url}
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={link.enabled ? 'default' : 'secondary'}>
-                    {link.enabled ? 'Active' : 'Disabled'}
-                  </Badge>
-                  <Switch
-                    checked={link.enabled}
-                    onCheckedChange={(checked) => toggleShareLink(link.id, checked)}
-                  />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Type:</span>
-                    <Badge variant="outline" className="ml-2">{link.resourceType}</Badge>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Access:</span>
-                    <Badge variant="outline" className="ml-2">{link.accessLevel}</Badge>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Eye className="h-3 w-3 text-muted-foreground" />
-                    <span>{link.views}</span>
-                    {link.maxViews && <span className="text-muted-foreground">/ {link.maxViews}</span>}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-xs">
-                      {link.expiresAt ? `Expires: ${new Date(link.expiresAt).toLocaleDateString()}` : 'Never expires'}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex gap-2 pt-2 border-t">
-                  <Button size="sm" variant="outline" onClick={() => copyToClipboard(link.url)}>
-                    <Copy className="h-3 w-3 mr-1" />
-                    Copy
-                  </Button>
-                  <Button size="sm" variant="outline" asChild>
-                    <a href={link.url} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-3 w-3 mr-1" />
-                      Open
-                    </a>
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={() => deleteShareLink(link.id)}>
-                    <Trash2 className="h-3 w-3 mr-1" />
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
+            {commentsOpen === link.id && <ul className="mt-3 w-full space-y-2">{(guestComments[link.id] || []).map((comment) => <li key={comment.id} className="flex justify-between gap-3 rounded border p-3"><div><strong>{comment.displayName}</strong><p>{comment.content}</p></div><button className="text-sm text-red-700 underline" onClick={() => void deleteGuestComment(link.id, comment.id)}>Remove</button></li>)}</ul>}
+          </li>
+        ))}</ul>
+      )}
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold">Access requests</h2>
+        {requests.length === 0 ? <p className="rounded border p-4 text-slate-600">No access requests.</p> : <ul className="space-y-2">{requests.map((request) => <li key={request.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-white p-4">
+          <div><p className="font-medium">{request.email}</p><p className="text-sm text-slate-600">{request.shareLink?.portal.name || 'Link no longer active'} · {request.status.toLowerCase()}</p>{request.message && <p className="mt-1 text-sm">{request.message}</p>}</div>
+          {request.status === 'PENDING' && <button className="rounded border px-3 py-1" onClick={() => void reviewRequest(request)}>Mark reviewed</button>}
+        </li>)}</ul>}
+      </section>
+    </main>
   );
 }

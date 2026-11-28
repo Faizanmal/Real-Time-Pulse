@@ -15,6 +15,7 @@ import {
 import { AuditService } from '../audit/audit.service';
 import { CacheService } from '../cache/cache.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { OnboardingFunnelService } from '../analytics/onboarding-funnel.service';
 
 import { BillingService } from './billing.service';
 
@@ -22,6 +23,7 @@ describe('BillingService', () => {
   let service: BillingService;
   let prismaService: any;
   let cacheService: any;
+  let onboardingFunnel: { recordStage: jest.Mock };
 
   const mockStripe = {
     customers: {
@@ -102,6 +104,9 @@ describe('BillingService', () => {
   beforeEach(async () => {
     prismaService = createMockPrismaService();
     cacheService = createMockRedisService();
+    onboardingFunnel = { recordStage: jest.fn().mockResolvedValue({ recorded: true }) };
+    prismaService.subscription = { findUnique: jest.fn() };
+    prismaService.billingEvent = { create: jest.fn().mockResolvedValue({ id: 'billing-event-fixture' }) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -112,12 +117,23 @@ describe('BillingService', () => {
           useValue: createMockConfigService({ 'stripe.secretKey': 'sk_test' }),
         },
         { provide: CacheService, useValue: cacheService },
+        { provide: OnboardingFunnelService, useValue: onboardingFunnel },
         { provide: AuditService, useValue: { logAction: jest.fn() } },
         { provide: 'STRIPE_CLIENT', useValue: mockStripe },
       ],
     }).compile();
 
     service = module.get<BillingService>(BillingService);
+  });
+
+  it('records first paid conversion after a confirmed paid invoice, never after checkout completion alone', async () => {
+    const subscription = { workspaceId: 'workspace-fictional-billing' };
+    prismaService.subscription.findUnique.mockResolvedValue(subscription);
+    await (service as any).handleInvoicePaid({ customer: 'cus_fictional', id: 'in_fictional', amount_paid: 4900 });
+    expect(onboardingFunnel.recordStage).toHaveBeenCalledWith(
+      subscription.workspaceId,
+      'PAID_CONVERSION',
+    );
   });
 
   describe('createCustomer', () => {

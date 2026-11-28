@@ -1,9 +1,12 @@
 {
   "name": "real-time-pulse-e2e",
   "version": "1.0.0",
+  "packageManager": "npm@11.20.0",
   "description": "End-to-end tests for Real-Time Pulse",
   "scripts": {
     "test": "playwright test",
+    "test:smoke": "playwright test --config=playwright.smoke.config.ts",
+    "test:chaos": "playwright test --config=playwright.chaos.config.ts",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
     "test:ui": "playwright test --ui",

@@ -4,6 +4,12 @@
 @variant dark (&:where(.dark, .dark *));
 
 :root {
+  color-scheme: light;
+  --font-geist-sans: Inter, ui-sans-serif, system-ui, Arial, sans-serif;
+  --font-geist-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+  --font-inter: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: Manrope, var(--font-geist-sans);
   --background: #ffffff;
   --foreground: #171717;
 
@@ -13,8 +19,9 @@
   --muted: #f5f5f5;
   --muted-foreground: #737373;
   --border: #e5e5e5;
-  --primary: #a855f7;
+  --primary: #6b21a8;
   --primary-foreground: #ffffff;
+  --focus-ring: #1d4ed8;
 }
 
 @theme inline {
@@ -31,25 +38,10 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-
-    /* Card variables - Dark mode */
-    --card: rgba(30, 41, 59, 0.8);
-    --card-foreground: #f1f5f9;
-    --muted: rgba(51, 65, 85, 0.6);
-    --muted-foreground: #94a3b8;
-    --border: rgba(71, 85, 105, 0.5);
-    --primary: #a855f7;
-    --primary-foreground: #ffffff;
-  }
-}
-
 /* Force dark mode for the dashboard since it uses dark backgrounds */
 .dark,
 [data-theme="dark"] {
+  color-scheme: dark;
   --background: #0a0a0a;
   --foreground: #ededed;
   --card: rgba(30, 41, 59, 0.8);
@@ -57,14 +49,38 @@
   --muted: rgba(51, 65, 85, 0.6);
   --muted-foreground: #94a3b8;
   --border: rgba(71, 85, 105, 0.5);
-  --primary: #a855f7;
-  --primary-foreground: #ffffff;
+  --primary: #c084fc;
+  --primary-foreground: #1f1233;
+  --focus-ring: #fbbf24;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+}
+
+:where(a, button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Ensure cards are styled correctly for dark backgrounds */

@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AgencyRoleGuard } from '../auth/guards/agency-role.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 import type { RequestUser } from '../common/interfaces/auth.interface';
 
@@ -19,7 +20,7 @@ import { CreateWidgetDto, UpdateWidgetDto } from './dto/widget.dto';
 import { WidgetService } from './widget.service';
 
 @Controller('widgets')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, AgencyRoleGuard)
 export class WidgetController {
   constructor(private readonly widgetService: WidgetService) {}
 

@@ -10,7 +10,9 @@ import { firstValueFrom } from 'rxjs';
 
 import { CacheService } from '../../cache/cache.service';
 import { LoggingService } from '../../common/logger/logging.service';
+import { EncryptionService } from '../../common/services/encryption.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { protectIntegrationTokens, revealIntegrationTokens } from '../connector-security.util';
 
 @Injectable()
 export class TeamsIntegrationService {
@@ -25,6 +27,7 @@ export class TeamsIntegrationService {
     private readonly logger: LoggingService,
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
+    private readonly encryptionService: EncryptionService,
   ) {
     this.clientId = this.configService.get<string>('integrations.teams.clientId') || '';
     this.clientSecret = this.configService.get<string>('integrations.teams.clientSecret') || '';
@@ -78,6 +81,14 @@ export class TeamsIntegrationService {
    * Connect Teams to workspace
    */
   async connectWorkspace(workspaceId: string, oauthData: any): Promise<void> {
+    const existing = await this.prisma.integration.findUnique({
+      where: { workspaceId_provider: { workspaceId, provider: 'TEAMS' } },
+      select: { tokenEncryptionVersion: true },
+    });
+    const protectedTokens = protectIntegrationTokens(this.encryptionService, {
+      accessToken: oauthData.access_token,
+      refreshToken: oauthData.refresh_token,
+    }, process.env, existing?.tokenEncryptionVersion ?? 0);
     await this.prisma.integration.upsert({
       where: {
         workspaceId_provider: {
@@ -86,8 +97,7 @@ export class TeamsIntegrationService {
         },
       },
       update: {
-        accessToken: oauthData.access_token,
-        refreshToken: oauthData.refresh_token,
+        ...protectedTokens,
         settings: {
           expiresAt: Date.now() + oauthData.expires_in * 1000,
         },
@@ -97,8 +107,7 @@ export class TeamsIntegrationService {
       create: {
         workspaceId,
         provider: 'TEAMS',
-        accessToken: oauthData.access_token,
-        refreshToken: oauthData.refresh_token,
+        ...protectedTokens,
         settings: {
           expiresAt: Date.now() + oauthData.expires_in * 1000,
         },
@@ -296,8 +305,9 @@ export class TeamsIntegrationService {
   }
 
   private async getIntegration(workspaceId: string) {
-    return this.prisma.integration.findFirst({
+    const integration = await this.prisma.integration.findFirst({
       where: { workspaceId, provider: 'TEAMS', status: 'ACTIVE' },
     });
+    return integration ? revealIntegrationTokens(this.encryptionService, integration) : null;
   }
 }

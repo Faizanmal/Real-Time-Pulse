@@ -10,6 +10,7 @@ interface PagerDutyIntegration {
   };
 }
 
+import { providerHttpStatus } from '../connector-security.util';
 @Injectable()
 export class PagerDutyService {
   private readonly logger = new Logger(PagerDutyService.name);
@@ -34,7 +35,7 @@ export class PagerDutyService {
       );
       return response.status === 200;
     } catch (error) {
-      this.logger.error('PagerDuty connection test failed', error);
+      this.logger.error('PagerDuty connection test failed' + " (HTTP " + providerHttpStatus(error) + ")");
       return false;
     }
   }
@@ -98,7 +99,7 @@ export class PagerDutyService {
 
       return response.data.incidents || [];
     } catch (error) {
-      this.logger.error('Failed to fetch PagerDuty incidents', error);
+      this.logger.error('Failed to fetch PagerDuty incidents' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -129,7 +130,7 @@ export class PagerDutyService {
 
       return response.data.services || [];
     } catch (error) {
-      this.logger.error('Failed to fetch PagerDuty services', error);
+      this.logger.error('Failed to fetch PagerDuty services' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -150,7 +151,7 @@ export class PagerDutyService {
 
       return response.data.users || [];
     } catch (error) {
-      this.logger.error('Failed to fetch PagerDuty users', error);
+      this.logger.error('Failed to fetch PagerDuty users' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -171,7 +172,7 @@ export class PagerDutyService {
 
       return response.data.teams || [];
     } catch (error) {
-      this.logger.error('Failed to fetch PagerDuty teams', error);
+      this.logger.error('Failed to fetch PagerDuty teams' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -192,7 +193,7 @@ export class PagerDutyService {
 
       return response.data.escalation_policies || [];
     } catch (error) {
-      this.logger.error('Failed to fetch PagerDuty escalation policies', error);
+      this.logger.error('Failed to fetch PagerDuty escalation policies' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -222,7 +223,7 @@ export class PagerDutyService {
 
       return response.data.oncalls || [];
     } catch (error) {
-      this.logger.error('Failed to fetch PagerDuty on-calls', error);
+      this.logger.error('Failed to fetch PagerDuty on-calls' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -246,7 +247,7 @@ export class PagerDutyService {
 
       return response.data.alerts || [];
     } catch (error) {
-      this.logger.error('Failed to fetch PagerDuty alerts', error);
+      this.logger.error('Failed to fetch PagerDuty alerts' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -345,7 +346,7 @@ export class PagerDutyService {
         })),
       };
     } catch (error) {
-      this.logger.error('Failed to fetch PagerDuty analytics', error);
+      this.logger.error('Failed to fetch PagerDuty analytics' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
@@ -382,7 +383,7 @@ export class PagerDutyService {
 
       return response.data.incident;
     } catch (error) {
-      this.logger.error('Failed to create PagerDuty incident', error);
+      this.logger.error('Failed to create PagerDuty incident' + " (HTTP " + providerHttpStatus(error) + ")");
       throw error;
     }
   }
