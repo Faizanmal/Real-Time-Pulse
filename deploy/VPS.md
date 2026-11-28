@@ -1,15 +1,17 @@
 # Single VPS deployment
 
-This deployment serves the app from `app.faizanmalik.me` and the API from
-`api.faizanmalik.me`. It does not change the DNS or hosting for the bare
-`faizanmalik.me` portfolio or `www.faizanmalik.me`.
+This deployment serves the app from `pulse.faizanmalik.me` and the API from
+`pulse-api.faizanmalik.me`. It does not change the DNS or hosting for the bare
+`faizanmalik.me` portfolio, `www.faizanmalik.me`, or the existing
+`api.faizanmalik.me` service.
 
 ## Before starting
 
 - A Linux VPS with Docker Engine and the Docker Compose plugin installed.
-- DNS `A` records for `app` and `api` under `faizanmalik.me`, both pointing to
-  the VPS public IPv4 address. Add `AAAA` records only if the VPS has working
-  public IPv6. Leave the bare-domain and `www` records as they are.
+- DNS `A` records for `pulse` and `pulse-api` under `faizanmalik.me`, both
+  pointing to the VPS public IPv4 address. Add `AAAA` records only if the VPS
+  has working public IPv6. Leave the bare-domain, `www`, and existing `api`
+  records as they are.
 - Allow inbound TCP ports 80 and 443 in the VPS firewall and provider firewall.
   UDP 443 is optional for HTTP/3. Keep ports 3000, 5432, and 6379 private;
   Compose does not publish them.
@@ -26,8 +28,9 @@ From the repository root on the VPS:
    `openssl rand -hex 32`. Keep these values in a password manager. Back up the
    encryption key securely; existing encrypted integration credentials cannot
    be read if that key is lost.
-3. Confirm `APP_DOMAIN=app.faizanmalik.me` and
-   `API_DOMAIN=api.faizanmalik.me`. Do not put the bare domain here.
+3. Confirm `APP_DOMAIN=pulse.faizanmalik.me` and
+   `API_DOMAIN=pulse-api.faizanmalik.me`. Do not change the bare domain or the
+   existing `api.faizanmalik.me` record.
 4. Build and start the services:
 
    ```sh
@@ -44,10 +47,10 @@ subdomains at build time; rebuild it after changing those domain values.
 ```sh
 docker compose --env-file .env.production -f compose.production.yaml ps
 docker compose --env-file .env.production -f compose.production.yaml logs --tail=100 caddy migrate backend frontend
-curl -fsS https://api.faizanmalik.me/api/v1/health/ready
+curl -fsS https://pulse-api.faizanmalik.me/api/v1/health/ready
 ```
 
-Open `https://app.faizanmalik.me` in a browser and check account creation,
+Open `https://pulse.faizanmalik.me` in a browser and check account creation,
 sign-in, sign-out, and realtime updates. Add the OAuth callback URLs shown by
 the provider configuration to the corresponding Google/GitHub app if you
 enable those sign-in options. Keep optional integrations disabled until their
