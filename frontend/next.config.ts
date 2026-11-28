@@ -156,10 +156,12 @@ const nextConfig: NextConfig & { eslint?: unknown } = {
 
   // Rewrites for API proxy
   async rewrites() {
+    const apiBaseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000').replace(/\/$/, '');
+
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'}/:path*`,
+        destination: `${apiBaseUrl}/api/:path*`,
       },
     ];
   },

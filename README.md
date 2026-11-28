@@ -563,6 +563,8 @@ Key variables:
 
 ## 🚀 Deployment
 
+For a single-VPS Docker deployment, see [deploy/VPS.md](./deploy/VPS.md). It serves the app and API from configurable subdomains and leaves the bare portfolio domain unchanged. Production readiness still depends on configuring and verifying the VPS, DNS, secrets, and backups.
+
 ### Backend (Render / AWS Fargate)
 
 ```bash
