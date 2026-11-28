@@ -21,7 +21,10 @@ This deployment serves the app from `pulse.faizanmalik.me` and the API from
 
 From the repository root on the VPS:
 
-1. Copy `.env.production.example` to `.env.production`.
+1. For a new install, copy `.env.example` to `.env`. If upgrading the already
+   started stack, copy the existing `.env.production` to `.env` instead so its
+   passwords and encryption key remain the same. Keep `.env` private with
+   `chmod 600 .env`.
 2. Replace the example email and generate a different 64-character hex value
    for `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `JWT_SECRET`, `ENCRYPTION_KEY`,
    and `ONBOARDING_FUNNEL_HMAC_KEY`. Generate each separately with
@@ -34,7 +37,7 @@ From the repository root on the VPS:
 4. Build and start the services:
 
    ```sh
-   docker compose --env-file .env.production -f compose.production.yaml up -d --build
+   docker compose up -d --build
    ```
 
 The stack waits for Postgres and Redis, runs checked-in Prisma migrations, then
@@ -45,8 +48,8 @@ subdomains at build time; rebuild it after changing those domain values.
 ## Check the deployment
 
 ```sh
-docker compose --env-file .env.production -f compose.production.yaml ps
-docker compose --env-file .env.production -f compose.production.yaml logs --tail=100 caddy migrate backend frontend
+docker compose ps
+docker compose logs --tail=100 caddy migrate backend frontend
 curl -fsS https://pulse-api.faizanmalik.me/api/v1/health/ready
 ```
 
@@ -64,8 +67,8 @@ volume is on the same VPS disk, so it is not a disaster recovery copy. Configure
 provider snapshots or copy backups to a separate storage account, and test a
 restore into a disposable database before storing real customer data.
 
-To update, pull the desired commit and rerun the `docker compose ... up -d
---build` command above. The migration service runs before the API is restarted.
+To update, pull the desired commit and rerun `docker compose up -d --build`.
+The migration service runs before the API is restarted.
 Review migration compatibility before deploying schema changes to an existing
 database. Do not remove the `postgres_data` volume when updating.
 
@@ -73,3 +76,10 @@ The repository supplies deployment configuration, but cannot verify the VPS,
 DNS records, provider firewall, certificate issuance, off-site backup, or OAuth
 provider settings. Confirm those on the server before treating the deployment
 as live.
+
+## Stop the stack
+
+From the repository root, run `docker compose down`. This stops and removes the
+containers and network while keeping the named database, Redis, Caddy, and
+backup volumes. Do not add `-v` unless you intentionally want to delete the
+stored data.

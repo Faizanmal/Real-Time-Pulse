@@ -24,7 +24,6 @@ e2e/playwright-report/
 .env.development.local
 .env.production.local
 !.env.example
-!.env.production.example
 
 # OS
 .DS_Store

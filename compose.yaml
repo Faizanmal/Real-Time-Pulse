@@ -13,7 +13,7 @@ services:
     environment:
       POSTGRES_DB: pulse
       POSTGRES_USER: pulse
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.production}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -28,9 +28,9 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env.production}"]
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}"]
     environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env.production}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
     volumes:
       - redis_data:/data
     healthcheck:
@@ -47,10 +47,10 @@ services:
       dockerfile: Dockerfile
       target: builder
     restart: "no"
-    env_file: .env.production
+    env_file: .env
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://pulse:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.production}@postgres:5432/pulse?schema=public
+      DATABASE_URL: postgresql://pulse:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/pulse?schema=public
     command: ["npm", "run", "prisma:migrate:deploy"]
     depends_on:
       postgres:
@@ -65,16 +65,16 @@ services:
     restart: unless-stopped
     init: true
     stop_grace_period: 30s
-    env_file: .env.production
+    env_file: .env
     environment:
       NODE_ENV: production
       PORT: "3000"
-      FRONTEND_URL: https://${APP_DOMAIN:?Set APP_DOMAIN in .env.production}
-      DATABASE_URL: postgresql://pulse:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.production}@postgres:5432/pulse?schema=public
+      FRONTEND_URL: https://${APP_DOMAIN:?Set APP_DOMAIN in .env}
+      DATABASE_URL: postgresql://pulse:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/pulse?schema=public
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_DB: "0"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env.production}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -94,9 +94,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.production
       args:
-        NEXT_PUBLIC_API_URL: https://${API_DOMAIN:?Set API_DOMAIN in .env.production}
-        NEXT_PUBLIC_WS_URL: https://${API_DOMAIN:?Set API_DOMAIN in .env.production}
-        NEXT_PUBLIC_APP_URL: https://${APP_DOMAIN:?Set APP_DOMAIN in .env.production}
+        NEXT_PUBLIC_API_URL: https://${API_DOMAIN:?Set API_DOMAIN in .env}
+        NEXT_PUBLIC_WS_URL: https://${API_DOMAIN:?Set API_DOMAIN in .env}
+        NEXT_PUBLIC_APP_URL: https://${APP_DOMAIN:?Set APP_DOMAIN in .env}
         NEXT_PUBLIC_APP_NAME: Real-Time Pulse
     restart: unless-stopped
     init: true
@@ -120,7 +120,7 @@ services:
       PGPORT: "5432"
       PGUSER: pulse
       PGDATABASE: pulse
-      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.production}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     command:
       - sh
       - -ec
@@ -145,9 +145,9 @@ services:
     image: caddy:2-alpine
     restart: unless-stopped
     environment:
-      APP_DOMAIN: ${APP_DOMAIN:?Set APP_DOMAIN in .env.production}
-      API_DOMAIN: ${API_DOMAIN:?Set API_DOMAIN in .env.production}
-      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env.production}
+      APP_DOMAIN: ${APP_DOMAIN:?Set APP_DOMAIN in .env}
+      API_DOMAIN: ${API_DOMAIN:?Set API_DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env}
     ports:
       - "80:80"
       - "443:443"

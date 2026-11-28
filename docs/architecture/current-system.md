@@ -71,7 +71,7 @@ Evidence: `backend-nest/prisma/schema.prisma:16-55` (User belongs to Workspace),
 
 ## Local topology
 
-`backend-nest/docker-compose.yml:1-41` starts only opt-in local Postgres and Redis services with health checks, persistent named volumes, and loopback port binds. The API runs on the host. `backend-nest/docker-compose.test.yml` defines separate test-only Postgres and Redis containers with health checks and no volumes. A single-VPS production stack is provided separately in the root `compose.production.yaml` and documented in `deploy/VPS.md`; it still requires deployment-specific DNS, secrets, backup, and server verification.
+`backend-nest/docker-compose.yml:1-41` starts only opt-in local Postgres and Redis services with health checks, persistent named volumes, and loopback port binds. The API runs on the host. `backend-nest/docker-compose.test.yml` defines separate test-only Postgres and Redis containers with health checks and no volumes. The root `compose.yaml` is the default single-VPS production stack and is documented in `deploy/VPS.md`; it still requires deployment-specific DNS, secrets, backup, and server verification.
 
 ## Fictional demo agency-to-client path
 
